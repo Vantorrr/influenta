@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+export const dynamic = 'force-dynamic'
+
+import React, { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
@@ -30,7 +32,7 @@ interface StepData {
   website?: string
 }
 
-export default function OnboardingPage() {
+function OnboardingInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [currentStep, setCurrentStep] = useState(0)
@@ -411,6 +413,14 @@ export default function OnboardingPage() {
         </AnimatePresence>
       </motion.div>
     </div>
+  )
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense>
+      <OnboardingInner />
+    </Suspense>
   )
 }
 
