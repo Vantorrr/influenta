@@ -270,6 +270,17 @@ ngrok http 3000
 7. **Админка** - полный контроль над платформой
 8. **Docker** - легкий деплой в любом окружении
 
+## 🚀 Deployment
+
+### Рекомендуемый стек:
+- **Backend**: Railway (API + WebSocket + PostgreSQL)
+- **Frontend**: Vercel (Next.js оптимизирован для Vercel)
+
+### Инструкции по деплою:
+- [RAILWAY_DEPLOY.md](./RAILWAY_DEPLOY.md) - деплой backend на Railway
+- [VERCEL_DEPLOY.md](./VERCEL_DEPLOY.md) - деплой frontend на Vercel
+- [DEPLOY.md](./DEPLOY.md) - альтернативные варианты деплоя
+
 ## 🤝 Поддержка
 
 - Telegram: @your_support_bot
