@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { SDKProvider } from '@telegram-apps/sdk-react'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,11 +27,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    <SDKProvider acceptCustomStyles>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
-    </SDKProvider>
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
   )
 }
 

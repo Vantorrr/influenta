@@ -65,3 +65,5 @@ export function Header({ title }: { title: string }) {
     </header>
   )
 }
+
+export { Layout } from './Layout'
