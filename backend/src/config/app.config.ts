@@ -13,8 +13,8 @@ export default registerAs('app', () => ({
   
   // Telegram Configuration
   telegram: {
-    botToken: process.env.TELEGRAM_BOT_TOKEN,
-    webAppUrl: process.env.TELEGRAM_WEBAPP_URL,
+    botToken: process.env.TELEGRAM_BOT_TOKEN || '',
+    webAppUrl: process.env.TELEGRAM_WEBAPP_URL || 'https://influentaa.vercel.app',
   },
   
   // Admin Configuration

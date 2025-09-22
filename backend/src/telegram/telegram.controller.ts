@@ -72,7 +72,7 @@ export class TelegramController {
   @Get('set-webhook')
   @ApiOperation({ summary: 'Set Telegram webhook' })
   async setWebhook(@Query('url') webhookUrl?: string) {
-    const baseUrl = this.configService.get('BACKEND_URL') || 'https://web-production-2bad2.up.railway.app';
+    const baseUrl = process.env.BACKEND_URL || process.env.RAILWAY_PUBLIC_DOMAIN || 'https://web-production-2bad2.up.railway.app';
     const url = webhookUrl || `${baseUrl}/telegram/webhook`;
     
     const result = await this.telegramService.setWebhook(url);
