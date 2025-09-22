@@ -18,15 +18,15 @@
 
 @layer base {
   * {
-    @apply box-border;
+    box-sizing: border-box;
   }
 
   html {
-    @apply h-full;
+    height: 100%;
   }
 
   body {
-    @apply h-full;
+    height: 100%;
     background-color: var(--color-telegram-bg);
     color: var(--color-telegram-text);
     -webkit-font-smoothing: antialiased;
@@ -35,7 +35,7 @@
 
   /* Scrollbar styles */
   ::-webkit-scrollbar {
-    @apply w-2;
+    width: 0.5rem;
   }
 
   ::-webkit-scrollbar-track {
@@ -54,40 +54,73 @@
 
 @layer components {
   .container {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    max-width: 80rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  @media (min-width: 640px) {
+    .container { padding-left: 1.5rem; padding-right: 1.5rem; }
+  }
+  @media (min-width: 1024px) {
+    .container { padding-left: 2rem; padding-right: 2rem; }
   }
 
   .btn {
-    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 active:scale-95;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 200ms;
   }
+  .btn:active { transform: scale(0.95); }
 
   .btn-primary {
-    @apply btn text-white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 200ms;
+    color: white;
     background-color: var(--color-telegram-primary);
   }
   .btn-primary:hover { background-color: var(--color-telegram-secondary); }
+  .btn-primary:active { transform: scale(0.95); }
 
   .btn-secondary {
-    @apply btn;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 200ms;
     background-color: var(--color-telegram-bgSecondary);
     color: var(--color-telegram-text);
   }
+  .btn-secondary:active { transform: scale(0.95); }
 
   .card {
-    @apply rounded-xl p-4 border border-gray-700/50;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    border: 1px solid rgb(55 65 81 / 0.5);
     background-color: var(--color-telegram-bgSecondary);
   }
 
   .input {
-    @apply w-full px-4 py-2 border border-gray-600 rounded-lg focus:outline-none transition-colors;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    border: 1px solid rgb(75 85 99);
+    border-radius: 0.5rem;
+    transition: border-color 150ms;
     background-color: var(--color-telegram-bg);
     color: var(--color-telegram-text);
   }
+  .input:focus { outline: none; }
   .input::placeholder { color: var(--color-telegram-textSecondary); }
   .input:focus { border-color: var(--color-telegram-primary); }
 
   .label {
-    @apply text-sm font-medium mb-1 block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    display: block;
     color: var(--color-telegram-textSecondary);
   }
 }
@@ -98,12 +131,14 @@
   }
 
   .glass {
-    @apply backdrop-blur-md;
+    backdrop-filter: blur(12px);
     background-color: rgb(255 255 255 / 0.05);
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
     background-image: linear-gradient(to right, var(--color-telegram-primary), var(--color-telegram-accent));
   }
 }
