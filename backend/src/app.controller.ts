@@ -1,13 +1,14 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AppService } from './app.service';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
-@ApiTags('Health')
+@ApiTags('App')
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
+  @ApiOperation({ summary: 'Welcome message' })
   getHello(): string {
     return this.appService.getHello();
   }
@@ -18,20 +19,23 @@ export class AppController {
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),
-      service: 'influencer-platform-backend',
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV,
       version: '1.0.0',
     };
   }
 
   @Get('api/health')
-  @ApiOperation({ summary: 'API health check endpoint' })
+  @ApiOperation({ summary: 'API Health check endpoint' })
   apiHealthCheck() {
     return {
       status: 'ok',
+      service: 'Influencer Platform API',
       timestamp: new Date().toISOString(),
-      service: 'influencer-platform-api',
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV,
+      database: 'connected', // TODO: add real DB check
       version: '1.0.0',
-      database: 'connected', // В продакшене проверять реальное подключение
     };
   }
 }
