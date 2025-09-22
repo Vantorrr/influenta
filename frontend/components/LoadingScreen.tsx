@@ -15,14 +15,14 @@ export function LoadingScreen() {
           clearInterval(progressInterval)
           return 100
         }
-        return prev + 2
+        return prev + 5
       })
     }, 50)
 
     // Минимальное время показа загрузочного экрана
     const timer = setTimeout(() => {
       setIsLoading(false)
-    }, 3000)
+    }, 2000)
 
     return () => {
       clearTimeout(timer)
