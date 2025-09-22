@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { User } from '../users/entities/user.entity';
 import { Blogger } from '../bloggers/entities/blogger.entity';
 import { Advertiser } from '../advertisers/entities/advertiser.entity';
-import { Listing } from '../listings/entities/listing.entity';
+import { Listing, ListingStatus } from '../listings/entities/listing.entity';
 
 @Injectable()
 export class AdminService {
@@ -32,7 +32,7 @@ export class AdminService {
       this.usersRepository.count(),
       this.bloggersRepository.count(),
       this.advertisersRepository.count(),
-      this.listingsRepository.count({ where: { status: 'active' } }),
+      this.listingsRepository.count({ where: { status: ListingStatus.ACTIVE } }),
       this.usersRepository.count({ where: { isVerified: true } }),
     ]);
 
@@ -47,20 +47,22 @@ export class AdminService {
   }
 
   async getAdminsList() {
-    const adminTelegramIds = this.configService.get<number[]>('app.admins.telegramIds');
-    const adminEmails = this.configService.get<string[]>('app.admins.emails');
+    const adminTelegramIds = this.configService.get<number[]>('app.admins.telegramIds') ?? [];
+    const adminEmails = this.configService.get<string[]>('app.admins.emails') ?? [];
 
     const admins = await this.usersRepository
       .createQueryBuilder('user')
-      .where('user.telegramId IN (:...ids)', { ids: adminTelegramIds.map(String) })
+      .where(adminTelegramIds.length > 0 ? 'user.telegramId IN (:...ids)' : '1=0', {
+        ids: adminTelegramIds.map(String),
+      })
       .orWhere('user.email IN (:...emails)', { emails: adminEmails })
       .orWhere('user.role = :role', { role: 'admin' })
       .getMany();
 
     return admins.map((admin, index) => ({
       ...admin,
-      adminLevel: adminTelegramIds.includes(parseInt(admin.telegramId)) 
-        ? adminTelegramIds.indexOf(parseInt(admin.telegramId)) === 0 
+      adminLevel: adminTelegramIds.includes(parseInt(String(admin.telegramId)))
+        ? adminTelegramIds.indexOf(parseInt(String(admin.telegramId))) === 0
           ? 'super_admin' 
           : 'admin'
         : 'admin',
@@ -90,11 +92,16 @@ export class AdminService {
   }
 
   async deleteListing(listingId: string, reason: string) {
-    await this.listingsRepository.update(listingId, { 
-      status: 'closed',
-      additionalInfo: { closedReason: reason, closedAt: new Date() }
-    });
-    
+    await this.listingsRepository
+      .createQueryBuilder()
+      .update(Listing)
+      .set({
+        status: ListingStatus.CLOSED,
+        additionalInfo: () => `'${JSON.stringify({ closedReason: reason, closedAt: new Date().toISOString() })}'`,
+      })
+      .where('id = :id', { id: listingId })
+      .execute();
+
     return { success: true, message: 'Listing closed successfully' };
   }
 

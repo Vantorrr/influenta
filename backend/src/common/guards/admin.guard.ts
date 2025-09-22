@@ -23,12 +23,12 @@ export class AdminGuard implements CanActivate {
     }
 
     // Получаем список админских Telegram ID из конфига
-    const adminTelegramIds = this.configService.get<number[]>('app.admins.telegramIds');
-    const adminEmails = this.configService.get<string[]>('app.admins.emails');
+    const adminTelegramIds = this.configService.get<number[]>('app.admins.telegramIds') ?? [];
+    const adminEmails = this.configService.get<string[]>('app.admins.emails') ?? [];
 
     // Проверяем является ли пользователь админом
-    const isAdminByTelegramId = adminTelegramIds.includes(parseInt(user.telegramId));
-    const isAdminByEmail = user.email && adminEmails.includes(user.email);
+    const isAdminByTelegramId = user.telegramId && adminTelegramIds.includes(parseInt(String(user.telegramId)));
+    const isAdminByEmail = !!user.email && adminEmails.includes(user.email);
     const isAdminByRole = user.role === 'admin';
 
     if (!isAdminByTelegramId && !isAdminByEmail && !isAdminByRole) {
