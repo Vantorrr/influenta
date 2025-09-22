@@ -33,15 +33,20 @@ export class AuthService {
 
       if (!user) {
         // Создаем нового пользователя
-        user = this.usersRepository.create({
+        const userData = {
           telegramId: telegramUser.id.toString(),
           firstName: telegramUser.first_name,
-          lastName: telegramUser.last_name,
-          username: telegramUser.username,
-          photoUrl: telegramUser.photo_url,
           isActive: true,
           isVerified: false,
-        } as any); // Временный type assertion для деплоя
+        }
+        
+        // Добавляем опциональные поля только если они есть
+        if (telegramUser.last_name) userData['lastName'] = telegramUser.last_name
+        if (telegramUser.username) userData['username'] = telegramUser.username
+        if (telegramUser.photo_url) userData['photoUrl'] = telegramUser.photo_url
+        if (telegramUser.language_code) userData['languageCode'] = telegramUser.language_code
+        
+        user = this.usersRepository.create(userData)
 
         await this.usersRepository.save(user);
       } else {
