@@ -2,8 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Tailwind v4 theming: объявляем токены цветов */
-@theme {
+/* CSS переменные для темы Telegram */
+:root {
   --color-telegram-primary: #2AABEE;
   --color-telegram-secondary: #229ED9;
   --color-telegram-bg: #17212B;

@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { LoadingScreen } from './LoadingScreen'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,6 +29,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <LoadingScreen />
       {children}
     </QueryClientProvider>
   )
