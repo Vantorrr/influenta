@@ -21,9 +21,10 @@ import { statsApi } from '@/lib/api'
 import { useQuery } from '@tanstack/react-query'
 
 export default function DashboardPage() {
-  const { data: stats, isLoading } = useQuery('dashboard-stats', () => 
-    statsApi.getDashboard()
-  )
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: () => statsApi.getDashboard(),
+  })
 
   const userRole = 'blogger' // TODO: Get from auth context
 

@@ -37,11 +37,11 @@ export default function BloggersPage() {
     verifiedOnly: false,
   })
 
-  const { data, isLoading } = useQuery(
-    ['bloggers', filters, search],
-    () => bloggersApi.search({ ...filters, search }, 1, 20),
-    { keepPreviousData: true }
-  )
+  const { data, isLoading } = useQuery({
+    queryKey: ['bloggers', filters, search],
+    queryFn: () => bloggersApi.search({ ...filters, search }, 1, 20),
+    placeholderData: (prev) => prev,
+  })
 
   const categories = Object.values(BloggerCategory)
 

@@ -42,11 +42,11 @@ export default function ListingsPage() {
     status: ListingStatus.ACTIVE,
   })
 
-  const { data, isLoading } = useQuery(
-    ['listings', filters, search],
-    () => listingsApi.search({ ...filters, search }, 1, 20),
-    { keepPreviousData: true }
-  )
+  const { data, isLoading } = useQuery({
+    queryKey: ['listings', filters, search],
+    queryFn: () => listingsApi.search({ ...filters, search }, 1, 20),
+    placeholderData: (prev) => prev,
+  })
 
   // Mock data for now
   const listings = data?.data || [
