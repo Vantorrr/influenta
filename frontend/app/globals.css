@@ -26,7 +26,9 @@
   }
 
   body {
-    @apply h-full bg-telegram-bg text-telegram-text;
+    @apply h-full;
+    background-color: var(--color-telegram-bg);
+    color: var(--color-telegram-text);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -37,15 +39,16 @@
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-telegram-bgSecondary;
+    background-color: var(--color-telegram-bgSecondary);
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-telegram-textSecondary rounded-full;
+    background-color: var(--color-telegram-textSecondary);
+    border-radius: 9999px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-telegram-accent;
+    background-color: var(--color-telegram-accent);
   }
 }
 
@@ -59,23 +62,33 @@
   }
 
   .btn-primary {
-    @apply btn bg-telegram-primary text-white hover:bg-telegram-secondary;
+    @apply btn text-white;
+    background-color: var(--color-telegram-primary);
   }
+  .btn-primary:hover { background-color: var(--color-telegram-secondary); }
 
   .btn-secondary {
-    @apply btn bg-telegram-bgSecondary text-telegram-text hover:bg-opacity-80;
+    @apply btn;
+    background-color: var(--color-telegram-bgSecondary);
+    color: var(--color-telegram-text);
   }
 
   .card {
-    @apply bg-telegram-bgSecondary rounded-xl p-4 border border-gray-700/50;
+    @apply rounded-xl p-4 border border-gray-700/50;
+    background-color: var(--color-telegram-bgSecondary);
   }
 
   .input {
-    @apply w-full px-4 py-2 bg-telegram-bg border border-gray-600 rounded-lg text-telegram-text placeholder-telegram-textSecondary focus:border-telegram-primary focus:outline-none transition-colors;
+    @apply w-full px-4 py-2 border border-gray-600 rounded-lg focus:outline-none transition-colors;
+    background-color: var(--color-telegram-bg);
+    color: var(--color-telegram-text);
   }
+  .input::placeholder { color: var(--color-telegram-textSecondary); }
+  .input:focus { border-color: var(--color-telegram-primary); }
 
   .label {
-    @apply text-sm font-medium text-telegram-textSecondary mb-1 block;
+    @apply text-sm font-medium mb-1 block;
+    color: var(--color-telegram-textSecondary);
   }
 }
 
@@ -85,10 +98,23 @@
   }
 
   .glass {
-    @apply bg-white/5 backdrop-blur-md;
+    @apply backdrop-blur-md;
+    background-color: rgb(255 255 255 / 0.05);
   }
 
   .text-gradient {
-    @apply bg-gradient-to-r from-telegram-primary to-telegram-accent bg-clip-text text-transparent;
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(to right, var(--color-telegram-primary), var(--color-telegram-accent));
   }
+}
+
+/* Fallback utility classes for color tokens (to avoid PostCSS unknown utility errors) */
+.bg-telegram-bg { background-color: var(--color-telegram-bg) !important; }
+.bg-telegram-bgSecondary { background-color: var(--color-telegram-bgSecondary) !important; }
+.bg-telegram-primary { background-color: var(--color-telegram-primary) !important; }
+.bg-telegram-secondary { background-color: var(--color-telegram-secondary) !important; }
+.bg-telegram-accent { background-color: var(--color-telegram-accent) !important; }
+.text-telegram-text { color: var(--color-telegram-text) !important; }
+.text-telegram-textSecondary { color: var(--color-telegram-textSecondary) !important; }
+.border-telegram-primary { border-color: var(--color-telegram-primary) !important; }
 }
