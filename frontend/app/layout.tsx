@@ -9,12 +9,6 @@ export const metadata: Metadata = {
   title: 'Influencer Platform - Связываем блогеров и рекламодателей',
   description: 'Telegram Mini App для поиска блогеров и размещения рекламы',
   manifest: '/manifest.json',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
 }
 
 export default function RootLayout({

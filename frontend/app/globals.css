@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Tailwind v4 theming: объявляем токены цветов */
+@theme {
+  --color-telegram-primary: #2AABEE;
+  --color-telegram-secondary: #229ED9;
+  --color-telegram-bg: #17212B;
+  --color-telegram-bgSecondary: #232E3C;
+  --color-telegram-text: #FFFFFF;
+  --color-telegram-textSecondary: #8B9AAB;
+  --color-telegram-accent: #71AAEB;
+  --color-telegram-success: #4DCD5E;
+  --color-telegram-danger: #FF3B30;
+  --color-telegram-warning: #FFA000;
+}
+
 @layer base {
   * {
     @apply box-border;
