@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  output: 'standalone', // Для Railway и production
   images: {
     domains: ['t.me', 'telegram.org'],
   },

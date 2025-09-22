@@ -34,10 +34,11 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  const port = configService.get('PORT') || 3001;
-  await app.listen(port);
-  
+  const port = process.env.PORT || configService.get('PORT') || 3001;
+  await app.listen(port, '0.0.0.0'); // Railway требует 0.0.0.0
+
   console.log(`🚀 Application is running on: http://localhost:${port}`);
   console.log(`📚 API documentation: http://localhost:${port}/api`);
+  console.log(`🏥 Health check: http://localhost:${port}/api/health`);
 }
 bootstrap();
