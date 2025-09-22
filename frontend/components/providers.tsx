@@ -18,12 +18,47 @@ export function Providers({ children }: { children: React.ReactNode }) {
     // Инициализация Telegram WebApp
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
       const tg = window.Telegram.WebApp
+      
+      // Инициализация
       tg.ready()
+      
+      // ПОЛНОЭКРАННЫЙ РЕЖИМ
       tg.expand()
+      tg.enableClosingConfirmation()
+      
+      // Скрываем стандартные элементы Telegram
+      if (tg.BackButton) {
+        tg.BackButton.hide()
+      }
       
       // Установка цветовой схемы
       tg.setHeaderColor('#17212B')
       tg.setBackgroundColor('#17212B')
+      
+      // Настройка viewport для полного экрана
+      if (tg.viewportHeight) {
+        document.documentElement.style.height = `${tg.viewportHeight}px`
+        document.body.style.height = `${tg.viewportHeight}px`
+      }
+      
+      // Обработчик изменения размера
+      const handleViewportChanged = () => {
+        if (tg.viewportHeight) {
+          document.documentElement.style.height = `${tg.viewportHeight}px`
+          document.body.style.height = `${tg.viewportHeight}px`
+        }
+      }
+      
+      tg.onEvent('viewportChanged', handleViewportChanged)
+      
+      // Отключение скролла за пределы приложения
+      document.body.style.overflow = 'auto'
+      document.documentElement.style.overflow = 'auto'
+      
+      // Cleanup
+      return () => {
+        tg.offEvent('viewportChanged', handleViewportChanged)
+      }
     }
   }, [])
 

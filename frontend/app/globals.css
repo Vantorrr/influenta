@@ -23,14 +23,40 @@
 
   html {
     height: 100%;
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
   }
 
   body {
     height: 100%;
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
     background-color: var(--color-telegram-bg);
     color: var(--color-telegram-text);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    /* Отключаем bounce scroll на iOS */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: none;
+  }
+
+  /* Полноэкранный режим для Telegram Mini App */
+  .telegram-viewport {
+    height: var(--tg-viewport-height, 100vh);
+    height: var(--tg-viewport-height, 100dvh);
+    overflow: hidden;
+  }
+
+  /* Отключаем zoom на iOS */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+
+  /* Убираем highlight при тапе на iOS */
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
   }
 
   /* Scrollbar styles */
