@@ -129,6 +129,35 @@
   .animate-in {
     animation: fadeIn 0.3s ease-in-out;
   }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+  
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(42, 171, 238, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 40px rgba(42, 171, 238, 0.8);
+    }
+  }
 
   .glass {
     backdrop-filter: blur(12px);
@@ -140,6 +169,18 @@
     -webkit-background-clip: text;
     color: transparent;
     background-image: linear-gradient(to right, var(--color-telegram-primary), var(--color-telegram-accent));
+  }
+  
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+  
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  
+  .backface-hidden {
+    backface-visibility: hidden;
   }
 }
 
