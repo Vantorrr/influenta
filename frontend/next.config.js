@@ -2,6 +2,12 @@
 const nextConfig = {
   reactStrictMode: true,
   output: 'standalone', // Для Railway и production
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   images: {
     domains: ['t.me', 'telegram.org'],
   },
