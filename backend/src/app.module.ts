@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { ChatModule } from './chat/chat.module';
 import { AdminModule } from './admin/admin.module';
 import { TelegramModule } from './telegram/telegram.module';
+import { AuthModule } from './auth/auth.module';
 import databaseConfig from './config/database.config';
 import appConfig from './config/app.config';
 
@@ -26,6 +27,7 @@ import appConfig from './config/app.config';
     ChatModule,
     AdminModule,
     TelegramModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

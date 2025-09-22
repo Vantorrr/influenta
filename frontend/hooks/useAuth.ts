@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ADMIN_CONFIG } from '@/lib/constants'
@@ -8,6 +10,7 @@ interface AuthState {
   isLoading: boolean
   isAdmin: boolean
   isSuperAdmin: boolean
+  token: string | null
 }
 
 export function useAuth() {
@@ -17,123 +20,118 @@ export function useAuth() {
     isLoading: true,
     isAdmin: false,
     isSuperAdmin: false,
+    token: null,
   })
 
   useEffect(() => {
-    checkAuth()
+    initAuth()
   }, [])
 
-  const checkAuth = async () => {
+  const initAuth = async () => {
     try {
-      // Проверяем cookie для демо-режима админки
-      const getCookie = (name: string) => {
-        const value = `; ${document.cookie}`
-        const parts = value.split(`; ${name}=`)
-        if (parts.length === 2) return parts.pop()?.split(';').shift()
-      }
+      // Проверяем сохраненную сессию
+      const savedToken = localStorage.getItem('influenta_token')
+      const savedUser = localStorage.getItem('influenta_user')
 
-      const adminTelegramId = getCookie('adminTelegramId')
-      const token = getCookie('token')
-
-      // Если есть админский cookie (для демо)
-      if (adminTelegramId && token === 'admin-token') {
-        const telegramId = parseInt(adminTelegramId)
-        const isAdmin = ADMIN_CONFIG.telegramIds.includes(telegramId)
-        const isSuperAdmin = telegramId === ADMIN_CONFIG.telegramIds[0]
-
-        const userData: User = {
-          id: adminTelegramId,
-          telegramId: adminTelegramId,
-          firstName: isSuperAdmin ? 'Супер' : 'Админ',
-          lastName: isSuperAdmin ? 'Админ' : '#2',
-          username: isSuperAdmin ? '@superadmin' : '@admin2',
-          photoUrl: null,
-          email: isSuperAdmin ? 'admin@example.com' : 'admin2@example.com',
-          role: 'admin',
-          isActive: true,
-          isVerified: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
+      if (savedToken && savedUser) {
+        const user = JSON.parse(savedUser)
+        const isAdmin = ADMIN_CONFIG.telegramIds.includes(parseInt(user.telegramId))
+        const isSuperAdmin = parseInt(user.telegramId) === ADMIN_CONFIG.telegramIds[0]
 
         setAuthState({
-          user: userData,
+          user,
           isLoading: false,
           isAdmin,
           isSuperAdmin,
+          token: savedToken,
         })
         return
       }
 
-      // Получаем данные пользователя из Telegram WebApp
+      // Получаем данные от Telegram WebApp
       if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
         const tg = window.Telegram.WebApp
-        const user = tg.initDataUnsafe?.user
+        const initData = tg.initData
+        const telegramUser = tg.initDataUnsafe?.user
 
-        if (user) {
-          // Проверяем является ли пользователь админом
-          const isAdmin = ADMIN_CONFIG.telegramIds.includes(user.id)
-          const isSuperAdmin = user.id === ADMIN_CONFIG.telegramIds[0] // Первый ID - супер админ
-
-          const userData: User = {
-            id: String(user.id),
-            telegramId: String(user.id),
-            firstName: user.first_name,
-            lastName: user.last_name || '',
-            username: user.username,
-            photoUrl: user.photo_url,
-            role: isAdmin ? 'admin' : 'blogger', // По умолчанию blogger, если не админ
-            isActive: true,
-            isVerified: isAdmin, // Админы автоматически верифицированы
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          }
-
-          setAuthState({
-            user: userData,
-            isLoading: false,
-            isAdmin,
-            isSuperAdmin,
+        if (telegramUser && initData) {
+          // Отправляем данные на сервер для авторизации
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/telegram`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              initData,
+              user: telegramUser,
+            }),
           })
+
+          if (response.ok) {
+            const authData = await response.json()
+            
+            if (authData.success) {
+              // Сохраняем токен и пользователя
+              localStorage.setItem('influenta_token', authData.token)
+              localStorage.setItem('influenta_user', JSON.stringify(authData.user))
+
+              const isAdmin = ADMIN_CONFIG.telegramIds.includes(parseInt(authData.user.telegramId))
+              const isSuperAdmin = parseInt(authData.user.telegramId) === ADMIN_CONFIG.telegramIds[0]
+
+              setAuthState({
+                user: authData.user,
+                isLoading: false,
+                isAdmin,
+                isSuperAdmin,
+                token: authData.token,
+              })
+            } else {
+              throw new Error(authData.error || 'Authentication failed')
+            }
+          } else {
+            throw new Error('Server authentication failed')
+          }
         } else {
+          // Нет данных от Telegram
           setAuthState({
             user: null,
             isLoading: false,
             isAdmin: false,
             isSuperAdmin: false,
+            token: null,
           })
         }
       } else {
-        // Если нет Telegram context и нет cookie
+        // Не в Telegram - для dev режима
         setAuthState({
           user: null,
           isLoading: false,
           isAdmin: false,
           isSuperAdmin: false,
+          token: null,
         })
       }
     } catch (error) {
-      console.error('Auth check error:', error)
+      console.error('Auth error:', error)
       setAuthState({
         user: null,
         isLoading: false,
         isAdmin: false,
         isSuperAdmin: false,
+        token: null,
       })
     }
   }
 
-  const login = async () => {
-    // Логин через Telegram WebApp происходит автоматически
-    checkAuth()
-  }
-
   const logout = () => {
+    localStorage.removeItem('influenta_token')
+    localStorage.removeItem('influenta_user')
     setAuthState({
       user: null,
       isLoading: false,
       isAdmin: false,
       isSuperAdmin: false,
+      token: null,
     })
     
     // Закрываем Telegram WebApp
@@ -150,11 +148,17 @@ export function useAuth() {
     return true
   }
 
+  // Backward compatibility
+  const adminLogin = () => false
+  const adminLogout = logout
+  const isAdminLoggedIn = authState.isAdmin
+
   return {
     ...authState,
-    login,
     logout,
-    checkAuth,
     checkAdminAccess,
+    adminLogin,
+    adminLogout,
+    isAdminLoggedIn,
   }
 }
