@@ -36,9 +36,9 @@ export class AuthService {
         user = this.usersRepository.create({
           telegramId: telegramUser.id.toString(),
           firstName: telegramUser.first_name,
-          lastName: telegramUser.last_name,
-          username: telegramUser.username,
-          photoUrl: telegramUser.photo_url,
+          lastName: telegramUser.last_name || undefined,
+          username: telegramUser.username || undefined,
+          photoUrl: telegramUser.photo_url || undefined,
           languageCode: telegramUser.language_code || 'ru',
           isActive: true,
           isVerified: false,

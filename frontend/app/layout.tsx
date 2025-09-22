@@ -33,7 +33,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ru" className="h-full">
-      <body className={`${inter.className} h-full`}>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="theme-color" content="#17212B" />
+        <script src="https://telegram.org/js/telegram-web-app.js"></script>
+      </head>
+      <body className={`${inter.className} h-full overflow-hidden`}>
         <Providers>{children}</Providers>
       </body>
     </html>

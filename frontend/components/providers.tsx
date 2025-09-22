@@ -36,24 +36,38 @@ export function Providers({ children }: { children: React.ReactNode }) {
       tg.setBackgroundColor('#17212B')
       
       // Настройка viewport для полного экрана
-      if (tg.viewportHeight) {
-        document.documentElement.style.height = `${tg.viewportHeight}px`
-        document.body.style.height = `${tg.viewportHeight}px`
-      }
-      
-      // Обработчик изменения размера
-      const handleViewportChanged = () => {
-        if (tg.viewportHeight) {
-          document.documentElement.style.height = `${tg.viewportHeight}px`
-          document.body.style.height = `${tg.viewportHeight}px`
+      const setViewportHeight = () => {
+        const height = tg.viewportHeight || window.innerHeight
+        document.documentElement.style.setProperty('--tg-viewport-height', `${height}px`)
+        document.documentElement.style.height = `${height}px`
+        document.body.style.height = `${height}px`
+        
+        // Принудительно растягиваем на весь экран
+        const root = document.getElementById('__next')
+        if (root) {
+          root.style.height = `${height}px`
+          root.style.overflow = 'hidden'
         }
       }
       
-      tg.onEvent('viewportChanged', handleViewportChanged)
+      // Устанавливаем высоту сразу
+      setViewportHeight()
       
-      // Отключение скролла за пределы приложения
-      document.body.style.overflow = 'auto'
-      document.documentElement.style.overflow = 'auto'
+      // Обработчик изменения размера
+      const handleViewportChanged = () => {
+        setViewportHeight()
+      }
+      
+      tg.onEvent('viewportChanged', handleViewportChanged)
+      window.addEventListener('resize', handleViewportChanged)
+      
+      // Отключение скролла и bounce
+      document.body.style.overflow = 'hidden'
+      document.documentElement.style.overflow = 'hidden'
+      document.body.style.position = 'fixed'
+      document.body.style.width = '100%'
+      document.body.style.top = '0'
+      document.body.style.left = '0'
       
       // Cleanup
       return () => {
