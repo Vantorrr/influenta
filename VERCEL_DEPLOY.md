@@ -51,8 +51,8 @@ vercel
 В Vercel Dashboard → Settings → Environment Variables добавь:
 
 ```env
-NEXT_PUBLIC_API_URL=https://influenta.up.railway.app
-NEXT_PUBLIC_WS_URL=wss://influenta.up.railway.app
+NEXT_PUBLIC_API_URL=https://web-production-2bad2.up.railway.app
+NEXT_PUBLIC_WS_URL=wss://web-production-2bad2.up.railway.app
 NEXT_PUBLIC_TELEGRAM_BOT_NAME=InfluentaBot
 ```
 
@@ -127,7 +127,7 @@ Vercel автоматически:
 ```javascript
 // Проверь в консоли браузера
 console.log(process.env.NEXT_PUBLIC_API_URL)
-// Должно быть: https://influenta.up.railway.app
+// Должно быть: https://web-production-2bad2.up.railway.app
 ```
 
 ### WebSocket не подключается
