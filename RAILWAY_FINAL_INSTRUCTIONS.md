@@ -56,3 +56,4 @@ cd backend && npm ci --production=false && npm run build
 2. `/setdomain`
 3. Выбери своего бота
 4. Введи: https://твой-app.up.railway.app
+

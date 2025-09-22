@@ -61,13 +61,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
       tg.onEvent('viewportChanged', handleViewportChanged)
       window.addEventListener('resize', handleViewportChanged)
       
-      // Отключение скролла и bounce
-      document.body.style.overflow = 'hidden'
-      document.documentElement.style.overflow = 'hidden'
-      document.body.style.position = 'fixed'
-      document.body.style.width = '100%'
-      document.body.style.top = '0'
-      document.body.style.left = '0'
+      // Настройка скролла для мини-аппа
+      document.body.style.overflowX = 'hidden'
+      document.body.style.overflowY = 'auto'
+      document.documentElement.style.overflowX = 'hidden'
+      document.documentElement.style.overflowY = 'auto'
       
       // Cleanup
       return () => {

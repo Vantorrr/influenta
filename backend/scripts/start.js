@@ -45,3 +45,4 @@ console.log('✅ Found main.js, starting application...');
 
 // Запускаем приложение
 require(mainPath);
+

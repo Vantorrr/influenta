@@ -100,3 +100,4 @@ https://t.me/InfluentaBot/influenta
 - Нажать на кнопку Menu
 - Запустить мини-апп
 - Пользоваться платформой внутри Telegram!
+

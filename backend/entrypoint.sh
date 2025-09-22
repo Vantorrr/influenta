@@ -35,3 +35,4 @@ echo "🚀 Environment: ${NODE_ENV:-development}"
 
 # Запуск приложения
 exec node dist/main.js
+

@@ -126,3 +126,4 @@ railway run pg_dump > backup.sql
 # Или через Dashboard
 # Settings → Backups → Create Backup
 ```
+

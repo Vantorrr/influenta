@@ -19,3 +19,4 @@ export function Layout({ title, children }: LayoutProps) {
     </div>
   )
 }
+

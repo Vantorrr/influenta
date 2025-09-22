@@ -72,3 +72,4 @@ LOG_LEVEL=info
 1. Логи в Railway (вкладка "Logs")
 2. Endpoint здоровья: https://твой-app.up.railway.app/api/health
 3. Swagger документация: https://твой-app.up.railway.app/api
+

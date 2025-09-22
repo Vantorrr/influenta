@@ -56,3 +56,4 @@ NEXT_PUBLIC_TELEGRAM_BOT_NAME = InfluentaBot
 - **CORS ошибка**: Добавь в Railway переменную `FRONTEND_URL=https://influenta-frontend.vercel.app`
 - **API не работает**: Проверь что в Vercel правильный `NEXT_PUBLIC_API_URL`
 - **WebSocket не подключается**: Убедись что используется `wss://` а не `ws://`
+

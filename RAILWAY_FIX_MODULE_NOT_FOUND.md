@@ -68,3 +68,4 @@ cmd = "cd backend && ls -la && npm run build && node dist/main.js"
 DEBUG=*
 LOG_LEVEL=debug
 ```
+
