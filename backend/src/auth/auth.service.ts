@@ -33,36 +33,33 @@ export class AuthService {
 
       if (!user) {
         // Создаем нового пользователя
-        const userData: any = {
-          telegramId: telegramUser.id.toString(),
-          firstName: telegramUser.first_name,
-          lastName: telegramUser.last_name || null,
-          username: telegramUser.username || null,
-          photoUrl: telegramUser.photo_url || null,
-          languageCode: telegramUser.language_code || 'ru',
-          isActive: true,
-          isVerified: false,
-        }
-        
-        user = this.usersRepository.create(userData)
+        user = new User();
+        user.telegramId = telegramUser.id.toString();
+        user.firstName = telegramUser.first_name;
+        user.lastName = telegramUser.last_name;
+        user.username = telegramUser.username;
+        user.photoUrl = telegramUser.photo_url;
+        user.languageCode = telegramUser.language_code || 'ru';
+        user.isActive = true;
+        user.isVerified = false;
 
-        await this.usersRepository.save(user);
+        user = await this.usersRepository.save(user);
       } else {
         // Обновляем данные существующего пользователя
-        await this.usersRepository.update(user.id, {
-          firstName: telegramUser.first_name,
-          lastName: telegramUser.last_name,
-          username: telegramUser.username,
-          photoUrl: telegramUser.photo_url,
-          lastLoginAt: new Date(),
-        });
+        user.firstName = telegramUser.first_name;
+        user.lastName = telegramUser.last_name;
+        user.username = telegramUser.username;
+        user.photoUrl = telegramUser.photo_url;
+        user.lastLoginAt = new Date();
+        
+        user = await this.usersRepository.save(user);
       }
 
       // Создаем JWT токен
       const payload = {
         sub: user.id,
         telegramId: user.telegramId,
-        username: user.username,
+        username: user.username || '',
       };
 
       const token = this.jwtService.sign(payload);
@@ -74,9 +71,9 @@ export class AuthService {
           id: user.id,
           telegramId: user.telegramId,
           firstName: user.firstName,
-          lastName: user.lastName,
-          username: user.username,
-          photoUrl: user.photoUrl,
+          lastName: user.lastName || '',
+          username: user.username || '',
+          photoUrl: user.photoUrl || '',
           isVerified: user.isVerified,
         },
       };
