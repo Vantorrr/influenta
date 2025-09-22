@@ -14,27 +14,31 @@ export class User extends BaseEntity {
   telegramId: string;
 
   @Column({ nullable: true })
-  username: string;
+  username?: string;
 
   @Column()
   firstName: string;
 
   @Column({ nullable: true })
-  lastName: string;
+  lastName?: string;
 
   @Column({ nullable: true })
-  photoUrl: string;
+  photoUrl?: string;
 
   @Column({ unique: true, nullable: true })
-  email: string;
+  email?: string;
 
   @Column({ nullable: true })
   @Exclude()
-  password: string;
+  password?: string;
+
+  @Column({ nullable: true })
+  languageCode?: string;
 
   @Column({
     type: 'enum',
     enum: UserRole,
+    default: UserRole.BLOGGER,
   })
   role: UserRole;
 
@@ -45,9 +49,9 @@ export class User extends BaseEntity {
   isVerified: boolean;
 
   @Column({ nullable: true })
-  lastLoginAt: Date;
+  lastLoginAt?: Date;
 
   @Column({ type: 'jsonb', nullable: true })
-  telegramData: Record<string, any>;
+  telegramData?: Record<string, any>;
 }
 
