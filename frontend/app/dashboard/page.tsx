@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatNumber, formatPrice, getRelativeTime } from '@/lib/utils'
 import { statsApi } from '@/lib/api'
-import { useQuery } from 'react-query'
+import { useQuery } from '@tanstack/react-query'
 
 export default function DashboardPage() {
   const { data: stats, isLoading } = useQuery('dashboard-stats', () => 

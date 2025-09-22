@@ -28,7 +28,7 @@ import {
   getStatusColor
 } from '@/lib/utils'
 import { listingsApi } from '@/lib/api'
-import { useQuery } from 'react-query'
+import { useQuery } from '@tanstack/react-query'
 import { 
   BloggerCategory, 
   ListingStatus,

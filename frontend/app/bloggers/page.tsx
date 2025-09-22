@@ -26,7 +26,7 @@ import {
   cn
 } from '@/lib/utils'
 import { bloggersApi } from '@/lib/api'
-import { useQuery } from 'react-query'
+import { useQuery } from '@tanstack/react-query'
 import { BloggerCategory, type BloggerFilters } from '@/types'
 
 export default function BloggersPage() {
