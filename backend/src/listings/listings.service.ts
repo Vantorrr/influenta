@@ -71,13 +71,12 @@ export class ListingsService {
       throw new ForbiddenException('Only advertisers can create listings');
     }
 
-    const listing = this.listingsRepository.create({
-      ...createListingDto,
-      advertiser: user,
-      status: ListingStatus.ACTIVE,
-      viewsCount: 0,
-      responsesCount: 0,
-    });
+    const listing = new Listing();
+    Object.assign(listing, createListingDto);
+    listing.advertiser = user;
+    listing.status = ListingStatus.ACTIVE;
+    listing.viewsCount = 0;
+    listing.responsesCount = 0;
 
     await this.listingsRepository.save(listing);
     return this.formatListing(listing);

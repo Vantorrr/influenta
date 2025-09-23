@@ -7,6 +7,7 @@ import { PaginationDto } from '@/common/dto/pagination.dto';
 import { ListingSearchDto } from './dto/listing-search.dto';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
+import { ListingStatus } from '@/types';
 
 @Controller('listings')
 @UseGuards(JwtAuthGuard)
@@ -50,11 +51,11 @@ export class ListingsController {
 
   @Post(':id/close')
   async close(@Param('id') id: string, @CurrentUser() user: User) {
-    return this.listingsService.updateStatus(id, 'closed', user);
+    return this.listingsService.updateStatus(id, ListingStatus.CLOSED, user);
   }
 
   @Post(':id/complete')
   async complete(@Param('id') id: string, @CurrentUser() user: User) {
-    return this.listingsService.updateStatus(id, 'completed', user);
+    return this.listingsService.updateStatus(id, ListingStatus.COMPLETED, user);
   }
 }
