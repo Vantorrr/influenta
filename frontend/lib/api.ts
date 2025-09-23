@@ -62,7 +62,7 @@ export const authApi = {
   },
 
   async getProfile(): Promise<ApiResponse<User>> {
-    const response = await api.get('/auth/profile')
+    const response = await api.get('/auth/me')
     return response.data
   },
 
