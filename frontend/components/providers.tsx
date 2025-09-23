@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { LoadingScreen } from './LoadingScreen'
+import { chatService } from '@/lib/chat.service'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -71,6 +72,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
       return () => {
         tg.offEvent('viewportChanged', handleViewportChanged)
       }
+    }
+  }, [])
+
+  // Подключение WebSocket чата при наличии токена
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('influenta_token')
+      if (token) {
+        chatService.connect(token)
+      }
+      return () => chatService.disconnect()
     }
   }, [])
 

@@ -94,7 +94,7 @@ export const bloggersApi = {
     page = 1,
     limit = 20
   ): Promise<PaginatedResponse<Blogger>> {
-    const response = await api.get('/bloggers', {
+    const response = await api.get('/bloggers/search', {
       params: { ...filters, page, limit },
     })
     return response.data
@@ -151,7 +151,7 @@ export const listingsApi = {
     page = 1,
     limit = 20
   ): Promise<PaginatedResponse<Listing>> {
-    const response = await api.get('/listings', {
+    const response = await api.get('/listings/search', {
       params: { ...filters, page, limit },
     })
     return response.data
