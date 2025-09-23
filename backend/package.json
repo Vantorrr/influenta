@@ -12,6 +12,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main.js",
+    "seed": "node dist/scripts/seed.js",
     "start:railway": "chmod +x railway-start.sh && ./railway-start.sh",
     "postinstall": "echo '✅ Dependencies installed successfully'",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
