@@ -71,28 +71,40 @@ export default function ProfilePage() {
     totalSpent: 0,
   })
 
-  // Обновляем профили когда меняется user
+  // Загружаем и обновляем профили когда меняется user
   useEffect(() => {
     if (user) {
-      setBloggerProfile(prev => ({
-        ...prev,
-        contacts: {
-          ...prev.contacts,
-          telegram: user.username ? `@${user.username}` : '',
-          email: user.email || '',
-        },
-        isVerified: user.isVerified,
-      }))
+      // Загружаем сохраненный профиль блогера
+      const savedBloggerProfile = localStorage.getItem(`influenta_blogger_profile_${user.id}`)
+      if (savedBloggerProfile) {
+        setBloggerProfile(JSON.parse(savedBloggerProfile))
+      } else {
+        setBloggerProfile(prev => ({
+          ...prev,
+          contacts: {
+            ...prev.contacts,
+            telegram: user.username ? `@${user.username}` : '',
+            email: user.email || '',
+          },
+          isVerified: user.isVerified,
+        }))
+      }
       
-      setAdvertiserProfile(prev => ({
-        ...prev,
-        contacts: {
-          ...prev.contacts,
-          telegram: user.username ? `@${user.username}` : '',
-          email: user.email || '',
-        },
-        isVerified: user.isVerified,
-      }))
+      // Загружаем сохраненный профиль рекламодателя
+      const savedAdvertiserProfile = localStorage.getItem(`influenta_advertiser_profile_${user.id}`)
+      if (savedAdvertiserProfile) {
+        setAdvertiserProfile(JSON.parse(savedAdvertiserProfile))
+      } else {
+        setAdvertiserProfile(prev => ({
+          ...prev,
+          contacts: {
+            ...prev.contacts,
+            telegram: user.username ? `@${user.username}` : '',
+            email: user.email || '',
+          },
+          isVerified: user.isVerified,
+        }))
+      }
     }
   }, [user])
 
@@ -149,8 +161,27 @@ export default function ProfilePage() {
   ]
 
   const handleSave = () => {
-    // Здесь будет сохранение данных
+    // Сохраняем изменения в localStorage
+    const updatedProfile = activeTab === 'blogger' ? bloggerProfile : advertiserProfile
+    localStorage.setItem(`influenta_${activeTab}_profile_${user?.id}`, JSON.stringify(updatedProfile))
     setIsEditing(false)
+  }
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-telegram-primary mx-auto mb-4"></div>
+        <p className="text-telegram-textSecondary">Загрузка профиля...</p>
+      </div>
+    </div>
+  }
+
+  if (!user) {
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <p className="text-telegram-textSecondary">Необходимо войти в приложение</p>
+      </div>
+    </div>
   }
 
   return (
@@ -163,6 +194,7 @@ export default function ProfilePage() {
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <Avatar
+                    src={user?.photoUrl}
                     firstName={user?.firstName || 'Имя'}
                     lastName={user?.lastName || 'Фамилия'}
                     size="xl"
