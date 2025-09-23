@@ -1,6 +1,10 @@
-import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Patch } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
+import { User } from '@/users/entities/user.entity';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 class TelegramAuthDto {
   initData: string;
@@ -28,9 +32,16 @@ export class AuthController {
 
   @Get('me')
   @ApiOperation({ summary: 'Get current user profile' })
-  async getCurrentUser() {
-    // TODO: Implement JWT guard and get user from token
-    return { message: 'Not implemented yet' };
+  @UseGuards(JwtAuthGuard)
+  async getCurrentUser(@CurrentUser() user: User) {
+    return this.authService.getProfile(user.id);
+  }
+
+  @Patch('profile')
+  @ApiOperation({ summary: 'Update current user profile' })
+  @UseGuards(JwtAuthGuard)
+  async updateProfile(@CurrentUser() user: User, @Body() dto: UpdateProfileDto) {
+    return this.authService.updateProfile(user.id, dto);
   }
 }
 

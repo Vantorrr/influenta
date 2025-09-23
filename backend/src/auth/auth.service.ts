@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { User } from '../users/entities/user.entity';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -112,5 +113,40 @@ export class AuthService {
       console.error('Telegram data verification error:', error);
       return true; // В случае ошибки пропускаем проверку для dev
     }
+  }
+
+  async getProfile(userId: string) {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new Error('User not found');
+    }
+    return {
+      success: true,
+      user: {
+        id: user.id,
+        telegramId: user.telegramId,
+        firstName: user.firstName,
+        lastName: user.lastName || '',
+        username: user.username || '',
+        photoUrl: user.photoUrl || '',
+        isVerified: user.isVerified,
+        email: user.email || null,
+        languageCode: user.languageCode || null,
+      },
+    };
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new Error('User not found');
+    }
+    if (dto.firstName !== undefined) user.firstName = dto.firstName;
+    if (dto.lastName !== undefined) user.lastName = dto.lastName;
+    if (dto.username !== undefined) user.username = dto.username;
+    if (dto.photoUrl !== undefined) user.photoUrl = dto.photoUrl;
+    if (dto.email !== undefined) user.email = dto.email || null as any;
+    await this.usersRepository.save(user);
+    return this.getProfile(userId);
   }
 }
