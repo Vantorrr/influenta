@@ -31,45 +31,70 @@ import { formatPrice, formatNumber, formatDate, getCategoryLabel } from '@/lib/u
 import { BloggerCategory } from '@/types'
 
 export default function ProfilePage() {
-  const { user } = useAuth()
+  const { user, isLoading } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [activeTab, setActiveTab] = useState<'blogger' | 'advertiser'>('blogger')
   
-  // Mock данные профиля
+  // Реальные данные профиля - пустые для нового пользователя
   const [bloggerProfile, setBloggerProfile] = useState({
-    bio: 'Рассказываю о моде, красоте и путешествиях. Люблю находить необычные места и делиться впечатлениями с подписчиками.',
-    categories: [BloggerCategory.LIFESTYLE, BloggerCategory.FASHION, BloggerCategory.TRAVEL],
-    subscribersCount: 125000,
-    averageViews: 45000,
-    engagementRate: 4.2,
-    pricePerPost: 25000,
-    pricePerStory: 10000,
+    bio: '',
+    categories: [],
+    subscribersCount: 0,
+    averageViews: 0,
+    engagementRate: 0,
+    pricePerPost: 0,
+    pricePerStory: 0,
     contacts: {
-      telegram: '@anna_lifestyle',
-      instagram: '@anna_lifestyle',
-      email: 'anna@example.com',
-      phone: '+7 (999) 123-45-67',
+      telegram: user?.username ? `@${user.username}` : '',
+      instagram: '',
+      email: user?.email || '',
+      phone: '',
     },
-    isVerified: true,
-    rating: 4.8,
-    completedCampaigns: 24,
-    totalEarnings: 890000,
+    isVerified: user?.isVerified || false,
+    rating: 0,
+    completedCampaigns: 0,
+    totalEarnings: 0,
   })
 
   const [advertiserProfile, setAdvertiserProfile] = useState({
-    companyName: 'TechBrand Solutions',
-    description: 'Разрабатываем инновационные мобильные приложения для здоровья и фитнеса.',
-    website: 'https://techbrand.com',
+    companyName: '',
+    description: '',
+    website: '',
     contacts: {
-      telegram: '@techbrand',
-      email: 'contact@techbrand.com',
-      phone: '+7 (999) 987-65-43',
+      telegram: user?.username ? `@${user.username}` : '',
+      email: user?.email || '',
+      phone: '',
     },
-    isVerified: true,
-    rating: 4.7,
-    completedCampaigns: 15,
-    totalSpent: 2500000,
+    isVerified: user?.isVerified || false,
+    rating: 0,
+    completedCampaigns: 0,
+    totalSpent: 0,
   })
+
+  // Обновляем профили когда меняется user
+  useEffect(() => {
+    if (user) {
+      setBloggerProfile(prev => ({
+        ...prev,
+        contacts: {
+          ...prev.contacts,
+          telegram: user.username ? `@${user.username}` : '',
+          email: user.email || '',
+        },
+        isVerified: user.isVerified,
+      }))
+      
+      setAdvertiserProfile(prev => ({
+        ...prev,
+        contacts: {
+          ...prev.contacts,
+          telegram: user.username ? `@${user.username}` : '',
+          email: user.email || '',
+        },
+        isVerified: user.isVerified,
+      }))
+    }
+  }, [user])
 
   const stats = activeTab === 'blogger' ? [
     {

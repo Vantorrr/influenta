@@ -51,46 +51,39 @@ export function useAuth() {
       // Получаем данные от Telegram WebApp
       if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
         const tg = window.Telegram.WebApp
-        const initData = tg.initData
         const telegramUser = tg.initDataUnsafe?.user
 
-        if (telegramUser && initData) {
-          // Отправляем данные на сервер для авторизации
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/telegram`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              initData,
-              user: telegramUser,
-            }),
-          })
-
-          if (response.ok) {
-            const authData = await response.json()
-            
-            if (authData.success) {
-              // Сохраняем токен и пользователя
-              localStorage.setItem('influenta_token', authData.token)
-              localStorage.setItem('influenta_user', JSON.stringify(authData.user))
-
-              const isAdmin = ADMIN_CONFIG.telegramIds.includes(parseInt(authData.user.telegramId))
-              const isSuperAdmin = parseInt(authData.user.telegramId) === ADMIN_CONFIG.telegramIds[0]
-
-              setAuthState({
-                user: authData.user,
-                isLoading: false,
-                isAdmin,
-                isSuperAdmin,
-                token: authData.token,
-              })
-            } else {
-              throw new Error(authData.error || 'Authentication failed')
-            }
-          } else {
-            throw new Error('Server authentication failed')
+        if (telegramUser) {
+          // Создаем пользователя из Telegram данных
+          const user: User = {
+            id: telegramUser.id.toString(),
+            telegramId: telegramUser.id.toString(),
+            firstName: telegramUser.first_name,
+            lastName: telegramUser.last_name || '',
+            username: telegramUser.username || '',
+            photoUrl: telegramUser.photo_url || null,
+            email: null,
+            role: ADMIN_CONFIG.telegramIds.includes(telegramUser.id) ? 'admin' : 'blogger',
+            isActive: true,
+            isVerified: ADMIN_CONFIG.telegramIds.includes(telegramUser.id),
+            createdAt: new Date(),
+            updatedAt: new Date(),
           }
+
+          const isAdmin = ADMIN_CONFIG.telegramIds.includes(telegramUser.id)
+          const isSuperAdmin = telegramUser.id === ADMIN_CONFIG.telegramIds[0]
+
+          // Сохраняем в localStorage для постоянной сессии
+          localStorage.setItem('influenta_token', 'telegram_session_' + telegramUser.id)
+          localStorage.setItem('influenta_user', JSON.stringify(user))
+
+          setAuthState({
+            user,
+            isLoading: false,
+            isAdmin,
+            isSuperAdmin,
+            token: 'telegram_session_' + telegramUser.id,
+          })
         } else {
           // Нет данных от Telegram
           setAuthState({
