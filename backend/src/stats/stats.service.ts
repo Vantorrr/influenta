@@ -70,7 +70,7 @@ export class StatsService {
       this.listingsRepository.count({
         where: { 
           advertiser: { id: user.id },
-          status: 'active'
+          status: ListingStatus.ACTIVE
         }
       }),
       
@@ -108,7 +108,7 @@ export class StatsService {
   }
 
   private async getRecentActivity(userId: string, role: 'blogger' | 'advertiser') {
-    const activities = [];
+    const activities: any[] = [];
 
     if (role === 'blogger') {
       // Последние отклики

@@ -9,7 +9,7 @@ export class Response {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Listing, listing => listing.responses)
+  @ManyToOne(() => Listing)
   listing: Listing;
 
   @ManyToOne(() => User)

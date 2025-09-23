@@ -73,7 +73,7 @@ export class ListingsService {
 
     const listing = new Listing();
     Object.assign(listing, createListingDto);
-    listing.advertiser = user;
+    listing.advertiser = user as any; // TODO: Fix advertiser relation
     listing.status = ListingStatus.ACTIVE;
     listing.viewsCount = 0;
     listing.responsesCount = 0;
@@ -147,8 +147,8 @@ export class ListingsService {
       description: listing.description,
       advertiser: {
         id: listing.advertiser.id,
-        companyName: listing.advertiser.firstName + ' ' + (listing.advertiser.lastName || ''),
-        isVerified: listing.advertiser.isVerified,
+        companyName: (listing.advertiser as any).firstName + ' ' + ((listing.advertiser as any).lastName || ''),
+        isVerified: (listing.advertiser as any).isVerified,
         rating: 0, // TODO: Implement rating system
       },
       targetCategories: listing.targetCategories || [],
