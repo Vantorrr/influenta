@@ -5,6 +5,7 @@ import { User } from '@/users/entities/user.entity';
 import { Listing } from '@/listings/entities/listing.entity';
 import { Response } from '@/responses/entities/response.entity';
 import { Chat } from '@/chat/entities/chat.entity';
+import { ListingStatus } from '@/types';
 
 @Injectable()
 export class StatsService {

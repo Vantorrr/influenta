@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '@/users/entities/user.entity';
+import { User, UserRole } from '@/users/entities/user.entity';
 import { BloggerSearchDto } from './dto/blogger-search.dto';
 import { PaginationDto } from '@/common/dto/pagination.dto';
 
@@ -18,7 +18,7 @@ export class BloggersService {
 
     const query = this.usersRepository
       .createQueryBuilder('user')
-      .where('user.role = :role', { role: 'blogger' })
+      .where('user.role = :role', { role: UserRole.BLOGGER })
       .andWhere('user.isActive = :isActive', { isActive: true });
 
     // Поиск по имени или username
@@ -79,7 +79,7 @@ export class BloggersService {
 
   async findOne(id: string) {
     const user = await this.usersRepository.findOne({
-      where: { id, role: 'blogger', isActive: true },
+      where: { id, role: UserRole.BLOGGER, isActive: true },
     });
 
     if (!user) {
