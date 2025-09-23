@@ -9,6 +9,8 @@ import { TelegramModule } from './telegram/telegram.module';
 import { AuthModule } from './auth/auth.module';
 import { StatsModule } from './stats/stats.module';
 import { ResponsesModule } from './responses/responses.module';
+import { BloggersModule } from './bloggers/bloggers.module';
+import { ListingsModule } from './listings/listings.module';
 import databaseConfig from './config/database.config';
 import appConfig from './config/app.config';
 
@@ -32,6 +34,8 @@ import appConfig from './config/app.config';
     AuthModule,
     StatsModule,
     ResponsesModule,
+    BloggersModule,
+    ListingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

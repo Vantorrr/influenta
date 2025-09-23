@@ -51,73 +51,7 @@ export default function ListingsPage() {
     enabled: !!user,
   })
 
-  // Mock data for now
   const listings = data?.data || [
-    {
-      id: '1',
-      title: 'Реклама мобильного приложения для медитации',
-      description: 'Ищем блогеров в тематике wellness, психология, саморазвитие для продвижения нашего приложения. Нужны качественные интеграции с личным опытом использования.',
-      advertiser: {
-        companyName: 'MindfulTech',
-        isVerified: true,
-        rating: 4.7,
-      },
-      targetCategories: [BloggerCategory.LIFESTYLE, BloggerCategory.FITNESS],
-      budget: 150000,
-      format: PostFormat.POST_AND_STORY,
-      requirements: {
-        minSubscribers: 50000,
-        minEngagementRate: 3,
-        verifiedOnly: true,
-      },
-      deadline: new Date('2024-12-31'),
-      status: ListingStatus.ACTIVE,
-      viewsCount: 245,
-      responsesCount: 12,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
-    },
-    {
-      id: '2',
-      title: 'Продвижение онлайн-курса по программированию',
-      description: 'Запускаем новый курс по веб-разработке. Ищем техноблогеров и образовательные каналы. Готовы предложить промокоды для подписчиков.',
-      advertiser: {
-        companyName: 'CodeAcademy',
-        isVerified: true,
-        rating: 4.9,
-      },
-      targetCategories: [BloggerCategory.TECH, BloggerCategory.EDUCATION],
-      budget: 200000,
-      format: PostFormat.POST,
-      requirements: {
-        minSubscribers: 30000,
-        minRating: 4,
-      },
-      deadline: new Date('2024-12-15'),
-      status: ListingStatus.ACTIVE,
-      viewsCount: 189,
-      responsesCount: 8,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
-    },
-    {
-      id: '3',
-      title: 'Реклама косметического бренда',
-      description: 'Новая линейка натуральной косметики. Ищем beauty-блогеров для обзоров и тестирования продукции. Предоставляем полный набор для тестирования.',
-      advertiser: {
-        companyName: 'NaturalBeauty',
-        isVerified: false,
-        rating: 4.5,
-      },
-      targetCategories: [BloggerCategory.BEAUTY, BloggerCategory.LIFESTYLE],
-      budget: 80000,
-      format: PostFormat.ANY,
-      requirements: {
-        minSubscribers: 20000,
-      },
-      status: ListingStatus.ACTIVE,
-      viewsCount: 432,
-      responsesCount: 24,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
-    },
   ]
 
   const statusTabs = [

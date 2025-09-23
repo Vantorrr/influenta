@@ -22,6 +22,7 @@ import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { formatDate, getRelativeTime } from '@/lib/utils'
 import { ChatWindow } from '@/components/chat/ChatWindow'
+import { useAuth } from '@/hooks/useAuth'
 
 interface Chat {
   id: string
@@ -45,70 +46,13 @@ interface Chat {
 }
 
 export default function MessagesPage() {
+  const { user } = useAuth()
   const [search, setSearch] = useState('')
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
-  const currentUserId = '1' // Mock current user
+  const currentUserId = user?.id || ''
 
-  // Mock данные чатов
-  const chats: Chat[] = [
-    {
-      id: '1',
-      responseId: '1',
-      listingTitle: 'Реклама мобильного приложения',
-      otherUser: {
-        firstName: 'Анна',
-        lastName: 'Иванова',
-        username: '@anna_lifestyle',
-        role: 'blogger',
-      },
-      lastMessage: {
-        content: 'Отлично! Готова начать работу над постом. Когда нужно опубликовать?',
-        createdAt: new Date(Date.now() - 1000 * 60 * 15),
-        isRead: false,
-        senderId: '2',
-      },
-      unreadCount: 2,
-      status: 'accepted',
-    },
-    {
-      id: '2',
-      responseId: '2',
-      listingTitle: 'Продвижение онлайн-курса',
-      otherUser: {
-        firstName: 'TechBrand',
-        lastName: '',
-        username: '@techbrand',
-        role: 'advertiser',
-      },
-      lastMessage: {
-        content: 'Спасибо за отклик! Можете показать примеры похожих работ?',
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
-        isRead: true,
-        senderId: '3',
-      },
-      unreadCount: 0,
-      status: 'active',
-    },
-    {
-      id: '3',
-      responseId: '3',
-      listingTitle: 'Реклама косметики',
-      otherUser: {
-        firstName: 'BeautyWorld',
-        lastName: '',
-        username: '@beautyworld',
-        role: 'advertiser',
-      },
-      lastMessage: {
-        content: 'К сожалению, мы выбрали другого блогера. Спасибо за интерес!',
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
-        isRead: true,
-        senderId: '4',
-      },
-      unreadCount: 0,
-      status: 'rejected',
-    },
-  ]
+  // TODO: Загружать реальные чаты из API
+  const chats: Chat[] = []
 
   const filteredChats = chats.filter(chat => {
     const searchLower = search.toLowerCase()
