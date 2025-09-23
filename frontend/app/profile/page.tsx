@@ -160,11 +160,28 @@ export default function ProfilePage() {
     },
   ]
 
-  const handleSave = () => {
-    // Сохраняем изменения в localStorage
-    const updatedProfile = activeTab === 'blogger' ? bloggerProfile : advertiserProfile
-    localStorage.setItem(`influenta_${activeTab}_profile_${user?.id}`, JSON.stringify(updatedProfile))
-    setIsEditing(false)
+  const handleSave = async () => {
+    try {
+      const payload = {
+        firstName: user?.firstName,
+        lastName: user?.lastName,
+        username: user?.username,
+        photoUrl: user?.photoUrl || undefined,
+        email: user?.email || undefined,
+      }
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/profile`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('influenta_token')}`,
+        },
+        body: JSON.stringify(payload),
+      })
+      setIsEditing(false)
+    } catch (e) {
+      console.error(e)
+      setIsEditing(false)
+    }
   }
 
   if (isLoading) {

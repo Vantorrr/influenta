@@ -33,7 +33,7 @@ api.interceptors.request.use((config) => {
   }
   
   // Get JWT token if exists
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem('influenta_token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
