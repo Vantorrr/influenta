@@ -19,41 +19,44 @@ import { Button } from '@/components/ui/button'
 import { formatNumber, formatPrice, getRelativeTime } from '@/lib/utils'
 import { statsApi } from '@/lib/api'
 import { useQuery } from '@tanstack/react-query'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function DashboardPage() {
+  const { user } = useAuth()
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: () => statsApi.getDashboard(),
+    enabled: !!user,
   })
 
-  const userRole = 'blogger' // TODO: Get from auth context
+  const userRole = user?.role || 'blogger'
 
   const bloggerStats = [
     {
       title: 'Просмотры профиля',
-      value: '2.4K',
-      change: '+12%',
+      value: stats?.profileViews ? formatNumber(stats.profileViews) : '0',
+      change: stats?.profileViewsChange ? `+${stats.profileViewsChange}%` : '0%',
       icon: Eye,
       color: 'from-blue-500 to-cyan-500',
     },
     {
       title: 'Активные отклики',
-      value: '5',
-      change: '+2',
+      value: stats?.activeResponses?.toString() || '0',
+      change: stats?.activeResponsesChange ? `+${stats.activeResponsesChange}` : '0',
       icon: MessageSquare,
       color: 'from-purple-500 to-pink-500',
     },
     {
       title: 'Заработано',
-      value: '₽125K',
-      change: '+18%',
+      value: stats?.earnings ? formatPrice(stats.earnings) : '₽0',
+      change: stats?.earningsChange ? `+${stats.earningsChange}%` : '0%',
       icon: DollarSign,
       color: 'from-green-500 to-emerald-500',
     },
     {
       title: 'Рейтинг',
-      value: '4.8',
-      change: '+0.2',
+      value: stats?.rating?.toString() || '0',
+      change: stats?.ratingChange ? `+${stats.ratingChange}` : '0',
       icon: Star,
       color: 'from-orange-500 to-yellow-500',
     },
@@ -62,29 +65,29 @@ export default function DashboardPage() {
   const advertiserStats = [
     {
       title: 'Активные кампании',
-      value: '3',
-      change: '+1',
+      value: stats?.activeCampaigns?.toString() || '0',
+      change: stats?.activeCampaignsChange ? `+${stats.activeCampaignsChange}` : '0',
       icon: Briefcase,
       color: 'from-blue-500 to-cyan-500',
     },
     {
       title: 'Отклики',
-      value: '24',
-      change: '+8',
+      value: stats?.totalResponses?.toString() || '0',
+      change: stats?.totalResponsesChange ? `+${stats.totalResponsesChange}` : '0',
       icon: MessageSquare,
       color: 'from-purple-500 to-pink-500',
     },
     {
       title: 'Потрачено',
-      value: '₽450K',
-      change: '+25%',
+      value: stats?.totalSpent ? formatPrice(stats.totalSpent) : '₽0',
+      change: stats?.totalSpentChange ? `+${stats.totalSpentChange}%` : '0%',
       icon: DollarSign,
       color: 'from-green-500 to-emerald-500',
     },
     {
       title: 'ROI',
-      value: '3.2x',
-      change: '+0.5x',
+      value: stats?.roi ? `${stats.roi}x` : '0x',
+      change: stats?.roiChange ? `+${stats.roiChange}x` : '0x',
       icon: TrendingUp,
       color: 'from-orange-500 to-yellow-500',
     },
@@ -92,29 +95,7 @@ export default function DashboardPage() {
 
   const currentStats = userRole === 'blogger' ? bloggerStats : advertiserStats
 
-  const recentActivity = [
-    {
-      id: 1,
-      type: 'response',
-      title: 'Новый отклик на "Реклама мобильного приложения"',
-      time: new Date(Date.now() - 1000 * 60 * 30),
-      status: 'new',
-    },
-    {
-      id: 2,
-      type: 'message',
-      title: 'Сообщение от TechBrand',
-      time: new Date(Date.now() - 1000 * 60 * 60 * 2),
-      status: 'unread',
-    },
-    {
-      id: 3,
-      type: 'accepted',
-      title: 'Ваш отклик принят: "Продвижение онлайн-курса"',
-      time: new Date(Date.now() - 1000 * 60 * 60 * 24),
-      status: 'success',
-    },
-  ]
+  const recentActivity = stats?.recentActivity || []
 
   return (
     <Layout>

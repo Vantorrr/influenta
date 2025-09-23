@@ -35,8 +35,10 @@ import {
   PostFormat,
   type ListingFilters 
 } from '@/types'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function ListingsPage() {
+  const { user } = useAuth()
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<ListingFilters>({
     status: ListingStatus.ACTIVE,
@@ -46,6 +48,7 @@ export default function ListingsPage() {
     queryKey: ['listings', filters, search],
     queryFn: () => listingsApi.search({ ...filters, search }, 1, 20),
     placeholderData: (prev) => prev,
+    enabled: !!user,
   })
 
   // Mock data for now

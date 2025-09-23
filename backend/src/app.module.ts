@@ -7,6 +7,8 @@ import { ChatModule } from './chat/chat.module';
 import { AdminModule } from './admin/admin.module';
 import { TelegramModule } from './telegram/telegram.module';
 import { AuthModule } from './auth/auth.module';
+import { StatsModule } from './stats/stats.module';
+import { ResponsesModule } from './responses/responses.module';
 import databaseConfig from './config/database.config';
 import appConfig from './config/app.config';
 
@@ -28,6 +30,8 @@ import appConfig from './config/app.config';
     AdminModule,
     TelegramModule,
     AuthModule,
+    StatsModule,
+    ResponsesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
