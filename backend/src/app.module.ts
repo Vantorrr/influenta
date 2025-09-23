@@ -13,6 +13,7 @@ import { BloggersModule } from './bloggers/bloggers.module';
 import { ListingsModule } from './listings/listings.module';
 import databaseConfig from './config/database.config';
 import appConfig from './config/app.config';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import appConfig from './config/app.config';
     ResponsesModule,
     BloggersModule,
     ListingsModule,
+    SeedModule,
   ],
   controllers: [AppController],
   providers: [AppService],
