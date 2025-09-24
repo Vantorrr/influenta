@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Search, Users, Briefcase, TrendingUp, Star, ArrowRight, Shield } from 'lucide-react'
+import { Search, Users, Briefcase, TrendingUp, Star, ArrowRight, Shield, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -144,6 +144,43 @@ export default function HomePage() {
                 Я рекламодатель
               </motion.button>
             </div>
+          </motion.div>
+
+          {/* Scroll Down Arrow */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1, duration: 0.5 }}
+            className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
+          >
+            <motion.div
+              animate={{ y: [0, 10, 0] }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="cursor-pointer"
+              onClick={() => window.scrollBy({ top: window.innerHeight, behavior: 'smooth' })}
+            >
+              <div className="flex flex-col items-center gap-2">
+                <span className="text-xs text-telegram-textSecondary">Листайте вниз</span>
+                <div className="relative">
+                  <ChevronDown className="w-8 h-8 text-telegram-primary" />
+                  <motion.div
+                    animate={{ opacity: [0, 1, 0] }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                    className="absolute top-0 left-0"
+                  >
+                    <ChevronDown className="w-8 h-8 text-telegram-primary/50" />
+                  </motion.div>
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
 
         </div>
