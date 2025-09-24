@@ -29,7 +29,7 @@ export default function HomePage() {
 
     // Скрываем стрелку при скролле
     const handleScroll = () => {
-      if (window.scrollY > 100) {
+      if (window.scrollY > 50) {
         setShowScrollArrow(false)
       } else {
         setShowScrollArrow(true)
@@ -164,31 +164,26 @@ export default function HomePage() {
       </section>
 
       {/* Scroll Down Arrow - Fixed at bottom */}
-      {showScrollArrow && (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: showScrollArrow ? 0.7 : 0 }}
+        transition={{ duration: 0.5 }}
+        className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-30 pointer-events-none"
+      >
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-40"
+          animate={{ 
+            y: [0, 6, 0],
+            opacity: [0.4, 0.8, 0.4]
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
         >
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            className="cursor-pointer bg-telegram-bg/80 backdrop-blur-sm rounded-full shadow-lg"
-            onClick={() => window.scrollBy({ top: window.innerHeight, behavior: 'smooth' })}
-          >
-            <div className="flex flex-col items-center gap-1 p-3">
-              <span className="text-xs text-telegram-textSecondary font-medium">Листайте</span>
-              <ChevronDown className="w-5 h-5 text-telegram-primary" />
-            </div>
-          </motion.div>
+          <ChevronDown className="w-6 h-6 text-telegram-textSecondary" />
         </motion.div>
-      )}
+      </motion.div>
 
       {/* Transparency Block */}
       <section className="py-20 relative z-10">
