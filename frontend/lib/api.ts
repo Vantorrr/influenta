@@ -45,9 +45,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiResponse<any>>) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized
-      localStorage.removeItem('token')
+    if (typeof window !== 'undefined' && error.response?.status === 401) {
+      // Сбрасываем сессию корректно
+      localStorage.removeItem('influenta_token')
+      localStorage.removeItem('influenta_user')
       window.location.href = '/'
     }
     return Promise.reject(error)

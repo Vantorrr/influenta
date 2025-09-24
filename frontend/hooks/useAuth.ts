@@ -33,8 +33,26 @@ export function useAuth() {
       const savedToken = localStorage.getItem('influenta_token')
       const savedUser = localStorage.getItem('influenta_user')
 
-      if (savedToken && savedUser) {
-        const user = JSON.parse(savedUser)
+      // Если есть токен, но нет пользователя — подтягиваем профиль с сервера
+      if (savedToken && !savedUser) {
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+            headers: {
+              Authorization: `Bearer ${savedToken}`,
+            },
+          })
+          if (res.ok) {
+            const data = await res.json()
+            if (data?.user) {
+              localStorage.setItem('influenta_user', JSON.stringify(data.user))
+            }
+          }
+        } catch {}
+      }
+
+      const effectiveUser = localStorage.getItem('influenta_user')
+      if (savedToken && effectiveUser) {
+        const user = JSON.parse(effectiveUser)
         const isAdmin = ADMIN_CONFIG.telegramIds.includes(parseInt(user.telegramId))
         const isSuperAdmin = parseInt(user.telegramId) === ADMIN_CONFIG.telegramIds[0]
 
