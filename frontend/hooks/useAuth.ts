@@ -85,6 +85,8 @@ export function useAuth() {
       // Получаем данные от Telegram WebApp
       if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
         const tg = window.Telegram.WebApp
+        // Явно сигнализируем готовность WebApp перед чтением initData
+        try { tg.ready() } catch {}
         await waitForTelegramReady()
 
         const attemptAuth = async (): Promise<boolean> => {

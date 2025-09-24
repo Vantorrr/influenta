@@ -11,8 +11,9 @@ async function bootstrap() {
   // Enable CORS
   const allowedOrigins = [
     configService.get('FRONTEND_URL') || 'http://localhost:3000',
+    'https://influenta.vercel.app',
     'https://influenta-frontend.vercel.app',
-    /https:\/\/influenta-frontend.*\.vercel\.app$/, // Для preview deployments
+    /https:\/\/.*\.vercel\.app$/,
   ].filter(Boolean);
 
   app.enableCors({
