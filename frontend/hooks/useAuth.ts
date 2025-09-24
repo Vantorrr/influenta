@@ -88,8 +88,15 @@ export function useAuth() {
         const initData = tg.initData
         const telegramUser = tg.initDataUnsafe?.user
 
-        if (telegramUser && initData) {
+        if (telegramUser) {
           try {
+            console.log('🟢 Sending auth request:', {
+              url: `${process.env.NEXT_PUBLIC_API_URL}/auth/telegram`,
+              initData: initData ? 'exists' : 'missing',
+              initDataLength: initData?.length,
+              user: telegramUser
+            })
+            
             // Отправляем данные на сервер для авторизации
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/telegram`, {
               method: 'POST',
@@ -102,8 +109,16 @@ export function useAuth() {
               }),
             })
 
+            console.log('🟢 Response status:', response.status)
+            
+            if (!response.ok) {
+              const errorText = await response.text()
+              console.error('🔴 Auth failed:', response.status, errorText)
+            }
+            
             if (response.ok) {
               const authData = await response.json()
+              console.log('🟢 Auth response:', authData)
               
               if (authData.success) {
                 // Сохраняем токен и пользователя
