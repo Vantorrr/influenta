@@ -15,7 +15,9 @@ import {
   Link as LinkIcon,
   CheckCircle,
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  UploadCloud,
+  X
 } from 'lucide-react'
 
 interface StepData {
@@ -234,57 +236,76 @@ function OnboardingInner() {
         
         case 2:
           const formatWithDots = (value: string) => {
+            // Удаляем всё кроме цифр
             const digits = value.replace(/\D/g, '')
             if (!digits) return ''
-            return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+            
+            // Добавляем точки каждые 3 цифры справа налево
+            let result = ''
+            for (let i = digits.length - 1, count = 0; i >= 0; i--, count++) {
+              if (count === 3) {
+                result = '.' + result
+                count = 0
+              }
+              result = digits[i] + result
+            }
+            return result
           }
+          
           return (
             <div className="space-y-6">
               <label className="label">Количество подписчиков</label>
 
               {/* Переключатель диапазона */}
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={!!data.useRange}
                   onChange={(e) => updateData('useRange', e.target.checked)}
+                  className="w-4 h-4"
                 />
-                Указать диапазон
+                <span className="text-sm text-telegram-text">Указать диапазон</span>
               </label>
 
               {!data.useRange ? (
                 <input
                   type="text"
                   inputMode="numeric"
-                  pattern="[0-9\.]*"
                   value={data.subscribersCount || ''}
-                  onChange={(e) => updateData('subscribersCount', formatWithDots(e.target.value))}
+                  onChange={(e) => {
+                    const formatted = formatWithDots(e.target.value)
+                    updateData('subscribersCount', formatted)
+                  }}
                   placeholder="Например: 15.000.000"
                   className="input"
                 />
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <span className="text-xs text-telegram-textSecondary">От</span>
+                    <span className="text-xs text-telegram-textSecondary block mb-1">От</span>
                     <input
                       type="text"
                       inputMode="numeric"
-                      pattern="[0-9\.]*"
                       value={data.subscribersMin || ''}
-                      onChange={(e) => updateData('subscribersMin', formatWithDots(e.target.value))}
-                      placeholder="Напр.: 100.000"
+                      onChange={(e) => {
+                        const formatted = formatWithDots(e.target.value)
+                        updateData('subscribersMin', formatted)
+                      }}
+                      placeholder="100.000"
                       className="input"
                     />
                   </div>
                   <div>
-                    <span className="text-xs text-telegram-textSecondary">До</span>
+                    <span className="text-xs text-telegram-textSecondary block mb-1">До</span>
                     <input
                       type="text"
                       inputMode="numeric"
-                      pattern="[0-9\.]*"
                       value={data.subscribersMax || ''}
-                      onChange={(e) => updateData('subscribersMax', formatWithDots(e.target.value))}
-                      placeholder="Напр.: 1.000.000"
+                      onChange={(e) => {
+                        const formatted = formatWithDots(e.target.value)
+                        updateData('subscribersMax', formatted)
+                      }}
+                      placeholder="1.000.000"
                       className="input"
                     />
                   </div>
@@ -296,30 +317,61 @@ function OnboardingInner() {
               </p>
 
               {/* Скриншоты‑доказательства */}
-              <div className="space-y-2">
-                <label className="label">Скриншоты (как пруф)</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) => updateData('proofScreens', e.target.files ? Array.from(e.target.files) : [])}
-                  className="input file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-telegram-primary/10 file:text-telegram-primary"
-                />
+              <div className="space-y-3 mt-6">
+                <label className="label">Скриншоты статистики (пруфы)</label>
+                
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => {
+                      const files = e.target.files ? Array.from(e.target.files) : []
+                      updateData('proofScreens', [...(data.proofScreens || []), ...files])
+                    }}
+                    className="hidden"
+                    id="proof-upload"
+                  />
+                  <label
+                    htmlFor="proof-upload"
+                    className="border-2 border-dashed border-telegram-border rounded-xl p-6 block text-center cursor-pointer hover:border-telegram-primary transition-colors"
+                  >
+                    <UploadCloud className="w-10 h-10 text-telegram-textSecondary mx-auto mb-3" />
+                    <p className="text-telegram-text font-medium mb-1">
+                      Нажмите или перетащите файлы
+                    </p>
+                    <p className="text-sm text-telegram-textSecondary">
+                      PNG, JPG до 10MB
+                    </p>
+                  </label>
+                </div>
+
                 {data.proofScreens && data.proofScreens.length > 0 && (
-                  <div className="flex gap-2 flex-wrap">
-                    {data.proofScreens.slice(0, 4).map((f, i) => (
-                      <img
-                        key={i}
-                        src={URL.createObjectURL(f)}
-                        alt={`proof-${i}`}
-                        className="w-16 h-16 rounded-md object-cover border border-gray-700/50"
-                      />
+                  <div className="grid grid-cols-3 gap-2">
+                    {data.proofScreens.map((file, i) => (
+                      <div key={i} className="relative group">
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt={`proof-${i}`}
+                          className="w-full h-24 rounded-lg object-cover border border-telegram-border"
+                        />
+                        <button
+                          onClick={() => {
+                            const newFiles = data.proofScreens?.filter((_, index) => index !== i)
+                            updateData('proofScreens', newFiles)
+                          }}
+                          className="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-4 h-4 text-white" />
+                        </button>
+                      </div>
                     ))}
-                    {data.proofScreens.length > 4 && (
-                      <span className="text-xs text-telegram-textSecondary self-center">+{data.proofScreens.length - 4}</span>
-                    )}
                   </div>
                 )}
+                
+                <p className="text-sm text-telegram-textSecondary">
+                  Прикрепите скриншоты из Telegram Analytics или других источников
+                </p>
               </div>
             </div>
           )
