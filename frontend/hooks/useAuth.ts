@@ -27,11 +27,12 @@ export function useAuth() {
     initAuth()
   }, [])
 
-  const waitForTelegramReady = async (timeoutMs = 2000): Promise<void> => {
+  const waitForTelegramReady = async (timeoutMs = 6000): Promise<void> => {
     const start = Date.now()
     while (Date.now() - start < timeoutMs) {
-      if (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user) return
-      await new Promise(r => setTimeout(r, 50))
+      const tg = typeof window !== 'undefined' ? window.Telegram?.WebApp : undefined
+      if (tg?.initDataUnsafe?.user || (tg?.initData && tg.initData.length > 0)) return
+      await new Promise(r => setTimeout(r, 100))
     }
   }
 
@@ -85,68 +86,67 @@ export function useAuth() {
       if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
         const tg = window.Telegram.WebApp
         await waitForTelegramReady()
-        const initData = tg.initData
-        const telegramUser = tg.initDataUnsafe?.user
 
-        if (telegramUser) {
+        const attemptAuth = async (): Promise<boolean> => {
+          const initData = tg.initData
+          const telegramUser = tg.initDataUnsafe?.user
           try {
             console.log('🟢 Sending auth request:', {
               url: `${process.env.NEXT_PUBLIC_API_URL}/auth/telegram`,
               initData: initData ? 'exists' : 'missing',
               initDataLength: initData?.length,
-              user: telegramUser
+              hasUser: !!telegramUser,
+              userId: telegramUser?.id,
             })
-            
-            // Отправляем данные на сервер для авторизации
+
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/telegram`, {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                initData,
-                user: telegramUser, // сервер умеет парсить и из initData
-              }),
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ initData, user: telegramUser || undefined }),
             })
 
             console.log('🟢 Response status:', response.status)
-            
             if (!response.ok) {
               const errorText = await response.text()
               console.error('🔴 Auth failed:', response.status, errorText)
+              return false
             }
-            
-            if (response.ok) {
-              const authData = await response.json()
-              console.log('🟢 Auth response:', authData)
-              
-              if (authData.success) {
-                // Сохраняем токен и пользователя
-                localStorage.setItem('influenta_token', authData.token)
-                localStorage.setItem('influenta_user', JSON.stringify(authData.user))
 
-                const isAdmin = ADMIN_CONFIG.telegramIds.includes(parseInt(authData.user.telegramId))
-                const isSuperAdmin = parseInt(authData.user.telegramId) === ADMIN_CONFIG.telegramIds[0]
+            const authData = await response.json()
+            console.log('🟢 Auth response:', authData)
+            if (authData?.success && authData?.user?.telegramId) {
+              localStorage.setItem('influenta_token', authData.token)
+              localStorage.setItem('influenta_user', JSON.stringify(authData.user))
 
-                setAuthState({
-                  user: authData.user,
-                  isLoading: false,
-                  isAdmin,
-                  isSuperAdmin,
-                  token: authData.token,
-                })
-                return
-              } else {
-                // Повторная попытка один раз через короткую задержку
-                await new Promise(r => setTimeout(r, 200))
-                return initAuth()
-              }
+              const isAdmin = ADMIN_CONFIG.telegramIds.includes(parseInt(authData.user.telegramId))
+              const isSuperAdmin = parseInt(authData.user.telegramId) === ADMIN_CONFIG.telegramIds[0]
+
+              setAuthState({
+                user: authData.user,
+                isLoading: false,
+                isAdmin,
+                isSuperAdmin,
+                token: authData.token,
+              })
+              return true
             }
+            return false
           } catch (error) {
             console.error('Auth error:', error)
+            return false
           }
         }
-        
+
+        let ok = await attemptAuth()
+        if (!ok) {
+          // Даем Телеграму время заполнить user и обновить initData
+          await new Promise(r => setTimeout(r, 700))
+          ok = await attemptAuth()
+          if (ok) return
+        } else {
+          return
+        }
+
         // Если авторизация не удалась
         setAuthState({
           user: null,
