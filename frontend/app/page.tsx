@@ -29,27 +29,27 @@ export default function HomePage() {
 
   const features = [
     {
-      icon: Search,
-      title: 'Умный поиск',
-      description: 'Находите блогеров по тематике, охватам и бюджету',
+      icon: Shield,
+      title: '100% прозрачность',
+      description: 'Все условия сделки фиксируются в системе. Никаких скрытых комиссий и обмана — вы видите реальные цены и условия',
       color: 'from-blue-500 to-cyan-500',
     },
     {
       icon: Users,
-      title: 'Проверенные блогеры',
-      description: 'База из тысяч верифицированных инфлюенсеров',
+      title: 'Прямое взаимодействие',
+      description: 'Общайтесь напрямую с блогерами без посредников и переплат',
       color: 'from-purple-500 to-pink-500',
     },
     {
       icon: Briefcase,
-      title: 'Безопасные сделки',
-      description: 'Встроенный чат и система откликов',
+      title: 'Защита сделок',
+      description: 'Встроенный чат, история переписки и четкие договоренности',
       color: 'from-green-500 to-emerald-500',
     },
     {
       icon: TrendingUp,
-      title: 'Аналитика',
-      description: 'Детальная статистика по каждой кампании',
+      title: 'Честная аналитика',
+      description: 'Реальная статистика без накруток и преувеличений',
       color: 'from-orange-500 to-red-500',
     },
   ]
@@ -146,6 +146,30 @@ export default function HomePage() {
             </div>
           </motion.div>
 
+        </div>
+      </section>
+
+      {/* Transparency Block */}
+      <section className="py-20 relative z-10">
+        <div className="container">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="max-w-4xl mx-auto text-center"
+          >
+            <div className="bg-gradient-to-r from-telegram-primary/10 to-telegram-accent/10 rounded-3xl p-8 md:p-12 border border-telegram-border">
+              <Shield className="w-16 h-16 text-telegram-primary mx-auto mb-6" />
+              <h3 className="text-2xl md:text-3xl font-bold mb-4">
+                Прозрачность — наш главный принцип
+              </h3>
+              <p className="text-lg text-telegram-textSecondary leading-relaxed">
+                В 95% случаев агентства скрывают реальные условия сделок от блогеров. 
+                Мы это меняем. Все цены, комиссии и условия фиксируются в системе и доступны обеим сторонам. 
+                Никаких скрытых процентов, никакого обмана. Только честное и прямое взаимодействие.
+              </p>
+            </div>
+          </motion.div>
         </div>
       </section>
 
