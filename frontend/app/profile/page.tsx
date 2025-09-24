@@ -23,7 +23,7 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <Layout>
+      <Layout title="Профиль">
         <div className="container py-6 max-w-4xl">
           <div className="text-center">
             <h2 className="text-xl">Не авторизовано</h2>
@@ -37,7 +37,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <Layout>
+    <Layout title="Профиль">
       <div className="container py-6 max-w-4xl">
         <Card className="mb-6">
           <CardContent className="p-6">
