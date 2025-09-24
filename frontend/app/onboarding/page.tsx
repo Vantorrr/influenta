@@ -23,7 +23,12 @@ interface StepData {
   // Blogger fields
   bio?: string
   categories?: string[]
-  subscribersCount?: string
+  // Охваты
+  subscribersCount?: string // отформатированное значение, например 15.000.000
+  useRange?: boolean
+  subscribersMin?: string
+  subscribersMax?: string
+  proofScreens?: File[]
   pricePerPost?: string
   pricePerStory?: string
   // Advertiser fields
@@ -108,7 +113,21 @@ function OnboardingInner() {
 
   const handleComplete = async () => {
     // Здесь будет отправка данных на сервер
-    console.log('Onboarding complete:', data)
+    const toRawNumber = (v?: string) => (v ? v.replace(/\./g, '') : undefined)
+
+    const payload = {
+      ...data,
+      subscribersCount: data?.useRange ? undefined : toRawNumber(data?.subscribersCount),
+      subscribersRange: data?.useRange
+        ? {
+            min: toRawNumber(data?.subscribersMin),
+            max: toRawNumber(data?.subscribersMax),
+          }
+        : undefined,
+      // proofScreens: data?.proofScreens // отправка файлов реализуется позже
+    }
+
+    console.log('Onboarding complete (sanitized):', payload)
     
     // Переход на главную страницу приложения
     router.push('/dashboard')
@@ -214,19 +233,94 @@ function OnboardingInner() {
           )
         
         case 2:
+          const formatWithDots = (value: string) => {
+            const digits = value.replace(/\D/g, '')
+            if (!digits) return ''
+            return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+          }
           return (
             <div className="space-y-6">
               <label className="label">Количество подписчиков</label>
-              <input
-                type="number"
-                value={data.subscribersCount || ''}
-                onChange={(e) => updateData('subscribersCount', e.target.value)}
-                placeholder="Например: 10000"
-                className="input"
-              />
+
+              {/* Переключатель диапазона */}
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={!!data.useRange}
+                  onChange={(e) => updateData('useRange', e.target.checked)}
+                />
+                Указать диапазон
+              </label>
+
+              {!data.useRange ? (
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9\.]*"
+                  value={data.subscribersCount || ''}
+                  onChange={(e) => updateData('subscribersCount', formatWithDots(e.target.value))}
+                  placeholder="Например: 15.000.000"
+                  className="input"
+                />
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-xs text-telegram-textSecondary">От</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9\.]*"
+                      value={data.subscribersMin || ''}
+                      onChange={(e) => updateData('subscribersMin', formatWithDots(e.target.value))}
+                      placeholder="Напр.: 100.000"
+                      className="input"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-xs text-telegram-textSecondary">До</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9\.]*"
+                      value={data.subscribersMax || ''}
+                      onChange={(e) => updateData('subscribersMax', formatWithDots(e.target.value))}
+                      placeholder="Напр.: 1.000.000"
+                      className="input"
+                    />
+                  </div>
+                </div>
+              )}
+
               <p className="text-sm text-telegram-textSecondary">
-                Укажите примерное количество подписчиков в вашем основном канале
+                Укажите примерный охват. Форматируется автоматически: 15.000.000.
               </p>
+
+              {/* Скриншоты‑доказательства */}
+              <div className="space-y-2">
+                <label className="label">Скриншоты (как пруф)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => updateData('proofScreens', e.target.files ? Array.from(e.target.files) : [])}
+                  className="input file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-telegram-primary/10 file:text-telegram-primary"
+                />
+                {data.proofScreens && data.proofScreens.length > 0 && (
+                  <div className="flex gap-2 flex-wrap">
+                    {data.proofScreens.slice(0, 4).map((f, i) => (
+                      <img
+                        key={i}
+                        src={URL.createObjectURL(f)}
+                        alt={`proof-${i}`}
+                        className="w-16 h-16 rounded-md object-cover border border-gray-700/50"
+                      />
+                    ))}
+                    {data.proofScreens.length > 4 && (
+                      <span className="text-xs text-telegram-textSecondary self-center">+{data.proofScreens.length - 4}</span>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           )
         
