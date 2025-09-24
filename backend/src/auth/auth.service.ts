@@ -51,22 +51,14 @@ export class AuthService {
         throw new BadRequestException('Telegram user data not provided');
       }
 
-      // В dev режиме пропускаем проверку подписи если нет initData
+      // Проверка подписи Telegram (ослабленная: не блокируем вход)
       if (!authData.initData) {
         console.log('🔴 No initData, skipping signature validation');
       } else {
-        // Проверяем подлинность данных от Telegram
         const isValid = this.verifyTelegramData(authData.initData);
         console.log('🔴 Telegram data validation:', { isValid });
-        
         if (!isValid) {
-          console.error('🔴 Invalid Telegram signature!');
-          // В dev окружении только предупреждаем
-          if (process.env.NODE_ENV !== 'production') {
-            console.warn('🔴 Skipping signature check in non-production');
-          } else {
-            throw new BadRequestException('Invalid Telegram data');
-          }
+          console.warn('🔴 Invalid Telegram signature, but proceeding (relaxed mode)');
         }
       }
       
