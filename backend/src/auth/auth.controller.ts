@@ -50,5 +50,16 @@ export class AuthController {
   async updateProfile(@CurrentUser() user: User, @Body() dto: UpdateProfileDto) {
     return this.authService.updateProfile(user.id, dto);
   }
+
+  @Get('webapp-debug')
+  @ApiOperation({ summary: 'Debug what WebApp sends (initData presence etc.)' })
+  async debugWebApp(@Headers('x-telegram-init-data') initHeader?: string) {
+    return {
+      ok: true,
+      hasInitHeader: !!initHeader,
+      initHeaderLength: initHeader?.length || 0,
+      note: 'Если initHeaderLength = 0, Telegram не передал initData. Открой через кнопку в боте.',
+    }
+  }
 }
 
