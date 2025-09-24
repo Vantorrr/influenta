@@ -206,31 +206,50 @@ function OnboardingInner() {
         case 1:
           return (
             <div className="space-y-6">
-              <label className="label">Выберите тематики</label>
-              <div className="grid grid-cols-2 gap-3">
-                {categories.map((category) => (
-                  <motion.button
-                    key={category}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      const current = data.categories || []
-                      if (current.includes(category)) {
-                        updateData('categories', current.filter(c => c !== category))
-                      } else {
-                        updateData('categories', [...current, category])
-                      }
-                    }}
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      data.categories?.includes(category)
-                        ? 'border-telegram-primary bg-telegram-primary/20'
-                        : 'border-gray-600 hover:border-gray-500'
-                    }`}
-                  >
-                    {category}
-                  </motion.button>
-                ))}
+              <div>
+                <label className="label">Выберите тематики</label>
+                <p className="text-sm text-telegram-textSecondary mt-1">
+                  Максимум 2 тематики
+                </p>
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                {categories.map((category) => {
+                  const current = data.categories || []
+                  const isSelected = current.includes(category)
+                  const isDisabled = !isSelected && current.length >= 2
+                  
+                  return (
+                    <motion.button
+                      key={category}
+                      whileHover={!isDisabled ? { scale: 1.05 } : {}}
+                      whileTap={!isDisabled ? { scale: 0.95 } : {}}
+                      onClick={() => {
+                        if (isDisabled) return
+                        
+                        if (isSelected) {
+                          updateData('categories', current.filter(c => c !== category))
+                        } else if (current.length < 2) {
+                          updateData('categories', [...current, category])
+                        }
+                      }}
+                      className={`p-3 rounded-lg border-2 transition-all ${
+                        isSelected
+                          ? 'border-telegram-primary bg-telegram-primary/20'
+                          : isDisabled
+                          ? 'border-gray-700 bg-gray-800/50 opacity-50 cursor-not-allowed'
+                          : 'border-gray-600 hover:border-gray-500'
+                      }`}
+                    >
+                      {category}
+                    </motion.button>
+                  )
+                })}
+              </div>
+              {data.categories && data.categories.length > 0 && (
+                <p className="text-sm text-telegram-primary text-center">
+                  Выбрано: {data.categories.length} из 2
+                </p>
+              )}
             </div>
           )
         
