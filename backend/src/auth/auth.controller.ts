@@ -61,5 +61,16 @@ export class AuthController {
       note: 'Если initHeaderLength = 0, Telegram не передал initData. Открой через кнопку в боте.',
     }
   }
+
+  @Get('debug')
+  @ApiOperation({ summary: 'Alt debug endpoint' })
+  async debugAlt(@Headers('x-telegram-init-data') initHeader?: string) {
+    return {
+      ok: true,
+      endpoint: '/auth/debug',
+      hasInitHeader: !!initHeader,
+      initHeaderLength: initHeader?.length || 0,
+    }
+  }
 }
 
