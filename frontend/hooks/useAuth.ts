@@ -101,7 +101,10 @@ export function useAuth() {
 
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/telegram`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                'Content-Type': 'application/json',
+                'X-Telegram-Init-Data': initData || ''
+              },
               body: JSON.stringify({ initData, user: telegramUser || undefined }),
             })
 

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, UseGuards, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Patch, Headers } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -51,8 +51,16 @@ export class AuthController {
   @Post('telegram')
   @ApiOperation({ summary: 'Authenticate user via Telegram WebApp' })
   @ApiBody({ type: TelegramAuthDto })
-  async authenticateWithTelegram(@Body() authData: TelegramAuthDto) {
-    return this.authService.authenticateWithTelegram(authData);
+  async authenticateWithTelegram(
+    @Body() authData: TelegramAuthDto,
+    @Headers('x-telegram-init-data') initHeader?: string,
+  ) {
+    // Если заголовок пришёл — подставляем его как initData
+    const payload: TelegramAuthDto = {
+      initData: authData.initData || initHeader,
+      user: authData.user,
+    }
+    return this.authService.authenticateWithTelegram(payload);
   }
 
   @Get('me')
