@@ -1,68 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { Users, Mail, Phone, Globe, Instagram, MessageCircle, Edit, Save, X, Camera, Shield, Star, TrendingUp, DollarSign, Calendar } from 'lucide-react'
+import { useState } from 'react'
+import { Edit } from 'lucide-react'
 import { Layout } from '@/components/layout/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
 import { useAuth } from '@/hooks/useAuth'
-import { formatPrice, formatNumber, getCategoryLabel } from '@/lib/utils'
 
 export default function ProfilePage() {
   const { user, isLoading } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
-  const [activeTab, setActiveTab] = useState<'blogger' | 'advertiser'>('blogger')
-  
-  const effectiveUser = user || {
-    id: 'temp-user-1',
-    telegramId: '123456',
-    firstName: 'Тест',
-    lastName: 'Пользователь',
-    username: 'testuser',
-    photoUrl: null,
-    email: 'test@example.com',
-    isVerified: false,
-    role: 'blogger' as const,
-  }
-  
-  const [bloggerProfile, setBloggerProfile] = useState({
-    bio: '',
-    categories: [] as string[],
-    subscribersCount: 0,
-    averageViews: 0,
-    engagementRate: 0,
-    pricePerPost: 0,
-    pricePerStory: 0,
-    contacts: {
-      telegram: effectiveUser?.username ? `@${effectiveUser.username}` : '',
-      instagram: '',
-      email: effectiveUser?.email || '',
-      phone: '',
-    },
-    isVerified: effectiveUser?.isVerified || false,
-    rating: 0,
-    completedCampaigns: 0,
-    totalEarnings: 0,
-  })
-
-  const [advertiserProfile, setAdvertiserProfile] = useState({
-    companyName: '',
-    description: '',
-    website: '',
-    contacts: {
-      telegram: effectiveUser?.username ? `@${effectiveUser.username}` : '',
-      email: effectiveUser?.email || '',
-      phone: '',
-    },
-    isVerified: effectiveUser?.isVerified || false,
-    rating: 0,
-    completedCampaigns: 0,
-    totalSpent: 0,
-  })
 
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">
@@ -73,6 +21,21 @@ export default function ProfilePage() {
     </div>
   }
 
+  if (!user) {
+    return (
+      <Layout>
+        <div className="container py-6 max-w-4xl">
+          <div className="text-center">
+            <h2 className="text-xl">Не авторизовано</h2>
+            <p className="text-telegram-textSecondary mt-2">
+              Откройте приложение как Telegram Mini App, чтобы войти автоматически
+            </p>
+          </div>
+        </div>
+      </Layout>
+    )
+  }
+
   return (
     <Layout>
       <div className="container py-6 max-w-4xl">
@@ -81,17 +44,17 @@ export default function ProfilePage() {
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-4">
                 <Avatar
-                  src={effectiveUser?.photoUrl}
-                  firstName={effectiveUser?.firstName || 'Имя'}
-                  lastName={effectiveUser?.lastName || 'Фамилия'}
+                  src={user.photoUrl}
+                  firstName={user.firstName || 'Имя'}
+                  lastName={user.lastName || 'Фамилия'}
                   size="xl"
                 />
                 <div>
                   <h1 className="text-2xl font-bold">
-                    {effectiveUser?.firstName} {effectiveUser?.lastName}
+                    {user.firstName} {user.lastName}
                   </h1>
                   <p className="text-telegram-textSecondary">
-                    @{effectiveUser?.username || 'username'}
+                    @{user.username || 'username'}
                   </p>
                 </div>
               </div>
@@ -108,9 +71,12 @@ export default function ProfilePage() {
         </Card>
 
         <div className="text-center">
-          <h2 className="text-xl">Профиль работает!</h2>
+          <h2 className="text-xl">Профиль загружен!</h2>
           <p className="text-telegram-textSecondary mt-2">
-            Авторизация через Telegram временно отключена для отладки
+            Пользователь: {user.firstName || 'Без имени'} {user.lastName || ''}
+          </p>
+          <p className="text-telegram-textSecondary">
+            Telegram ID: {user.telegramId}
           </p>
         </div>
       </div>
