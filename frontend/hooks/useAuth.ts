@@ -43,8 +43,9 @@ export function useAuth() {
           })
           if (res.ok) {
             const data = await res.json()
-            if (data?.user) {
-              localStorage.setItem('influenta_user', JSON.stringify(data.user))
+            const maybeUser = (data && (data.user ?? data)) || null
+            if (maybeUser?.id) {
+              localStorage.setItem('influenta_user', JSON.stringify(maybeUser))
             }
           }
         } catch {}
