@@ -27,6 +27,14 @@ export function useAuth() {
     initAuth()
   }, [])
 
+  const waitForTelegramReady = async (timeoutMs = 2000): Promise<void> => {
+    const start = Date.now()
+    while (Date.now() - start < timeoutMs) {
+      if (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user) return
+      await new Promise(r => setTimeout(r, 50))
+    }
+  }
+
   const initAuth = async () => {
     try {
       // Проверяем сохраненную сессию
@@ -70,6 +78,7 @@ export function useAuth() {
       // Получаем данные от Telegram WebApp
       if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
         const tg = window.Telegram.WebApp
+        await waitForTelegramReady()
         const initData = tg.initData
         const telegramUser = tg.initDataUnsafe?.user
 
@@ -106,6 +115,10 @@ export function useAuth() {
                   token: authData.token,
                 })
                 return
+              } else {
+                // Повторная попытка один раз через короткую задержку
+                await new Promise(r => setTimeout(r, 200))
+                return initAuth()
               }
             }
           } catch (error) {
