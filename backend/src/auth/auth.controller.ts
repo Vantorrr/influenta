@@ -1,36 +1,11 @@
 import { Controller, Post, Body, Get, UseGuards, Patch, Headers } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { User } from '@/users/entities/user.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-
-class TelegramUserDto {
-  @IsNumber()
-  id: number;
-
-  @IsString()
-  first_name: string;
-
-  @IsOptional()
-  @IsString()
-  last_name?: string;
-
-  @IsOptional()
-  @IsString()
-  username?: string;
-
-  @IsOptional()
-  @IsString()
-  photo_url?: string;
-
-  @IsOptional()
-  @IsString()
-  language_code?: string;
-}
 
 class TelegramAuthDto {
   @IsOptional()
@@ -38,9 +13,8 @@ class TelegramAuthDto {
   initData?: string;
 
   @IsOptional()
-  @ValidateNested()
-  @Type(() => TelegramUserDto)
-  user?: TelegramUserDto;
+  // Разрешаем произвольные поля пользователя из Telegram (whitelist иначе их режет)
+  user?: any;
 }
 
 @ApiTags('Authentication')

@@ -52,14 +52,18 @@ export class AuthService {
       }
 
       // Проверка подписи Telegram (ослабленная: не блокируем вход)
-      if (!authData.initData) {
-        console.log('🔴 No initData, skipping signature validation');
-      } else {
+      if (authData.initData) {
         const isValid = this.verifyTelegramData(authData.initData);
-        console.log('🔴 Telegram data validation:', { isValid });
-        if (!isValid) {
-          console.warn('🔴 Invalid Telegram signature, but proceeding (relaxed mode)');
-        }
+        const params = new URLSearchParams(authData.initData);
+        const hash = params.get('hash');
+        params.delete('hash');
+        const dataCheckString = Array.from(params.entries())
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([k, v]) => `${k}=${v}`)
+          .join('\n');
+        console.log('🔴 Signature debug:', { isValid, hash, dataCheckStringPreview: dataCheckString.substring(0, 200) });
+      } else {
+        console.log('🔴 No initData provided');
       }
       
       // Ищем или создаем пользователя
@@ -140,8 +144,9 @@ export class AuthService {
         .map(([key, value]) => `${key}=${value}`)
         .join('\n');
 
-      const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
-      const calculatedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+      // Правильный секрет: SHA256(botToken) как raw bytes
+      const secret = crypto.createHash('sha256').update(botToken).digest();
+      const calculatedHash = crypto.createHmac('sha256', secret).update(dataCheckString).digest('hex');
 
       return calculatedHash === hash;
     } catch (error) {
