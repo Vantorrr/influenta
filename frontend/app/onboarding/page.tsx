@@ -21,6 +21,37 @@ import {
 } from 'lucide-react'
 import { CATEGORY_LABELS } from '@/lib/constants'
 
+// Branded minimal icons (no external deps)
+const TelegramIcon = ({ className = '' }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden>
+    <path fill="currentColor" d="M21.94 2.34a1.2 1.2 0 0 0-1.27-.17L2.72 10.45c-1.16.56-1.14 2.24.03 2.76l4.7 2.1c.5.22 1.08.17 1.54-.14l8.37-5.82c.15-.11.32.1.2.24l-6.2 6.87c-.38.42-.33 1.08.1 1.44l3.5 2.98c.53.45 1.35.22 1.6-.44l6.23-16.64c.22-.6-.05-1.27-.58-1.5Z"/>
+  </svg>
+)
+const InstagramIcon = ({ className = '' }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden>
+    <rect x="3" y="3" width="18" height="18" rx="5" ry="5" fill="none" stroke="currentColor" strokeWidth="2"/>
+    <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="2"/>
+    <circle cx="17.5" cy="6.5" r="1.3" fill="currentColor"/>
+  </svg>
+)
+const YouTubeIcon = ({ className = '' }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden>
+    <rect x="2.5" y="6" width="19" height="12" rx="3" fill="currentColor" opacity=".2"/>
+    <path fill="currentColor" d="M10 9.5v5l5-2.5-5-2.5Z"/>
+    <rect x="2.5" y="6" width="19" height="12" rx="3" fill="none" stroke="currentColor" strokeWidth="2"/>
+  </svg>
+)
+const TikTokIcon = ({ className = '' }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden>
+    <path fill="currentColor" d="M14 3v7.2a4.8 4.8 0 1 1-3.7-1.77V11a2.2 2.2 0 1 0 2.2 2.2V3h1.5c.6 2 1.9 3.3 4.1 3.5V9c-1.8-.2-3.2-.8-4.1-1.7V21h-1.5v-3.1A4.7 4.7 0 1 1 14 8.7V3Z"/>
+  </svg>
+)
+const VkIcon = ({ className = '' }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden>
+    <path fill="currentColor" d="M3 7c0-1.1.9-2 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Zm3.7 1.9h1.8c.1 2.4 1.2 3.7 3.2 3.9v-3.9h1.7c.1 1.3.7 2.2 2.2 2.4v1.6c-1.1.1-2-.3-2.5-1.1-.4.8-1.3 1.4-2.6 1.5v2.1H9.2v-2.1c-2.1-.3-3.4-1.8-3.5-4.3Z"/>
+  </svg>
+)
+
 interface StepData {
   role?: 'blogger' | 'advertiser'
   // Blogger fields
@@ -405,11 +436,11 @@ function OnboardingInner() {
         
         case 3:
           const socialPlatforms = [
-            { id: 'telegram', name: 'Telegram', icon: '✈️' },
-            { id: 'instagram', name: 'Instagram', icon: '📷' },
-            { id: 'youtube', name: 'YouTube', icon: '📺' },
-            { id: 'tiktok', name: 'TikTok', icon: '🎵' },
-            { id: 'vk', name: 'VKontakte', icon: '🔵' },
+            { id: 'telegram', name: 'Telegram', icon: <TelegramIcon className="w-5 h-5" /> },
+            { id: 'instagram', name: 'Instagram', icon: <InstagramIcon className="w-5 h-5" /> },
+            { id: 'youtube', name: 'YouTube', icon: <YouTubeIcon className="w-5 h-5" /> },
+            { id: 'tiktok', name: 'TikTok', icon: <TikTokIcon className="w-5 h-5" /> },
+            { id: 'vk', name: 'VKontakte', icon: <VkIcon className="w-5 h-5" /> },
           ]
           
           const selectedPlatforms = data.socialPlatforms || []
@@ -439,13 +470,13 @@ function OnboardingInner() {
                             }])
                           }
                         }}
-                        className={`p-4 rounded-xl border-2 transition-all ${
+                        className={`p-4 rounded-xl border-2 transition-all flex items-center gap-2 ${
                           isSelected
                             ? 'border-telegram-primary bg-telegram-primary/10'
                             : 'border-telegram-border hover:border-telegram-primary/50'
                         }`}
                       >
-                        <div className="text-2xl mb-1">{platform.icon}</div>
+                        <div className="text-telegram-primary">{platform.icon}</div>
                         <div className="font-medium">{platform.name}</div>
                       </motion.button>
                     )
@@ -459,7 +490,9 @@ function OnboardingInner() {
                   {selectedPlatforms.map((platform) => (
                     <div key={platform.id} className="card p-4 space-y-3">
                       <h4 className="font-medium flex items-center gap-2">
-                        {socialPlatforms.find(p => p.id === platform.id)?.icon}
+                        <span className="text-telegram-primary">
+                          {socialPlatforms.find(p => p.id === platform.id)?.icon}
+                        </span>
                         {platform.name}
                       </h4>
                       
