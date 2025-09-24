@@ -146,32 +146,6 @@ export default function HomePage() {
             </div>
           </motion.div>
 
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="grid grid-cols-3 gap-8 max-w-3xl mx-auto"
-          >
-            {[
-              { value: '10K+', label: 'Блогеров' },
-              { value: '500+', label: 'Рекламодателей' },
-              { value: '95%', label: 'Довольных клиентов' },
-            ].map((stat, index) => (
-              <motion.div 
-                key={index} 
-                className="text-center"
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.4 + index * 0.1 }}
-              >
-                <div className="text-3xl md:text-5xl font-bold text-telegram-accent mb-2">
-                  {stat.value}
-                </div>
-                <div className="text-telegram-textSecondary">{stat.label}</div>
-              </motion.div>
-            ))}
-          </motion.div>
         </div>
       </section>
 
