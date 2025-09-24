@@ -105,7 +105,7 @@ export function useAuth() {
               },
               body: JSON.stringify({
                 initData,
-                user: telegramUser,
+                user: telegramUser, // сервер умеет парсить и из initData
               }),
             })
 

@@ -32,7 +32,23 @@ export class AuthService {
         }
       }
 
-      const telegramUser = authData.user;
+      // Получаем пользователя из тела или из initData
+      let telegramUser = authData.user;
+      if (!telegramUser && authData.initData) {
+        try {
+          const params = new URLSearchParams(authData.initData);
+          const raw = params.get('user');
+          if (raw) {
+            telegramUser = JSON.parse(raw);
+          }
+        } catch (e) {
+          console.warn('Failed to parse telegram user from initData');
+        }
+      }
+
+      if (!telegramUser?.id) {
+        throw new BadRequestException('Telegram user data not provided');
+      }
       
       // Ищем или создаем пользователя
       let user = await this.usersRepository.findOne({
