@@ -34,6 +34,13 @@ interface StepData {
   proofScreens?: File[]
   pricePerPost?: string
   pricePerStory?: string
+  socialPlatforms?: Array<{
+    id: string
+    name: string
+    pricePost: string
+    priceStory: string
+    priceReel: string
+  }>
   // Advertiser fields
   companyName?: string
   description?: string
@@ -397,32 +404,131 @@ function OnboardingInner() {
           )
         
         case 3:
+          const socialPlatforms = [
+            { id: 'telegram', name: 'Telegram', icon: '✈️' },
+            { id: 'instagram', name: 'Instagram', icon: '📷' },
+            { id: 'youtube', name: 'YouTube', icon: '📺' },
+            { id: 'tiktok', name: 'TikTok', icon: '🎵' },
+            { id: 'vk', name: 'VKontakte', icon: '🔵' },
+          ]
+          
+          const selectedPlatforms = data.socialPlatforms || []
+          
           return (
             <div className="space-y-6">
               <div>
-                <label className="label">Цена за пост (₽)</label>
-                <input
-                  type="number"
-                  value={data.pricePerPost || ''}
-                  onChange={(e) => updateData('pricePerPost', e.target.value)}
-                  placeholder="Например: 5000"
-                  className="input"
-                />
+                <label className="label mb-3">Выберите социальные сети</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {socialPlatforms.map((platform) => {
+                    const isSelected = selectedPlatforms.some(p => p.id === platform.id)
+                    return (
+                      <motion.button
+                        key={platform.id}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          if (isSelected) {
+                            updateData('socialPlatforms', selectedPlatforms.filter(p => p.id !== platform.id))
+                          } else {
+                            updateData('socialPlatforms', [...selectedPlatforms, {
+                              id: platform.id,
+                              name: platform.name,
+                              pricePost: '',
+                              priceStory: '',
+                              priceReel: ''
+                            }])
+                          }
+                        }}
+                        className={`p-4 rounded-xl border-2 transition-all ${
+                          isSelected
+                            ? 'border-telegram-primary bg-telegram-primary/10'
+                            : 'border-telegram-border hover:border-telegram-primary/50'
+                        }`}
+                      >
+                        <div className="text-2xl mb-1">{platform.icon}</div>
+                        <div className="font-medium">{platform.name}</div>
+                      </motion.button>
+                    )
+                  })}
+                </div>
               </div>
+
+              {selectedPlatforms.length > 0 && (
+                <div className="space-y-4">
+                  <label className="label">Установите цены</label>
+                  {selectedPlatforms.map((platform) => (
+                    <div key={platform.id} className="card p-4 space-y-3">
+                      <h4 className="font-medium flex items-center gap-2">
+                        {socialPlatforms.find(p => p.id === platform.id)?.icon}
+                        {platform.name}
+                      </h4>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                          <label className="text-xs text-telegram-textSecondary">Пост</label>
+                          <input
+                            type="number"
+                            value={platform.pricePost}
+                            onChange={(e) => {
+                              const updated = selectedPlatforms.map(p => 
+                                p.id === platform.id 
+                                  ? { ...p, pricePost: e.target.value }
+                                  : p
+                              )
+                              updateData('socialPlatforms', updated)
+                            }}
+                            placeholder="5000"
+                            className="input mt-1"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="text-xs text-telegram-textSecondary">Сторис</label>
+                          <input
+                            type="number"
+                            value={platform.priceStory}
+                            onChange={(e) => {
+                              const updated = selectedPlatforms.map(p => 
+                                p.id === platform.id 
+                                  ? { ...p, priceStory: e.target.value }
+                                  : p
+                              )
+                              updateData('socialPlatforms', updated)
+                            }}
+                            placeholder="2000"
+                            className="input mt-1"
+                          />
+                        </div>
+                        
+                        {(platform.id === 'instagram' || platform.id === 'tiktok' || platform.id === 'youtube') && (
+                          <div>
+                            <label className="text-xs text-telegram-textSecondary">
+                              {platform.id === 'youtube' ? 'Shorts' : 'Reels'}
+                            </label>
+                            <input
+                              type="number"
+                              value={platform.priceReel}
+                              onChange={(e) => {
+                                const updated = selectedPlatforms.map(p => 
+                                  p.id === platform.id 
+                                    ? { ...p, priceReel: e.target.value }
+                                    : p
+                                )
+                                updateData('socialPlatforms', updated)
+                              }}
+                              placeholder="3000"
+                              className="input mt-1"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
               
-              <div>
-                <label className="label">Цена за сторис (₽)</label>
-                <input
-                  type="number"
-                  value={data.pricePerStory || ''}
-                  onChange={(e) => updateData('pricePerStory', e.target.value)}
-                  placeholder="Например: 2000"
-                  className="input"
-                />
-              </div>
-              
-              <p className="text-sm text-telegram-textSecondary">
-                Вы сможете изменить цены в любой момент
+              <p className="text-sm text-telegram-textSecondary text-center">
+                Укажите цены в рублях. Вы сможете изменить их в любой момент.
               </p>
             </div>
           )
