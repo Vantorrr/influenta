@@ -18,36 +18,56 @@ export class AuthService {
 
   async authenticateWithTelegram(authData: any) {
     try {
-      console.log('🔴 Auth request received:', { hasInitData: !!authData.initData, hasUser: !!authData.user });
+      console.log('🔴 Auth request received:', { 
+        hasInitData: !!authData.initData, 
+        initDataLength: authData.initData?.length,
+        hasUser: !!authData.user,
+        userId: authData.user?.id,
+        rawBody: JSON.stringify(authData).substring(0, 300)
+      });
       
-      // В dev режиме пропускаем проверку если нет initData
-      if (!authData.initData && authData.user) {
-        console.log('🔴 Dev mode: skipping initData validation');
-      } else {
-        // Проверяем подлинность данных от Telegram
-        const isValid = this.verifyTelegramData(authData.initData);
-        
-        if (!isValid) {
-          throw new BadRequestException('Invalid Telegram data');
-        }
-      }
-
       // Получаем пользователя из тела или из initData
       let telegramUser = authData.user;
       if (!telegramUser && authData.initData) {
         try {
           const params = new URLSearchParams(authData.initData);
           const raw = params.get('user');
+          console.log('🔴 Trying to parse user from initData:', { hasUserParam: !!raw });
           if (raw) {
             telegramUser = JSON.parse(raw);
+            console.log('🔴 Parsed user:', telegramUser);
           }
         } catch (e) {
-          console.warn('Failed to parse telegram user from initData');
+          console.error('🔴 Failed to parse telegram user from initData:', e);
         }
       }
 
       if (!telegramUser?.id) {
+        console.error('🔴 No telegram user found!', { 
+          hasUser: !!authData.user, 
+          hasInitData: !!authData.initData,
+          telegramUser 
+        });
         throw new BadRequestException('Telegram user data not provided');
+      }
+
+      // В dev режиме пропускаем проверку подписи если нет initData
+      if (!authData.initData) {
+        console.log('🔴 No initData, skipping signature validation');
+      } else {
+        // Проверяем подлинность данных от Telegram
+        const isValid = this.verifyTelegramData(authData.initData);
+        console.log('🔴 Telegram data validation:', { isValid });
+        
+        if (!isValid) {
+          console.error('🔴 Invalid Telegram signature!');
+          // В dev окружении только предупреждаем
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn('🔴 Skipping signature check in non-production');
+          } else {
+            throw new BadRequestException('Invalid Telegram data');
+          }
+        }
       }
       
       // Ищем или создаем пользователя
