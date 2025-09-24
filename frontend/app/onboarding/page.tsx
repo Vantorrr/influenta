@@ -19,6 +19,7 @@ import {
   UploadCloud,
   X
 } from 'lucide-react'
+import { CATEGORY_LABELS } from '@/lib/constants'
 
 interface StepData {
   role?: 'blogger' | 'advertiser'
@@ -48,30 +49,30 @@ function OnboardingInner() {
   })
 
   const categories = [
-    'Lifestyle', 'Tech', 'Beauty', 'Fashion', 'Food', 
-    'Travel', 'Fitness', 'Gaming', 'Education', 'Business',
-    'Entertainment', 'Other'
+    'lifestyle', 'tech', 'beauty', 'fashion', 'food', 
+    'travel', 'fitness', 'gaming', 'education', 'business',
+    'entertainment', 'other'
   ]
 
   const bloggerSteps = [
     {
-      title: 'Расскажите о себе',
-      description: 'Напишите короткое описание вашего блога',
+      title: 'О блоге',
+      description: 'Расскажите о своём блоге',
       icon: Camera,
     },
     {
-      title: 'Выберите тематику',
-      description: 'В каких нишах вы создаете контент?',
+      title: 'Тематика',
+      description: 'Выберите направления контента',
       icon: Target,
     },
     {
-      title: 'Укажите охваты',
-      description: 'Сколько у вас подписчиков?',
+      title: 'Аудитория',
+      description: 'Укажите количество подписчиков',
       icon: Users,
     },
     {
-      title: 'Установите цены',
-      description: 'Сколько стоит размещение у вас?',
+      title: 'Стоимость',
+      description: 'Установите цены на рекламу',
       icon: DollarSign,
     },
   ]
@@ -240,7 +241,7 @@ function OnboardingInner() {
                           : 'border-gray-600 hover:border-gray-500'
                       }`}
                     >
-                      {category}
+                      {CATEGORY_LABELS[category] || category}
                     </motion.button>
                   )
                 })}
