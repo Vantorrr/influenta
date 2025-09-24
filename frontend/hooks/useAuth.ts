@@ -37,9 +37,15 @@ export function useAuth() {
 
   const initAuth = async () => {
     try {
+      console.log('🔵 InitAuth started')
+      console.log('🔵 Telegram WebApp available:', !!window.Telegram?.WebApp)
+      console.log('🔵 Telegram user:', window.Telegram?.WebApp?.initDataUnsafe?.user)
+      
       // Проверяем сохраненную сессию
       const savedToken = localStorage.getItem('influenta_token')
       const savedUser = localStorage.getItem('influenta_user')
+      console.log('🔵 SavedToken:', !!savedToken)
+      console.log('🔵 SavedUser:', !!savedUser)
 
       // Если есть токен, но нет пользователя — подтягиваем профиль с сервера
       if (savedToken && !savedUser) {
@@ -135,13 +141,32 @@ export function useAuth() {
           token: null,
         })
       } else {
-        // Не в Telegram - для dev режима
+        // Не в Telegram - для dev режима создаем тестового пользователя
+        console.log('Creating dev user for testing')
+        const devUser = {
+          id: 'dev-user-123',
+          telegramId: '123456789',
+          firstName: 'Тест',
+          lastName: 'Пользователь',
+          username: 'testuser',
+          photoUrl: null,
+          email: 'test@example.com',
+          role: 'blogger',
+          isActive: true,
+          isVerified: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+        
+        localStorage.setItem('influenta_token', 'dev-token-123')
+        localStorage.setItem('influenta_user', JSON.stringify(devUser))
+        
         setAuthState({
-          user: null,
+          user: devUser,
           isLoading: false,
           isAdmin: false,
           isSuperAdmin: false,
-          token: null,
+          token: 'dev-token-123',
         })
       }
     } catch (error) {
