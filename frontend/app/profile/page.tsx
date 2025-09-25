@@ -57,15 +57,21 @@ export default function ProfilePage() {
     
     setIsSaving(true)
     try {
+      console.log('Отправляем данные:', formData)
       const response = await authApi.updateProfile(formData)
       console.log('Profile update response:', response)
       
-      // Обновляем данные пользователя в localStorage и состоянии
-      const updatedUser = { ...user, ...formData }
-      localStorage.setItem('influenta_user', JSON.stringify(updatedUser))
+      // Получаем свежие данные с сервера
+      const profileResponse = await authApi.getCurrentUser()
+      console.log('Fresh profile data:', profileResponse)
       
-      // Принудительно обновляем страницу чтобы useAuth подхватил изменения
-      window.location.reload()
+      if (profileResponse?.user) {
+        // Обновляем localStorage с данными с сервера
+        localStorage.setItem('influenta_user', JSON.stringify(profileResponse.user))
+        
+        // Принудительно обновляем страницу чтобы useAuth подхватил изменения
+        window.location.reload()
+      }
       
       setIsEditing(false)
     } catch (error) {
@@ -119,6 +125,13 @@ export default function ProfilePage() {
     )
   }
 
+  // Временный debug
+  console.log('🔍 Profile data:', user)
+  console.log('🔍 Bio:', user.bio)
+  console.log('🔍 Role:', user.role)
+  console.log('🔍 SubscribersCount:', (user as any).subscribersCount)
+  console.log('🔍 Categories:', (user as any).categories)
+
   return (
     <Layout title="Профиль">
       <div className="container py-6 max-w-4xl">
@@ -139,6 +152,11 @@ export default function ProfilePage() {
                   <p className="text-telegram-textSecondary">
                     @{user.username || 'username'}
                   </p>
+                  {user.bio && (
+                    <p className="text-telegram-text mt-2 max-w-md">
+                      {user.bio}
+                    </p>
+                  )}
                 </div>
               </div>
               {!isEditing ? (

@@ -62,6 +62,11 @@ export const authApi = {
     return response.data
   },
 
+  async getCurrentUser(): Promise<ApiResponse<User>> {
+    const response = await api.get('/auth/me')
+    return response.data
+  },
+
   async getProfile(): Promise<ApiResponse<User>> {
     const response = await api.get('/auth/me')
     return response.data
