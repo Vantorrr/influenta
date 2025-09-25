@@ -209,10 +209,36 @@ function OnboardingInner() {
       }
 
       console.log('Saving profile data:', profileData)
+      console.log('API URL:', process.env.NEXT_PUBLIC_API_URL)
       
       // Сохраняем через API
-      const response = await authApi.updateProfile(profileData)
-      console.log('Profile saved response:', response)
+      let response
+      try {
+        response = await authApi.updateProfile(profileData)
+        console.log('Profile saved response:', response)
+      } catch (apiError) {
+        console.warn('authApi failed, trying direct fetch:', apiError)
+        
+        // Резервный вариант с прямым fetch
+        const token = localStorage.getItem('influenta_token')
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-2bad2.up.railway.app'
+        
+        const directResponse = await fetch(`${apiUrl}/auth/profile`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(profileData)
+        })
+        
+        if (!directResponse.ok) {
+          throw new Error(`HTTP ${directResponse.status}: ${await directResponse.text()}`)
+        }
+        
+        response = await directResponse.json()
+        console.log('Direct fetch response:', response)
+      }
 
       // Обновляем локальные данные
       const currentUser = JSON.parse(localStorage.getItem('influenta_user') || '{}')
