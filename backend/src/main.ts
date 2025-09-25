@@ -1,3 +1,5 @@
+// Polyfills must be imported first
+import './shims/crypto.polyfill';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
