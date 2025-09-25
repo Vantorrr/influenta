@@ -22,13 +22,18 @@ import { SeedModule } from './seed/seed.module';
       load: [appConfig, databaseConfig],
       envFilePath: ['.env'],
     }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        ...configService.get('database'),
-      }),
-    }),
+    // Инициализацию БД делаем условной, чтобы сервер стартовал даже без DATABASE_URL
+    ...(process.env.DATABASE_URL
+      ? [
+          TypeOrmModule.forRootAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: (configService: ConfigService) => ({
+              ...configService.get('database'),
+            }),
+          }),
+        ]
+      : []),
     ChatModule,
     AdminModule,
     TelegramModule,

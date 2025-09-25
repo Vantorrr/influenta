@@ -28,13 +28,14 @@ export class AppController {
   @Get('api/health')
   @ApiOperation({ summary: 'API Health check endpoint' })
   apiHealthCheck() {
+    const dbUrl = process.env.DATABASE_URL;
     return {
       status: 'ok',
       service: 'Influencer Platform API',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       environment: process.env.NODE_ENV,
-      database: 'connected', // TODO: add real DB check
+      database: dbUrl ? 'configured' : 'not-configured',
       version: '1.0.0',
     };
   }
