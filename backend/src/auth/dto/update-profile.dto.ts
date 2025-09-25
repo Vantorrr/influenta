@@ -68,6 +68,9 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsOptional()
+  onboardingCompleted?: boolean;
 }
 
 

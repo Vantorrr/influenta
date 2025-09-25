@@ -140,6 +140,7 @@ export class AuthService {
         username: user.username || '',
         photoUrl: user.photoUrl || '',
         isVerified: user.isVerified,
+            onboardingCompleted: user.onboardingCompleted,
         email: user.email || null,
         languageCode: user.languageCode || null,
         bio: user.bio || '',
@@ -180,6 +181,7 @@ export class AuthService {
     if (dto.categories !== undefined) user.categories = dto.categories;
     if (dto.companyName !== undefined) user.companyName = dto.companyName;
     if (dto.description !== undefined) user.description = dto.description;
+        if (dto.onboardingCompleted !== undefined) user.onboardingCompleted = !!dto.onboardingCompleted;
     await this.usersRepository.save(user);
     return this.getProfile(userId);
   }

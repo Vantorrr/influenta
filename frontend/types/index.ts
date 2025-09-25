@@ -11,6 +11,7 @@ export interface User {
   role: UserRole
   isActive: boolean
   isVerified: boolean
+    onboardingCompleted?: boolean
   createdAt: Date
   updatedAt: Date
 }

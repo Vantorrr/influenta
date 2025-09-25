@@ -209,6 +209,7 @@ function OnboardingInner() {
       // Подготавливаем данные для сохранения
       const profileData: any = {
         role: data.role === 'blogger' ? UserRole.BLOGGER : UserRole.ADVERTISER,
+        onboardingCompleted: true,
       }
 
       // Добавляем данные для блогеров
