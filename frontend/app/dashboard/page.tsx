@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatNumber, formatPrice, getRelativeTime } from '@/lib/utils'
-import { statsApi } from '@/lib/api'
+import { statsApi, analyticsApi } from '@/lib/api'
 import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -30,6 +30,12 @@ export default function DashboardPage() {
     queryFn: () => statsApi.getDashboard(),
     enabled: !!user,
   })
+
+  useEffect(() => {
+    if (user?.id) {
+      analyticsApi.track('dashboard_view')
+    }
+  }, [user?.id])
 
   const userRole = user?.role || 'blogger'
 

@@ -263,6 +263,14 @@ export const statsApi = {
   },
 }
 
+// Analytics API
+export const analyticsApi = {
+  async track(event: string, params?: { targetType?: string; targetId?: string; targetUserId?: string; metadata?: any }) {
+    const response = await api.post('/analytics/track', { event, ...params })
+    return response.data
+  },
+}
+
 export default api
 
 

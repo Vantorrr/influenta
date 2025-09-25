@@ -14,6 +14,7 @@ import { ListingsModule } from './listings/listings.module';
 import databaseConfig from './config/database.config';
 import appConfig from './config/app.config';
 import { SeedModule } from './seed/seed.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { SeedModule } from './seed/seed.module';
     BloggersModule,
     ListingsModule,
     SeedModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
