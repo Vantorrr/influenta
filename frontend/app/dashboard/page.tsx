@@ -111,9 +111,8 @@ export default function DashboardPage() {
           </h2>
           <p className="opacity-90 mb-4">
             {userRole === 'blogger' 
-              ? 'У вас 3 новых предложения от рекламодателей'
-              : 'На ваши объявления откликнулись 8 блогеров'
-            }
+              ? `У вас ${stats?.activeResponses ?? 0} новых предложений от рекламодателей`
+              : `На ваши объявления откликнулись ${stats?.totalResponses ?? 0} блогеров`}
           </p>
           <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white">
             Посмотреть
