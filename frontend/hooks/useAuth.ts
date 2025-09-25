@@ -45,6 +45,7 @@ export function useAuth() {
       // Проверяем сохраненную сессию
       const savedToken = localStorage.getItem('influenta_token')
       const savedUser = localStorage.getItem('influenta_user')
+      const onboardingLocal = localStorage.getItem('onboarding_completed') === 'true'
       console.log('🔵 SavedToken:', !!savedToken)
       console.log('🔵 SavedUser:', !!savedUser)
 
@@ -134,8 +135,13 @@ export function useAuth() {
                 token: authData.token,
               })
 
+              // Обновим локальный флаг, если сервер уже знает о завершении онбординга
+              if (authData.user.onboardingCompleted) {
+                localStorage.setItem('onboarding_completed', 'true')
+              }
+
               // Если пользователь новый - отправляем на онбординг только один раз
-              const isNewUser = (!authData.user.onboardingCompleted && authData.user.role === 'blogger')
+              const isNewUser = (!authData.user.onboardingCompleted && !onboardingLocal && authData.user.role === 'blogger')
               if (isNewUser && typeof window !== 'undefined') {
                 console.log('🟢 New user detected, redirecting to onboarding')
                 setTimeout(() => {

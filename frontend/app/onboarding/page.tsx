@@ -256,17 +256,20 @@ function OnboardingInner() {
         const userData = (me as any)?.user || me
         if (userData?.id) {
           localStorage.setItem('influenta_user', JSON.stringify(userData))
+          localStorage.setItem('onboarding_completed', 'true')
         } else {
           // fallback: обновим частично
           const currentUser = JSON.parse(localStorage.getItem('influenta_user') || '{}')
           const updatedUser = { ...currentUser, ...profileData }
           localStorage.setItem('influenta_user', JSON.stringify(updatedUser))
+          localStorage.setItem('onboarding_completed', 'true')
         }
       } catch (e) {
         console.warn('Failed to fetch /auth/me after onboarding, fallback to local merge')
         const currentUser = JSON.parse(localStorage.getItem('influenta_user') || '{}')
         const updatedUser = { ...currentUser, ...profileData }
         localStorage.setItem('influenta_user', JSON.stringify(updatedUser))
+        localStorage.setItem('onboarding_completed', 'true')
       }
       
       // Переходим в профиль
