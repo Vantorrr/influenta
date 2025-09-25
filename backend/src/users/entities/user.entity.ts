@@ -1,4 +1,4 @@
-import { Entity, Column, OneToOne, OneToMany } from 'typeorm';
+import { Entity, Column, OneToOne, OneToMany, ValueTransformer } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { BaseEntity } from '../../common/entities/base.entity';
 
@@ -10,6 +10,11 @@ export enum UserRole {
 
 @Entity('users')
 export class User extends BaseEntity {
+  // Transformer to map Postgres BIGINT (string) <-> number in JS
+  private static readonly bigIntToNumber: ValueTransformer = {
+    to: (value: number | null | undefined) => value ?? null,
+    from: (value: string | null) => (value === null || value === undefined ? null : parseInt(value as unknown as string, 10)),
+  };
   @Column({ unique: true })
   telegramId: string;
 
@@ -51,14 +56,14 @@ export class User extends BaseEntity {
   instagramLink?: string;
 
   // Поля для блогеров
-  @Column({ nullable: true, type: 'int' })
-  subscribersCount?: number;
+  @Column({ nullable: true, type: 'bigint', transformer: User.bigIntToNumber })
+  subscribersCount?: number | null;
 
-  @Column({ nullable: true, type: 'int' })
-  pricePerPost?: number;
+  @Column({ nullable: true, type: 'bigint', transformer: User.bigIntToNumber })
+  pricePerPost?: number | null;
 
-  @Column({ nullable: true, type: 'int' })
-  pricePerStory?: number;
+  @Column({ nullable: true, type: 'bigint', transformer: User.bigIntToNumber })
+  pricePerStory?: number | null;
 
   @Column({ nullable: true })
   categories?: string;
