@@ -38,6 +38,38 @@ export class User extends BaseEntity {
   @Column({ nullable: true, type: 'text' })
   bio?: string;
 
+  @Column({ nullable: true })
+  phone?: string;
+
+  @Column({ nullable: true })
+  website?: string;
+
+  @Column({ nullable: true })
+  telegramLink?: string;
+
+  @Column({ nullable: true })
+  instagramLink?: string;
+
+  // Поля для блогеров
+  @Column({ nullable: true, type: 'int' })
+  subscribersCount?: number;
+
+  @Column({ nullable: true, type: 'int' })
+  pricePerPost?: number;
+
+  @Column({ nullable: true, type: 'int' })
+  pricePerStory?: number;
+
+  @Column({ nullable: true })
+  categories?: string;
+
+  // Поля для рекламодателей
+  @Column({ nullable: true })
+  companyName?: string;
+
+  @Column({ nullable: true, type: 'text' })
+  description?: string;
+
   @Column({
     type: 'enum',
     enum: UserRole,

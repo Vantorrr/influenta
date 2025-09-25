@@ -144,6 +144,16 @@ export class AuthService {
         languageCode: user.languageCode || null,
         bio: user.bio || '',
         role: user.role,
+        phone: user.phone || null,
+        website: user.website || null,
+        telegramLink: user.telegramLink || null,
+        instagramLink: user.instagramLink || null,
+        subscribersCount: user.subscribersCount || null,
+        pricePerPost: user.pricePerPost || null,
+        pricePerStory: user.pricePerStory || null,
+        categories: user.categories || null,
+        companyName: user.companyName || null,
+        description: user.description || null,
       },
     };
   }
@@ -160,6 +170,16 @@ export class AuthService {
     if (dto.email !== undefined) user.email = dto.email || null as any;
     if (dto.bio !== undefined) user.bio = dto.bio;
     if (dto.role !== undefined) user.role = dto.role;
+    if (dto.phone !== undefined) user.phone = dto.phone;
+    if (dto.website !== undefined) user.website = dto.website;
+    if (dto.telegramLink !== undefined) user.telegramLink = dto.telegramLink;
+    if (dto.instagramLink !== undefined) user.instagramLink = dto.instagramLink;
+    if (dto.subscribersCount !== undefined) user.subscribersCount = dto.subscribersCount;
+    if (dto.pricePerPost !== undefined) user.pricePerPost = dto.pricePerPost;
+    if (dto.pricePerStory !== undefined) user.pricePerStory = dto.pricePerStory;
+    if (dto.categories !== undefined) user.categories = dto.categories;
+    if (dto.companyName !== undefined) user.companyName = dto.companyName;
+    if (dto.description !== undefined) user.description = dto.description;
     await this.usersRepository.save(user);
     return this.getProfile(userId);
   }
