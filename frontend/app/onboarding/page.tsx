@@ -219,9 +219,6 @@ function OnboardingInner() {
       `
       console.log('DEBUG INFO:', debugInfo)
       
-      // Показываем debug на экране
-      alert('DEBUG: ' + debugInfo)
-      
       // Сохраняем через API
       let response
       try {
