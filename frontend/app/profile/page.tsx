@@ -7,11 +7,17 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
 import { useAuth } from '@/hooks/useAuth'
+import { useEffect } from 'react'
 import { authApi, analyticsApi } from '@/lib/api'
 import { UserRole } from '@/types'
 
 export default function ProfilePage() {
   const { user, isLoading } = useAuth()
+  useEffect(() => {
+    if (user?.id) {
+      try { analyticsApi.track('profile_view', { targetUserId: user.id }) } catch {}
+    }
+  }, [user?.id])
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [formData, setFormData] = useState({
