@@ -65,9 +65,11 @@ export default function ProfilePage() {
       const profileResponse = await authApi.getCurrentUser()
       console.log('Fresh profile data:', profileResponse)
       
-      if (profileResponse?.user) {
+      // Правильная структура ответа API
+      const userData = profileResponse?.user || profileResponse
+      if (userData?.id) {
         // Обновляем localStorage с данными с сервера
-        localStorage.setItem('influenta_user', JSON.stringify(profileResponse.user))
+        localStorage.setItem('influenta_user', JSON.stringify(userData))
         
         // Принудительно обновляем страницу чтобы useAuth подхватил изменения
         window.location.reload()
