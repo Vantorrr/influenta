@@ -211,6 +211,17 @@ function OnboardingInner() {
       console.log('Saving profile data:', profileData)
       console.log('API URL:', process.env.NEXT_PUBLIC_API_URL)
       
+      // ПОКАЗЫВАЕМ DEBUG INFO НА ЭКРАНЕ
+      const debugInfo = `
+        API URL: ${process.env.NEXT_PUBLIC_API_URL || 'НЕ УСТАНОВЛЕНО!'}
+        Сохраняем: ${JSON.stringify(profileData)}
+        Токен: ${localStorage.getItem('influenta_token') ? 'ЕСТЬ' : 'НЕТ'}
+      `
+      console.log('DEBUG INFO:', debugInfo)
+      
+      // Показываем debug на экране
+      alert('DEBUG: ' + debugInfo)
+      
       // Сохраняем через API
       let response
       try {
