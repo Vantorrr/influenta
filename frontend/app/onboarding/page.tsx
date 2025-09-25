@@ -182,13 +182,13 @@ function OnboardingInner() {
       // Добавляем данные для блогеров
       if (data.role === 'blogger') {
         if (data.subscribersCount) {
-          profileData.subscribersCount = data.subscribersCount.replace(/\./g, '')
+          profileData.subscribersCount = parseInt(data.subscribersCount.replace(/\./g, '')) || 0
         }
         if (data.pricePerPost) {
-          profileData.pricePerPost = data.pricePerPost.replace(/\./g, '')
+          profileData.pricePerPost = parseInt(data.pricePerPost.replace(/\./g, '')) || 0
         }
         if (data.pricePerStory) {
-          profileData.pricePerStory = data.pricePerStory.replace(/\./g, '')
+          profileData.pricePerStory = parseInt(data.pricePerStory.replace(/\./g, '')) || 0
         }
         if (data.categories) {
           profileData.categories = data.categories.join(',')
@@ -211,20 +211,31 @@ function OnboardingInner() {
       console.log('Saving profile data:', profileData)
       
       // Сохраняем через API
-      await authApi.updateProfile(profileData)
+      const response = await authApi.updateProfile(profileData)
+      console.log('Profile saved response:', response)
 
       // Обновляем локальные данные
       const currentUser = JSON.parse(localStorage.getItem('influenta_user') || '{}')
       const updatedUser = { ...currentUser, ...profileData }
       localStorage.setItem('influenta_user', JSON.stringify(updatedUser))
 
-      console.log('Profile saved successfully')
+      console.log('Profile saved successfully, redirecting to dashboard')
       
       // Переход на главную страницу приложения
       router.push('/dashboard')
     } catch (error) {
       console.error('Error saving profile:', error)
-      alert('Ошибка сохранения профиля. Попробуйте еще раз.')
+      console.error('Full error object:', JSON.stringify(error, null, 2))
+      
+      // Более детальная ошибка
+      let errorMessage = 'Ошибка сохранения профиля.'
+      if (error.response?.data?.message) {
+        errorMessage += ` ${error.response.data.message}`
+      } else if (error.message) {
+        errorMessage += ` ${error.message}`
+      }
+      
+      alert(errorMessage + ' Попробуйте еще раз.')
     }
   }
 
