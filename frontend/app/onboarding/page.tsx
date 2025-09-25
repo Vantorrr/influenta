@@ -260,15 +260,15 @@ function OnboardingInner() {
       
       // Переход на главную страницу приложения
       router.push('/dashboard')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving profile:', error)
       console.error('Full error object:', JSON.stringify(error, null, 2))
       
       // Более детальная ошибка
       let errorMessage = 'Ошибка сохранения профиля.'
-      if (error.response?.data?.message) {
+      if (error?.response?.data?.message) {
         errorMessage += ` ${error.response.data.message}`
-      } else if (error.message) {
+      } else if (error?.message) {
         errorMessage += ` ${error.message}`
       }
       
