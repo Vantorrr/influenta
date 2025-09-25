@@ -138,7 +138,55 @@ function OnboardingInner() {
   const steps = data.role === 'blogger' ? bloggerSteps : advertiserSteps
   const totalSteps = steps.length
 
+  const isStepValid = (): boolean => {
+    if (!data.role) return false
+    
+    if (data.role === 'blogger') {
+      switch (currentStep) {
+        case 0: // О блоге
+          return !!data.bio && data.bio.length >= 10
+        case 1: // Тематика
+          return !!data.categories && data.categories.length > 0
+        case 2: // Аудитория
+          if (data.useRange) {
+            return !!data.subscribersMin && !!data.subscribersMax
+          }
+          return !!data.subscribersCount
+        case 3: // Стоимость
+          // Проверяем что выбрана хотя бы одна платформа и указана хотя бы одна цена
+          if (!data.socialPlatforms || data.socialPlatforms.length === 0) {
+            return false
+          }
+          // Проверяем что для каждой платформы указана хотя бы одна цена
+          return data.socialPlatforms.every(platform => 
+            platform.pricePost || platform.priceStory || platform.priceReel
+          )
+        default:
+          return true
+      }
+    }
+    
+    if (data.role === 'advertiser') {
+      switch (currentStep) {
+        case 0: // Название компании
+          return !!data.companyName && data.companyName.length >= 2
+        case 1: // Описание
+          return !!data.description && data.description.length >= 10
+        case 2: // Сайт (необязательно)
+          return true // Сайт необязателен
+        default:
+          return true
+      }
+    }
+    
+    return false
+  }
+
   const handleNext = () => {
+    if (!isStepValid()) {
+      return // Не переходим дальше если шаг не валиден
+    }
+    
     if (currentStep < totalSteps - 1) {
       setCurrentStep(currentStep + 1)
     } else {
@@ -155,9 +203,66 @@ function OnboardingInner() {
   }
 
   const handleComplete = async () => {
-    // Временно пропускаем онбординг и переходим сразу к приложению
     console.log('Onboarding complete:', data)
-    router.push('/dashboard')
+    
+    try {
+      // Подготавливаем данные для сохранения
+      const profileData: any = {
+        role: data.role === 'blogger' ? UserRole.BLOGGER : UserRole.ADVERTISER,
+      }
+
+      // Добавляем данные для блогеров
+      if (data.role === 'blogger') {
+        profileData.bio = data.bio || ''
+        profileData.categories = data.categories?.join(',') || ''
+        
+        // Обрабатываем подписчиков
+        if (data.subscribersCount) {
+          profileData.subscribersCount = parseInt(data.subscribersCount.replace(/\./g, '')) || 0
+        }
+        
+        // Обрабатываем цены только если есть выбранные платформы
+        if (data.socialPlatforms && data.socialPlatforms.length > 0) {
+          // Берём первую платформу для основных цен (для совместимости)
+          const firstPlatform = data.socialPlatforms[0]
+          if (firstPlatform.pricePost) {
+            profileData.pricePerPost = parseInt(firstPlatform.pricePost) || 0
+          }
+          if (firstPlatform.priceStory) {
+            profileData.pricePerStory = parseInt(firstPlatform.priceStory) || 0
+          }
+        }
+      }
+
+      // Добавляем данные для рекламодателей  
+      if (data.role === 'advertiser') {
+        profileData.companyName = data.companyName || ''
+        profileData.description = data.description || ''
+        if (data.website) {
+          profileData.website = data.website
+        }
+      }
+
+      console.log('Saving profile data:', profileData)
+      
+      // Сохраняем через API
+      const response = await authApi.updateProfile(profileData)
+      console.log('Profile saved:', response)
+      
+      // Обновляем локальные данные
+      const currentUser = JSON.parse(localStorage.getItem('influenta_user') || '{}')
+      const updatedUser = { ...currentUser, ...profileData }
+      localStorage.setItem('influenta_user', JSON.stringify(updatedUser))
+      
+      // Переходим в приложение
+      router.push('/dashboard')
+      
+    } catch (error: any) {
+      console.error('Error saving profile:', error)
+      
+      // В случае ошибки всё равно переходим в приложение
+      router.push('/dashboard')
+    }
   }
 
   const updateData = (field: keyof StepData, value: any) => {
@@ -681,10 +786,10 @@ function OnboardingInner() {
               </motion.button>
               
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={isStepValid() ? { scale: 1.05 } : {}}
+                whileTap={isStepValid() ? { scale: 0.95 } : {}}
                 onClick={handleNext}
-                disabled={!data.role}
+                disabled={!isStepValid()}
                 className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {currentStep === totalSteps - 1 ? (
