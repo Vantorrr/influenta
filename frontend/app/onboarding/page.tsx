@@ -261,23 +261,7 @@ function OnboardingInner() {
         errorMessage += ` ${error.message}`
       }
       
-      // Предлагаем пропустить онбординг
-      const skipOnboarding = confirm(errorMessage + ' Хотите пропустить настройку и заполнить профиль позже?')
-      
-      if (skipOnboarding) {
-        // Сохраняем минимальные данные локально
-        const currentUser = JSON.parse(localStorage.getItem('influenta_user') || '{}')
-        const minimalUser = { 
-          ...currentUser, 
-          role: data.role === 'blogger' ? UserRole.BLOGGER : UserRole.ADVERTISER,
-          bio: data.bio || 'Заполните профиль в настройках',
-          onboardingCompleted: true
-        }
-        localStorage.setItem('influenta_user', JSON.stringify(minimalUser))
-        
-        console.log('Skipping onboarding, saved minimal data')
-        router.push('/dashboard')
-      }
+      alert(errorMessage + ' Попробуйте еще раз.')
     }
   }
 
