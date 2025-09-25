@@ -33,6 +33,12 @@ export default function ProfilePage() {
 
   const handleEdit = () => {
     if (user) {
+      const rawCats: any = (user as any).categories
+      const normalizedCategories = Array.isArray(rawCats)
+        ? rawCats
+        : typeof rawCats === 'string'
+          ? rawCats.split(',').map((c: string) => c.trim()).filter(Boolean)
+          : []
       setFormData({
         firstName: user.firstName || '',
         lastName: user.lastName || '',
@@ -46,7 +52,7 @@ export default function ProfilePage() {
         subscribersCount: (user as any).subscribersCount || '',
         pricePerPost: (user as any).pricePerPost || '',
         pricePerStory: (user as any).pricePerStory || '',
-        categories: (user as any).categories || []
+        categories: normalizedCategories,
       })
     }
     setIsEditing(true)
@@ -57,8 +63,26 @@ export default function ProfilePage() {
     
     setIsSaving(true)
     try {
-      console.log('Отправляем данные:', formData)
-      const response = await authApi.updateProfile(formData)
+      // Нормализуем данные для API
+      const payload: any = {
+        firstName: formData.firstName || undefined,
+        lastName: formData.lastName || undefined,
+        email: formData.email || undefined,
+        bio: formData.bio || undefined,
+        role: formData.role || undefined,
+        phone: formData.phone || undefined,
+        website: formData.website || undefined,
+        telegramLink: formData.telegramLink || undefined,
+        instagramLink: formData.instagramLink || undefined,
+      }
+
+      if (formData.subscribersCount !== '') payload.subscribersCount = parseInt(String(formData.subscribersCount).replace(/\./g, ''), 10) || 0
+      if (formData.pricePerPost !== '') payload.pricePerPost = parseInt(String(formData.pricePerPost).replace(/\./g, ''), 10) || 0
+      if (formData.pricePerStory !== '') payload.pricePerStory = parseInt(String(formData.pricePerStory).replace(/\./g, ''), 10) || 0
+      if (formData.categories && formData.categories.length > 0) payload.categories = formData.categories.join(',')
+
+      console.log('Отправляем данные:', payload)
+      const response = await authApi.updateProfile(payload)
       console.log('Profile update response:', response)
       
       // Получаем свежие данные с сервера
