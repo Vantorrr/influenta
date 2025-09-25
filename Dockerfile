@@ -14,6 +14,9 @@ COPY backend ./
 # Build application
 RUN npm run build
 
+# Ensure PORT env var
+ENV PORT=3001
+
 # Expose port
 EXPOSE 3001
 
