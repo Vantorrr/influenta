@@ -142,6 +142,8 @@ export class AuthService {
         isVerified: user.isVerified,
         email: user.email || null,
         languageCode: user.languageCode || null,
+        bio: user.bio || '',
+        role: user.role,
       },
     };
   }
@@ -156,6 +158,8 @@ export class AuthService {
     if (dto.username !== undefined) user.username = dto.username;
     if (dto.photoUrl !== undefined) user.photoUrl = dto.photoUrl;
     if (dto.email !== undefined) user.email = dto.email || null as any;
+    if (dto.bio !== undefined) user.bio = dto.bio;
+    if (dto.role !== undefined) user.role = dto.role;
     await this.usersRepository.save(user);
     return this.getProfile(userId);
   }

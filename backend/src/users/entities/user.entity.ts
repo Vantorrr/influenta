@@ -35,6 +35,9 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   languageCode?: string;
 
+  @Column({ nullable: true, type: 'text' })
+  bio?: string;
+
   @Column({
     type: 'enum',
     enum: UserRole,
