@@ -19,10 +19,12 @@ import { Button } from '@/components/ui/button'
 import { formatNumber, formatPrice, getRelativeTime } from '@/lib/utils'
 import { statsApi } from '@/lib/api'
 import { useQuery } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 
 export default function DashboardPage() {
   const { user } = useAuth()
+  const router = useRouter()
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: () => statsApi.getDashboard(),
@@ -114,7 +116,11 @@ export default function DashboardPage() {
               ? `У вас ${stats?.activeResponses ?? 0} новых предложений от рекламодателей`
               : `На ваши объявления откликнулись ${stats?.totalResponses ?? 0} блогеров`}
           </p>
-          <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white">
+          <Button
+            variant="secondary"
+            className="bg-white/20 hover:bg-white/30 text-white"
+            onClick={() => router.push(userRole === 'blogger' ? '/listings' : '/bloggers')}
+          >
             Посмотреть
           </Button>
         </motion.div>
@@ -157,22 +163,22 @@ export default function DashboardPage() {
             <div className="grid grid-cols-2 gap-3">
               {userRole === 'blogger' ? (
                 <>
-                  <Button variant="secondary" fullWidth>
+                  <Button variant="secondary" fullWidth onClick={() => router.push('/listings')}>
                     <Search className="w-4 h-4 mr-2" />
                     Найти заказы
                   </Button>
-                  <Button variant="secondary" fullWidth>
+                  <Button variant="secondary" fullWidth onClick={() => router.push('/profile')}>
                     <User className="w-4 h-4 mr-2" />
                     Мой профиль
                   </Button>
                 </>
               ) : (
                 <>
-                  <Button variant="secondary" fullWidth>
+                  <Button variant="secondary" fullWidth onClick={() => router.push('/listings/create')}>
                     <PlusCircle className="w-4 h-4 mr-2" />
                     Создать объявление
                   </Button>
-                  <Button variant="secondary" fullWidth>
+                  <Button variant="secondary" fullWidth onClick={() => router.push('/bloggers')}>
                     <Users className="w-4 h-4 mr-2" />
                     Найти блогеров
                   </Button>
