@@ -127,13 +127,43 @@ export function useAuth() {
               const isAdmin = ADMIN_CONFIG.telegramIds.includes(parseInt(authData.user.telegramId))
               const isSuperAdmin = parseInt(authData.user.telegramId) === ADMIN_CONFIG.telegramIds[0]
 
-              setAuthState({
-                user: authData.user,
-                isLoading: false,
-                isAdmin,
-                isSuperAdmin,
-                token: authData.token,
-              })
+              // Подтянем свежий профиль сразу после авторизации
+              try {
+                const meRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+                  headers: { Authorization: `Bearer ${authData.token}` },
+                })
+                if (meRes.ok) {
+                  const meData = await meRes.json()
+                  const fullUser = (meData && (meData.user ?? meData)) || authData.user
+                  localStorage.setItem('influenta_user', JSON.stringify(fullUser))
+                  if (fullUser?.onboardingCompleted) {
+                    localStorage.setItem('onboarding_completed', 'true')
+                  }
+                  setAuthState({
+                    user: fullUser,
+                    isLoading: false,
+                    isAdmin,
+                    isSuperAdmin,
+                    token: authData.token,
+                  })
+                } else {
+                  setAuthState({
+                    user: authData.user,
+                    isLoading: false,
+                    isAdmin,
+                    isSuperAdmin,
+                    token: authData.token,
+                  })
+                }
+              } catch {
+                setAuthState({
+                  user: authData.user,
+                  isLoading: false,
+                  isAdmin,
+                  isSuperAdmin,
+                  token: authData.token,
+                })
+              }
 
               // Обновим локальный флаг, если сервер уже знает о завершении онбординга
               if (authData.user.onboardingCompleted) {
@@ -141,7 +171,10 @@ export function useAuth() {
               }
 
               // Если пользователь новый - отправляем на онбординг только один раз
-              const isNewUser = (!authData.user.onboardingCompleted && !onboardingLocal && authData.user.role === 'blogger')
+              const storedUser = JSON.parse(localStorage.getItem('influenta_user') || 'null')
+              const completed = storedUser?.onboardingCompleted || authData.user.onboardingCompleted || onboardingLocal
+              const role = storedUser?.role || authData.user.role
+              const isNewUser = (!completed && role === 'blogger')
               if (isNewUser && typeof window !== 'undefined') {
                 console.log('🟢 New user detected, redirecting to onboarding')
                 setTimeout(() => {
