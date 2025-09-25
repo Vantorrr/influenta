@@ -7,6 +7,7 @@ export interface User {
   lastName?: string
   photoUrl?: string
   email?: string
+  bio?: string
   role: UserRole
   isActive: boolean
   isVerified: boolean

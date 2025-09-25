@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
 import { useAuth } from '@/hooks/useAuth'
 import { authApi } from '@/lib/api'
+import { UserRole } from '@/types'
 
 export default function ProfilePage() {
   const { user, isLoading } = useAuth()
@@ -19,7 +20,7 @@ export default function ProfilePage() {
     username: '',
     email: '',
     bio: '',
-    role: 'blogger' as 'blogger' | 'advertiser'
+    role: UserRole.BLOGGER
   })
 
   const handleEdit = () => {
@@ -30,7 +31,7 @@ export default function ProfilePage() {
         username: user.username || '',
         email: user.email || '',
         bio: user.bio || '',
-        role: user.role || 'blogger'
+        role: user.role || UserRole.BLOGGER
       })
     }
     setIsEditing(true)
@@ -63,7 +64,7 @@ export default function ProfilePage() {
       username: '',
       email: '',
       bio: '',
-      role: 'blogger'
+      role: UserRole.BLOGGER
     })
   }
 
@@ -223,11 +224,11 @@ export default function ProfilePage() {
                   </label>
                   <select
                     value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value as 'blogger' | 'advertiser' })}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
                     className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
                   >
-                    <option value="blogger">Блогер</option>
-                    <option value="advertiser">Рекламодатель</option>
+                    <option value={UserRole.BLOGGER}>Блогер</option>
+                    <option value={UserRole.ADVERTISER}>Рекламодатель</option>
                   </select>
                 </div>
 
