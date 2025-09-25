@@ -81,10 +81,17 @@ export default function ProfilePage() {
     setFormData({
       firstName: '',
       lastName: '',
-      username: '',
       email: '',
       bio: '',
-      role: UserRole.BLOGGER
+      role: UserRole.BLOGGER,
+      phone: '',
+      website: '',
+      telegramLink: '',
+      instagramLink: '',
+      subscribersCount: '',
+      pricePerPost: '',
+      pricePerStory: '',
+      categories: []
     })
   }
 
