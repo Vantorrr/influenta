@@ -273,9 +273,9 @@ function OnboardingInner() {
       
     } catch (error: any) {
       console.error('Error saving profile:', error)
-      
-      // В случае ошибки всё равно переходим в приложение
-      router.push('/dashboard')
+      const msg = error?.response?.data?.message || error?.message || 'Неизвестная ошибка'
+      alert(`Ошибка сохранения профиля: ${msg}`)
+      return
     }
   }
 
