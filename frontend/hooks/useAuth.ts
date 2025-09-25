@@ -70,6 +70,9 @@ export function useAuth() {
       const effectiveUser = localStorage.getItem('influenta_user')
       if (savedToken && effectiveUser) {
         const user = JSON.parse(effectiveUser)
+        if (user?.onboardingCompleted) {
+          localStorage.setItem('onboarding_completed', 'true')
+        }
         const isAdmin = ADMIN_CONFIG.telegramIds.includes(parseInt(user.telegramId))
         const isSuperAdmin = parseInt(user.telegramId) === ADMIN_CONFIG.telegramIds[0]
 

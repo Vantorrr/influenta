@@ -88,6 +88,18 @@ function OnboardingInner() {
     role: searchParams.get('role') as 'blogger' | 'advertiser' || undefined,
   })
 
+  // Хард-редирект: если онбординг уже пройден — сразу уходим из этой страницы
+  useEffect(() => {
+    const localCompleted = localStorage.getItem('onboarding_completed') === 'true'
+    const savedUserRaw = localStorage.getItem('influenta_user')
+    const savedUser = savedUserRaw ? JSON.parse(savedUserRaw) : null
+    const serverCompleted = !!savedUser?.onboardingCompleted
+    if (localCompleted || serverCompleted) {
+      router.replace('/dashboard')
+      return
+    }
+  }, [])
+
   const categories = [
     'lifestyle', 'tech', 'beauty', 'fashion', 'food', 
     'travel', 'fitness', 'gaming', 'education', 'business',
