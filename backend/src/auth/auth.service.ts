@@ -85,6 +85,10 @@ export class AuthService {
           username: user.username || '',
           photoUrl: user.photoUrl || '',
           isVerified: user.isVerified,
+          onboardingCompleted: user.onboardingCompleted,
+          role: user.role,
+          email: user.email || null,
+          bio: user.bio || '',
         },
       };
     } catch (error) {
