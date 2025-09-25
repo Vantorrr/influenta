@@ -249,13 +249,27 @@ function OnboardingInner() {
       const response = await authApi.updateProfile(profileData)
       console.log('Profile saved:', response)
       
-      // Обновляем локальные данные
-      const currentUser = JSON.parse(localStorage.getItem('influenta_user') || '{}')
-      const updatedUser = { ...currentUser, ...profileData }
-      localStorage.setItem('influenta_user', JSON.stringify(updatedUser))
+      // Подтягиваем свежий профиль с сервера
+      try {
+        const me = await authApi.getCurrentUser()
+        const userData = (me as any)?.user || me
+        if (userData?.id) {
+          localStorage.setItem('influenta_user', JSON.stringify(userData))
+        } else {
+          // fallback: обновим частично
+          const currentUser = JSON.parse(localStorage.getItem('influenta_user') || '{}')
+          const updatedUser = { ...currentUser, ...profileData }
+          localStorage.setItem('influenta_user', JSON.stringify(updatedUser))
+        }
+      } catch (e) {
+        console.warn('Failed to fetch /auth/me after onboarding, fallback to local merge')
+        const currentUser = JSON.parse(localStorage.getItem('influenta_user') || '{}')
+        const updatedUser = { ...currentUser, ...profileData }
+        localStorage.setItem('influenta_user', JSON.stringify(updatedUser))
+      }
       
-      // Переходим в приложение
-      router.push('/dashboard')
+      // Переходим в профиль
+      router.push('/profile')
       
     } catch (error: any) {
       console.error('Error saving profile:', error)
