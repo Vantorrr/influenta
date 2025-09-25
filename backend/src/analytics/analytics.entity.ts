@@ -5,9 +5,15 @@ export type AnalyticsEventName =
   | 'app_open'
   | 'dashboard_view'
   | 'profile_view'
+  | 'profile_edit_save'
   | 'listing_view'
+  | 'listings_list_view'
+  | 'bloggers_list_view'
   | 'quick_action_click'
-  | 'cta_click';
+  | 'cta_click'
+  | 'onboarding_complete'
+  | 'listing_create_open'
+  | 'listing_create_submit';
 
 @Entity('analytics_events')
 export class AnalyticsEvent extends BaseEntity {

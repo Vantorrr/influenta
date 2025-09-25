@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { 
   Filter, 
@@ -27,7 +27,7 @@ import {
   getStatusLabel,
   getStatusColor
 } from '@/lib/utils'
-import { listingsApi } from '@/lib/api'
+import { listingsApi, analyticsApi } from '@/lib/api'
 import { useQuery } from '@tanstack/react-query'
 import { 
   BloggerCategory, 
@@ -50,6 +50,10 @@ export default function ListingsPage() {
     placeholderData: (prev) => prev,
     enabled: !!user,
   })
+
+  useEffect(() => {
+    analyticsApi.track('listings_list_view')
+  }, [])
 
   const listings = data?.data || [
   ]

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Filter, 
@@ -25,7 +25,7 @@ import {
   getCategoryLabel,
   cn
 } from '@/lib/utils'
-import { bloggersApi } from '@/lib/api'
+import { bloggersApi, analyticsApi } from '@/lib/api'
 import { useQuery } from '@tanstack/react-query'
 import { BloggerCategory, type BloggerFilters } from '@/types'
 import { useAuth } from '@/hooks/useAuth'
@@ -45,6 +45,10 @@ export default function BloggersPage() {
     placeholderData: (prev) => prev,
     enabled: !!user,
   })
+
+  useEffect(() => {
+    analyticsApi.track('bloggers_list_view')
+  }, [])
 
   const categories = Object.values(BloggerCategory)
 

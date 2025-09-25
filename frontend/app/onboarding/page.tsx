@@ -20,7 +20,7 @@ import {
   X
 } from 'lucide-react'
 import { CATEGORY_LABELS } from '@/lib/constants'
-import { authApi } from '@/lib/api'
+import { authApi, analyticsApi } from '@/lib/api'
 import { UserRole } from '@/types'
 
 // Branded minimal icons (no external deps)
@@ -285,6 +285,7 @@ function OnboardingInner() {
       }
       
       // Переходим в профиль
+      try { analyticsApi.track('onboarding_complete') } catch {}
       router.push('/profile')
       
     } catch (error: any) {

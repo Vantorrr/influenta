@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
 import { useAuth } from '@/hooks/useAuth'
-import { authApi } from '@/lib/api'
+import { authApi, analyticsApi } from '@/lib/api'
 import { UserRole } from '@/types'
 
 export default function ProfilePage() {
@@ -32,6 +32,7 @@ export default function ProfilePage() {
   })
 
   const handleEdit = () => {
+    analyticsApi.track('quick_action_click', { targetType: 'profile', targetId: 'edit' })
     if (user) {
       const rawCats: any = (user as any).categories
       const normalizedCategories = Array.isArray(rawCats)
@@ -84,6 +85,7 @@ export default function ProfilePage() {
       console.log('Отправляем данные:', payload)
       const response = await authApi.updateProfile(payload)
       console.log('Profile update response:', response)
+      try { analyticsApi.track('profile_edit_save', { targetUserId: user.id }) } catch {}
       
       // Получаем свежие данные с сервера
       const profileResponse = await authApi.getCurrentUser()
