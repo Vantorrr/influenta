@@ -43,7 +43,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  const port = process.env.PORT || configService.get('PORT') || 3001;
+  const port = parseInt(process.env.PORT || '', 10) || configService.get<number>('app.port') || 3001;
   await app.listen(port, '0.0.0.0'); // Railway требует 0.0.0.0
 
   console.log(`🚀 Application is running on: http://localhost:${port}`);

@@ -14,11 +14,8 @@ COPY backend ./
 # Build application
 RUN npm run build
 
-# Ensure PORT env var
-ENV PORT=3001
-
-# Expose port
-EXPOSE 3001
+# Expose typical Railway port (platform will set PORT env var)
+EXPOSE 8080
 
 # Start the application
 CMD ["npm", "run", "start:prod"]
