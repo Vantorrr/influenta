@@ -26,45 +26,15 @@ export class AuthService {
         rawBody: JSON.stringify(authData).substring(0, 300)
       });
       
-      // Получаем пользователя из тела или из initData
+      // УПРОЩЁННО: берём user только из тела запроса, без проверки подписи
       let telegramUser = authData.user;
-      if (!telegramUser && authData.initData) {
-        try {
-          const params = new URLSearchParams(authData.initData);
-          const raw = params.get('user');
-          console.log('🔴 Trying to parse user from initData:', { hasUserParam: !!raw });
-          if (raw) {
-            telegramUser = JSON.parse(raw);
-            console.log('🔴 Parsed user:', telegramUser);
-          }
-        } catch (e) {
-          console.error('🔴 Failed to parse telegram user from initData:', e);
-        }
-      }
 
       if (!telegramUser?.id) {
-        console.error('🔴 No telegram user found!', { 
-          hasUser: !!authData.user, 
-          hasInitData: !!authData.initData,
-          telegramUser 
-        });
-        throw new BadRequestException('Telegram user data not provided');
+        console.error('🔴 No telegram user in request body!', { authData });
+        throw new BadRequestException('Telegram user data required in request body');
       }
 
-      // Проверка подписи Telegram (ослабленная: не блокируем вход)
-      if (authData.initData) {
-        const isValid = this.verifyTelegramData(authData.initData);
-        const params = new URLSearchParams(authData.initData);
-        const hash = params.get('hash');
-        params.delete('hash');
-        const dataCheckString = Array.from(params.entries())
-          .sort(([a], [b]) => a.localeCompare(b))
-          .map(([k, v]) => `${k}=${v}`)
-          .join('\n');
-        console.log('🔴 Signature debug:', { isValid, hash, dataCheckStringPreview: dataCheckString.substring(0, 200) });
-      } else {
-        console.log('🔴 No initData provided');
-      }
+      console.log('🔴 Using telegram user from request:', telegramUser);
       
       // Ищем или создаем пользователя
       let user = await this.usersRepository.findOne({
