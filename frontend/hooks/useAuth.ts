@@ -136,7 +136,9 @@ export function useAuth() {
 
               // Если пользователь новый (нет дополнительных данных) - отправляем на онбординг
               const isNewUser = (!authData.user.bio && !authData.user.email && authData.user.role === 'blogger')
-              if (isNewUser && typeof window !== 'undefined') {
+              const onboardingCompleted = (authData.user as any).onboardingCompleted
+              
+              if (isNewUser && !onboardingCompleted && typeof window !== 'undefined') {
                 console.log('🟢 New user detected, redirecting to onboarding')
                 setTimeout(() => {
                   window.location.href = '/onboarding'
