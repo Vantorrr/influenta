@@ -1,5 +1,11 @@
-[build]
-cmd = "cd backend && npm ci --production=false && npm run build && echo '✅ Build completed' && ls -la dist/"
+[phases.setup]
+nixPkgs = ["nodejs_18", "npm"]
+
+[phases.install]
+cmd = "cd backend && npm ci"
+
+[phases.build]
+cmd = "cd backend && npm run build"
 
 [start]
-cmd = "cd backend && npm run start:railway"
+cmd = "cd backend && npm run start:prod"
