@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Edit, Save, X, User, Mail, AtSign, FileText } from 'lucide-react'
+import { Edit, Save, X, User, Mail, AtSign, FileText, Phone, Globe, Users2, DollarSign } from 'lucide-react'
 import { Layout } from '@/components/layout/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -17,10 +17,18 @@ export default function ProfilePage() {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    username: '',
     email: '',
     bio: '',
-    role: UserRole.BLOGGER
+    role: UserRole.BLOGGER,
+    phone: '',
+    website: '',
+    telegramLink: '',
+    instagramLink: '',
+    // Для блогеров
+    subscribersCount: '',
+    pricePerPost: '',
+    pricePerStory: '',
+    categories: [] as string[]
   })
 
   const handleEdit = () => {
@@ -28,10 +36,17 @@ export default function ProfilePage() {
       setFormData({
         firstName: user.firstName || '',
         lastName: user.lastName || '',
-        username: user.username || '',
         email: user.email || '',
         bio: user.bio || '',
-        role: user.role || UserRole.BLOGGER
+        role: user.role || UserRole.BLOGGER,
+        phone: (user as any).phone || '',
+        website: (user as any).website || '',
+        telegramLink: (user as any).telegramLink || '',
+        instagramLink: (user as any).instagramLink || '',
+        subscribersCount: (user as any).subscribersCount || '',
+        pricePerPost: (user as any).pricePerPost || '',
+        pricePerStory: (user as any).pricePerStory || '',
+        categories: (user as any).categories || []
       })
     }
     setIsEditing(true)
@@ -186,19 +201,19 @@ export default function ProfilePage() {
                   />
                 </div>
 
-                {/* Username */}
+                {/* Username - только отображение */}
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     <AtSign className="w-4 h-4 inline mr-1" />
-                    Username
+                    Username (Telegram)
                   </label>
                   <input
                     type="text"
-                    value={formData.username}
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
-                    placeholder="Введите username"
+                    value={user.username || 'Не указан'}
+                    disabled
+                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bgSecondary text-telegram-textSecondary cursor-not-allowed"
                   />
+                  <p className="text-xs text-telegram-textSecondary mt-1">Синхронизируется с Telegram автоматически</p>
                 </div>
 
                 {/* Email */}
@@ -246,10 +261,200 @@ export default function ProfilePage() {
                     placeholder="Расскажите о себе..."
                   />
                 </div>
+
+                {/* Телефон */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    <Phone className="w-4 h-4 inline mr-1" />
+                    Телефон
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
+                    placeholder="+7 (999) 123-45-67"
+                  />
+                </div>
+
+                {/* Сайт */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    <Globe className="w-4 h-4 inline mr-1" />
+                    Сайт/Портфолио
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.website}
+                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
+                    placeholder="https://example.com"
+                  />
+                </div>
+
+                {/* Telegram ссылка */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    <AtSign className="w-4 h-4 inline mr-1" />
+                    Telegram канал
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.telegramLink}
+                    onChange={(e) => setFormData({ ...formData, telegramLink: e.target.value })}
+                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
+                    placeholder="https://t.me/channel"
+                  />
+                </div>
+
+                {/* Instagram ссылка */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    <Globe className="w-4 h-4 inline mr-1" />
+                    Instagram
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.instagramLink}
+                    onChange={(e) => setFormData({ ...formData, instagramLink: e.target.value })}
+                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
+                    placeholder="https://instagram.com/username"
+                  />
+                </div>
+
+                {/* Дополнительные поля для блогеров */}
+                {formData.role === UserRole.BLOGGER && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        <Users2 className="w-4 h-4 inline mr-1" />
+                        Количество подписчиков
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.subscribersCount}
+                        onChange={(e) => setFormData({ ...formData, subscribersCount: e.target.value })}
+                        className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
+                        placeholder="10000"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        <DollarSign className="w-4 h-4 inline mr-1" />
+                        Цена за пост (₽)
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.pricePerPost}
+                        onChange={(e) => setFormData({ ...formData, pricePerPost: e.target.value })}
+                        className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
+                        placeholder="5000"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium mb-2">
+                        <DollarSign className="w-4 h-4 inline mr-1" />
+                        Цена за сторис (₽)
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.pricePerStory}
+                        onChange={(e) => setFormData({ ...formData, pricePerStory: e.target.value })}
+                        className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
+                        placeholder="2000"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
         )}
+
+        {/* Статистика профиля */}
+        {user.role === UserRole.BLOGGER && (
+          <Card className="mb-6">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Статистика блогера</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-telegram-primary">
+                    {(user as any).subscribersCount ? `${(user as any).subscribersCount}` : '0'}
+                  </div>
+                  <div className="text-sm text-telegram-textSecondary">Подписчики</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-telegram-accent">
+                    {(user as any).pricePerPost ? `${(user as any).pricePerPost}₽` : 'Не указано'}
+                  </div>
+                  <div className="text-sm text-telegram-textSecondary">За пост</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-telegram-secondary">
+                    {(user as any).pricePerStory ? `${(user as any).pricePerStory}₽` : 'Не указано'}
+                  </div>
+                  <div className="text-sm text-telegram-textSecondary">За сторис</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-yellow-500">
+                    ⭐ 5.0
+                  </div>
+                  <div className="text-sm text-telegram-textSecondary">Рейтинг</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Контакты и ссылки */}
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Контакты и ссылки</h3>
+            <div className="space-y-3">
+              {((user as any).phone || (user as any).website || (user as any).telegramLink || (user as any).instagramLink) ? (
+                <>
+                  {(user as any).phone && (
+                    <div className="flex items-center gap-3">
+                      <Phone className="w-4 h-4 text-telegram-textSecondary" />
+                      <span>{(user as any).phone}</span>
+                    </div>
+                  )}
+                  {(user as any).website && (
+                    <div className="flex items-center gap-3">
+                      <Globe className="w-4 h-4 text-telegram-textSecondary" />
+                      <a href={(user as any).website} target="_blank" rel="noopener noreferrer" 
+                         className="text-telegram-primary hover:underline">
+                        {(user as any).website}
+                      </a>
+                    </div>
+                  )}
+                  {(user as any).telegramLink && (
+                    <div className="flex items-center gap-3">
+                      <AtSign className="w-4 h-4 text-telegram-textSecondary" />
+                      <a href={(user as any).telegramLink} target="_blank" rel="noopener noreferrer"
+                         className="text-telegram-primary hover:underline">
+                        Telegram канал
+                      </a>
+                    </div>
+                  )}
+                  {(user as any).instagramLink && (
+                    <div className="flex items-center gap-3">
+                      <Globe className="w-4 h-4 text-telegram-textSecondary" />
+                      <a href={(user as any).instagramLink} target="_blank" rel="noopener noreferrer"
+                         className="text-telegram-primary hover:underline">
+                        Instagram
+                      </a>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-telegram-textSecondary">Контакты не указаны</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Информация о профиле */}
         <Card>
@@ -261,8 +466,15 @@ export default function ProfilePage() {
                 <span className="font-mono">{user.telegramId}</span>
               </div>
               <div className="flex justify-between">
+                <span className="text-telegram-textSecondary">Username:</span>
+                <span>@{user.username || 'Не указан'}</span>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-telegram-textSecondary">Роль:</span>
-                <span className="capitalize">{user.role || 'Не указана'}</span>
+                <span className="capitalize">
+                  {user.role === UserRole.BLOGGER ? 'Блогер' : 
+                   user.role === UserRole.ADVERTISER ? 'Рекламодатель' : 'Не указана'}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-telegram-textSecondary">Email:</span>
