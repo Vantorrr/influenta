@@ -1,19 +1,19 @@
 import { Controller, Get, UseGuards } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
-import { CurrentUser } from '../common/decorators/current-user.decorator'
-import { User } from '../users/entities/user.entity'
 import { StatsService } from './stats.service'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { CurrentUser } from '@/common/decorators/current-user.decorator'
+import { User } from '@/users/entities/user.entity'
 
 @ApiTags('Stats')
 @Controller('stats')
 export class StatsController {
-  constructor(private service: StatsService) {}
+  constructor(private readonly statsService: StatsService) {}
 
   @Get('dashboard')
   @UseGuards(JwtAuthGuard)
   async dashboard(@CurrentUser() user: User) {
-    return this.service.getDashboard(user.id)
+    return this.statsService.getDashboard(user.id)
   }
 }
 

@@ -1,21 +1,20 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThan } from 'typeorm'
-import { AnalyticsEvent } from '../analytics/analytics.entity'
+import { AnalyticsEvent } from '@/analytics/analytics.entity'
 
 @Injectable()
 export class StatsService {
   constructor(
     @InjectRepository(AnalyticsEvent)
-    private analyticsRepo: Repository<AnalyticsEvent>,
+    private readonly analyticsRepo: Repository<AnalyticsEvent>,
   ) {}
 
   async getDashboard(userId: string) {
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
 
-    // Простейшая агрегация по событиям за 7 дней
     const profileViews = await this.analyticsRepo.count({ where: { event: 'profile_view', targetUserId: userId, createdAt: MoreThan(since) } })
-    const activeResponses = 0 // TODO: связать с реальными откликами
+    const activeResponses = 0
     const earnings = 0
     const rating = 0
 
