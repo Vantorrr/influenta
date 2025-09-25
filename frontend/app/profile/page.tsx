@@ -57,15 +57,20 @@ export default function ProfilePage() {
     
     setIsSaving(true)
     try {
-      await authApi.updateProfile(formData)
-      // Обновляем данные пользователя в localStorage
+      const response = await authApi.updateProfile(formData)
+      console.log('Profile update response:', response)
+      
+      // Обновляем данные пользователя в localStorage и состоянии
       const updatedUser = { ...user, ...formData }
       localStorage.setItem('influenta_user', JSON.stringify(updatedUser))
+      
+      // Принудительно обновляем страницу чтобы useAuth подхватил изменения
+      window.location.reload()
+      
       setIsEditing(false)
-      // Можно добавить toast уведомление
     } catch (error) {
       console.error('Ошибка сохранения профиля:', error)
-      // Можно добавить toast с ошибкой
+      alert('Ошибка сохранения профиля. Попробуйте еще раз.')
     } finally {
       setIsSaving(false)
     }

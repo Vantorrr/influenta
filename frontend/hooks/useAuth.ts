@@ -133,6 +133,16 @@ export function useAuth() {
                 isSuperAdmin,
                 token: authData.token,
               })
+
+              // Если пользователь новый (нет дополнительных данных) - отправляем на онбординг
+              const isNewUser = (!authData.user.bio && !authData.user.email && authData.user.role === 'blogger')
+              if (isNewUser && typeof window !== 'undefined') {
+                console.log('🟢 New user detected, redirecting to onboarding')
+                setTimeout(() => {
+                  window.location.href = '/onboarding'
+                }, 1000)
+              }
+
               return true
             }
             return false

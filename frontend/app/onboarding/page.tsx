@@ -20,6 +20,8 @@ import {
   X
 } from 'lucide-react'
 import { CATEGORY_LABELS } from '@/lib/constants'
+import { authApi } from '@/lib/api'
+import { UserRole } from '@/types'
 
 // Branded minimal icons (no external deps)
 const TelegramIcon = ({ className = '' }: { className?: string }) => (
@@ -170,8 +172,60 @@ function OnboardingInner() {
 
     console.log('Onboarding complete (sanitized):', payload)
     
-    // Переход на главную страницу приложения
-    router.push('/dashboard')
+    try {
+      // Сохраняем данные профиля
+      const profileData: any = {
+        role: data.role === 'blogger' ? UserRole.BLOGGER : UserRole.ADVERTISER,
+        bio: data.bio || '',
+      }
+
+      // Добавляем данные для блогеров
+      if (data.role === 'blogger') {
+        if (data.subscribersCount) {
+          profileData.subscribersCount = data.subscribersCount.replace(/\./g, '')
+        }
+        if (data.pricePerPost) {
+          profileData.pricePerPost = data.pricePerPost.replace(/\./g, '')
+        }
+        if (data.pricePerStory) {
+          profileData.pricePerStory = data.pricePerStory.replace(/\./g, '')
+        }
+        if (data.categories) {
+          profileData.categories = data.categories.join(',')
+        }
+      }
+
+      // Добавляем данные для рекламодателей
+      if (data.role === 'advertiser') {
+        if (data.companyName) {
+          profileData.companyName = data.companyName
+        }
+        if (data.description) {
+          profileData.description = data.description
+        }
+        if (data.website) {
+          profileData.website = data.website
+        }
+      }
+
+      console.log('Saving profile data:', profileData)
+      
+      // Сохраняем через API
+      await authApi.updateProfile(profileData)
+
+      // Обновляем локальные данные
+      const currentUser = JSON.parse(localStorage.getItem('influenta_user') || '{}')
+      const updatedUser = { ...currentUser, ...profileData }
+      localStorage.setItem('influenta_user', JSON.stringify(updatedUser))
+
+      console.log('Profile saved successfully')
+      
+      // Переход на главную страницу приложения
+      router.push('/dashboard')
+    } catch (error) {
+      console.error('Error saving profile:', error)
+      alert('Ошибка сохранения профиля. Попробуйте еще раз.')
+    }
   }
 
   const updateData = (field: keyof StepData, value: any) => {
