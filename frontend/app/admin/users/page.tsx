@@ -133,13 +133,13 @@ export default function AdminUsersPage() {
     },
   ]
 
-  const currentUsers = users.length > 0 ? users : fallbackUsers
-  const filteredUsers = currentUsers.filter(user => {
+  const currentUsers = Array.isArray(users) && users.length > 0 ? users : []
+  const filteredUsers = currentUsers.filter((user: any) => {
     const matchesSearch = 
-      user.firstName.toLowerCase().includes(search.toLowerCase()) ||
-      user.lastName.toLowerCase().includes(search.toLowerCase()) ||
-      user.username.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase())
+      (user.firstName || '').toLowerCase().includes(search.toLowerCase()) ||
+      (user.lastName || '').toLowerCase().includes(search.toLowerCase()) ||
+      (user.username || '').toLowerCase().includes(search.toLowerCase()) ||
+      (user.email || '').toLowerCase().includes(search.toLowerCase())
     
     const matchesRole = filterRole === 'all' || user.role === filterRole
     
@@ -148,10 +148,10 @@ export default function AdminUsersPage() {
 
   const stats = {
     total: currentUsers.length,
-    active: currentUsers.filter(u => u.isActive).length,
-    verified: currentUsers.filter(u => u.isVerified).length,
-    bloggers: currentUsers.filter(u => u.role === 'blogger').length,
-    advertisers: currentUsers.filter(u => u.role === 'advertiser').length,
+    active: currentUsers.filter((u: any) => !!u.isActive).length,
+    verified: currentUsers.filter((u: any) => !!u.isVerified).length,
+    bloggers: currentUsers.filter((u: any) => u.role === 'blogger').length,
+    advertisers: currentUsers.filter((u: any) => u.role === 'advertiser').length,
   }
 
   if (isLoading) {
@@ -387,3 +387,4 @@ export default function AdminUsersPage() {
     </div>
   )
 }
+

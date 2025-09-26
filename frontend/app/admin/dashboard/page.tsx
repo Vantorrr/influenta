@@ -130,8 +130,34 @@ export default function AdminDashboardPage() {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` }
           })
         ])
-        if (ra.ok) setRecentActivity(await ra.json())
-        if (tb.ok) setTopBloggers(await tb.json())
+        if (ra.ok) {
+          const data = await ra.json()
+          const normalized = Array.isArray(data)
+            ? data.map((i: any) => ({
+                id: i.id,
+                type: i.type,
+                title: i.title || '',
+                time: i.time ? new Date(i.time) : new Date(),
+                status: i.status,
+                amount: i.amount,
+              }))
+            : []
+          setRecentActivity(normalized)
+        }
+        if (tb.ok) {
+          const data = await tb.json()
+          const normalized = Array.isArray(data)
+            ? data.map((b: any) => ({
+                id: b.id,
+                name: b.name || '',
+                username: b.username || '',
+                subscribers: Number(b.subscribers || 0),
+                earnings: Number(b.earnings || 0),
+                campaigns: Number(b.campaigns || 0),
+              }))
+            : []
+          setTopBloggers(normalized)
+        }
       } catch (e) {
         // no-op
       }
