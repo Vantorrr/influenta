@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { 
   Search as SearchIcon, 
@@ -33,85 +33,44 @@ import {
   ListingStatus,
   PostFormat
 } from '@/types'
+import { listingsApi } from '@/lib/api'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function AdminListingsPage() {
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<ListingStatus | 'all'>('all')
+  const [listings, setListings] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const { user } = useAuth()
 
-  // Mock данные
-  const listings = [
-    {
-      id: '1',
-      title: 'Реклама мобильного приложения для медитации',
-      advertiser: {
-        companyName: 'MindfulTech',
-        isVerified: true,
-      },
-      targetCategories: [BloggerCategory.LIFESTYLE, BloggerCategory.FITNESS],
-      budget: 150000,
-      format: PostFormat.POST_AND_STORY,
-      deadline: new Date('2024-12-31'),
-      status: ListingStatus.ACTIVE,
-      viewsCount: 245,
-      responsesCount: 12,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
-    },
-    {
-      id: '2',
-      title: 'Продвижение онлайн-курса по программированию',
-      advertiser: {
-        companyName: 'CodeAcademy',
-        isVerified: true,
-      },
-      targetCategories: [BloggerCategory.TECH, BloggerCategory.EDUCATION],
-      budget: 200000,
-      format: PostFormat.POST,
-      deadline: new Date('2024-12-15'),
-      status: ListingStatus.ACTIVE,
-      viewsCount: 189,
-      responsesCount: 8,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
-    },
-    {
-      id: '3',
-      title: 'Реклама косметического бренда',
-      advertiser: {
-        companyName: 'NaturalBeauty',
-        isVerified: false,
-      },
-      targetCategories: [BloggerCategory.BEAUTY, BloggerCategory.LIFESTYLE],
-      budget: 80000,
-      format: PostFormat.ANY,
-      status: ListingStatus.PAUSED,
-      viewsCount: 432,
-      responsesCount: 24,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10),
-    },
-    {
-      id: '4',
-      title: 'Промо криптовалютной биржи',
-      advertiser: {
-        companyName: 'CryptoExchange',
-        isVerified: false,
-      },
-      targetCategories: [BloggerCategory.BUSINESS, BloggerCategory.TECH],
-      budget: 500000,
-      format: PostFormat.POST,
-      status: ListingStatus.CLOSED,
-      viewsCount: 567,
-      responsesCount: 45,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30),
-      closedReason: 'Нарушение правил платформы',
-    },
-  ]
+  const loadListings = async () => {
+    try {
+      const data = await listingsApi.search(
+        { status: filterStatus === 'all' ? undefined : filterStatus, search },
+        1,
+        50
+      )
+      setListings(data.data || [])
+    } catch (e: any) {
+      setError(e?.message || 'Ошибка загрузки объявлений')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!user) return
+    setIsLoading(true)
+    loadListings()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
 
   const filteredListings = listings.filter(listing => {
     const matchesSearch = 
-      listing.title.toLowerCase().includes(search.toLowerCase()) ||
-      listing.advertiser.companyName.toLowerCase().includes(search.toLowerCase())
-    
+      (listing.title || '').toLowerCase().includes(search.toLowerCase()) ||
+      (listing.advertiser?.companyName || listing.advertiser?.user?.firstName || '').toLowerCase().includes(search.toLowerCase())
     const matchesStatus = filterStatus === 'all' || listing.status === filterStatus
-    
     return matchesSearch && matchesStatus
   })
 
@@ -120,8 +79,8 @@ export default function AdminListingsPage() {
     active: listings.filter(l => l.status === ListingStatus.ACTIVE).length,
     paused: listings.filter(l => l.status === ListingStatus.PAUSED).length,
     closed: listings.filter(l => l.status === ListingStatus.CLOSED).length,
-    totalBudget: listings.reduce((sum, l) => sum + l.budget, 0),
-    totalResponses: listings.reduce((sum, l) => sum + l.responsesCount, 0),
+    totalBudget: listings.reduce((sum, l) => sum + (l.budget || 0), 0),
+    totalResponses: listings.reduce((sum, l) => sum + (l.responsesCount || 0), 0),
   }
 
   const statusTabs = [
@@ -130,6 +89,28 @@ export default function AdminListingsPage() {
     { value: ListingStatus.PAUSED, label: 'На паузе', count: stats.paused },
     { value: ListingStatus.CLOSED, label: 'Закрытые', count: stats.closed },
   ]
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-telegram-bg flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-telegram-primary mx-auto mb-4"></div>
+          <p className="text-telegram-textSecondary">Загрузка объявлений...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-telegram-bg flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 mb-2">Ошибка</div>
+          <p className="text-telegram-textSecondary">{error}</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -268,8 +249,8 @@ export default function AdminListingsPage() {
                     </h3>
                     <div className="flex items-center gap-2 text-sm text-telegram-textSecondary">
                       <Building className="w-4 h-4" />
-                      <span>{listing.advertiser.companyName}</span>
-                      {listing.advertiser.isVerified && (
+                      <span>{listing.advertiser?.companyName || listing.advertiser?.user?.firstName || '—'}</span>
+                      {listing.advertiser?.isVerified && (
                         <Badge variant="primary" className="text-xs">✓</Badge>
                       )}
                     </div>
@@ -287,13 +268,13 @@ export default function AdminListingsPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {listing.targetCategories.map(category => (
+                  {(listing.targetCategories || []).map((category: BloggerCategory) => (
                     <Badge key={category} variant="default">
                       {getCategoryLabel(category)}
                     </Badge>
                   ))}
                   <Badge variant="default">
-                    {getPostFormatLabel(listing.format)}
+                    {getPostFormatLabel(listing.format || PostFormat.ANY)}
                   </Badge>
                 </div>
 
@@ -306,14 +287,14 @@ export default function AdminListingsPage() {
                     <p className="text-telegram-textSecondary">Просмотры</p>
                     <p className="font-medium flex items-center gap-1">
                       <Eye className="w-4 h-4" />
-                      {listing.viewsCount}
+                      {listing.viewsCount || 0}
                     </p>
                   </div>
                   <div>
                     <p className="text-telegram-textSecondary">Отклики</p>
                     <p className="font-medium flex items-center gap-1">
                       <MessageSquare className="w-4 h-4" />
-                      {listing.responsesCount}
+                      {listing.responsesCount || 0}
                     </p>
                   </div>
                   {listing.deadline && (
