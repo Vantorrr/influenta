@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { 
   Users, 
@@ -22,42 +23,96 @@ import { useAuth } from '@/hooks/useAuth'
 
 export default function AdminDashboardPage() {
   const { user, isAdmin, isSuperAdmin } = useAuth()
-  // Mock данные для демонстрации
-  const stats = [
+  const [stats, setStats] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    fetchAdminStats()
+  }, [])
+
+  const fetchAdminStats = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/stats`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setStats(data)
+      }
+    } catch (error) {
+      console.error('Error fetching admin stats:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Преобразуем данные API в формат для отображения
+  const currentStats = stats ? [
     {
       title: 'Всего пользователей',
-      value: 15243,
-      change: 12.5,
+      value: stats.totalUsers || 0,
+      change: 0, // TODO: Calculate change
       icon: Users,
       color: 'from-blue-500 to-cyan-500',
     },
     {
-      title: 'Активных блогеров',
-      value: 8921,
-      change: 8.2,
+      title: 'Верифицированных',
+      value: stats.verifiedUsers || 0,
+      change: 0, // TODO: Calculate change
       icon: UserCheck,
       color: 'from-purple-500 to-pink-500',
     },
     {
-      title: 'Рекламодателей',
-      value: 1834,
-      change: 15.3,
-      icon: Briefcase,
-      color: 'from-green-500 to-emerald-500',
-    },
-    {
       title: 'Активных объявлений',
-      value: 429,
-      change: -3.2,
+      value: stats.activeListings || 0,
+      change: 0, // TODO: Calculate change
       icon: FileText,
       color: 'from-orange-500 to-red-500',
     },
+    {
+      title: 'Комиссия платформы',
+      value: stats.platformCommission || 0,
+      change: 0, // TODO: Calculate change
+      icon: DollarSign,
+      color: 'from-green-500 to-emerald-500',
+    },
+  ] : [
+    {
+      title: 'Всего пользователей',
+      value: 0,
+      change: 0,
+      icon: Users,
+      color: 'from-blue-500 to-cyan-500',
+    },
+    {
+      title: 'Верифицированных',
+      value: 0,
+      change: 0,
+      icon: UserCheck,
+      color: 'from-purple-500 to-pink-500',
+    },
+    {
+      title: 'Активных объявлений',
+      value: 0,
+      change: 0,
+      icon: FileText,
+      color: 'from-orange-500 to-red-500',
+    },
+    {
+      title: 'Комиссия платформы',
+      value: 0,
+      change: 0,
+      icon: DollarSign,
+      color: 'from-green-500 to-emerald-500',
+    },
   ]
-
   const revenueStats = {
-    total: 12500000,
-    commission: 1250000,
-    growth: 23.5,
+    total: stats?.totalRevenue || 0,
+    commission: stats?.platformCommission || 0,
+    growth: 23.5, // TODO: Calculate real growth
   }
 
   const recentActivity = [
@@ -119,6 +174,17 @@ export default function AdminDashboardPage() {
     },
   ]
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-telegram-bg flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-telegram-primary mx-auto mb-4"></div>
+          <p className="text-telegram-textSecondary">Загрузка статистики...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Admin Welcome Card */}
@@ -165,7 +231,7 @@ export default function AdminDashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => (
+        {currentStats.map((stat, index) => (
           <motion.div
             key={stat.title}
             initial={{ opacity: 0, y: 20 }}

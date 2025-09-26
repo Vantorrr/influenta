@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { 
   Search as SearchIcon, 
@@ -25,9 +25,34 @@ import { ADMIN_CONFIG } from '@/lib/constants'
 export default function AdminUsersPage() {
   const [search, setSearch] = useState('')
   const [filterRole, setFilterRole] = useState<'all' | 'blogger' | 'advertiser'>('all')
+  const [users, setUsers] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Mock данные
-  const users = [
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bloggers/debug/all-users`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setUsers(data)
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Fallback данные
+  const fallbackUsers = [
     {
       id: '0',
       firstName: 'Супер',
@@ -108,7 +133,8 @@ export default function AdminUsersPage() {
     },
   ]
 
-  const filteredUsers = users.filter(user => {
+  const currentUsers = users.length > 0 ? users : fallbackUsers
+  const filteredUsers = currentUsers.filter(user => {
     const matchesSearch = 
       user.firstName.toLowerCase().includes(search.toLowerCase()) ||
       user.lastName.toLowerCase().includes(search.toLowerCase()) ||
@@ -121,11 +147,22 @@ export default function AdminUsersPage() {
   })
 
   const stats = {
-    total: users.length,
-    active: users.filter(u => u.isActive).length,
-    verified: users.filter(u => u.isVerified).length,
-    bloggers: users.filter(u => u.role === 'blogger').length,
-    advertisers: users.filter(u => u.role === 'advertiser').length,
+    total: currentUsers.length,
+    active: currentUsers.filter(u => u.isActive).length,
+    verified: currentUsers.filter(u => u.isVerified).length,
+    bloggers: currentUsers.filter(u => u.role === 'blogger').length,
+    advertisers: currentUsers.filter(u => u.role === 'advertiser').length,
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-telegram-bg flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-telegram-primary mx-auto mb-4"></div>
+          <p className="text-telegram-textSecondary">Загрузка пользователей...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
