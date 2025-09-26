@@ -189,4 +189,12 @@ export class AuthService {
     await this.usersRepository.save(user);
     return this.getProfile(userId);
   }
+
+  async verifyUser(userId: string) {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) throw new Error('User not found');
+    user.isVerified = true;
+    await this.usersRepository.save(user);
+    return this.getProfile(userId);
+  }
 }

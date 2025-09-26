@@ -75,5 +75,12 @@ export class AuthController {
       initHeaderLength: initHeader?.length || 0,
     }
   }
+
+  @Patch('verify')
+  @ApiOperation({ summary: 'Mark current user as verified (MVP)' })
+  @UseGuards(JwtAuthGuard)
+  async verifyMe(@CurrentUser() user: User) {
+    return this.authService.verifyUser(user.id)
+  }
 }
 
