@@ -57,11 +57,18 @@ export class AdminController {
     return this.adminService.getRevenueStats();
   }
 
+  @Get('advertisers')
+  @ApiOperation({ summary: 'Get advertisers list for admin' })
+  async getAdvertisers() {
+    return this.adminService.getAdvertisersList();
+  }
+
   @Get('system-info')
   @ApiOperation({ summary: 'Get system information' })
   async getSystemInfo() {
     return this.adminService.getSystemInfo();
   }
 }
+
 
 

@@ -163,6 +163,37 @@ export class AdminService {
     return mockStats;
   }
 
+  async getAdvertisersList() {
+    const [advertisers, listingCounts] = await Promise.all([
+      this.advertisersRepository.find({ relations: ['user'] }),
+      this.listingsRepository
+        .createQueryBuilder('listing')
+        .select('listing.advertiserId', 'advertiserId')
+        .addSelect('COUNT(*)', 'count')
+        .groupBy('listing.advertiserId')
+        .getRawMany(),
+    ]);
+
+    const advertiserIdToActiveListings = new Map<string, number>();
+    for (const row of listingCounts) {
+      advertiserIdToActiveListings.set(String(row.advertiserId), parseInt(row.count, 10));
+    }
+
+    return advertisers.map((a) => ({
+      id: a.id,
+      companyName: a.companyName,
+      website: a.website,
+      isVerified: a.isVerified,
+      rating: Number(a.rating ?? 0),
+      completedCampaigns: Number(a.completedCampaigns ?? 0),
+      totalSpent: Number(a.totalSpent ?? 0),
+      activeListings: advertiserIdToActiveListings.get(String(a.id)) ?? 0,
+      createdAt: a.createdAt,
+      lastActivity: a.user?.lastLoginAt ?? a.updatedAt,
+      email: a.user?.email ?? null,
+    }));
+  }
+
   async getSystemInfo() {
     const dbSize = await this.usersRepository.query(
       "SELECT pg_database_size(current_database()) as size"
@@ -179,4 +210,5 @@ export class AdminService {
     };
   }
 }
+
 

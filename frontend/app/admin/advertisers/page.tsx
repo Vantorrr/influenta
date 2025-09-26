@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { 
   Search as SearchIcon, 
@@ -20,62 +20,63 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatPrice, formatDate } from '@/lib/utils'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function AdminAdvertisersPage() {
   const [search, setSearch] = useState('')
+  const [advertisers, setAdvertisers] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const { user } = useAuth()
 
-  // Mock данные
-  const advertisers = [
-    {
-      id: '1',
-      companyName: 'TechBrand',
-      email: 'contact@techbrand.com',
-      website: 'https://techbrand.com',
-      isVerified: true,
-      isActive: true,
-      rating: 4.7,
-      completedCampaigns: 15,
-      totalSpent: 2500000,
-      activeListings: 3,
-      createdAt: new Date('2024-01-15'),
-      lastActivity: new Date(Date.now() - 1000 * 60 * 60 * 2),
-    },
-    {
-      id: '2',
-      companyName: 'BeautyWorld',
-      email: 'info@beautyworld.ru',
-      website: 'https://beautyworld.ru',
-      isVerified: true,
-      isActive: true,
-      rating: 4.9,
-      completedCampaigns: 23,
-      totalSpent: 3800000,
-      activeListings: 5,
-      createdAt: new Date('2023-11-20'),
-      lastActivity: new Date(Date.now() - 1000 * 60 * 60 * 24),
-    },
-    {
-      id: '3',
-      companyName: 'FoodDelivery Pro',
-      email: 'partners@fooddelivery.com',
-      website: 'https://fooddelivery.com',
-      isVerified: false,
-      isActive: true,
-      rating: 4.2,
-      completedCampaigns: 8,
-      totalSpent: 980000,
-      activeListings: 1,
-      createdAt: new Date('2024-03-10'),
-      lastActivity: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
-    },
-  ]
+  useEffect(() => {
+    if (!user) return
+    ;(async () => {
+      try {
+        const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/advertisers`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`
+          }
+        })
+        if (!resp.ok) throw new Error('Failed to load advertisers')
+        const data = await resp.json()
+        setAdvertisers(Array.isArray(data) ? data : [])
+      } catch (e: any) {
+        setError(e?.message || 'Ошибка загрузки рекламодателей')
+      } finally {
+        setIsLoading(false)
+      }
+    })()
+  }, [user])
 
   const stats = {
     total: advertisers.length,
     verified: advertisers.filter(a => a.isVerified).length,
-    active: advertisers.filter(a => a.isActive).length,
-    totalSpent: advertisers.reduce((sum, a) => sum + a.totalSpent, 0),
-    activeListings: advertisers.reduce((sum, a) => sum + a.activeListings, 0),
+    active: advertisers.length,
+    totalSpent: advertisers.reduce((sum, a) => sum + (a.totalSpent || 0), 0),
+    activeListings: advertisers.reduce((sum, a) => sum + (a.activeListings || 0), 0),
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-telegram-bg flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-telegram-primary mx-auto mb-4"></div>
+          <p className="text-telegram-textSecondary">Загрузка рекламодателей...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-telegram-bg flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 mb-2">Ошибка</div>
+          <p className="text-telegram-textSecondary">{error}</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -169,7 +170,9 @@ export default function AdminAdvertisersPage() {
 
       {/* Advertisers List */}
       <div className="space-y-4">
-        {advertisers.map((advertiser, index) => (
+        {advertisers
+          .filter(a => (a.companyName || '').toLowerCase().includes(search.toLowerCase()))
+          .map((advertiser, index) => (
           <motion.div
             key={advertiser.id}
             initial={{ opacity: 0, y: 20 }}
@@ -210,16 +213,10 @@ export default function AdminAdvertisersPage() {
                       <Edit className="w-4 h-4 mr-1" />
                       Редактировать
                     </Button>
-                    {advertiser.isActive ? (
-                      <Button variant="danger" size="sm">
-                        <Ban className="w-4 h-4 mr-1" />
-                        Заблокировать
-                      </Button>
-                    ) : (
-                      <Button variant="success" size="sm">
-                        Разблокировать
-                      </Button>
-                    )}
+                    <Button variant="secondary" size="sm">
+                      <BarChart className="w-4 h-4 mr-1" />
+                      Статистика
+                    </Button>
                     {!advertiser.isVerified && (
                       <Button variant="primary" size="sm">
                         <Shield className="w-4 h-4 mr-1" />
