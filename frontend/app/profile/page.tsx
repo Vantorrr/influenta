@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Edit, Save, X, User, Mail, AtSign, FileText, Phone, Globe, Users2, DollarSign } from 'lucide-react'
+import { Edit, Save, X, User, Mail, AtSign, FileText, Phone, Globe, Users2, DollarSign, Shield, CheckCircle, AlertCircle, Clock } from 'lucide-react'
 import { Layout } from '@/components/layout/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -221,9 +221,16 @@ export default function ProfilePage() {
                   size="xl"
                 />
                 <div>
-                  <h1 className="text-2xl font-bold">
-                    {user.firstName} {user.lastName}
-                  </h1>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-2xl font-bold">
+                      {user.firstName} {user.lastName}
+                    </h1>
+                    {user.isVerified && (
+                      <div className="bg-green-500 rounded-full p-1">
+                        <CheckCircle className="w-5 h-5 text-white" fill="currentColor" />
+                      </div>
+                    )}
+                  </div>
                   <p className="text-telegram-textSecondary">
                     @{user.username || 'username'}
                   </p>
@@ -588,26 +595,15 @@ export default function ProfilePage() {
               <div className="flex justify-between items-center">
                 <span className="text-telegram-textSecondary">Статус:</span>
                 <div className="flex items-center gap-2">
-                  <span className={user.isVerified ? 'text-green-500' : 'text-yellow-500'}>
-                    {user.isVerified ? 'Верифицирован' : 'Не верифицирован'}
-                  </span>
-                  {!user.isVerified && (!(user as any).verificationRequested || (user as any).verificationData?.rejectionReason) && (
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={handleRequestVerification}
-                    >
-                      {(user as any).verificationData?.rejectionReason ? 'Подать заново' : 'Запросить верификацию'}
-                    </Button>
-                  )}
-                  {(user as any).verificationRequested && !user.isVerified && (
-                    <span className="text-xs text-telegram-textSecondary">
-                      (заявка отправлена)
-                    </span>
-                  )}
-                  {(user as any).verificationData?.rejectionReason && (
-                    <div className="text-xs text-red-500 mt-1">
-                      Отклонено: {(user as any).verificationData.rejectionReason}
+                  {user.isVerified ? (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <span className="text-green-500 font-medium">Верифицирован</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-yellow-500" />
+                      <span className="text-yellow-500">Не верифицирован</span>
                     </div>
                   )}
                 </div>
@@ -615,6 +611,85 @@ export default function ProfilePage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Блок верификации */}
+        {!user.isVerified && (
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                  (user as any).verificationRequested ? 'bg-blue-100' : 
+                  (user as any).verificationData?.rejectionReason ? 'bg-red-100' : 'bg-yellow-100'
+                }`}>
+                  {(user as any).verificationRequested ? (
+                    <Clock className="w-6 h-6 text-blue-600" />
+                  ) : (user as any).verificationData?.rejectionReason ? (
+                    <AlertCircle className="w-6 h-6 text-red-600" />
+                  ) : (
+                    <Shield className="w-6 h-6 text-yellow-600" />
+                  )}
+                </div>
+                
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-2">
+                    {(user as any).verificationRequested ? 'Заявка на рассмотрении' :
+                     (user as any).verificationData?.rejectionReason ? 'Заявка отклонена' : 
+                     'Пройдите верификацию'}
+                  </h3>
+                  
+                  <p className="text-telegram-textSecondary mb-4">
+                    {(user as any).verificationRequested ? 
+                      'Администратор рассматривает вашу заявку. Обычно это занимает до 24 часов.' :
+                     (user as any).verificationData?.rejectionReason ? (
+                      <>
+                        <span className="text-red-600 font-medium">Причина отказа:</span> {(user as any).verificationData.rejectionReason}
+                      </>
+                     ) : 
+                      'Подтвердите владение аккаунтами и каналами для получения галочки верификации.'}
+                  </p>
+                  
+                  {!(user as any).verificationRequested && (
+                    <Button 
+                      variant="primary"
+                      onClick={handleRequestVerification}
+                    >
+                      <Shield className="w-4 h-4 mr-2" />
+                      {(user as any).verificationData?.rejectionReason ? 'Подать заявку заново' : 'Пройти верификацию'}
+                    </Button>
+                  )}
+                </div>
+              </div>
+              
+              {/* Преимущества верификации */}
+              <div className="mt-6 pt-6 border-t border-telegram-border">
+                <h4 className="font-medium mb-3">Преимущества верификации:</h4>
+                <div className="space-y-2">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                    <div>
+                      <div className="font-medium">Доверие рекламодателей</div>
+                      <div className="text-sm text-telegram-textSecondary">Верифицированные блогеры получают больше заказов</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                    <div>
+                      <div className="font-medium">Приоритет в поиске</div>
+                      <div className="text-sm text-telegram-textSecondary">Ваш профиль будет выше в результатах</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                    <div>
+                      <div className="font-medium">Защита от мошенников</div>
+                      <div className="text-sm text-telegram-textSecondary">Подтверждение подлинности аккаунта</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Модальное окно верификации */}

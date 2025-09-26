@@ -9,7 +9,8 @@ import {
   Eye, 
   Star,
   ChevronRight,
-  X
+  X,
+  CheckCircle
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -226,12 +227,12 @@ export default function BloggersPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <div>
-                            <h3 className="font-semibold flex items-center gap-2">
+                            <h3 className="font-semibold flex items-center gap-1">
                               {blogger.user?.firstName} {blogger.user?.lastName}
                               {blogger.isVerified && (
-                                <Badge variant="primary" className="text-xs">
-                                  ✓
-                                </Badge>
+                                <div className="bg-green-500 rounded-full p-0.5 inline-flex">
+                                  <CheckCircle className="w-4 h-4 text-white" fill="currentColor" />
+                                </div>
                               )}
                             </h3>
                             <p className="text-sm text-telegram-textSecondary">
