@@ -70,8 +70,35 @@ export class AdminService {
     }));
   }
 
+  async getVerificationRequests() {
+    const requests = await this.usersRepository.find({
+      where: {
+        verificationRequested: true,
+        isVerified: false
+      },
+      order: {
+        verificationRequestedAt: 'ASC'
+      }
+    });
+
+    return requests.map(user => ({
+      id: user.id,
+      telegramId: user.telegramId,
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      requestedAt: user.verificationRequestedAt,
+      subscribersCount: (user as any).subscribersCount,
+      bio: user.bio
+    }));
+  }
+
   async verifyUser(userId: string) {
-    await this.usersRepository.update(userId, { isVerified: true });
+    await this.usersRepository.update(userId, { 
+      isVerified: true,
+      verificationRequested: false 
+    });
     return { success: true, message: 'User verified successfully' };
   }
 

@@ -116,24 +116,53 @@ export default function ProfilePage() {
     }
   }
 
-  const handleCancel = () => {
-    setIsEditing(false)
-    setFormData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      bio: '',
-      role: UserRole.BLOGGER,
-      phone: '',
-      website: '',
-      telegramLink: '',
-      instagramLink: '',
-      subscribersCount: '',
-      pricePerPost: '',
-      pricePerStory: '',
-      categories: []
-    })
-  }
+      const handleCancel = () => {
+        setIsEditing(false)
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          bio: '',
+          role: UserRole.BLOGGER,
+          phone: '',
+          website: '',
+          telegramLink: '',
+          instagramLink: '',
+          subscribersCount: '',
+          pricePerPost: '',
+          pricePerStory: '',
+          categories: []
+        })
+      }
+
+      const handleRequestVerification = async () => {
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/request-verification`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`,
+              'Content-Type': 'application/json'
+            }
+          })
+          
+          const data = await response.json()
+          
+          if (response.ok) {
+            alert(data.message)
+            // Обновляем профиль чтобы показать что заявка отправлена
+            const profileResponse = await authApi.getCurrentUser()
+            if (profileResponse?.user) {
+              localStorage.setItem('influenta_user', JSON.stringify(profileResponse.user))
+              window.location.reload()
+            }
+          } else {
+            alert(data.message || 'Ошибка при отправке заявки')
+          }
+        } catch (error) {
+          console.error('Error requesting verification:', error)
+          alert('Ошибка при отправке заявки на верификацию')
+        }
+      }
 
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">
@@ -544,11 +573,27 @@ export default function ProfilePage() {
                 <span className="text-telegram-textSecondary">Email:</span>
                 <span>{user.email || 'Не указан'}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-telegram-textSecondary">Статус:</span>
-                <span className={user.isVerified ? 'text-green-500' : 'text-yellow-500'}>
-                  {user.isVerified ? 'Верифицирован' : 'Не верифицирован'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={user.isVerified ? 'text-green-500' : 'text-yellow-500'}>
+                    {user.isVerified ? 'Верифицирован' : 'Не верифицирован'}
+                  </span>
+                  {!user.isVerified && !(user as any).verificationRequested && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={handleRequestVerification}
+                    >
+                      Запросить верификацию
+                    </Button>
+                  )}
+                  {(user as any).verificationRequested && !user.isVerified && (
+                    <span className="text-xs text-telegram-textSecondary">
+                      (заявка отправлена)
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>

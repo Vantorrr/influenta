@@ -76,11 +76,11 @@ export class AuthController {
     }
   }
 
-  @Patch('verify')
-  @ApiOperation({ summary: 'Mark current user as verified (MVP)' })
+  @Post('request-verification')
+  @ApiOperation({ summary: 'Request verification from admins' })
   @UseGuards(JwtAuthGuard)
-  async verifyMe(@CurrentUser() user: User) {
-    return this.authService.verifyUser(user.id)
+  async requestVerification(@CurrentUser() user: User) {
+    return this.authService.requestVerification(user.id)
   }
 }
 

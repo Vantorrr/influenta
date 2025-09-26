@@ -144,7 +144,6 @@ export class AuthService {
         username: user.username || '',
         photoUrl: user.photoUrl || '',
         isVerified: user.isVerified,
-            onboardingCompleted: user.onboardingCompleted,
         email: user.email || null,
         languageCode: user.languageCode || null,
         bio: user.bio || '',
@@ -159,6 +158,9 @@ export class AuthService {
         categories: user.categories || null,
         companyName: user.companyName || null,
         description: user.description || null,
+        onboardingCompleted: user.onboardingCompleted,
+        verificationRequested: user.verificationRequested,
+        verificationRequestedAt: user.verificationRequestedAt,
       },
     };
   }
@@ -190,11 +192,25 @@ export class AuthService {
     return this.getProfile(userId);
   }
 
-  async verifyUser(userId: string) {
+  async requestVerification(userId: string) {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) throw new Error('User not found');
-    user.isVerified = true;
+    
+    if (user.isVerified) {
+      throw new BadRequestException('Пользователь уже верифицирован');
+    }
+    
+    if (user.verificationRequested) {
+      throw new BadRequestException('Заявка на верификацию уже отправлена');
+    }
+    
+    user.verificationRequested = true;
+    user.verificationRequestedAt = new Date();
     await this.usersRepository.save(user);
-    return this.getProfile(userId);
+    
+    return {
+      success: true,
+      message: 'Заявка на верификацию отправлена. Администратор рассмотрит её в ближайшее время.'
+    };
   }
 }

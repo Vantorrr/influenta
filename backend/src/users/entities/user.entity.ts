@@ -91,6 +91,12 @@ export class User extends BaseEntity {
   @Column({ default: false })
   onboardingCompleted: boolean;
 
+  @Column({ default: false })
+  verificationRequested: boolean;
+
+  @Column({ nullable: true })
+  verificationRequestedAt?: Date;
+
   @Column({ nullable: true })
   lastLoginAt?: Date;
 

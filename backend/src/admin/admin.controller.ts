@@ -21,7 +21,13 @@ export class AdminController {
     return this.adminService.getAdminsList();
   }
 
-  @Get('users/:id/verify')
+  @Get('verification-requests')
+  @ApiOperation({ summary: 'Get users awaiting verification' })
+  async getVerificationRequests() {
+    return this.adminService.getVerificationRequests();
+  }
+
+  @Patch('users/:id/verify')
   @ApiOperation({ summary: 'Verify a user' })
   async verifyUser(@Param('id') id: string) {
     return this.adminService.verifyUser(id);
