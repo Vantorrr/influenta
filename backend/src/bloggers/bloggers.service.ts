@@ -18,8 +18,7 @@ export class BloggersService {
 
     const query = this.usersRepository
       .createQueryBuilder('user')
-      .where('user.role = :role', { role: UserRole.BLOGGER })
-      .andWhere('user.isActive = :isActive', { isActive: true });
+      .where('user.isActive = :isActive', { isActive: true });
 
     // Поиск по имени или username
     if (search) {
@@ -40,6 +39,12 @@ export class BloggersService {
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
+
+    console.log('🔍 Bloggers search:', { 
+      total, 
+      found: data.length, 
+      users: data.map(u => ({ id: u.id, firstName: u.firstName, role: u.role }))
+    });
 
     // Преобразуем пользователей в блогеров с реальными данными
     const bloggers = data.map(user => ({
@@ -77,7 +82,7 @@ export class BloggersService {
 
   async findOne(id: string) {
     const user = await this.usersRepository.findOne({
-      where: { id, role: UserRole.BLOGGER, isActive: true },
+      where: { id, isActive: true },
     });
 
     if (!user) {
@@ -106,5 +111,14 @@ export class BloggersService {
       completedCampaigns: 0, // TODO: Track campaigns
       isVerified: user.isVerified,
     };
+  }
+
+  async getAllUsers() {
+    const users = await this.usersRepository.find({
+      select: ['id', 'firstName', 'lastName', 'username', 'role', 'isActive', 'isVerified', 'bio', 'subscribersCount', 'pricePerPost', 'pricePerStory', 'categories']
+    });
+    
+    console.log('🔍 All users:', users);
+    return users;
   }
 }
