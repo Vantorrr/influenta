@@ -100,7 +100,7 @@ export default function ProfilePage() {
       console.log('Fresh profile data:', profileResponse)
       
       // Правильная структура ответа API
-      const userData = profileResponse?.user || profileResponse
+      const userData = (profileResponse as any)?.user || profileResponse
       if (userData?.id) {
         // Обновляем localStorage с данными с сервера
         localStorage.setItem('influenta_user', JSON.stringify(userData))
@@ -163,8 +163,8 @@ export default function ProfilePage() {
             setShowVerificationModal(false)
             // Обновляем профиль чтобы показать что заявка отправлена
             const profileResponse = await authApi.getCurrentUser()
-            if (profileResponse?.user) {
-              localStorage.setItem('influenta_user', JSON.stringify(profileResponse.user))
+            if ((profileResponse as any)?.user) {
+              localStorage.setItem('influenta_user', JSON.stringify((profileResponse as any).user))
               window.location.reload()
             }
           } else {

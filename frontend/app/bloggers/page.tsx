@@ -75,66 +75,8 @@ export default function BloggersPage() {
     (filters.minSubscribers ? 1 : 0) +
     (filters.minPrice || filters.maxPrice ? 1 : 0)
 
-  // Mock data for now
-  const bloggers = data?.data || [
-    {
-      id: '1',
-      user: {
-        firstName: 'Анна',
-        lastName: 'Иванова',
-        username: '@anna_lifestyle',
-        photoUrl: null,
-      },
-      bio: 'Рассказываю о моде, красоте и путешествиях. Люблю находить необычные места и делиться впечатлениями.',
-      categories: [BloggerCategory.LIFESTYLE, BloggerCategory.FASHION],
-      subscribersCount: 125000,
-      averageViews: 45000,
-      engagementRate: 4.2,
-      pricePerPost: 25000,
-      pricePerStory: 10000,
-      rating: 4.8,
-      isVerified: true,
-      completedCampaigns: 24,
-    },
-    {
-      id: '2',
-      user: {
-        firstName: 'Михаил',
-        lastName: 'Петров',
-        username: '@tech_mike',
-        photoUrl: null,
-      },
-      bio: 'Tech-блогер, обозреваю гаджеты и рассказываю о новинках IT. Помогаю выбрать технику.',
-      categories: [BloggerCategory.TECH, BloggerCategory.EDUCATION],
-      subscribersCount: 87000,
-      averageViews: 32000,
-      engagementRate: 5.1,
-      pricePerPost: 20000,
-      pricePerStory: 8000,
-      rating: 4.9,
-      isVerified: true,
-      completedCampaigns: 18,
-    },
-    {
-      id: '3',
-      user: {
-        firstName: 'Елена',
-        lastName: 'Фитнес',
-        username: '@fit_elena',
-        photoUrl: null,
-      },
-      bio: 'Фитнес-тренер и нутрициолог. Делюсь тренировками, рецептами правильного питания.',
-      categories: [BloggerCategory.FITNESS, BloggerCategory.FOOD],
-      subscribersCount: 56000,
-      averageViews: 18000,
-      engagementRate: 6.3,
-      pricePerPost: 15000,
-      pricePerStory: 6000,
-      rating: 4.7,
-      isVerified: false,
-      completedCampaigns: 12,
-    },
-  ]
+  // Реальные данные из БД
+  const bloggers = data?.data || []
 
   return (
     <Layout>
