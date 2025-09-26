@@ -43,16 +43,11 @@ export default function AdminLayout({
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  // Не показываем layout на странице логина
-  if (pathname === '/admin/login') {
-    return children
-  }
-
   const handleLogout = () => {
     // Очищаем все админские cookie
     document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT'
     document.cookie = 'adminTelegramId=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT'
-    router.push('/admin/login')
+    router.push('/')
   }
 
   return (

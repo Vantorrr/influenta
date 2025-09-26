@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { 
   Search as SearchIcon, 
@@ -21,76 +21,57 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
 import { formatNumber, formatPrice, getCategoryLabel } from '@/lib/utils'
 import { BloggerCategory } from '@/types'
+import { bloggersApi } from '@/lib/api'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function AdminBloggersPage() {
   const [search, setSearch] = useState('')
+  const [bloggers, setBloggers] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const { user } = useAuth()
 
-  // Mock данные
-  const bloggers = [
-    {
-      id: '1',
-      user: {
-        firstName: 'Анна',
-        lastName: 'Иванова',
-        username: '@anna_lifestyle',
-        email: 'anna@example.com',
-      },
-      categories: [BloggerCategory.LIFESTYLE, BloggerCategory.FASHION],
-      subscribersCount: 125000,
-      averageViews: 45000,
-      engagementRate: 4.2,
-      pricePerPost: 25000,
-      rating: 4.8,
-      isVerified: true,
-      isPublic: true,
-      completedCampaigns: 24,
-      totalEarnings: 890000,
-    },
-    {
-      id: '2',
-      user: {
-        firstName: 'Михаил',
-        lastName: 'Петров',
-        username: '@tech_mike',
-        email: 'mike@example.com',
-      },
-      categories: [BloggerCategory.TECH, BloggerCategory.EDUCATION],
-      subscribersCount: 87000,
-      averageViews: 32000,
-      engagementRate: 5.1,
-      pricePerPost: 20000,
-      rating: 4.9,
-      isVerified: true,
-      isPublic: true,
-      completedCampaigns: 18,
-      totalEarnings: 650000,
-    },
-    {
-      id: '3',
-      user: {
-        firstName: 'Елена',
-        lastName: 'Фитнес',
-        username: '@fit_elena',
-        email: 'elena@example.com',
-      },
-      categories: [BloggerCategory.FITNESS, BloggerCategory.FOOD],
-      subscribersCount: 56000,
-      averageViews: 18000,
-      engagementRate: 6.3,
-      pricePerPost: 15000,
-      rating: 4.7,
-      isVerified: false,
-      isPublic: true,
-      completedCampaigns: 12,
-      totalEarnings: 420000,
-    },
-  ]
+  useEffect(() => {
+    if (!user) return
+    ;(async () => {
+      try {
+        const data = await bloggersApi.search({ search, verifiedOnly: false, categories: [] }, 1, 50)
+        setBloggers(data.data || [])
+      } catch (e: any) {
+        setError(e?.message || 'Ошибка загрузки')
+      } finally {
+        setIsLoading(false)
+      }
+    })()
+  }, [user])
 
   const stats = {
     total: bloggers.length,
     verified: bloggers.filter(b => b.isVerified).length,
     active: bloggers.filter(b => b.isPublic).length,
     totalEarnings: bloggers.reduce((sum, b) => sum + b.totalEarnings, 0),
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-telegram-bg flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-telegram-primary mx-auto mb-4"></div>
+          <p className="text-telegram-textSecondary">Загрузка блогеров...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-telegram-bg flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 mb-2">Ошибка</div>
+          <p className="text-telegram-textSecondary">{error}</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -279,5 +260,6 @@ export default function AdminBloggersPage() {
     </div>
   )
 }
+
 
 
