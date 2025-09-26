@@ -115,11 +115,28 @@ export default function AdminDashboardPage() {
     growth: 23.5, // TODO: Calculate real growth
   }
 
-  // Реальные данные для активности пока не собираем — убираем заглушки
-  const recentActivity: any[] = []
+  const [recentActivity, setRecentActivity] = useState<any[]>([])
 
-  // Топ блогеров — заглушки удалены, показываем пустое состояние
-  const topBloggers: any[] = []
+  const [topBloggers, setTopBloggers] = useState<any[]>([])
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const [ra, tb] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/recent-activity`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` }
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/top-bloggers`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` }
+          })
+        ])
+        if (ra.ok) setRecentActivity(await ra.json())
+        if (tb.ok) setTopBloggers(await tb.json())
+      } catch (e) {
+        // no-op
+      }
+    })()
+  }, [])
 
   if (isLoading) {
     return (

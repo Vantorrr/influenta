@@ -63,12 +63,25 @@ export class AdminController {
     return this.adminService.getAdvertisersList();
   }
 
+  @Get('recent-activity')
+  @ApiOperation({ summary: 'Get recent platform activity' })
+  async getRecentActivity() {
+    return this.adminService.getRecentActivity();
+  }
+
+  @Get('top-bloggers')
+  @ApiOperation({ summary: 'Get top bloggers' })
+  async getTopBloggers() {
+    return this.adminService.getTopBloggers();
+  }
+
   @Get('system-info')
   @ApiOperation({ summary: 'Get system information' })
   async getSystemInfo() {
     return this.adminService.getSystemInfo();
   }
 }
+
 
 
 

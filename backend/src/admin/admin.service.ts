@@ -194,6 +194,89 @@ export class AdminService {
     }));
   }
 
+  async getRecentActivity() {
+    const [latestBloggers, latestListings, latestVerifications] = await Promise.all([
+      this.usersRepository.find({
+        where: { isActive: true },
+        order: { createdAt: 'DESC' },
+        take: 5,
+      }),
+      this.listingsRepository.find({
+        order: { createdAt: 'DESC' },
+        take: 5,
+        relations: ['advertiser'],
+      }),
+      this.usersRepository.find({
+        where: { verificationRequested: true },
+        order: { verificationRequestedAt: 'DESC' },
+        take: 5,
+      }),
+    ]);
+
+    const items: Array<{
+      id: string | number;
+      type: string;
+      title: string;
+      time: Date;
+      status?: string;
+      amount?: number;
+    }> = [];
+
+    for (const u of latestBloggers) {
+      items.push({
+        id: `u_${u.id}`,
+        type: 'new_user',
+        title: `Новый пользователь: @${u.username ?? u.firstName}`,
+        time: u.createdAt,
+        status: u.role,
+      });
+    }
+
+    for (const l of latestListings) {
+      items.push({
+        id: `l_${l.id}`,
+        type: 'new_listing',
+        title: `Новое объявление: "${l.title}"`,
+        time: l.createdAt,
+        status: 'listing',
+        amount: Number(l.budget ?? 0),
+      });
+    }
+
+    for (const v of latestVerifications) {
+      items.push({
+        id: `v_${v.id}`,
+        type: 'verification',
+        title: `Запрос на верификацию: ${v.firstName}${v.lastName ? ' ' + v.lastName : ''}`,
+        time: v.verificationRequestedAt ?? v.updatedAt,
+        status: 'pending',
+      });
+    }
+
+    return items
+      .sort((a, b) => +new Date(b.time) - +new Date(a.time))
+      .slice(0, 10);
+  }
+
+  async getTopBloggers() {
+    const bloggers = await this.usersRepository
+      .createQueryBuilder('user')
+      .where('user.isActive = :isActive', { isActive: true })
+      .orderBy('user.subscribersCount', 'DESC')
+      .limit(5)
+      .getMany();
+
+    return bloggers.map((u, idx) => ({
+      id: u.id,
+      name: `${u.firstName}${u.lastName ? ' ' + u.lastName : ''}`.trim(),
+      username: u.username ? `@${u.username}` : '',
+      subscribers: Number(u.subscribersCount || 0),
+      earnings: 0,
+      campaigns: 0,
+      rank: idx + 1,
+    }));
+  }
+
   async getSystemInfo() {
     const dbSize = await this.usersRepository.query(
       "SELECT pg_database_size(current_database()) as size"
@@ -210,5 +293,6 @@ export class AdminService {
     };
   }
 }
+
 
 
