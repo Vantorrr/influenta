@@ -115,64 +115,11 @@ export default function AdminDashboardPage() {
     growth: 23.5, // TODO: Calculate real growth
   }
 
-  const recentActivity = [
-    {
-      id: 1,
-      type: 'new_user',
-      title: 'Новый блогер: @anna_lifestyle',
-      time: new Date(Date.now() - 1000 * 60 * 15),
-      status: 'blogger',
-    },
-    {
-      id: 2,
-      type: 'new_listing',
-      title: 'Новое объявление: "Реклама косметики"',
-      time: new Date(Date.now() - 1000 * 60 * 30),
-      status: 'listing',
-      amount: 150000,
-    },
-    {
-      id: 3,
-      type: 'verification',
-      title: 'Запрос на верификацию: TechBrand',
-      time: new Date(Date.now() - 1000 * 60 * 45),
-      status: 'pending',
-    },
-    {
-      id: 4,
-      type: 'complaint',
-      title: 'Жалоба на пользователя @spam_user',
-      time: new Date(Date.now() - 1000 * 60 * 60),
-      status: 'complaint',
-    },
-  ]
+  // Реальные данные для активности пока не собираем — убираем заглушки
+  const recentActivity: any[] = []
 
-  const topBloggers = [
-    {
-      id: 1,
-      name: 'Анна Иванова',
-      username: '@anna_lifestyle',
-      subscribers: 125000,
-      earnings: 890000,
-      campaigns: 24,
-    },
-    {
-      id: 2,
-      name: 'Михаил Петров',
-      username: '@tech_mike',
-      subscribers: 87000,
-      earnings: 650000,
-      campaigns: 18,
-    },
-    {
-      id: 3,
-      name: 'Елена Фитнес',
-      username: '@fit_elena',
-      subscribers: 56000,
-      earnings: 420000,
-      campaigns: 12,
-    },
-  ]
+  // Топ блогеров — заглушки удалены, показываем пустое состояние
+  const topBloggers: any[] = []
 
   if (isLoading) {
     return (
@@ -385,3 +332,4 @@ export default function AdminDashboardPage() {
     </div>
   )
 }
+
