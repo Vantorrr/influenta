@@ -97,6 +97,18 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   verificationRequestedAt?: Date;
 
+  @Column({ type: 'jsonb', nullable: true })
+  verificationData?: {
+    documents?: string[]; // URLs документов
+    socialProofs?: {
+      platform: string;
+      url: string;
+      followers?: number;
+    }[];
+    message?: string;
+    rejectionReason?: string;
+  };
+
   @Column({ nullable: true })
   lastLoginAt?: Date;
 

@@ -192,7 +192,15 @@ export class AuthService {
     return this.getProfile(userId);
   }
 
-  async requestVerification(userId: string) {
+  async requestVerification(userId: string, data: {
+    documents?: string[];
+    socialProofs?: {
+      platform: string;
+      url: string;
+      followers?: number;
+    }[];
+    message?: string;
+  }) {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) throw new Error('User not found');
     
@@ -200,12 +208,23 @@ export class AuthService {
       throw new BadRequestException('Пользователь уже верифицирован');
     }
     
-    if (user.verificationRequested) {
+    if (user.verificationRequested && !user.verificationData?.rejectionReason) {
       throw new BadRequestException('Заявка на верификацию уже отправлена');
+    }
+    
+    // Проверяем что предоставлены доказательства
+    if (!data.documents?.length && !data.socialProofs?.length) {
+      throw new BadRequestException('Необходимо предоставить документы или ссылки на социальные сети');
     }
     
     user.verificationRequested = true;
     user.verificationRequestedAt = new Date();
+    user.verificationData = {
+      documents: data.documents || [],
+      socialProofs: data.socialProofs || [],
+      message: data.message,
+      rejectionReason: undefined // Сбрасываем предыдущий отказ
+    };
     await this.usersRepository.save(user);
     
     return {

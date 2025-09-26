@@ -90,7 +90,8 @@ export class AdminService {
       role: user.role,
       requestedAt: user.verificationRequestedAt,
       subscribersCount: (user as any).subscribersCount,
-      bio: user.bio
+      bio: user.bio,
+      verificationData: user.verificationData
     }));
   }
 
@@ -100,6 +101,20 @@ export class AdminService {
       verificationRequested: false 
     });
     return { success: true, message: 'User verified successfully' };
+  }
+
+  async rejectVerification(userId: string, reason: string) {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) throw new Error('User not found');
+    
+    user.verificationRequested = false;
+    user.verificationData = {
+      ...user.verificationData,
+      rejectionReason: reason
+    };
+    await this.usersRepository.save(user);
+    
+    return { success: true, message: 'Verification rejected' };
   }
 
   async toggleUserBlock(userId: string) {

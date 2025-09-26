@@ -33,6 +33,12 @@ export class AdminController {
     return this.adminService.verifyUser(id);
   }
 
+  @Patch('users/:id/reject-verification')
+  @ApiOperation({ summary: 'Reject verification request' })
+  async rejectVerification(@Param('id') id: string, @Body() data: { reason: string }) {
+    return this.adminService.rejectVerification(id, data.reason);
+  }
+
   @Patch('users/:id/block')
   @ApiOperation({ summary: 'Block/unblock a user' })
   async toggleUserBlock(@Param('id') id: string) {

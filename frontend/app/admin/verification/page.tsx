@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { CheckCircle, XCircle, User, Calendar, Hash } from 'lucide-react'
+import { CheckCircle, XCircle, User, Calendar, Hash, FileText, Link as LinkIcon, MessageSquare } from 'lucide-react'
 import { Layout } from '@/components/layout/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -21,6 +21,15 @@ interface VerificationRequest {
   requestedAt: string
   subscribersCount?: number
   bio?: string
+  verificationData?: {
+    documents?: string[]
+    socialProofs?: {
+      platform: string
+      url: string
+      followers?: number
+    }[]
+    message?: string
+  }
 }
 
 export default function VerificationPage() {
@@ -70,6 +79,28 @@ export default function VerificationPage() {
     } catch (error) {
       console.error('Error verifying user:', error)
       alert('Ошибка при верификации пользователя')
+    }
+  }
+
+  const handleReject = async (userId: string, reason: string) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userId}/reject-verification`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason })
+      })
+      
+      if (!response.ok) throw new Error('Failed to reject')
+      
+      alert('Заявка отклонена')
+      // Убираем из списка
+      setRequests(prev => prev.filter(r => r.id !== userId))
+    } catch (error) {
+      console.error('Error rejecting verification:', error)
+      alert('Ошибка при отклонении заявки')
     }
   }
 
@@ -140,6 +171,68 @@ export default function VerificationPage() {
                             {request.bio}
                           </p>
                         )}
+                        
+                        {/* Данные верификации */}
+                        {request.verificationData && (
+                          <div className="mt-4 space-y-3">
+                            {/* Документы */}
+                            {request.verificationData.documents && request.verificationData.documents.length > 0 && (
+                              <div>
+                                <div className="flex items-center gap-2 text-sm font-medium mb-2">
+                                  <FileText className="w-4 h-4" />
+                                  Документы ({request.verificationData.documents.length})
+                                </div>
+                                <div className="space-y-1">
+                                  {request.verificationData.documents.map((doc, i) => (
+                                    <a key={i} href={doc} target="_blank" rel="noopener noreferrer"
+                                       className="text-xs text-telegram-primary hover:underline block truncate">
+                                      {doc}
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Социальные доказательства */}
+                            {request.verificationData.socialProofs && request.verificationData.socialProofs.length > 0 && (
+                              <div>
+                                <div className="flex items-center gap-2 text-sm font-medium mb-2">
+                                  <LinkIcon className="w-4 h-4" />
+                                  Социальные сети
+                                </div>
+                                <div className="space-y-2">
+                                  {request.verificationData.socialProofs.map((proof, i) => (
+                                    <div key={i} className="text-xs">
+                                      <span className="font-medium">{proof.platform}:</span>{' '}
+                                      <a href={proof.url} target="_blank" rel="noopener noreferrer"
+                                         className="text-telegram-primary hover:underline">
+                                        {proof.url}
+                                      </a>
+                                      {proof.followers && (
+                                        <span className="text-telegram-textSecondary ml-2">
+                                          ({proof.followers.toLocaleString('ru-RU')} подписчиков)
+                                        </span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Сообщение */}
+                            {request.verificationData.message && (
+                              <div>
+                                <div className="flex items-center gap-2 text-sm font-medium mb-2">
+                                  <MessageSquare className="w-4 h-4" />
+                                  Сообщение
+                                </div>
+                                <p className="text-xs text-telegram-text">
+                                  {request.verificationData.message}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                       
                       <div className="flex gap-2">
@@ -150,6 +243,17 @@ export default function VerificationPage() {
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
                           Верифицировать
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => {
+                            const reason = prompt('Причина отказа:')
+                            if (reason) handleReject(request.id, reason)
+                          }}
+                        >
+                          <XCircle className="w-4 h-4 mr-1" />
+                          Отклонить
                         </Button>
                       </div>
                     </div>

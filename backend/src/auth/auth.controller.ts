@@ -79,8 +79,19 @@ export class AuthController {
   @Post('request-verification')
   @ApiOperation({ summary: 'Request verification from admins' })
   @UseGuards(JwtAuthGuard)
-  async requestVerification(@CurrentUser() user: User) {
-    return this.authService.requestVerification(user.id)
+  async requestVerification(
+    @CurrentUser() user: User,
+    @Body() data: {
+      documents?: string[];
+      socialProofs?: {
+        platform: string;
+        url: string;
+        followers?: number;
+      }[];
+      message?: string;
+    }
+  ) {
+    return this.authService.requestVerification(user.id, data)
   }
 }
 

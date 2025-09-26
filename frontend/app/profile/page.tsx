@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useEffect } from 'react'
 import { authApi, analyticsApi } from '@/lib/api'
 import { UserRole } from '@/types'
+import { VerificationModal } from '@/components/VerificationModal'
 
 export default function ProfilePage() {
   const { user, isLoading } = useAuth()
@@ -20,6 +21,7 @@ export default function ProfilePage() {
   }, [user?.id])
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [showVerificationModal, setShowVerificationModal] = useState(false)
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -135,20 +137,30 @@ export default function ProfilePage() {
         })
       }
 
-      const handleRequestVerification = async () => {
+      const handleRequestVerification = () => {
+        setShowVerificationModal(true)
+      }
+
+      const handleVerificationSubmit = async (data: {
+        documents: string[]
+        socialProofs: { platform: string; url: string; followers?: number }[]
+        message: string
+      }) => {
         try {
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/request-verification`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`,
               'Content-Type': 'application/json'
-            }
+            },
+            body: JSON.stringify(data)
           })
           
-          const data = await response.json()
+          const result = await response.json()
           
           if (response.ok) {
-            alert(data.message)
+            alert(result.message)
+            setShowVerificationModal(false)
             // Обновляем профиль чтобы показать что заявка отправлена
             const profileResponse = await authApi.getCurrentUser()
             if (profileResponse?.user) {
@@ -156,7 +168,7 @@ export default function ProfilePage() {
               window.location.reload()
             }
           } else {
-            alert(data.message || 'Ошибка при отправке заявки')
+            alert(result.message || 'Ошибка при отправке заявки')
           }
         } catch (error) {
           console.error('Error requesting verification:', error)
@@ -579,13 +591,13 @@ export default function ProfilePage() {
                   <span className={user.isVerified ? 'text-green-500' : 'text-yellow-500'}>
                     {user.isVerified ? 'Верифицирован' : 'Не верифицирован'}
                   </span>
-                  {!user.isVerified && !(user as any).verificationRequested && (
+                  {!user.isVerified && (!(user as any).verificationRequested || (user as any).verificationData?.rejectionReason) && (
                     <Button
                       size="sm"
                       variant="secondary"
                       onClick={handleRequestVerification}
                     >
-                      Запросить верификацию
+                      {(user as any).verificationData?.rejectionReason ? 'Подать заново' : 'Запросить верификацию'}
                     </Button>
                   )}
                   {(user as any).verificationRequested && !user.isVerified && (
@@ -593,12 +605,24 @@ export default function ProfilePage() {
                       (заявка отправлена)
                     </span>
                   )}
+                  {(user as any).verificationData?.rejectionReason && (
+                    <div className="text-xs text-red-500 mt-1">
+                      Отклонено: {(user as any).verificationData.rejectionReason}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Модальное окно верификации */}
+      <VerificationModal
+        isOpen={showVerificationModal}
+        onClose={() => setShowVerificationModal(false)}
+        onSubmit={handleVerificationSubmit}
+      />
     </Layout>
   )
 }
