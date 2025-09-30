@@ -96,6 +96,13 @@ export class AdminService {
     return { success: true, isActive };
   }
 
+  async softDeleteUser(id: string) {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+    await this.usersRepository.update(id, { isActive: false });
+    return { success: true };
+  }
+
   async deleteListing(id: string, reason: string) {
     await this.listingsRepository
       .createQueryBuilder()
