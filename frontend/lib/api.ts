@@ -100,9 +100,12 @@ export const bloggersApi = {
     page = 1,
     limit = 20
   ): Promise<PaginatedResponse<Blogger>> {
-    const response = await api.get('/bloggers/search', {
-      params: { ...filters, page, limit },
-    })
+    const params: Record<string, any> = { page, limit }
+    if (filters?.search) params.search = filters.search
+    if (filters?.verifiedOnly) params.verifiedOnly = true
+    if (filters?.categories && filters.categories.length > 0) params.categories = filters.categories
+
+    const response = await api.get('/bloggers/search', { params })
     return response.data
   },
 
