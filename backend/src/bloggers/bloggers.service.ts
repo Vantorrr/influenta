@@ -18,7 +18,8 @@ export class BloggersService {
 
     const query = this.usersRepository
       .createQueryBuilder('user')
-      .where('user.isActive = :isActive', { isActive: true });
+      .where('user.isActive = :isActive', { isActive: true })
+      .andWhere('user.role = :role', { role: UserRole.BLOGGER });
 
     // Поиск по имени или username
     if (search) {
@@ -82,7 +83,7 @@ export class BloggersService {
 
   async findOne(id: string) {
     const user = await this.usersRepository.findOne({
-      where: { id, isActive: true },
+      where: { id, isActive: true, role: UserRole.BLOGGER },
     });
 
     if (!user) {
@@ -122,5 +123,6 @@ export class BloggersService {
     return users;
   }
 }
+
 
 
