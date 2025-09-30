@@ -165,33 +165,45 @@ export default function AdminBloggersPage() {
           >
             <Card hover>
               <CardContent className="p-6">
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-4 min-w-0">
                   <Avatar
                     firstName={blogger.user?.firstName || ''}
                     lastName={blogger.user?.lastName || ''}
                     size="lg"
                   />
                   
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3 className="font-semibold text-lg flex items-center gap-2">
-                          {blogger.user?.firstName || ''} {blogger.user?.lastName || ''}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between mb-2 gap-3">
+                      <div className="min-w-0" dir="auto">
+                        <h3 className="font-semibold text-lg flex items-center gap-2 truncate">
+                          <span className="truncate">
+                            {blogger.user?.firstName || ''} {blogger.user?.lastName || ''}
+                          </span>
                           {blogger.isVerified && (
-                            <Shield className="w-4 h-4 text-telegram-primary" />
+                            <Shield className="w-4 h-4 text-telegram-primary flex-shrink-0" />
                           )}
                         </h3>
-                        <p className="text-telegram-textSecondary">
+                        <p className="text-telegram-textSecondary truncate">
                           {blogger.user?.username || ''}
                         </p>
                       </div>
                       
-                      <div className="flex items-center gap-2">
-                        <Button variant="secondary" size="sm">
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => { if (typeof window !== 'undefined') window.location.href = `/bloggers/${blogger.id}` }}
+                          title="Редактировать"
+                        >
                           <Edit className="w-4 h-4 mr-1" />
                           Редактировать
                         </Button>
-                        <Button variant="secondary" size="sm">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => { if (typeof window !== 'undefined') window.location.href = `/bloggers/${blogger.id}` }}
+                          title="Просмотр"
+                        >
                           <Eye className="w-4 h-4 mr-1" />
                           Просмотр
                         </Button>
@@ -199,11 +211,14 @@ export default function AdminBloggersPage() {
                     </div>
                     
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {(blogger.categories || []).map((category: string) => (
+                      {(blogger.categories || []).slice(0, 2).map((category: string) => (
                         <Badge key={category} variant="default">
                           {getCategoryLabel(category)}
                         </Badge>
                       ))}
+                      {(blogger.categories || []).length > 2 && (
+                        <Badge variant="default">+{(blogger.categories || []).length - 2}</Badge>
+                      )}
                     </div>
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
