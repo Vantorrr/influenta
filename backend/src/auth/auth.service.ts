@@ -250,9 +250,8 @@ export class AuthService {
           [{ text: '🛡 Открыть модерацию', web_app: { url: `${frontendUrl}/admin/moderation` } }],
         ] as any[],
       }
-      if (user.username) {
-        keyboard.inline_keyboard.push([{ text: '✉️ Написать в Telegram', url: `https://t.me/${user.username}` }])
-      }
+      const dmUrl = user.username ? `https://t.me/${user.username}` : `tg://user?id=${user.telegramId}`
+      keyboard.inline_keyboard.push([{ text: '✉️ Написать в Telegram', url: dmUrl }])
 
       for (const adminId of adminIds) {
         await this.telegramService.sendMessage(adminId, adminText, keyboard)
