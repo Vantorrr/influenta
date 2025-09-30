@@ -10,7 +10,8 @@ WORKDIR /app/backend
 COPY backend/package*.json ./
 
 # Install all dependencies (including devDependencies for build)
-RUN npm ci --production=false
+# Using legacy-peer-deps to avoid peer conflicts on CI
+RUN npm ci --production=false --legacy-peer-deps --omit=optional
 
 # Copy source code
 COPY backend/ ./
