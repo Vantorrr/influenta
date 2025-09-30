@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Filter, 
   Search as SearchIcon, 
@@ -43,6 +43,7 @@ export default function ListingsPage() {
   const [filters, setFilters] = useState<ListingFilters>({
     status: ListingStatus.ACTIVE,
   })
+  const [showFilters, setShowFilters] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ['listings', filters, search],
@@ -77,9 +78,14 @@ export default function ListingsPage() {
             icon={<SearchIcon className="w-4 h-4" />}
             className="flex-1"
           />
-          <Button variant="secondary">
+          <Button variant="secondary" onClick={() => setShowFilters(true)}>
             <Filter className="w-4 h-4" />
           </Button>
+          {user?.role === 'advertiser' && (
+            <Button variant="primary" onClick={() => { if (typeof window !== 'undefined') window.location.href = '/listings/create' }}>
+              Создать объявление
+            </Button>
+          )}
         </div>
 
         {/* Status Tabs */}
@@ -207,6 +213,11 @@ export default function ListingsPage() {
     </Layout>
   )
 }
+
+
+
+
+
 
 
 
