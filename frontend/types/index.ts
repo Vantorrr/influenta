@@ -137,9 +137,8 @@ export enum ListingStatus {
 export enum PostFormat {
   POST = 'post',
   STORY = 'story',
-  REEL = 'reel',
-  POST_AND_STORY = 'post_and_story',
-  ANY = 'any',
+  REELS = 'reels',
+  LIVE = 'live',
 }
 
 // Response types
@@ -230,6 +229,7 @@ export interface ListingFilters {
   status?: ListingStatus
   search?: string
 }
+
 
 
 

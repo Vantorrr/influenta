@@ -110,9 +110,8 @@ export function getPostFormatLabel(format: string): string {
   const labels: Record<string, string> = {
     post: 'Пост',
     story: 'Сторис',
-    reel: 'Reels',
-    post_and_story: 'Пост + Сторис',
-    any: 'Любой формат',
+    reels: 'Reels',
+    live: 'Эфир',
   }
   return labels[format.toLowerCase()] || format
 }
