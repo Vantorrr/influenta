@@ -128,7 +128,13 @@ export class ListingsService {
       throw new NotFoundException('Listing not found');
     }
 
-    if ((listing.advertiser as any).userId !== user.id) {
+    // Ownership check (supports legacy records)
+    const myAdvertiser = await this.advertisersRepository.findOne({ where: { userId: user.id } }).catch(() => null)
+    const isOwner =
+      (myAdvertiser && listing.advertiserId === myAdvertiser.id) ||
+      ((listing as any)?.advertiser?.userId === user.id) ||
+      ((listing as any)?.advertiser?.id === user.id)
+    if (!isOwner) {
       throw new ForbiddenException('You can only update your own listings');
     }
 
@@ -148,7 +154,13 @@ export class ListingsService {
       throw new NotFoundException('Listing not found');
     }
 
-    if ((listing.advertiser as any).userId !== user.id) {
+    // Ownership check (supports legacy records)
+    const myAdvertiser = await this.advertisersRepository.findOne({ where: { userId: user.id } }).catch(() => null)
+    const isOwner =
+      (myAdvertiser && listing.advertiserId === myAdvertiser.id) ||
+      ((listing as any)?.advertiser?.userId === user.id) ||
+      ((listing as any)?.advertiser?.id === user.id)
+    if (!isOwner) {
       throw new ForbiddenException('You can only delete your own listings');
     }
 
@@ -166,7 +178,13 @@ export class ListingsService {
       throw new NotFoundException('Listing not found');
     }
 
-    if ((listing.advertiser as any).userId !== user.id) {
+    // Ownership check (supports legacy records)
+    const myAdvertiser = await this.advertisersRepository.findOne({ where: { userId: user.id } }).catch(() => null)
+    const isOwner =
+      (myAdvertiser && listing.advertiserId === myAdvertiser.id) ||
+      ((listing as any)?.advertiser?.userId === user.id) ||
+      ((listing as any)?.advertiser?.id === user.id)
+    if (!isOwner) {
       throw new ForbiddenException('You can only update your own listings');
     }
 
@@ -199,6 +217,7 @@ export class ListingsService {
     };
   }
 }
+
 
 
 
