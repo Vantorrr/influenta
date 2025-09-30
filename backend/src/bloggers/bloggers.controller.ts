@@ -1,8 +1,7 @@
 import { Controller, Get, Query, Param, UseGuards } from '@nestjs/common';
 import { BloggersService } from './bloggers.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
-import { PaginationDto } from '@/common/dto/pagination.dto';
-import { BloggerSearchDto } from './dto/blogger-search.dto';
+import { BloggerSearchQueryDto } from './dto/blogger-search.query.dto';
 
 @Controller('bloggers')
 export class BloggersController {
@@ -10,11 +9,9 @@ export class BloggersController {
 
   @Get('search')
   @UseGuards(JwtAuthGuard)
-  async search(
-    @Query() searchDto: BloggerSearchDto,
-    @Query() paginationDto: PaginationDto,
-  ) {
-    return this.bloggersService.search(searchDto, paginationDto);
+  async search(@Query() query: BloggerSearchQueryDto) {
+    const { page, limit, ...filters } = query
+    return this.bloggersService.search(filters as any, { page, limit } as any);
   }
 
   @Get(':id')
@@ -28,3 +25,4 @@ export class BloggersController {
     return this.bloggersService.getAllUsers();
   }
 }
+
