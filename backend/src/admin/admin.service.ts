@@ -131,32 +131,69 @@ export class AdminService {
   }
 
   async getAdvertisersList() {
-    const [advertisers, listingCounts] = await Promise.all([
-      this.advertisersRepository.find({ relations: ['user'] }).catch(() => []),
-      this.listingsRepository
-        .createQueryBuilder('listing')
-        .select('listing.advertiserId', 'advertiserId')
-        .addSelect('COUNT(*)', 'count')
-        .groupBy('listing.advertiserId')
-        .getRawMany(),
-    ]);
+    try {
+      const [advertisers, listingCounts] = await Promise.all([
+        this.advertisersRepository.find({ relations: ['user'] }).catch(() => []),
+        this.listingsRepository
+          .createQueryBuilder('listing')
+          .select('listing.advertiserId', 'advertiserId')
+          .addSelect('COUNT(*)', 'count')
+          .groupBy('listing.advertiserId')
+          .getRawMany()
+          .catch(() => []),
+      ]);
 
-    const idToActive = new Map<string, number>();
-    for (const row of listingCounts) idToActive.set(String(row.advertiserId), parseInt(row.count, 10));
+      // Если таблицы advertisers нет, используем пользователей с ролью advertiser
+      const baseAdvertisers = advertisers.length
+        ? advertisers.map((a) => ({
+            id: a.id,
+            companyName: a.companyName,
+            website: a.website,
+            isVerified: a.isVerified,
+            rating: Number((a as any).rating ?? 0),
+            completedCampaigns: Number((a as any).completedCampaigns ?? 0),
+            totalSpent: Number((a as any).totalSpent ?? 0),
+            createdAt: a.createdAt,
+            updatedAt: (a as any).updatedAt,
+            email: (a as any).user?.email ?? null,
+            lastLoginAt: (a as any).user?.lastLoginAt ?? (a as any).updatedAt,
+          }))
+        : (
+            await this.usersRepository.find({ where: { role: 'advertiser' as any } })
+          ).map((u) => ({
+            id: u.id,
+            companyName: u.companyName || `${u.firstName} ${u.lastName || ''}`.trim(),
+            website: u.website || null,
+            isVerified: u.isVerified,
+            rating: 0,
+            completedCampaigns: 0,
+            totalSpent: 0,
+            createdAt: u.createdAt,
+            updatedAt: u.updatedAt,
+            email: u.email || null,
+            lastLoginAt: u.lastLoginAt || u.updatedAt,
+          }));
 
-    return advertisers.map((a) => ({
-      id: a.id,
-      companyName: a.companyName,
-      website: a.website,
-      isVerified: a.isVerified,
-      rating: Number(a.rating ?? 0),
-      completedCampaigns: Number(a.completedCampaigns ?? 0),
-      totalSpent: Number(a.totalSpent ?? 0),
-      activeListings: idToActive.get(String(a.id)) ?? 0,
-      createdAt: a.createdAt,
-      lastActivity: a.user?.lastLoginAt ?? a.updatedAt,
-      email: a.user?.email ?? null,
-    }));
+      const idToActive = new Map<string, number>();
+      for (const row of listingCounts) idToActive.set(String(row.advertiserId), parseInt(row.count, 10));
+
+      return baseAdvertisers.map((a) => ({
+        id: a.id,
+        companyName: a.companyName,
+        website: a.website,
+        isVerified: a.isVerified,
+        rating: a.rating ?? 0,
+        completedCampaigns: a.completedCampaigns ?? 0,
+        totalSpent: a.totalSpent ?? 0,
+        activeListings: idToActive.get(String(a.id)) ?? 0,
+        createdAt: a.createdAt,
+        lastActivity: a.lastLoginAt ?? a.updatedAt,
+        email: a.email ?? null,
+      }));
+    } catch (e) {
+      // Никогда не валим админку — лучше пустой список
+      return [];
+    }
   }
 
   async getRecentActivity() {
