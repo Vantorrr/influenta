@@ -53,7 +53,8 @@ export default function AdminListingsPage() {
       )
       setListings(data.data || [])
     } catch (e: any) {
-      setError(e?.message || 'Ошибка загрузки объявлений')
+      const msg = e?.response?.data?.message || e?.message
+      setError(Array.isArray(msg) ? msg.join(', ') : (msg || 'Ошибка загрузки объявлений'))
     } finally {
       setIsLoading(false)
     }
@@ -107,6 +108,7 @@ export default function AdminListingsPage() {
         <div className="text-center">
           <div className="text-red-500 mb-2">Ошибка</div>
           <p className="text-telegram-textSecondary">{error}</p>
+          <Button variant="secondary" className="mt-3" onClick={() => { setError(null); loadListings() }}>Повторить</Button>
         </div>
       </div>
     )

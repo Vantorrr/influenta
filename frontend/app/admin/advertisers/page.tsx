@@ -38,7 +38,10 @@ export default function AdminAdvertisersPage() {
             'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`
           }
         })
-        if (!resp.ok) throw new Error('Failed to load advertisers')
+        if (!resp.ok) {
+          const txt = await resp.text().catch(() => '')
+          throw new Error(`API ${resp.status}: ${txt || 'Failed to load advertisers'}`)
+        }
         const data = await resp.json()
         setAdvertisers(Array.isArray(data) ? data : [])
       } catch (e: any) {
