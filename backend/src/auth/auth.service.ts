@@ -232,8 +232,9 @@ export class AuthService {
     // Уведомляем админов о новой заявке
     try {
       const adminIds: number[] = this.configService.get<number[]>('app.admins.telegramIds') || []
+      const frontendUrl = this.configService.get('app.frontendUrl') || 'https://influentaa.vercel.app'
       for (const adminId of adminIds) {
-        await this.telegramService.sendMessage(adminId, `🟦 Новая заявка на верификацию\n\nПользователь: ${user.firstName}${user.lastName ? ' ' + user.lastName : ''} ${user.username ? '(@' + user.username + ')' : ''}\nID: ${user.telegramId}\n\nОткройте админку: https://influentaa.vercel.app/admin/moderation`)
+        await this.telegramService.sendMessage(adminId, `🟦 Новая заявка на верификацию\n\nПользователь: ${user.firstName}${user.lastName ? ' ' + user.lastName : ''} ${user.username ? '(@' + user.username + ')' : ''}\nID: ${user.telegramId}\n\nОткройте админку: ${frontendUrl}/admin/moderation`)
       }
     } catch {}
 

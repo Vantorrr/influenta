@@ -107,9 +107,10 @@ export class TelegramController {
 
 👆 Нажмите кнопку ниже для входа в админ панель:`;
 
+      const frontendUrl = this.configService.get('app.frontendUrl') || 'https://influentaa.vercel.app'
       const adminKeyboard = {
         inline_keyboard: [
-          [{ text: '🛠 Открыть Админ Панель', web_app: { url: 'https://influentaa.vercel.app/admin' } }]
+          [{ text: '🛠 Открыть Админ Панель', web_app: { url: `${frontendUrl}/admin/dashboard` } }]
         ]
       };
 
@@ -142,5 +143,6 @@ export class TelegramController {
     }
   }
 }
+
 
 

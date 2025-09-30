@@ -79,15 +79,16 @@ ${isAdmin ? '• 🛠 Управлять платформой (админ пан
 
   getInlineKeyboard(isAdmin: boolean = false) {
     const keyboard = [];
+    const frontendUrl = this.configService.get('app.frontendUrl') || 'https://influentaa.vercel.app'
 
     if (isAdmin) {
       keyboard.push([
-        { text: '🛠 Админ Панель', web_app: { url: 'https://influentaa.vercel.app/admin' } }
+        { text: '🛠 Админ Панель', web_app: { url: `${frontendUrl}/admin/dashboard` } }
       ]);
     }
 
     keyboard.push([
-      { text: '🚀 Открыть Influenta', web_app: { url: 'https://influentaa.vercel.app' } }
+      { text: '🚀 Открыть Influenta', web_app: { url: `${frontendUrl}` } }
     ]);
 
     keyboard.push([
@@ -135,5 +136,6 @@ ${isAdmin ? '• 🛠 Управлять платформой (админ пан
 🚀 <b>Присоединяйтесь к растущему сообществу!</b>`;
   }
 }
+
 
 
