@@ -211,19 +211,19 @@ export default function AdminAdvertisersPage() {
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2">
-                    <Button variant="secondary" size="sm">
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  <Button variant="secondary" size="sm" className="px-2 min-w-[44px]">
                       <Edit className="w-4 h-4 mr-1" />
-                      Редактировать
+                    <span className="hidden md:inline">Редактировать</span>
                     </Button>
-                    <Button variant="secondary" size="sm">
+                  <Button variant="secondary" size="sm" className="px-2 min-w-[44px]">
                       <BarChart className="w-4 h-4 mr-1" />
-                      Статистика
+                    <span className="hidden md:inline">Статистика</span>
                     </Button>
-                    {!advertiser.isVerified && (
-                      <Button variant="primary" size="sm">
+                  {!advertiser.isVerified && (
+                    <Button variant="primary" size="sm" className="px-2 min-w-[44px]">
                         <Shield className="w-4 h-4 mr-1" />
-                        Верифицировать
+                      <span className="hidden md:inline">Верифицировать</span>
                       </Button>
                     )}
                   </div>
