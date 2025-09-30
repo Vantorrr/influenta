@@ -24,8 +24,10 @@ export function formatNumber(num: number): string {
   return num.toString()
 }
 
-export function formatDate(date: Date | string): string {
-  const d = new Date(date)
+export function formatDate(date: Date | string | undefined | null): string {
+  if (!date) return '—'
+  const d = new Date(date as any)
+  if (isNaN(d.getTime())) return '—'
   return new Intl.DateTimeFormat('ru-RU', {
     day: 'numeric',
     month: 'long',
@@ -33,8 +35,10 @@ export function formatDate(date: Date | string): string {
   }).format(d)
 }
 
-export function formatDateTime(date: Date | string): string {
-  const d = new Date(date)
+export function formatDateTime(date: Date | string | undefined | null): string {
+  if (!date) return '—'
+  const d = new Date(date as any)
+  if (isNaN(d.getTime())) return '—'
   return new Intl.DateTimeFormat('ru-RU', {
     day: 'numeric',
     month: 'long',
@@ -44,8 +48,10 @@ export function formatDateTime(date: Date | string): string {
   }).format(d)
 }
 
-export function getRelativeTime(date: Date | string): string {
-  const d = new Date(date)
+export function getRelativeTime(date: Date | string | undefined | null): string {
+  if (!date) return '—'
+  const d = new Date(date as any)
+  if (isNaN(d.getTime())) return '—'
   const now = new Date()
   const diff = now.getTime() - d.getTime()
   
