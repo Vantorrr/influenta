@@ -210,6 +210,49 @@ export default function ListingsPage() {
           </div>
         )}
       </div>
+
+      {/* Filters Modal */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50"
+            onClick={() => setShowFilters(false)}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30 }}
+              className="absolute bottom-0 left-0 right-0 bg-telegram-bgSecondary rounded-t-2xl p-6 max-h-[80vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold">Фильтры</h3>
+                <button onClick={() => setShowFilters(false)} className="p-2 hover:bg-telegram-bg rounded-lg">✕</button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <Input type="number" placeholder="Мин. бюджет"
+                  value={filters.minBudget || ''}
+                  onChange={(e) => setFilters(prev => ({ ...prev, minBudget: e.target.value ? parseInt(e.target.value) : undefined }))}
+                />
+                <Input type="number" placeholder="Макс. бюджет"
+                  value={filters.maxBudget || ''}
+                  onChange={(e) => setFilters(prev => ({ ...prev, maxBudget: e.target.value ? parseInt(e.target.value) : undefined }))}
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <Button variant="secondary" fullWidth onClick={() => { setFilters({ status: filters.status }); setShowFilters(false) }}>Сбросить</Button>
+                <Button variant="primary" fullWidth onClick={() => setShowFilters(false)}>Применить</Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Layout>
   )
 }
