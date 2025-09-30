@@ -168,6 +168,7 @@ export class AdminService {
       const baseAdvertisers = advertisers.length
         ? advertisers.map((a) => ({
             id: a.id,
+            userId: (a as any).user?.id ?? null,
             companyName: a.companyName,
             website: a.website,
             isVerified: a.isVerified,
@@ -183,6 +184,7 @@ export class AdminService {
             await this.usersRepository.find({ where: { role: 'advertiser' as any } })
           ).map((u) => ({
             id: u.id,
+            userId: u.id,
             companyName: u.companyName || `${u.firstName} ${u.lastName || ''}`.trim(),
             website: u.website || null,
             isVerified: u.isVerified,
@@ -200,6 +202,7 @@ export class AdminService {
 
       return baseAdvertisers.map((a) => ({
         id: a.id,
+        userId: a.userId ?? a.id,
         companyName: a.companyName,
         website: a.website,
         isVerified: a.isVerified,
