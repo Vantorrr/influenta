@@ -28,16 +28,16 @@ export class ResponsesController {
       return { success: false, message: 'Only bloggers can respond' } as any
     }
     // ensure blogger entity exists for this user
-    let blogger = await this.bloggersRepo.findOne({ where: { userId: user.id } })
-    if (!blogger) {
-      const created = this.bloggersRepo.create({ user: user as any, userId: user.id } as any)
-      blogger = await this.bloggersRepo.save(created)
-    }
+    const blogger =
+      (await this.bloggersRepo.findOne({ where: { userId: user.id } })) ||
+      (await this.bloggersRepo.save(
+        this.bloggersRepo.create({ user: user as any, userId: user.id } as any),
+      ))
     // verify listing exists (will throw if not)
     await this.listingsService.findOne(data.listingId)
     const resp = this.responsesRepo.create({
       listingId: data.listingId as any,
-      bloggerId: (blogger as any).id as any,
+      bloggerId: blogger.id as any,
       message: data.message,
       proposedPrice: data.proposedPrice,
       status: ResponseStatus.PENDING,
