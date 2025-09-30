@@ -137,3 +137,5 @@ console.log(process.env.NEXT_PUBLIC_API_URL)
 ### Telegram не авторизует
 - Проверь что домен в @BotFather обновлен
 - Очисти кеш Telegram
+
+

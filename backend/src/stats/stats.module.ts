@@ -10,3 +10,5 @@ import { AnalyticsEvent } from '@/analytics/analytics.entity'
   providers: [DashboardStatsService],
 })
 export class StatsModule {}
+
+

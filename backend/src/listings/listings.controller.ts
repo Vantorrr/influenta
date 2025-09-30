@@ -59,3 +59,5 @@ export class ListingsController {
     return this.listingsService.updateStatus(id, ListingStatus.COMPLETED, user);
   }
 }
+
+

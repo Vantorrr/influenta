@@ -84,4 +84,3 @@ cmd = "cd backend && npm ci && npm run build"
 [start]
 cmd = "cd backend && npm run start:prod"
 ```
-

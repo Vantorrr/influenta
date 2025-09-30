@@ -33,6 +33,12 @@ export class AdminController {
     return this.adminService.verifyUser(id);
   }
 
+  @Patch('users/:id/unverify')
+  @ApiOperation({ summary: 'Unverify a user' })
+  async unverifyUser(@Param('id') id: string) {
+    return this.adminService.unverifyUser(id);
+  }
+
   @Patch('users/:id/reject-verification')
   @ApiOperation({ summary: 'Reject verification request' })
   async rejectVerification(@Param('id') id: string, @Body() data: { reason: string }) {
@@ -45,6 +51,12 @@ export class AdminController {
     return this.adminService.toggleUserBlock(id);
   }
 
+  @Delete('users/:id')
+  @ApiOperation({ summary: 'Soft delete (deactivate) a user' })
+  async softDeleteUser(@Param('id') id: string) {
+    return this.adminService.softDeleteUser(id);
+  }
+
   @Delete('listings/:id')
   @ApiOperation({ summary: 'Delete a listing' })
   async deleteListing(@Param('id') id: string, @Body('reason') reason: string) {
@@ -55,6 +67,12 @@ export class AdminController {
   @ApiOperation({ summary: 'Get revenue statistics' })
   async getRevenueStats() {
     return this.adminService.getRevenueStats();
+  }
+
+  @Get('system-info')
+  @ApiOperation({ summary: 'Get system information' })
+  async getSystemInfo() {
+    return this.adminService.getSystemInfo();
   }
 
   @Get('advertisers')
@@ -74,14 +92,5 @@ export class AdminController {
   async getTopBloggers() {
     return this.adminService.getTopBloggers();
   }
-
-  @Get('system-info')
-  @ApiOperation({ summary: 'Get system information' })
-  async getSystemInfo() {
-    return this.adminService.getSystemInfo();
-  }
 }
-
-
-
 

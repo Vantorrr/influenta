@@ -1,38 +1,28 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
 import { User } from '../users/entities/user.entity';
 import { Blogger } from '../bloggers/entities/blogger.entity';
 import { Advertiser } from '../advertisers/entities/advertiser.entity';
 import { Listing, ListingStatus } from '../listings/entities/listing.entity';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AdminService {
   constructor(
-    @InjectRepository(User)
-    private usersRepository: Repository<User>,
-    @InjectRepository(Blogger)
-    private bloggersRepository: Repository<Blogger>,
-    @InjectRepository(Advertiser)
-    private advertisersRepository: Repository<Advertiser>,
-    @InjectRepository(Listing)
-    private listingsRepository: Repository<Listing>,
-    private configService: ConfigService,
+    @InjectRepository(User) private readonly usersRepository: Repository<User>,
+    @InjectRepository(Blogger) private readonly bloggersRepository: Repository<Blogger>,
+    @InjectRepository(Advertiser) private readonly advertisersRepository: Repository<Advertiser>,
+    @InjectRepository(Listing) private readonly listingsRepository: Repository<Listing>,
+    private readonly configService: ConfigService,
   ) {}
 
   async getPlatformStats() {
-    const [
-      totalUsers,
-      totalBloggers,
-      totalAdvertisers,
-      activeListings,
-      verifiedUsers,
-    ] = await Promise.all([
+    const [totalUsers, totalBloggers, totalAdvertisers, activeListings, verifiedUsers] = await Promise.all([
       this.usersRepository.count(),
-      this.bloggersRepository.count(),
-      this.advertisersRepository.count(),
-      this.listingsRepository.count({ where: { status: ListingStatus.ACTIVE } }),
+      this.bloggersRepository.count().catch(() => 0),
+      this.advertisersRepository.count().catch(() => 0),
+      this.listingsRepository.count({ where: { status: ListingStatus.ACTIVE } }).catch(() => 0),
       this.usersRepository.count({ where: { isVerified: true } }),
     ]);
 
@@ -42,7 +32,7 @@ export class AdminService {
       totalAdvertisers,
       activeListings,
       verifiedUsers,
-      platformCommission: this.configService.get('app.platform.commission'),
+      platformCommission: this.configService.get('app.platform.commission') ?? 0,
     };
   }
 
@@ -52,120 +42,90 @@ export class AdminService {
 
     const admins = await this.usersRepository
       .createQueryBuilder('user')
-      .where(adminTelegramIds.length > 0 ? 'user.telegramId IN (:...ids)' : '1=0', {
-        ids: adminTelegramIds.map(String),
-      })
-      .orWhere('user.email IN (:...emails)', { emails: adminEmails })
+      .where(adminTelegramIds.length > 0 ? 'user.telegramId IN (:...ids)' : '1=0', { ids: adminTelegramIds.map(String) })
+      .orWhere(adminEmails.length > 0 ? 'user.email IN (:...emails)' : '1=0', { emails: adminEmails })
       .orWhere('user.role = :role', { role: 'admin' })
       .getMany();
 
-    return admins.map((admin, index) => ({
-      ...admin,
-      adminLevel: adminTelegramIds.includes(parseInt(String(admin.telegramId)))
-        ? adminTelegramIds.indexOf(parseInt(String(admin.telegramId))) === 0
-          ? 'super_admin' 
-          : 'admin'
-        : 'admin',
-      adminNumber: index + 1,
-    }));
+    return admins.map((a, i) => ({ ...a, adminNumber: i + 1 }));
   }
 
   async getVerificationRequests() {
-    const requests = await this.usersRepository.find({
-      where: {
-        verificationRequested: true,
-        isVerified: false
-      },
-      order: {
-        verificationRequestedAt: 'ASC'
-      }
+    const users = await this.usersRepository.find({
+      where: { verificationRequested: true, isVerified: false },
+      order: { verificationRequestedAt: 'ASC' },
     });
-
-    return requests.map(user => ({
-      id: user.id,
-      telegramId: user.telegramId,
-      username: user.username,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role,
-      requestedAt: user.verificationRequestedAt,
-      subscribersCount: (user as any).subscribersCount,
-      bio: user.bio,
-      verificationData: user.verificationData
+    return users.map((u) => ({
+      id: u.id,
+      telegramId: u.telegramId,
+      username: u.username,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      role: u.role,
+      requestedAt: u.verificationRequestedAt,
+      subscribersCount: (u as any).subscribersCount,
+      bio: u.bio,
+      verificationData: u.verificationData,
     }));
   }
 
-  async verifyUser(userId: string) {
-    await this.usersRepository.update(userId, { 
-      isVerified: true,
-      verificationRequested: false 
-    });
-    return { success: true, message: 'User verified successfully' };
+  async verifyUser(id: string) {
+    await this.usersRepository.update(id, { isVerified: true, verificationRequested: false });
+    return { success: true };
   }
 
-  async rejectVerification(userId: string, reason: string) {
-    const user = await this.usersRepository.findOne({ where: { id: userId } });
-    if (!user) throw new Error('User not found');
-    
+  async rejectVerification(id: string, reason: string) {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
     user.verificationRequested = false;
-    user.verificationData = {
-      ...user.verificationData,
-      rejectionReason: reason
-    };
+    user.verificationData = { ...(user.verificationData || {}), rejectionReason: reason };
     await this.usersRepository.save(user);
-    
-    return { success: true, message: 'Verification rejected' };
+    return { success: true };
   }
 
-  async toggleUserBlock(userId: string) {
-    const user = await this.usersRepository.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    const newStatus = !user.isActive;
-    await this.usersRepository.update(userId, { isActive: newStatus });
-    
-    return { 
-      success: true, 
-      message: `User ${newStatus ? 'unblocked' : 'blocked'} successfully`,
-      isActive: newStatus 
-    };
+  async unverifyUser(id: string) {
+    await this.usersRepository.update(id, { isVerified: false });
+    return { success: true };
   }
 
-  async deleteListing(listingId: string, reason: string) {
+  async toggleUserBlock(id: string) {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+    const isActive = !user.isActive;
+    await this.usersRepository.update(id, { isActive });
+    return { success: true, isActive };
+  }
+
+  async deleteListing(id: string, reason: string) {
     await this.listingsRepository
       .createQueryBuilder()
       .update(Listing)
-      .set({
-        status: ListingStatus.CLOSED,
-        additionalInfo: () => `'${JSON.stringify({ closedReason: reason, closedAt: new Date().toISOString() })}'`,
-      })
-      .where('id = :id', { id: listingId })
+      .set({ status: ListingStatus.CLOSED, additionalInfo: () => `'${JSON.stringify({ closedReason: reason, closedAt: new Date().toISOString() })}'` })
+      .where('id = :id', { id })
       .execute();
-
-    return { success: true, message: 'Listing closed successfully' };
+    return { success: true };
   }
 
   async getRevenueStats() {
-    // В реальном приложении здесь будет расчет на основе транзакций
-    const mockStats = {
-      totalRevenue: 12500000,
-      platformCommission: 1250000,
-      monthlyGrowth: 23.5,
-      topSpenders: [
-        { company: 'TechBrand', spent: 2500000 },
-        { company: 'BeautyWorld', spent: 3800000 },
-        { company: 'FoodDelivery Pro', spent: 980000 },
-      ],
+    return {
+      totalRevenue: 0,
+      platformCommission: 0,
+      monthlyGrowth: 0,
+      topSpenders: [],
     };
-    
-    return mockStats;
+  }
+
+  async getSystemInfo() {
+    return {
+      version: '1.0.0',
+      nodeVersion: process.version,
+      uptime: process.uptime(),
+    };
   }
 
   async getAdvertisersList() {
     const [advertisers, listingCounts] = await Promise.all([
-      this.advertisersRepository.find({ relations: ['user'] }),
+      this.advertisersRepository.find({ relations: ['user'] }).catch(() => []),
       this.listingsRepository
         .createQueryBuilder('listing')
         .select('listing.advertiserId', 'advertiserId')
@@ -174,10 +134,8 @@ export class AdminService {
         .getRawMany(),
     ]);
 
-    const advertiserIdToActiveListings = new Map<string, number>();
-    for (const row of listingCounts) {
-      advertiserIdToActiveListings.set(String(row.advertiserId), parseInt(row.count, 10));
-    }
+    const idToActive = new Map<string, number>();
+    for (const row of listingCounts) idToActive.set(String(row.advertiserId), parseInt(row.count, 10));
 
     return advertisers.map((a) => ({
       id: a.id,
@@ -187,7 +145,7 @@ export class AdminService {
       rating: Number(a.rating ?? 0),
       completedCampaigns: Number(a.completedCampaigns ?? 0),
       totalSpent: Number(a.totalSpent ?? 0),
-      activeListings: advertiserIdToActiveListings.get(String(a.id)) ?? 0,
+      activeListings: idToActive.get(String(a.id)) ?? 0,
       createdAt: a.createdAt,
       lastActivity: a.user?.lastLoginAt ?? a.updatedAt,
       email: a.user?.email ?? null,
@@ -195,67 +153,17 @@ export class AdminService {
   }
 
   async getRecentActivity() {
-    const [latestBloggers, latestListings, latestVerifications] = await Promise.all([
-      this.usersRepository.find({
-        where: { isActive: true },
-        order: { createdAt: 'DESC' },
-        take: 5,
-      }),
-      this.listingsRepository.find({
-        order: { createdAt: 'DESC' },
-        take: 5,
-        relations: ['advertiser'],
-      }),
-      this.usersRepository.find({
-        where: { verificationRequested: true },
-        order: { verificationRequestedAt: 'DESC' },
-        take: 5,
-      }),
+    const [latestUsers, latestListings, latestVerifs] = await Promise.all([
+      this.usersRepository.find({ order: { createdAt: 'DESC' }, take: 5 }),
+      this.listingsRepository.find({ order: { createdAt: 'DESC' }, take: 5, relations: ['advertiser'] }),
+      this.usersRepository.find({ where: { verificationRequested: true }, order: { verificationRequestedAt: 'DESC' }, take: 5 }),
     ]);
 
-    const items: Array<{
-      id: string | number;
-      type: string;
-      title: string;
-      time: Date;
-      status?: string;
-      amount?: number;
-    }> = [];
-
-    for (const u of latestBloggers) {
-      items.push({
-        id: `u_${u.id}`,
-        type: 'new_user',
-        title: `Новый пользователь: @${u.username ?? u.firstName}`,
-        time: u.createdAt,
-        status: u.role,
-      });
-    }
-
-    for (const l of latestListings) {
-      items.push({
-        id: `l_${l.id}`,
-        type: 'new_listing',
-        title: `Новое объявление: "${l.title}"`,
-        time: l.createdAt,
-        status: 'listing',
-        amount: Number(l.budget ?? 0),
-      });
-    }
-
-    for (const v of latestVerifications) {
-      items.push({
-        id: `v_${v.id}`,
-        type: 'verification',
-        title: `Запрос на верификацию: ${v.firstName}${v.lastName ? ' ' + v.lastName : ''}`,
-        time: v.verificationRequestedAt ?? v.updatedAt,
-        status: 'pending',
-      });
-    }
-
-    return items
-      .sort((a, b) => +new Date(b.time) - +new Date(a.time))
-      .slice(0, 10);
+    const items: any[] = [];
+    for (const u of latestUsers) items.push({ id: `u_${u.id}`, type: 'new_user', title: `Новый пользователь: @${u.username ?? u.firstName}`, time: u.createdAt, status: u.role });
+    for (const l of latestListings) items.push({ id: `l_${l.id}`, type: 'new_listing', title: `Новое объявление: "${l.title}"`, time: l.createdAt, status: 'listing', amount: Number(l.budget ?? 0) });
+    for (const v of latestVerifs) items.push({ id: `v_${v.id}`, type: 'verification', title: `Запрос на верификацию: ${v.firstName}${v.lastName ? ' ' + v.lastName : ''}`, time: v.verificationRequestedAt ?? v.updatedAt, status: 'pending' });
+    return items.sort((a, b) => +new Date(b.time) - +new Date(a.time)).slice(0, 10);
   }
 
   async getTopBloggers() {
@@ -265,34 +173,15 @@ export class AdminService {
       .orderBy('user.subscribersCount', 'DESC')
       .limit(5)
       .getMany();
-
-    return bloggers.map((u, idx) => ({
+    return bloggers.map((u, i) => ({
       id: u.id,
       name: `${u.firstName}${u.lastName ? ' ' + u.lastName : ''}`.trim(),
       username: u.username ? `@${u.username}` : '',
       subscribers: Number(u.subscribersCount || 0),
       earnings: 0,
       campaigns: 0,
-      rank: idx + 1,
+      rank: i + 1,
     }));
   }
-
-  async getSystemInfo() {
-    const dbSize = await this.usersRepository.query(
-      "SELECT pg_database_size(current_database()) as size"
-    );
-
-    return {
-      version: '1.0.0',
-      nodeVersion: process.version,
-      uptime: process.uptime(),
-      memory: process.memoryUsage(),
-      databaseSize: parseInt(dbSize[0].size),
-      environment: this.configService.get('app.nodeEnv'),
-      adminIds: this.configService.get<number[]>('app.admins.telegramIds'),
-    };
-  }
 }
-
-
 

@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Users, Eye, Star, Shield } from 'lucide-react'
+import { ArrowLeft, Users, Eye, Star, Shield, Ban, CheckCircle, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
 import { bloggersApi } from '@/lib/api'
 import { formatNumber } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+import { Button } from '@/components/ui/button'
 
 export default function BloggerDetailsPage() {
   const params = useParams() as { id?: string }
@@ -87,6 +88,43 @@ export default function BloggerDetailsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Admin actions */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={blogger.isVerified ? 'secondary' : 'primary'}
+              size="sm"
+              onClick={async () => {
+                const url = blogger.isVerified
+                  ? `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${blogger.user?.id || blogger.id}/unverify`
+                  : `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${blogger.user?.id || blogger.id}/verify`
+                await fetch(url, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` } })
+                router.refresh()
+              }}
+            >
+              {blogger.isVerified ? (<><Shield className="w-4 h-4 mr-1" /> Снять верификацию</>) : (<><CheckCircle className="w-4 h-4 mr-1" /> Верифицировать</>)}
+            </Button>
+            <Button
+              variant={blogger.user?.isActive === false ? 'success' : 'danger'}
+              size="sm"
+              onClick={async () => {
+                await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${blogger.user?.id || blogger.id}/block`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` } })
+                router.refresh()
+              }}
+            >
+              <Ban className="w-4 h-4 mr-1" /> {blogger.user?.isActive === false ? 'Разблокировать' : 'Заблокировать'}
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={async () => {
+                if (!confirm('Удалить пользователя (деактивация)?')) return
+                await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${blogger.user?.id || blogger.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` } })
+                router.back()
+              }}
+            >
+              <Trash2 className="w-4 h-4 mr-1" /> Удалить
+            </Button>
+          </div>
           <div className="flex flex-wrap gap-2">
             {(blogger.categories || []).map((c: string) => (
               <Badge key={c} variant="default">{c}</Badge>

@@ -12,4 +12,3 @@ import { AnalyticsEvent } from './analytics.entity';
 })
 export class AnalyticsModule {}
 
-
