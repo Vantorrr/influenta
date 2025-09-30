@@ -5,6 +5,8 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import * as express from 'express';
+import * as path from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -46,6 +48,9 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   const port = parseInt(process.env.PORT || '', 10) || configService.get<number>('app.port') || 3001;
+  // Static for uploads without serve-static package
+  const uploadsDir = path.join(process.cwd(), 'uploads');
+  app.use('/uploads', express.static(uploadsDir));
   await app.listen(port, '0.0.0.0'); // Railway требует 0.0.0.0
 
   console.log(`🚀 Application is running on: http://localhost:${port}`);
