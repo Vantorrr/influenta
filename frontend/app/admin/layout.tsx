@@ -18,7 +18,7 @@ import {
   AlertCircle,
   Crown
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { Badge } from '@/components/ui/badge'
@@ -42,6 +42,26 @@ export default function AdminLayout({
   const pathname = usePathname()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [pendingVerifications, setPendingVerifications] = useState<number>(0)
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/verification-requests`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` },
+          cache: 'no-store'
+        })
+        if (resp.ok) {
+          const arr = await resp.json()
+          setPendingVerifications(Array.isArray(arr) ? arr.length : 0)
+        } else {
+          setPendingVerifications(0)
+        }
+      } catch {
+        setPendingVerifications(0)
+      }
+    })()
+  }, [pathname])
 
   const handleLogout = () => {
     // Очищаем все админские cookie
@@ -114,9 +134,9 @@ export default function AdminLayout({
                 >
                   <item.icon className="w-5 h-5" />
                   <span>{item.name}</span>
-                  {item.name === 'Модерация' && (
+                  {item.name === 'Модерация' && pendingVerifications > 0 && (
                     <span className="ml-auto bg-telegram-danger text-white text-xs px-2 py-0.5 rounded-full">
-                      3
+                      {pendingVerifications}
                     </span>
                   )}
                 </Link>

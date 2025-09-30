@@ -6,6 +6,7 @@ import { Blogger } from '../bloggers/entities/blogger.entity';
 import { Advertiser } from '../advertisers/entities/advertiser.entity';
 import { Listing, ListingStatus } from '../listings/entities/listing.entity';
 import { ConfigService } from '@nestjs/config';
+import { TelegramService } from '../telegram/telegram.service';
 
 @Injectable()
 export class AdminService {
@@ -15,6 +16,7 @@ export class AdminService {
     @InjectRepository(Advertiser) private readonly advertisersRepository: Repository<Advertiser>,
     @InjectRepository(Listing) private readonly listingsRepository: Repository<Listing>,
     private readonly configService: ConfigService,
+    private readonly telegramService: TelegramService,
   ) {}
 
   async getPlatformStats() {
@@ -71,6 +73,16 @@ export class AdminService {
 
   async verifyUser(id: string) {
     await this.usersRepository.update(id, { isVerified: true, verificationRequested: false });
+    // Уведомление пользователю
+    try {
+      const user = await this.usersRepository.findOne({ where: { id } });
+      if (user?.telegramId) {
+        await this.telegramService.sendMessage(
+          parseInt(String(user.telegramId), 10),
+          '✅ Ваша верификация одобрена. Спасибо!'
+        );
+      }
+    } catch {}
     return { success: true };
   }
 
@@ -80,6 +92,15 @@ export class AdminService {
     user.verificationRequested = false;
     user.verificationData = { ...(user.verificationData || {}), rejectionReason: reason };
     await this.usersRepository.save(user);
+    // Уведомление пользователю
+    try {
+      if (user?.telegramId) {
+        await this.telegramService.sendMessage(
+          parseInt(String(user.telegramId), 10),
+          `❌ Верификация отклонена. Причина: ${reason}`
+        );
+      }
+    } catch {}
     return { success: true };
   }
 
