@@ -35,10 +35,13 @@ export default function AdminBloggersPage() {
     if (!user) return
     ;(async () => {
       try {
-        const data = await bloggersApi.search({ search, verifiedOnly: false, categories: [] }, 1, 50)
+        const filters: any = {}
+        if (search && search.trim().length > 0) filters.search = search.trim()
+        const data = await bloggersApi.search(filters, 1, 50)
         setBloggers(data.data || [])
       } catch (e: any) {
-        setError(e?.message || 'Ошибка загрузки')
+        const msg = e?.response?.data?.message || e?.message || 'Ошибка загрузки'
+        setError(Array.isArray(msg) ? msg.join(', ') : String(msg))
       } finally {
         setIsLoading(false)
       }
