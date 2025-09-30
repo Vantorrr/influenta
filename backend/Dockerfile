@@ -1,21 +1,21 @@
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
-WORKDIR /app
+WORKDIR /app/backend
 
-COPY package*.json ./
+COPY backend/package*.json ./
 RUN npm ci --legacy-peer-deps --omit=optional
 
-COPY . .
+COPY backend/ ./
 RUN npm run build
 
-FROM node:18-alpine
+FROM node:20-alpine
 
-WORKDIR /app
+WORKDIR /app/backend
 
-COPY package*.json ./
+COPY backend/package*.json ./
 RUN npm ci --only=production --legacy-peer-deps --omit=optional
 
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/backend/dist ./dist
 
 EXPOSE 3001
 

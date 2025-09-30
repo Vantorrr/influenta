@@ -1,5 +1,5 @@
 # Railway-specific Dockerfile
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Install dependencies for bcrypt
 RUN apk add --no-cache python3 make g++ postgresql-client
