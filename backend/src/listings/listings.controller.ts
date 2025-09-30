@@ -27,6 +27,12 @@ export class ListingsController {
     return this.listingsService.search(searchDto, paginationDto);
   }
 
+  @Get('my')
+  @UseGuards(JwtAuthGuard)
+  async getMyListings(@CurrentUser() user: User, @Query() paginationDto: PaginationDto) {
+    return this.listingsService.getMyListings(user, paginationDto);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.listingsService.findOne(id);
@@ -64,6 +70,7 @@ export class ListingsController {
     return this.listingsService.updateStatus(id, ListingStatus.COMPLETED, user);
   }
 }
+
 
 
 

@@ -69,6 +69,25 @@ export class ListingsService {
     return this.formatListing(listing);
   }
 
+  async getMyListings(user: User, paginationDto: PaginationDto) {
+    const { page = 1, limit = 20 } = paginationDto
+    // ensure advertiser
+    const advertiser = await this.advertisersRepository.findOne({ where: { userId: user.id } })
+    if (!advertiser) {
+      return { data: [], meta: { total: 0, page, limit, totalPages: 0 } }
+    }
+    const [data, total] = await this.listingsRepository.findAndCount({
+      where: { advertiserId: advertiser.id },
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    })
+    return {
+      data: data.map(l => this.formatListing({ ...(l as any), advertiser } as any)),
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    }
+  }
+
   async create(createListingDto: CreateListingDto, user: User) {
     if (user.role !== 'advertiser') {
       throw new ForbiddenException('Only advertisers can create listings');
@@ -109,7 +128,7 @@ export class ListingsService {
       throw new NotFoundException('Listing not found');
     }
 
-    if (listing.advertiser.id !== user.id) {
+    if ((listing.advertiser as any).userId !== user.id) {
       throw new ForbiddenException('You can only update your own listings');
     }
 
@@ -129,7 +148,7 @@ export class ListingsService {
       throw new NotFoundException('Listing not found');
     }
 
-    if (listing.advertiser.id !== user.id) {
+    if ((listing.advertiser as any).userId !== user.id) {
       throw new ForbiddenException('You can only delete your own listings');
     }
 
@@ -147,7 +166,7 @@ export class ListingsService {
       throw new NotFoundException('Listing not found');
     }
 
-    if (listing.advertiser.id !== user.id) {
+    if ((listing.advertiser as any).userId !== user.id) {
       throw new ForbiddenException('You can only update your own listings');
     }
 

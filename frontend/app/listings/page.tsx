@@ -45,9 +45,15 @@ export default function ListingsPage() {
   })
   const [showFilters, setShowFilters] = useState(false)
 
+  const [showMine, setShowMine] = useState(false)
   const { data, isLoading } = useQuery({
-    queryKey: ['listings', filters, search],
-    queryFn: () => listingsApi.search({ ...filters, search }, 1, 20),
+    queryKey: ['listings', filters, search, showMine],
+    queryFn: async () => {
+      if (showMine && user?.role === 'advertiser') {
+        return await listingsApi.getMyListings(1, 20)
+      }
+      return await listingsApi.search({ ...filters, search }, 1, 20)
+    },
     placeholderData: (prev) => prev,
     enabled: !!user,
   })
@@ -69,7 +75,7 @@ export default function ListingsPage() {
     <Layout>
       <div className="container py-4 space-y-4">
         {/* Search Bar */}
-        <div className="bg-telegram-bgSecondary/60 backdrop-blur rounded-xl p-3 flex gap-2 items-center">
+        <div className="bg-telegram-bgSecondary/60 backdrop-blur rounded-xl p-3 flex gap-2 items-center relative">
           <Input
             type="search"
             placeholder="Поиск объявлений..."
@@ -78,12 +84,17 @@ export default function ListingsPage() {
             icon={<SearchIcon className="w-4 h-4" />}
             className="flex-1 h-11 rounded-lg"
           />
-          <Button variant="secondary" onClick={() => setShowFilters(true)} className="h-11 rounded-lg px-3">
+          <Button variant="secondary" onClick={() => setShowFilters(true)} className="h-11 rounded-lg px-3 shrink-0 pointer-events-auto">
             <Filter className="w-4 h-4" />
           </Button>
           {user?.role === 'advertiser' && (
-            <Button variant="primary" onClick={() => { if (typeof window !== 'undefined') window.location.href = '/listings/create' }} className="h-11 rounded-lg whitespace-nowrap">
+            <Button variant="primary" onClick={() => { if (typeof window !== 'undefined') window.location.href = '/listings/create' }} className="h-11 rounded-lg whitespace-nowrap shrink-0 pointer-events-auto">
               Создать объявление
+            </Button>
+          )}
+          {user?.role === 'advertiser' && (
+            <Button variant={showMine ? 'primary' : 'secondary'} className="h-11 rounded-lg whitespace-nowrap" onClick={() => setShowMine(v => !v)}>
+              {showMine ? 'Мои объявления' : 'Все объявления'}
             </Button>
           )}
         </div>
@@ -256,6 +267,7 @@ export default function ListingsPage() {
     </Layout>
   )
 }
+
 
 
 

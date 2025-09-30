@@ -43,6 +43,7 @@ export default function ListingDetailsPage() {
   }, [user, params?.id])
 
   const canRespond = user?.role === 'blogger'
+  const canEdit = user?.role === 'advertiser'
 
   const handleSendResponse = async () => {
     if (!params?.id) return
@@ -143,6 +144,12 @@ export default function ListingDetailsPage() {
                 <Button variant="primary" onClick={() => setShowRespond(true)}>
                   <MessageSquare className="w-4 h-4 mr-2" /> Откликнуться
                 </Button>
+              </div>
+            )}
+            {canEdit && (
+              <div className="pt-2 flex gap-3">
+                <Button variant="secondary" onClick={() => alert('Редактирование: скоро')}>Редактировать</Button>
+                <Button variant="danger" onClick={() => alert('Удаление: скоро')}>Удалить</Button>
               </div>
             )}
           </CardContent>
