@@ -72,6 +72,7 @@ export class AuthService {
         sub: user.id,
         telegramId: user.telegramId,
         username: user.username || '',
+        role: user.role,
       };
 
       const token = this.jwtService.sign(payload);
@@ -264,6 +265,7 @@ export class AuthService {
     };
   }
 }
+
 
 
 
