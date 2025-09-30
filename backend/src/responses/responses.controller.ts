@@ -28,9 +28,9 @@ export class ResponsesController {
       return { success: false, message: 'Only bloggers can respond' } as any
     }
     // ensure blogger entity exists for this user
-    let blogger = await this.bloggersRepo.findOne({ where: { id: user.id } })
+    let blogger = await this.bloggersRepo.findOne({ where: { userId: user.id } })
     if (!blogger) {
-      blogger = this.bloggersRepo.create({ id: user.id } as any)
+      blogger = this.bloggersRepo.create({ user: user as any, userId: user.id } as any)
       await this.bloggersRepo.save(blogger)
     }
     // verify listing exists (will throw if not)
