@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Calendar, DollarSign, MessageSquare, Shield } from 'lucide-react'
+import { ArrowLeft, Calendar, DollarSign, MessageSquare, Shield, Save, Trash2, X } from 'lucide-react'
 import { Layout } from '@/components/layout/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -28,12 +28,25 @@ export default function ListingDetailsPage() {
   const [respError, setRespError] = useState<string | null>(null)
   const [respLoading, setRespLoading] = useState(false)
 
+  // Edit modal state
+  const [showEdit, setShowEdit] = useState(false)
+  const [editLoading, setEditLoading] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
+  const [editData, setEditData] = useState<{ title: string; description: string; budget: string; format: string }>({ title: '', description: '', budget: '', format: 'post' })
+
   useEffect(() => {
     if (!user || !params?.id) return
     ;(async () => {
       try {
         const data = await listingsApi.getById(params.id!)
-        setListing((data as any)?.data || data)
+        const l = (data as any)?.data || data
+        setListing(l)
+        setEditData({
+          title: l?.title || '',
+          description: l?.description || '',
+          budget: String(l?.budget || ''),
+          format: String(l?.format || 'post')
+        })
       } catch (e: any) {
         setError(e?.response?.data?.message || e?.message || 'Объявление не найдено')
       } finally {
@@ -148,8 +161,17 @@ export default function ListingDetailsPage() {
             )}
             {canEdit && (
               <div className="pt-2 flex gap-3">
-                <Button variant="secondary" onClick={() => alert('Редактирование: скоро')}>Редактировать</Button>
-                <Button variant="danger" onClick={() => alert('Удаление: скоро')}>Удалить</Button>
+                <Button variant="secondary" onClick={() => setShowEdit(true)}>Редактировать</Button>
+                <Button variant="danger" onClick={async () => {
+                  if (!confirm('Удалить объявление?')) return
+                  try {
+                    await listingsApi.delete(params.id!)
+                    alert('Объявление удалено')
+                    router.push('/listings')
+                  } catch (e: any) {
+                    alert(String(e?.response?.data?.message || e?.message || 'Не удалось удалить'))
+                  }
+                }}>Удалить</Button>
               </div>
             )}
           </CardContent>
@@ -174,6 +196,70 @@ export default function ListingDetailsPage() {
                   <Button variant="secondary" fullWidth onClick={() => setShowRespond(false)}>Отмена</Button>
                   <Button variant="primary" fullWidth onClick={handleSendResponse} disabled={respLoading}>
                     <DollarSign className="w-4 h-4 mr-2" /> {respLoading ? 'Отправка...' : 'Отправить'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit modal */}
+        {showEdit && (
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-end md:items-center justify-center" onClick={() => setShowEdit(false)}>
+            <div className="bg-telegram-bgSecondary w-full md:max-w-2xl rounded-t-2xl md:rounded-2xl p-6" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Редактирование объявления</h3>
+                <button className="p-2 hover:bg-telegram-bg rounded-lg" onClick={() => setShowEdit(false)}><X className="w-4 h-4" /></button>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="label">Заголовок</label>
+                  <Input value={editData.title} onChange={(e) => setEditData(s => ({ ...s, title: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">Описание</label>
+                  <textarea className="input min-h-[120px] resize-none" value={editData.description} onChange={(e) => setEditData(s => ({ ...s, description: e.target.value }))} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="label">Бюджет (₽)</label>
+                    <Input type="number" value={editData.budget} onChange={(e) => setEditData(s => ({ ...s, budget: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="label">Формат</label>
+                    <select className="input" value={editData.format} onChange={(e) => setEditData(s => ({ ...s, format: e.target.value }))}>
+                      <option value="post">Пост</option>
+                      <option value="story">Сторис</option>
+                      <option value="reels">Reels</option>
+                      <option value="live">Эфир</option>
+                    </select>
+                  </div>
+                </div>
+                {editError && <div className="text-telegram-danger text-sm">{editError}</div>}
+                <div className="flex gap-3 pt-1">
+                  <Button variant="secondary" fullWidth onClick={() => setShowEdit(false)}>Отмена</Button>
+                  <Button variant="primary" fullWidth onClick={async () => {
+                    setEditError(null)
+                    setEditLoading(true)
+                    try {
+                      const payload: any = {
+                        title: editData.title || undefined,
+                        description: editData.description || undefined,
+                        budget: editData.budget ? parseFloat(editData.budget) : undefined,
+                        format: editData.format || undefined,
+                      }
+                      await listingsApi.update(params.id!, payload)
+                      alert('Сохранено')
+                      setShowEdit(false)
+                      router.refresh()
+                    } catch (e: any) {
+                      const msg = e?.response?.data?.message || e?.message
+                      setEditError(Array.isArray(msg) ? msg.join(', ') : String(msg || 'Не удалось сохранить'))
+                    } finally {
+                      setEditLoading(false)
+                    }
+                  }} disabled={editLoading}>
+                    <Save className="w-4 h-4 mr-2" /> {editLoading ? 'Сохранение...' : 'Сохранить'}
                   </Button>
                 </div>
               </div>

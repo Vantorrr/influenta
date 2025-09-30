@@ -75,7 +75,7 @@ export default function ListingsPage() {
     <Layout>
       <div className="container py-4 space-y-4">
         {/* Search Bar */}
-        <div className="bg-telegram-bgSecondary/60 backdrop-blur rounded-xl p-3 flex gap-2 items-center relative">
+        <div className="bg-telegram-bgSecondary/60 backdrop-blur rounded-xl p-3 flex gap-2 items-center relative flex-wrap">
           <Input
             type="search"
             placeholder="Поиск объявлений..."
@@ -88,13 +88,14 @@ export default function ListingsPage() {
             <Filter className="w-4 h-4" />
           </Button>
           {user?.role === 'advertiser' && (
-            <Button variant="primary" onClick={() => { if (typeof window !== 'undefined') window.location.href = '/listings/create' }} className="h-11 rounded-lg whitespace-nowrap shrink-0 pointer-events-auto">
+            <Button variant="primary" onClick={() => { if (typeof window !== 'undefined') window.location.href = '/listings/create' }} className="h-11 rounded-lg px-3 shrink-0 pointer-events-auto">
               Создать объявление
             </Button>
           )}
           {user?.role === 'advertiser' && (
-            <Button variant={showMine ? 'primary' : 'secondary'} className="h-11 rounded-lg whitespace-nowrap" onClick={() => setShowMine(v => !v)}>
-              {showMine ? 'Мои объявления' : 'Все объявления'}
+            <Button variant={showMine ? 'primary' : 'secondary'} className="h-11 rounded-lg px-3 shrink-0" onClick={() => setShowMine(v => !v)}>
+              <span className="hidden md:inline">{showMine ? 'Мои объявления' : 'Все объявления'}</span>
+              <span className="md:hidden inline">{showMine ? 'Мои' : 'Все'}</span>
             </Button>
           )}
         </div>
