@@ -8,6 +8,10 @@ import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { User } from '@/users/entities/user.entity';
 import { ListingsService } from '@/listings/listings.service';
 import { Blogger } from '@/bloggers/entities/blogger.entity';
+import { Advertiser } from '@/advertisers/entities/advertiser.entity';
+import { Listing } from '@/listings/entities/listing.entity';
+import { TelegramService } from '@/telegram/telegram.service';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('responses')
 @UseGuards(JwtAuthGuard)
@@ -15,7 +19,11 @@ export class ResponsesController {
   constructor(
     @InjectRepository(Resp) private readonly responsesRepo: Repository<Resp>,
     @InjectRepository(Blogger) private readonly bloggersRepo: Repository<Blogger>,
+    @InjectRepository(Advertiser) private readonly advertisersRepo: Repository<Advertiser>,
+    @InjectRepository(Listing) private readonly listingsRepo: Repository<Listing>,
     private readonly listingsService: ListingsService,
+    private readonly telegramService: TelegramService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Post()
@@ -44,7 +52,49 @@ export class ResponsesController {
       status: ResponseStatus.PENDING,
     })
     await this.responsesRepo.save(resp)
+
+    // Send Telegram notifications
+    try {
+      const listing = await this.listingsRepo.findOne({ where: { id: data.listingId }, relations: ['advertiser', 'advertiser.user'] })
+      const frontendUrl = this.configService.get('app.frontendUrl') || 'https://influentaa.vercel.app'
+      const title = listing?.title || 'объявление'
+      const advTgId = (listing as any)?.advertiser?.user?.telegramId
+      const messageText = `📩 <b>Новый отклик</b>\n\nНа ваше объявление: <b>${title}</b>\nЦена: ${data.proposedPrice}₽`;
+      if (advTgId) {
+        await this.telegramService.sendMessage(parseInt(String(advTgId), 10), messageText, {
+          inline_keyboard: [[{ text: 'Открыть объявление', web_app: { url: `${frontendUrl}/listings/${data.listingId}` } }]],
+        })
+      }
+    } catch {}
     return { success: true, data: resp }
+  }
+
+  @Get('my/sent')
+  async mySent(@CurrentUser() user: User) {
+    // Blogger responses
+    const blogger = await this.bloggersRepo.findOne({ where: { userId: user.id } })
+    if (!blogger) return { data: [], total: 0 }
+    const list = await this.responsesRepo
+      .createQueryBuilder('r')
+      .leftJoinAndSelect('r.listing', 'listing')
+      .where('r.bloggerId = :id', { id: blogger.id })
+      .orderBy('r.createdAt', 'DESC')
+      .getMany()
+    return { data: list, total: list.length }
+  }
+
+  @Get('my/received')
+  async myReceived(@CurrentUser() user: User) {
+    // Advertiser received responses
+    const advertiser = await this.advertisersRepo.findOne({ where: { userId: user.id } })
+    if (!advertiser) return { data: [], total: 0 }
+    const list = await this.responsesRepo
+      .createQueryBuilder('r')
+      .leftJoinAndSelect('r.listing', 'listing')
+      .where('listing.advertiserId = :aid', { aid: advertiser.id })
+      .orderBy('r.createdAt', 'DESC')
+      .getMany()
+    return { data: list, total: list.length }
   }
 }
 

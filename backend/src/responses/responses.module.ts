@@ -4,9 +4,11 @@ import { Response } from './entities/response.entity';
 import { ResponsesController } from './responses.controller';
 import { ListingsModule } from '@/listings/listings.module';
 import { Blogger } from '@/bloggers/entities/blogger.entity';
+import { Advertiser } from '@/advertisers/entities/advertiser.entity';
+import { Listing } from '@/listings/entities/listing.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Response, Blogger]), ListingsModule],
+  imports: [TypeOrmModule.forFeature([Response, Blogger, Advertiser, Listing]), ListingsModule],
   controllers: [ResponsesController],
   exports: [TypeOrmModule],
 })
