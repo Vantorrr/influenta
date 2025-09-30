@@ -47,9 +47,9 @@ export default function AdminBloggersPage() {
 
   const stats = {
     total: bloggers.length,
-    verified: bloggers.filter(b => b.isVerified).length,
-    active: bloggers.filter(b => b.isPublic).length,
-    totalEarnings: bloggers.reduce((sum, b) => sum + b.totalEarnings, 0),
+    verified: bloggers.filter(b => !!b.isVerified).length,
+    active: bloggers.filter(b => (b.subscribersCount || 0) > 0).length,
+    totalEarnings: bloggers.reduce((sum, b) => sum + ((b.completedCampaigns || 0) * (b.pricePerPost || 0)), 0),
   }
 
   if (isLoading) {
@@ -164,8 +164,8 @@ export default function AdminBloggersPage() {
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <Avatar
-                    firstName={blogger.user.firstName}
-                    lastName={blogger.user.lastName}
+                    firstName={blogger.user?.firstName || ''}
+                    lastName={blogger.user?.lastName || ''}
                     size="lg"
                   />
                   
@@ -173,13 +173,13 @@ export default function AdminBloggersPage() {
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <h3 className="font-semibold text-lg flex items-center gap-2">
-                          {blogger.user.firstName} {blogger.user.lastName}
+                          {blogger.user?.firstName || ''} {blogger.user?.lastName || ''}
                           {blogger.isVerified && (
                             <Shield className="w-4 h-4 text-telegram-primary" />
                           )}
                         </h3>
                         <p className="text-telegram-textSecondary">
-                          {blogger.user.username} • {blogger.user.email}
+                          {blogger.user?.username || ''}
                         </p>
                       </div>
                       
@@ -188,22 +188,15 @@ export default function AdminBloggersPage() {
                           <Edit className="w-4 h-4 mr-1" />
                           Редактировать
                         </Button>
-                        {blogger.isPublic ? (
-                          <Button variant="danger" size="sm">
-                            <Ban className="w-4 h-4 mr-1" />
-                            Скрыть
-                          </Button>
-                        ) : (
-                          <Button variant="success" size="sm">
-                            <Eye className="w-4 h-4 mr-1" />
-                            Показать
-                          </Button>
-                        )}
+                        <Button variant="secondary" size="sm">
+                          <Eye className="w-4 h-4 mr-1" />
+                          Просмотр
+                        </Button>
                       </div>
                     </div>
                     
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {blogger.categories.map(category => (
+                      {(blogger.categories || []).map((category: string) => (
                         <Badge key={category} variant="default">
                           {getCategoryLabel(category)}
                         </Badge>
@@ -213,41 +206,37 @@ export default function AdminBloggersPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div>
                         <p className="text-telegram-textSecondary">Подписчики</p>
-                        <p className="font-medium">{formatNumber(blogger.subscribersCount)}</p>
+                        <p className="font-medium">{formatNumber(blogger.subscribersCount || 0)}</p>
                       </div>
                       <div>
                         <p className="text-telegram-textSecondary">Ср. просмотры</p>
-                        <p className="font-medium">{formatNumber(blogger.averageViews)}</p>
+                        <p className="font-medium">{formatNumber(blogger.averageViews || 0)}</p>
                       </div>
                       <div>
                         <p className="text-telegram-textSecondary">Engagement</p>
-                        <p className="font-medium">{blogger.engagementRate}%</p>
+                        <p className="font-medium">{blogger.engagementRate || 0}%</p>
                       </div>
                       <div>
                         <p className="text-telegram-textSecondary">Рейтинг</p>
                         <p className="font-medium flex items-center gap-1">
                           <Star className="w-4 h-4 text-yellow-500" />
-                          {blogger.rating}
+                          {blogger.rating || 0}
                         </p>
                       </div>
                     </div>
                     
-                    <div className="mt-4 pt-4 border-t border-gray-700/50 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="mt-4 pt-4 border-t border-gray-700/50 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                       <div>
                         <p className="text-telegram-textSecondary">Цена за пост</p>
-                        <p className="font-medium">{formatPrice(blogger.pricePerPost)}</p>
+                        <p className="font-medium">{formatPrice(blogger.pricePerPost || 0)}</p>
                       </div>
                       <div>
                         <p className="text-telegram-textSecondary">Кампаний</p>
-                        <p className="font-medium">{blogger.completedCampaigns}</p>
+                        <p className="font-medium">{blogger.completedCampaigns || 0}</p>
                       </div>
                       <div>
-                        <p className="text-telegram-textSecondary">Заработано</p>
-                        <p className="font-medium">{formatPrice(blogger.totalEarnings)}</p>
-                      </div>
-                      <div>
-                        <p className="text-telegram-textSecondary">Комиссия платформы</p>
-                        <p className="font-medium">{formatPrice(blogger.totalEarnings * 0.1)}</p>
+                        <p className="text-telegram-textSecondary">Оцен. оборот</p>
+                        <p className="font-medium">{formatPrice((blogger.completedCampaigns || 0) * (blogger.pricePerPost || 0))}</p>
                       </div>
                     </div>
                   </div>
