@@ -69,20 +69,20 @@ export default function ListingsPage() {
     <Layout>
       <div className="container py-4 space-y-4">
         {/* Search Bar */}
-        <div className="flex gap-2">
+        <div className="bg-telegram-bgSecondary/60 backdrop-blur rounded-xl p-3 flex gap-2 items-center">
           <Input
             type="search"
             placeholder="Поиск объявлений..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             icon={<SearchIcon className="w-4 h-4" />}
-            className="flex-1"
+            className="flex-1 h-11 rounded-lg"
           />
-          <Button variant="secondary" onClick={() => setShowFilters(true)}>
+          <Button variant="secondary" onClick={() => setShowFilters(true)} className="h-11 rounded-lg px-3">
             <Filter className="w-4 h-4" />
           </Button>
           {user?.role === 'advertiser' && (
-            <Button variant="primary" onClick={() => { if (typeof window !== 'undefined') window.location.href = '/listings/create' }}>
+            <Button variant="primary" onClick={() => { if (typeof window !== 'undefined') window.location.href = '/listings/create' }} className="h-11 rounded-lg whitespace-nowrap">
               Создать объявление
             </Button>
           )}
