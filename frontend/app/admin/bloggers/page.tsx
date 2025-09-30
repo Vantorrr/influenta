@@ -188,24 +188,26 @@ export default function AdminBloggersPage() {
                         </p>
                       </div>
                       
-                      <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-1 flex-shrink-0 whitespace-nowrap">
                         <Button
                           variant="secondary"
                           size="sm"
+                          className="px-2"
                           onClick={() => { if (typeof window !== 'undefined') window.location.href = `/bloggers/${blogger.id}` }}
                           title="Редактировать"
                         >
-                          <Edit className="w-4 h-4 mr-1" />
-                          Редактировать
+                          <Edit className="w-4 h-4" />
+                          <span className="hidden md:inline ml-1">Редактировать</span>
                         </Button>
                         <Button
                           variant="secondary"
                           size="sm"
+                          className="px-2"
                           onClick={() => { if (typeof window !== 'undefined') window.location.href = `/bloggers/${blogger.id}` }}
                           title="Просмотр"
                         >
-                          <Eye className="w-4 h-4 mr-1" />
-                          Просмотр
+                          <Eye className="w-4 h-4" />
+                          <span className="hidden md:inline ml-1">Просмотр</span>
                         </Button>
                       </div>
                     </div>
