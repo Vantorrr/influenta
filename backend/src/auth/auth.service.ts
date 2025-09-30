@@ -233,8 +233,29 @@ export class AuthService {
     try {
       const adminIds: number[] = this.configService.get<number[]>('app.admins.telegramIds') || []
       const frontendUrl = this.configService.get('app.frontendUrl') || 'https://influentaa.vercel.app'
+      const fullName = `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}`.trim()
+      const username = user.username ? `@${user.username}` : ''
+      const adminText = [
+        '🆕 <b>Новая заявка на верификацию</b>',
+        '',
+        `👤 <b>Пользователь:</b> ${fullName} ${username}`.trim(),
+        `🆔 <b>ID:</b> ${user.telegramId}`,
+        data.message ? `📝 <b>Сообщение:</b> ${data.message}` : '',
+        (data.documents?.length || 0) > 0 ? `📎 Документов: ${data.documents!.length}` : '',
+        (data.socialProofs?.length || 0) > 0 ? `🔗 Ссылок: ${data.socialProofs!.length}` : ''
+      ].filter(Boolean).join('\n')
+
+      const keyboard: any = {
+        inline_keyboard: [
+          [{ text: '🛡 Открыть модерацию', web_app: { url: `${frontendUrl}/admin/moderation` } }],
+        ] as any[],
+      }
+      if (user.username) {
+        keyboard.inline_keyboard.push([{ text: '✉️ Написать в Telegram', url: `https://t.me/${user.username}` }])
+      }
+
       for (const adminId of adminIds) {
-        await this.telegramService.sendMessage(adminId, `🟦 Новая заявка на верификацию\n\nПользователь: ${user.firstName}${user.lastName ? ' ' + user.lastName : ''} ${user.username ? '(@' + user.username + ')' : ''}\nID: ${user.telegramId}\n\nОткройте админку: ${frontendUrl}/admin/moderation`)
+        await this.telegramService.sendMessage(adminId, adminText, keyboard)
       }
     } catch {}
 
