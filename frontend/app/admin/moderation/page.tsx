@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import Link from 'next/link'
 
 export default function AdminModerationPage() {
   const [requests, setRequests] = useState<any[]>([])
@@ -24,6 +26,37 @@ export default function AdminModerationPage() {
       }
     })()
   }, [])
+
+  const openLink = (url: string) => {
+    try {
+      if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.openLink) {
+        ;(window as any).Telegram.WebApp.openLink(url, { try_instant_view: false })
+      } else {
+        window.open(url, '_blank')
+      }
+    } catch {
+      try { window.open(url, '_blank') } catch {}
+    }
+  }
+
+  const openTelegram = (username?: string, telegramId?: string | number) => {
+    const url = username
+      ? `https://t.me/${username.replace(/^@/, '')}`
+      : telegramId
+        ? `tg://user?id=${telegramId}`
+        : ''
+    if (url) {
+      try {
+        if ((window as any).Telegram?.WebApp?.openTelegramLink) {
+          (window as any).Telegram.WebApp.openTelegramLink(url)
+        } else {
+          window.open(url, '_blank')
+        }
+      } catch {
+        try { window.open(url, '_blank') } catch {}
+      }
+    }
+  }
 
   if (isLoading) return (
     <div className="min-h-screen bg-telegram-bg flex items-center justify-center">
@@ -50,15 +83,71 @@ export default function AdminModerationPage() {
       {requests.length === 0 ? (
         <Card><CardContent className="p-8 text-center text-telegram-textSecondary">Нет заявок</CardContent></Card>
       ) : (
-        requests.map((r, i) => (
-          <Card key={r.id}>
-            <CardHeader><CardTitle>{r.firstName} {r.lastName}</CardTitle></CardHeader>
-            <CardContent className="flex gap-2">
-              <Button size="sm" variant="primary" onClick={async () => { await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${r.id}/verify`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` } }); setRequests(prev => prev.filter(x => x.id !== r.id)) }}>Верифицировать</Button>
-              <Button size="sm" variant="danger" onClick={async () => { const reason = prompt('Причина отказа:') || 'недостаточно данных'; await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${r.id}/reject-verification`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) }); setRequests(prev => prev.filter(x => x.id !== r.id)) }}>Отклонить</Button>
-            </CardContent>
-          </Card>
-        ))
+        requests.map((r, i) => {
+          const docs: string[] = Array.isArray(r?.verificationData?.documents) ? r.verificationData.documents : []
+          const proofs: string[] = Array.isArray(r?.verificationData?.socialProofs) ? r.verificationData.socialProofs : []
+          const msg: string | undefined = r?.verificationData?.message
+
+          return (
+            <Card key={r.id}>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between gap-2">
+                  <span className="truncate">{r.firstName} {r.lastName}</span>
+                  <div className="flex items-center gap-2">
+                    {r.username && (
+                      <Badge variant="primary">@{r.username}</Badge>
+                    )}
+                    <Button size="sm" variant="secondary" onClick={() => openTelegram(r.username, r.telegramId)}>
+                      Написать в Telegram
+                    </Button>
+                    <Link href={`/bloggers/${r.id}`} className="hidden md:inline">
+                      <Button size="sm" variant="secondary">Профиль</Button>
+                    </Link>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {msg && (
+                  <div>
+                    <p className="text-xs text-telegram-textSecondary mb-1">Сообщение</p>
+                    <p className="text-sm whitespace-pre-wrap">{msg}</p>
+                  </div>
+                )}
+
+                {docs.length > 0 && (
+                  <div>
+                    <p className="text-xs text-telegram-textSecondary mb-2">Документы</p>
+                    <div className="flex flex-wrap gap-2">
+                      {docs.map((url, idx) => (
+                        <Button key={idx} size="sm" variant="secondary" onClick={() => openLink(url)}>
+                          Открыть документ {idx + 1}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {proofs.length > 0 && (
+                  <div>
+                    <p className="text-xs text-telegram-textSecondary mb-2">Соц. доказательства</p>
+                    <div className="flex flex-wrap gap-2">
+                      {proofs.map((url, idx) => (
+                        <Button key={idx} size="sm" variant="secondary" onClick={() => openLink(url)}>
+                          Ссылка {idx + 1}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-2">
+                  <Button size="sm" variant="primary" onClick={async () => { await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${r.id}/verify`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` } }); setRequests(prev => prev.filter(x => x.id !== r.id)) }}>Верифицировать</Button>
+                  <Button size="sm" variant="danger" onClick={async () => { const reason = prompt('Причина отказа:') || 'недостаточно данных'; await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${r.id}/reject-verification`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) }); setRequests(prev => prev.filter(x => x.id !== r.id)) }}>Отклонить</Button>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })
       )}
     </div>
   )
