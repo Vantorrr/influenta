@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
+import { TelegramService } from '../telegram/telegram.service';
 import { User } from '../users/entities/user.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import * as crypto from 'crypto';
@@ -14,6 +15,7 @@ export class AuthService {
     private usersRepository: Repository<User>,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private telegramService: TelegramService,
   ) {}
 
   async authenticateWithTelegram(authData: any) {
@@ -227,11 +229,20 @@ export class AuthService {
     };
     await this.usersRepository.save(user);
     
+    // Уведомляем админов о новой заявке
+    try {
+      const adminIds: number[] = this.configService.get<number[]>('app.admins.telegramIds') || []
+      for (const adminId of adminIds) {
+        await this.telegramService.sendMessage(adminId, `🟦 Новая заявка на верификацию\n\nПользователь: ${user.firstName}${user.lastName ? ' ' + user.lastName : ''} ${user.username ? '(@' + user.username + ')' : ''}\nID: ${user.telegramId}\n\nОткройте админку: https://influentaa.vercel.app/admin/moderation`)
+      }
+    } catch {}
+
     return {
       success: true,
       message: 'Заявка на верификацию отправлена. Администратор рассмотрит её в ближайшее время.'
     };
   }
 }
+
 
 
