@@ -69,20 +69,46 @@ export function useAuth() {
 
       const effectiveUser = localStorage.getItem('influenta_user')
       if (savedToken && effectiveUser) {
-        const user = JSON.parse(effectiveUser)
-        if (user?.onboardingCompleted) {
+        const cachedUser = JSON.parse(effectiveUser)
+        if (cachedUser?.onboardingCompleted) {
           localStorage.setItem('onboarding_completed', 'true')
         }
-        const isAdmin = ADMIN_CONFIG.telegramIds.includes(parseInt(user.telegramId))
-        const isSuperAdmin = parseInt(user.telegramId) === ADMIN_CONFIG.telegramIds[0]
+        const cachedIsAdmin = ADMIN_CONFIG.telegramIds.includes(parseInt(cachedUser.telegramId))
+        const cachedIsSuper = parseInt(cachedUser.telegramId) === ADMIN_CONFIG.telegramIds[0]
 
+        // Показать сразу кеш, чтобы UI открылся быстрее
         setAuthState({
-          user,
+          user: cachedUser,
           isLoading: false,
-          isAdmin,
-          isSuperAdmin,
+          isAdmin: cachedIsAdmin,
+          isSuperAdmin: cachedIsSuper,
           token: savedToken,
         })
+
+        // Асинхронно подтянуть свежий профиль (чтобы увиделся статус верификации после решения админа)
+        ;(async () => {
+          try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+              headers: { Authorization: `Bearer ${savedToken}` },
+            })
+            if (res.ok) {
+              const me = await res.json()
+              const freshUser = (me && (me.user ?? me)) || cachedUser
+              localStorage.setItem('influenta_user', JSON.stringify(freshUser))
+              const isAdmin = ADMIN_CONFIG.telegramIds.includes(parseInt(freshUser.telegramId))
+              const isSuperAdmin = parseInt(freshUser.telegramId) === ADMIN_CONFIG.telegramIds[0]
+              setAuthState(prev => ({
+                ...prev,
+                user: freshUser,
+                isAdmin,
+                isSuperAdmin,
+              }))
+              if (freshUser?.onboardingCompleted) {
+                localStorage.setItem('onboarding_completed', 'true')
+              }
+            }
+          } catch {}
+        })()
         return
       }
 
@@ -292,4 +318,5 @@ export function useAuth() {
     isAdminLoggedIn,
   }
 }
+
 
