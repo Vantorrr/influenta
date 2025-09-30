@@ -15,10 +15,15 @@ export class ListingsController {
   constructor(private readonly listingsService: ListingsService) {}
 
   @Get('search')
-  async search(
-    @Query() searchDto: ListingSearchDto,
-    @Query() paginationDto: PaginationDto,
-  ) {
+  async search(@Query() query: any) {
+    const searchDto: ListingSearchDto = {
+      search: query.search,
+      status: query.status,
+    } as ListingSearchDto;
+    const paginationDto: PaginationDto = {
+      page: query.page ? parseInt(String(query.page), 10) : undefined,
+      limit: query.limit ? parseInt(String(query.limit), 10) : undefined,
+    } as PaginationDto;
     return this.listingsService.search(searchDto, paginationDto);
   }
 
@@ -59,5 +64,6 @@ export class ListingsController {
     return this.listingsService.updateStatus(id, ListingStatus.COMPLETED, user);
   }
 }
+
 
 
