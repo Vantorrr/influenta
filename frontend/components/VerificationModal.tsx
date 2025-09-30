@@ -41,11 +41,32 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
   const [newProof, setNewProof] = useState<SocialProof>({ platform: 'Telegram', url: '', followers: undefined })
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
 
   const handleAddDocument = () => {
     if (documentUrl.trim()) {
       setDocuments([...documents, documentUrl.trim()])
       setDocumentUrl('')
+    }
+  }
+
+  const handleUploadFile = async (file: File) => {
+    if (!file) return
+    try {
+      setIsUploading(true)
+      const form = new FormData()
+      form.append('file', file)
+      const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/uploads/verification`, {
+        method: 'POST',
+        body: form,
+      })
+      if (!resp.ok) throw new Error('upload failed')
+      const data = await resp.json()
+      if (data?.url) setDocuments(prev => [...prev, data.url])
+    } catch (e) {
+      alert('Не удалось загрузить файл. Попробуйте еще раз.')
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -125,6 +146,10 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
                     <Button onClick={handleAddDocument} size="sm">
                       <Plus className="w-4 h-4" />
                     </Button>
+                    <label className="inline-flex items-center px-3 py-2 bg-telegram-bg rounded-lg border border-telegram-border cursor-pointer text-sm">
+                      <Upload className="w-4 h-4 mr-2" /> {isUploading ? 'Загрузка...' : 'Загрузить файл'}
+                      <input type="file" accept="image/*,.pdf" className="hidden" onChange={(e) => e.target.files && handleUploadFile(e.target.files[0])} disabled={isUploading} />
+                    </label>
                   </div>
 
                   {documents.length > 0 && (

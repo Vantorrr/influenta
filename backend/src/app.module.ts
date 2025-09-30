@@ -15,6 +15,9 @@ import databaseConfig from './config/database.config';
 import appConfig from './config/app.config';
 import { SeedModule } from './seed/seed.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { UploadsModule } from './uploads/uploads.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import * as path from 'path';
 
 @Module({
   imports: [
@@ -35,6 +38,11 @@ import { AnalyticsModule } from './analytics/analytics.module';
           }),
         ]
       : []),
+    // Раздача статических файлов /uploads
+    ServeStaticModule.forRoot({
+      rootPath: path.join(process.cwd(), 'uploads'),
+      serveRoot: '/uploads',
+    }),
     ChatModule,
     AdminModule,
     TelegramModule,
@@ -45,6 +53,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     ListingsModule,
     SeedModule,
     AnalyticsModule,
+    UploadsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
