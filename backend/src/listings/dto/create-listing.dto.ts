@@ -29,6 +29,7 @@ export class CreateListingDto {
     categories?: BloggerCategory[];
   };
 
+  @IsOptional()
   @IsDateString()
-  deadline: string;
+  deadline?: string;
 }
