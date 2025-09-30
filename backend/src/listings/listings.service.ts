@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Listing } from './entities/listing.entity';
+import { Advertiser } from '@/advertisers/entities/advertiser.entity';
 import { User } from '@/users/entities/user.entity';
 import { ListingSearchDto } from './dto/listing-search.dto';
 import { CreateListingDto } from './dto/create-listing.dto';
@@ -14,6 +15,8 @@ export class ListingsService {
   constructor(
     @InjectRepository(Listing)
     private listingsRepository: Repository<Listing>,
+    @InjectRepository(Advertiser)
+    private advertisersRepository: Repository<Advertiser>,
   ) {}
 
   async search(searchDto: ListingSearchDto, paginationDto: PaginationDto) {
@@ -71,9 +74,23 @@ export class ListingsService {
       throw new ForbiddenException('Only advertisers can create listings');
     }
 
+    // Ensure Advertiser entity exists for this user
+    let advertiser = await this.advertisersRepository.findOne({ where: { userId: user.id } });
+    if (!advertiser) {
+      advertiser = this.advertisersRepository.create({
+        user: user as any,
+        userId: user.id,
+        companyName: user.companyName || `${user.firstName} ${user.lastName || ''}`.trim(),
+        website: (user as any).website || null,
+        isVerified: user.isVerified,
+      });
+      advertiser = await this.advertisersRepository.save(advertiser);
+    }
+
     const listing = new Listing();
     Object.assign(listing, createListingDto);
-    listing.advertiser = user as any; // TODO: Fix advertiser relation
+    listing.advertiserId = advertiser.id;
+    listing.advertiser = advertiser as any;
     listing.status = ListingStatus.ACTIVE;
     listing.viewsCount = 0;
     listing.responsesCount = 0;
@@ -163,5 +180,8 @@ export class ListingsService {
     };
   }
 }
+
+
+
 
 
