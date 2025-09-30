@@ -211,12 +211,12 @@ export default function AdminAdvertisersPage() {
                     </div>
                   </div>
                   
-                <div className="flex items-center gap-2 flex-wrap justify-end">
-                  <Button variant="secondary" size="sm" className="px-2 min-w-[44px]">
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                  <Button variant="secondary" size="sm" className="px-2 min-w-[44px]" onClick={() => { if (typeof window !== 'undefined') window.alert('Редактирование рекламодателя: скоро'); }}>
                       <Edit className="w-4 h-4 mr-1" />
                     <span className="hidden md:inline">Редактировать</span>
                     </Button>
-                  <Button variant="secondary" size="sm" className="px-2 min-w-[44px]">
+                  <Button variant="secondary" size="sm" className="px-2 min-w-[44px]" onClick={() => { if (typeof window !== 'undefined') window.alert('Статистика рекламодателя: скоро'); }}>
                       <BarChart className="w-4 h-4 mr-1" />
                     <span className="hidden md:inline">Статистика</span>
                     </Button>
