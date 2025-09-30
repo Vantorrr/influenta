@@ -11,7 +11,7 @@ function ensureDir(dir: string) {
   }
 }
 
-function filenameGenerator(req: any, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) {
+function filenameGenerator(req: any, file: any, cb: (error: Error | null, filename: string) => void) {
   const ext = path.extname(file.originalname || '');
   const name = `${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;
   cb(null, name);
