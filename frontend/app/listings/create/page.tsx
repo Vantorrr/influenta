@@ -88,30 +88,43 @@ export default function CreateListingPage() {
     setLoading(true)
 
     try {
-      const data: Partial<Listing> = {
+      const req: Partial<Listing> = {
         title: formData.title,
         description: formData.description,
         targetCategories: formData.targetCategories,
         budget: parseFloat(formData.budget),
         format: formData.format,
+        // DTO допускает только: minSubscribers, minEngagementRate, minRating, verifiedOnly
         requirements: {
-          minSubscribers: formData.requirements.minSubscribers ? 
-            parseInt(formData.requirements.minSubscribers) : undefined,
-          maxSubscribers: formData.requirements.maxSubscribers ? 
-            parseInt(formData.requirements.maxSubscribers) : undefined,
-          minEngagementRate: formData.requirements.minEngagementRate ? 
-            parseFloat(formData.requirements.minEngagementRate) : undefined,
-          minRating: formData.requirements.minRating ? 
-            parseFloat(formData.requirements.minRating) : undefined,
+          minSubscribers: formData.requirements.minSubscribers
+            ? parseInt(formData.requirements.minSubscribers)
+            : undefined,
+          minEngagementRate: formData.requirements.minEngagementRate
+            ? parseFloat(formData.requirements.minEngagementRate)
+            : undefined,
+          minRating: formData.requirements.minRating
+            ? parseFloat(formData.requirements.minRating)
+            : undefined,
           verifiedOnly: formData.requirements.verifiedOnly,
         },
-        deadline: formData.deadline ? new Date(formData.deadline) : undefined,
+        deadline: formData.deadline ? new Date(formData.deadline).toISOString() : undefined,
       }
 
-      await listingsApi.create(data)
+      // Удаляем пустые поля из requirements, чтобы не слал лишнее
+      if (req.requirements) {
+        const cleanReq: any = {}
+        if (req.requirements.minSubscribers !== undefined) cleanReq.minSubscribers = req.requirements.minSubscribers
+        if (req.requirements.minEngagementRate !== undefined) cleanReq.minEngagementRate = req.requirements.minEngagementRate
+        if (req.requirements.minRating !== undefined) cleanReq.minRating = req.requirements.minRating
+        if (req.requirements.verifiedOnly !== undefined) cleanReq.verifiedOnly = req.requirements.verifiedOnly
+        req.requirements = cleanReq
+      }
+
+      await listingsApi.create(req)
       router.push('/listings')
-    } catch (err) {
-      setError('Ошибка при создании объявления. Попробуйте еще раз.')
+    } catch (err: any) {
+      const apiMsg = err?.response?.data?.message || err?.message
+      setError(Array.isArray(apiMsg) ? apiMsg.join(', ') : (apiMsg || 'Ошибка при создании объявления. Попробуйте еще раз.'))
     } finally {
       setLoading(false)
     }
@@ -390,6 +403,9 @@ export default function CreateListingPage() {
     </Layout>
   )
 }
+
+
+
 
 
 
