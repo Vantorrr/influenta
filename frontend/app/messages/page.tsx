@@ -95,18 +95,19 @@ function MessagesPageContent() {
               role: iAmBlogger ? 'advertiser' : 'blogger',
             },
             lastMessage: row.lastMessage ? {
-            content: row.lastMessage.content,
-            createdAt: new Date(row.lastMessage.createdAt),
-            isRead: !!row.lastMessage.isRead,
-            senderId: row.lastMessage.senderId,
-          } : {
-            content: 'Нет сообщений',
-            createdAt: new Date(),
-            isRead: true,
-            senderId: '',
-          },
-          unreadCount: row.unreadCount || 0,
-          status: 'active',
+              content: row.lastMessage.content,
+              createdAt: new Date(row.lastMessage.createdAt),
+              isRead: !!row.lastMessage.isRead,
+              senderId: row.lastMessage.senderId,
+            } : {
+              content: 'Нет сообщений',
+              createdAt: new Date(),
+              isRead: true,
+              senderId: '',
+            },
+            unreadCount: row.unreadCount || 0,
+            status: 'active',
+          };
         }))
         setChats(normalized)
       } catch {
@@ -257,6 +258,7 @@ function MessagesPageContent() {
     </Layout>
   )
 }
+
 
 
 
