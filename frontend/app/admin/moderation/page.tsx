@@ -141,8 +141,8 @@ export default function AdminModerationPage() {
                 )}
 
                 <div className="flex gap-2 pt-2">
-                  <Button size="sm" variant="primary" onClick={async () => { await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${r.id}/verify`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` } }); setRequests(prev => prev.filter(x => x.id !== r.id)) }}>Верифицировать</Button>
-                  <Button size="sm" variant="danger" onClick={async () => { const reason = prompt('Причина отказа:') || 'недостаточно данных'; await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${r.id}/reject-verification`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) }); setRequests(prev => prev.filter(x => x.id !== r.id)) }}>Отклонить</Button>
+                  <Button size="sm" variant="primary" onClick={async () => { await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${r.id}/verify`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` } }); setRequests(prev => prev.filter(x => x.id !== r.id)); try { window.dispatchEvent(new Event('refreshModerationCount')) } catch {} }}>Верифицировать</Button>
+                  <Button size="sm" variant="danger" onClick={async () => { const reason = prompt('Причина отказа:') || 'недостаточно данных'; await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${r.id}/reject-verification`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) }); setRequests(prev => prev.filter(x => x.id !== r.id)); try { window.dispatchEvent(new Event('refreshModerationCount')) } catch {} }}>Отклонить</Button>
                 </div>
               </CardContent>
             </Card>

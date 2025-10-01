@@ -44,24 +44,33 @@ export default function AdminLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [pendingVerifications, setPendingVerifications] = useState<number>(0)
 
-  useEffect(() => {
-    ;(async () => {
-      try {
-        const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/verification-requests`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` },
-          cache: 'no-store'
-        })
-        if (resp.ok) {
-          const arr = await resp.json()
-          setPendingVerifications(Array.isArray(arr) ? arr.length : 0)
-        } else {
-          setPendingVerifications(0)
-        }
-      } catch {
+  const fetchModerationCount = async () => {
+    try {
+      const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/verification-requests`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` },
+        cache: 'no-store'
+      })
+      if (resp.ok) {
+        const arr = await resp.json()
+        setPendingVerifications(Array.isArray(arr) ? arr.length : 0)
+      } else {
         setPendingVerifications(0)
       }
-    })()
+    } catch {
+      setPendingVerifications(0)
+    }
+  }
+
+  useEffect(() => {
+    fetchModerationCount()
   }, [pathname])
+
+  // Слушаем кастомное событие на обновление счетчика
+  useEffect(() => {
+    const handler = () => fetchModerationCount()
+    window.addEventListener('refreshModerationCount', handler as any)
+    return () => window.removeEventListener('refreshModerationCount', handler as any)
+  }, [])
 
   const handleLogout = () => {
     // Очищаем все админские cookie
@@ -249,3 +258,4 @@ function AdminUserInfo() {
     </>
   )
 }
+
