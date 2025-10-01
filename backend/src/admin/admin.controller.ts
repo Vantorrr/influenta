@@ -38,6 +38,13 @@ export class AdminController {
   async advertisers() {
     return this.adminService.getAdvertisersList();
   }
+
+  // Заявки на верификацию (модерация)
+  @Get('verification-requests')
+  @UseGuards(JwtAuthGuard)
+  async verificationRequests() {
+    return this.adminService.getVerificationRequests();
+  }
 }
 
 
