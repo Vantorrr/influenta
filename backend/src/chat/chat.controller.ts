@@ -37,10 +37,16 @@ export class ChatController {
       attachments?: any[];
     },
   ) {
-    return this.chatService.createMessage({
-      ...data,
-      senderId: user.id,
-    });
+    try {
+      const message = await this.chatService.createMessage({
+        ...data,
+        senderId: user.id,
+      });
+      return { success: true, data: message };
+    } catch (error) {
+      console.error('Error creating message:', error);
+      return { success: false, message: error?.message || 'Failed to send message' };
+    }
   }
 
   @Post('messages/:id/read')

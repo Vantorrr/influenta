@@ -127,18 +127,22 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
     const content = message
     setMessage('')
     try {
+      console.log('📤 Sending message:', { responseId: chat.responseId, content })
       const res = await messagesApi.send(chat.responseId, content)
+      console.log('✅ Message sent:', res)
       const m = (res as any)?.data || res
       const newMessage: Message = {
-        id: m.id,
-        content: m.content,
+        id: m.id || Date.now().toString(),
+        content: m.content || content,
         senderId: m.senderId || currentUserId,
         createdAt: new Date(m.createdAt || Date.now()),
         isRead: !!m.isRead,
       }
       setMessages(prev => [...prev, newMessage])
       try { chatService.stopTyping(chat.responseId) } catch {}
-    } catch (e) {
+    } catch (e: any) {
+      console.error('❌ Message send error:', e)
+      alert(`Не удалось отправить: ${e?.response?.data?.message || e?.message || 'Неизвестная ошибка'}`)
       // Возвращаем текст в инпут, если не отправилось
       setMessage(content)
     }
