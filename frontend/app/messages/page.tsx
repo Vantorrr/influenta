@@ -76,17 +76,24 @@ function MessagesPageContent() {
       try {
         const res = await messagesApi.getChatList()
         const rows = (res as any)?.data || res
-        const normalized: Chat[] = (rows || []).map((row: any) => ({
-          id: row.responseId,
-          responseId: row.responseId,
-          listingTitle: row.response?.listing?.title || 'Объявление',
-          otherUser: {
-            firstName: row.response?.blogger?.user?.firstName || row.response?.listing?.advertiser?.user?.firstName || 'Пользователь',
-            lastName: row.response?.blogger?.user?.lastName || row.response?.listing?.advertiser?.user?.lastName || '',
-            username: row.response?.blogger?.user?.username || row.response?.listing?.advertiser?.user?.username || '',
-            photoUrl: row.response?.blogger?.user?.photoUrl || row.response?.listing?.advertiser?.user?.photoUrl,
-            role: row.response?.blogger ? 'blogger' : 'advertiser',
-          },
+        const normalized: Chat[] = (rows || []).map((row: any) => {
+          // Определяем, кто я: блогер (автор отклика) или рекламодатель (владелец объявления)
+          const iAmBlogger = row.response?.blogger?.userId === user.id
+          const otherUserData = iAmBlogger
+            ? row.response?.listing?.advertiser?.user // Я блогер → собеседник рекламодатель
+            : row.response?.blogger?.user // Я рекламодатель → собеседник блогер
+          
+          return {
+            id: row.responseId,
+            responseId: row.responseId,
+            listingTitle: row.response?.listing?.title || 'Объявление',
+            otherUser: {
+              firstName: otherUserData?.firstName || 'Пользователь',
+              lastName: otherUserData?.lastName || '',
+              username: otherUserData?.username || '',
+              photoUrl: otherUserData?.photoUrl,
+              role: iAmBlogger ? 'advertiser' : 'blogger',
+            },
           lastMessage: row.lastMessage ? {
             content: row.lastMessage.content,
             createdAt: new Date(row.lastMessage.createdAt),
