@@ -251,5 +251,21 @@ export class AdminService {
       rank: i + 1,
     }));
   }
+
+  async syncListingCounters() {
+    // Пересчитываем responsesCount для всех объявлений
+    const listings = await this.listingsRepository.find();
+    for (const listing of listings) {
+      const count = await this.listingsRepository
+        .createQueryBuilder('l')
+        .leftJoin('responses', 'r', 'r.listingId = l.id')
+        .where('l.id = :id', { id: listing.id })
+        .select('COUNT(r.id)', 'count')
+        .getRawOne();
+      listing.responsesCount = parseInt(count?.count || '0', 10);
+    }
+    await this.listingsRepository.save(listings);
+    return { success: true, updated: listings.length };
+  }
 }
 

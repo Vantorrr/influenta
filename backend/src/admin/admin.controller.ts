@@ -62,6 +62,13 @@ export class AdminController {
   ) {
     return this.adminService.rejectVerification(id, body?.reason || 'Недостаточно данных');
   }
+
+  // Синхронизация счётчиков (пересчёт responsesCount для всех объявлений)
+  @Post('sync-counters')
+  @UseGuards(JwtAuthGuard)
+  async syncCounters() {
+    return this.adminService.syncListingCounters();
+  }
 }
 
 
