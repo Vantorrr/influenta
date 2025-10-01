@@ -212,66 +212,70 @@ export default function ProfilePage() {
       <div className="container py-6 max-w-4xl">
         <Card className="mb-6">
           <CardContent className="p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-start gap-4">
                 <Avatar
                   src={user.photoUrl}
                   firstName={user.firstName || 'Имя'}
                   lastName={user.lastName || 'Фамилия'}
                   size="xl"
                 />
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-bold">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h1 className="text-2xl font-bold truncate">
                       {user.firstName} {user.lastName}
                     </h1>
-                    {user.isVerified && (
-                      <div className="bg-green-500 rounded-full p-1">
-                        <CheckCircle className="w-5 h-5 text-white" fill="currentColor" />
-                      </div>
-                    )}
                   </div>
-                  <p className="text-telegram-textSecondary">
+                  <p className="text-telegram-textSecondary mb-2">
                     @{user.username || 'username'}
                   </p>
+                  {user.isVerified && (
+                    <div className="inline-flex items-center gap-1.5 bg-green-500/10 text-green-500 px-3 py-1 rounded-full text-sm font-medium">
+                      <CheckCircle className="w-4 h-4" fill="currentColor" />
+                      Верифицирован
+                    </div>
+                  )}
                   {user.bio && (
-                    <p className="text-telegram-text mt-2 max-w-md">
+                    <p className="text-telegram-text mt-3">
                       {user.bio}
                     </p>
                   )}
                 </div>
               </div>
-              {!isEditing ? (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleEdit}
-                >
-                  <Edit className="w-4 h-4 mr-1" />
-                  Редактировать
-                </Button>
-              ) : (
-                <div className="flex gap-2">
+              
+              <div className="flex gap-2 pt-3 border-t border-gray-700/50">
+                {!isEditing ? (
                   <Button
                     variant="primary"
-                    size="sm"
-                    onClick={handleSave}
-                    disabled={isSaving}
+                    fullWidth
+                    onClick={handleEdit}
                   >
-                    <Save className="w-4 h-4 mr-1" />
-                    {isSaving ? 'Сохранение...' : 'Сохранить'}
+                    <Edit className="w-4 h-4 mr-2" />
+                    Редактировать профиль
                   </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={handleCancel}
-                    disabled={isSaving}
-                  >
-                    <X className="w-4 h-4 mr-1" />
-                    Отмена
-                  </Button>
-                </div>
-              )}
+                ) : (
+                  <>
+                    <Button
+                      variant="primary"
+                      fullWidth
+                      onClick={handleSave}
+                      disabled={isSaving}
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      {isSaving ? 'Сохранение...' : 'Сохранить'}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      fullWidth
+                      onClick={handleCancel}
+                      disabled={isSaving}
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Отмена
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
