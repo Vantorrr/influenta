@@ -7,11 +7,10 @@ import { ChatService } from './chat.service';
 import { ChatController } from './chat.controller';
 import { Message } from './entities/message.entity';
 import { Response } from '../responses/entities/response.entity';
-import { Chat } from './entities/chat.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Message, Response, Chat]),
+    TypeOrmModule.forFeature([Message, Response]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -26,6 +25,7 @@ import { Chat } from './entities/chat.entity';
   exports: [ChatService],
 })
 export class ChatModule {}
+
 
 
 
