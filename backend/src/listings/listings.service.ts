@@ -20,7 +20,7 @@ export class ListingsService {
   ) {}
 
   async search(searchDto: ListingSearchDto, paginationDto: PaginationDto) {
-    const { search, status = ListingStatus.ACTIVE } = searchDto;
+    const { search, status = ListingStatus.ACTIVE, minBudget, maxBudget, format } = searchDto;
     const { page = 1, limit = 20 } = paginationDto;
 
     const query = this.listingsRepository
@@ -34,6 +34,18 @@ export class ListingsService {
         '(listing.title ILIKE :search OR listing.description ILIKE :search)',
         { search: `%${search}%` }
       );
+    }
+
+    if (typeof minBudget === 'number' && !Number.isNaN(minBudget)) {
+      query.andWhere('listing.budget >= :minBudget', { minBudget })
+    }
+
+    if (typeof maxBudget === 'number' && !Number.isNaN(maxBudget)) {
+      query.andWhere('listing.budget <= :maxBudget', { maxBudget })
+    }
+
+    if (format) {
+      query.andWhere('listing.format = :format', { format })
     }
 
     const [data, total] = await query

@@ -1,4 +1,5 @@
-import { IsOptional, IsString, IsEnum } from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsInt, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ListingStatus } from '@/types';
 
 export class ListingSearchDto {
@@ -9,6 +10,22 @@ export class ListingSearchDto {
   @IsOptional()
   @IsEnum(ListingStatus)
   status?: ListingStatus;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  minBudget?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  maxBudget?: number;
+
+  @IsOptional()
+  @IsString()
+  format?: string;
 }
 
 

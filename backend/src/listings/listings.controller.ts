@@ -19,6 +19,9 @@ export class ListingsController {
     const searchDto: ListingSearchDto = {
       search: query.search,
       status: query.status,
+      minBudget: query.minBudget ? parseInt(String(query.minBudget), 10) : undefined,
+      maxBudget: query.maxBudget ? parseInt(String(query.maxBudget), 10) : undefined,
+      format: query.format,
     } as ListingSearchDto;
     const paginationDto: PaginationDto = {
       page: query.page ? parseInt(String(query.page), 10) : undefined,
