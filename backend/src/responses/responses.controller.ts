@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards, ForbiddenException } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -136,6 +136,91 @@ export class ResponsesController {
       .orderBy('r.createdAt', 'DESC')
       .getMany()
     return { data: list, total: list.length }
+  }
+
+  // Get single response (only for involved blogger or advertiser)
+  @Get(':id')
+  async getOne(@Param('id') id: string, @CurrentUser() user: User) {
+    const resp = await this.responsesRepo.findOne({
+      where: { id },
+      relations: ['blogger', 'blogger.user', 'listing', 'listing.advertiser', 'listing.advertiser.user'],
+    })
+    if (!resp) return { success: false, message: 'Not found' } as any
+
+    const isBlogger = (resp as any)?.blogger?.userId === user.id
+    const isAdvertiser = (resp as any)?.listing?.advertiser?.userId === user.id
+    if (!isBlogger && !isAdvertiser) throw new ForbiddenException('Not allowed')
+    return { success: true, data: resp }
+  }
+
+  // Accept response (only advertiser-owner of listing)
+  @Post(':id/accept')
+  async accept(@Param('id') id: string, @CurrentUser() user: User) {
+    const resp = await this.responsesRepo.findOne({
+      where: { id },
+      relations: ['blogger', 'blogger.user', 'listing', 'listing.advertiser', 'listing.advertiser.user'],
+    })
+    if (!resp) return { success: false, message: 'Not found' } as any
+    const isOwner = (resp as any)?.listing?.advertiser?.userId === user.id
+    if (!isOwner) throw new ForbiddenException('Only advertiser can accept')
+
+    resp.status = ResponseStatus.ACCEPTED
+    resp.acceptedAt = new Date()
+    await this.responsesRepo.save(resp)
+
+    // notify blogger
+    try {
+      const tgId = (resp as any)?.blogger?.user?.telegramId
+      if (tgId) {
+        await this.telegramService.sendMessage(parseInt(String(tgId), 10), '✅ Ваш отклик принят. Перейдите в Сообщения, чтобы обсудить детали.')
+      }
+    } catch {}
+
+    return { success: true, data: resp }
+  }
+
+  // Reject response (only advertiser-owner)
+  @Post(':id/reject')
+  async reject(
+    @Param('id') id: string,
+    @Body() body: { reason?: string },
+    @CurrentUser() user: User,
+  ) {
+    const resp = await this.responsesRepo.findOne({
+      where: { id },
+      relations: ['blogger', 'blogger.user', 'listing', 'listing.advertiser', 'listing.advertiser.user'],
+    })
+    if (!resp) return { success: false, message: 'Not found' } as any
+    const isOwner = (resp as any)?.listing?.advertiser?.userId === user.id
+    if (!isOwner) throw new ForbiddenException('Only advertiser can reject')
+
+    resp.status = ResponseStatus.REJECTED
+    resp.rejectedAt = new Date()
+    resp.rejectionReason = body?.reason || 'Не указана'
+    await this.responsesRepo.save(resp)
+
+    try {
+      const tgId = (resp as any)?.blogger?.user?.telegramId
+      if (tgId) {
+        await this.telegramService.sendMessage(parseInt(String(tgId), 10), `❌ Ваш отклик отклонён. Причина: ${resp.rejectionReason}`)
+      }
+    } catch {}
+
+    return { success: true, data: resp }
+  }
+
+  // Withdraw response (only blogger-owner)
+  @Post(':id/withdraw')
+  async withdraw(@Param('id') id: string, @CurrentUser() user: User) {
+    const resp = await this.responsesRepo.findOne({ where: { id }, relations: ['blogger'] })
+    if (!resp) return { success: false, message: 'Not found' } as any
+    const isBlogger = (resp as any)?.blogger?.userId === user.id
+    if (!isBlogger) throw new ForbiddenException('Only author can withdraw')
+
+    resp.status = ResponseStatus.WITHDRAWN
+    resp.rejectedAt = new Date()
+    await this.responsesRepo.save(resp)
+    return { success: true, data: resp }
   }
 }
 
