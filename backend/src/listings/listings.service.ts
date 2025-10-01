@@ -68,7 +68,7 @@ export class ListingsService {
   async findOne(id: string) {
     const listing = await this.listingsRepository.findOne({
       where: { id },
-      relations: ['advertiser'],
+      relations: ['advertiser', 'advertiser.user'],
     });
 
     if (!listing) {
@@ -214,11 +214,19 @@ export class ListingsService {
       id: listing.id,
       title: listing.title,
       description: listing.description,
+      advertiserId: listing.advertiserId,
       advertiser: {
         id: listing.advertiser.id,
-        companyName: (listing.advertiser as any).firstName + ' ' + ((listing.advertiser as any).lastName || ''),
+        userId: (listing.advertiser as any).userId,
+        companyName: (listing.advertiser as any).companyName || ((listing.advertiser as any).firstName + ' ' + ((listing.advertiser as any).lastName || '')),
         isVerified: (listing.advertiser as any).isVerified,
-        rating: 0, // TODO: Implement rating system
+        rating: 0,
+        user: (listing.advertiser as any).user ? {
+          id: (listing.advertiser as any).user.id,
+          telegramId: (listing.advertiser as any).user.telegramId,
+          firstName: (listing.advertiser as any).user.firstName,
+          lastName: (listing.advertiser as any).user.lastName,
+        } : undefined,
       },
       targetCategories: listing.targetCategories || [],
       budget: listing.budget,
