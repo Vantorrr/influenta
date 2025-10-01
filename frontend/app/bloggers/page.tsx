@@ -223,7 +223,7 @@ export default function BloggersPage() {
                                 Цена за пост
                               </p>
                               <p className="font-semibold">
-                                {formatPrice(blogger.pricePerPost)}
+                                {blogger.pricePerPost ? formatPrice(blogger.pricePerPost) : 'Договорная'}
                               </p>
                             </div>
                             <div className="text-right">

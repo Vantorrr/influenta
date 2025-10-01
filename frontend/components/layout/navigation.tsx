@@ -46,7 +46,7 @@ export function Navigation() {
   const currentNavItems = isAdminPage && isAdmin ? adminNavItems : navItems
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-telegram-bg border-t border-telegram-border">
+    <nav className="fixed bottom-0 left-0 right-0 bg-telegram-bg border-t border-telegram-border pb-[env(safe-area-inset-bottom)]">
       <div className="flex justify-around items-center h-16">
         {currentNavItems.map((item) => {
           const isActive = pathname === item.href
@@ -112,6 +112,7 @@ export function Header({ title }: { title: string }) {
 }
 
 export { Layout } from './Layout'
+
 
 
 
