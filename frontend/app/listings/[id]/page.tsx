@@ -30,6 +30,7 @@ export default function ListingDetailsPage() {
   const [respLoading, setRespLoading] = useState(false)
   const [myResponses, setMyResponses] = useState<any[]>([])
   const [receivedResponses, setReceivedResponses] = useState<any[]>([])
+  const [respActionLoading, setRespActionLoading] = useState<string | null>(null)
 
   // Edit modal state
   const [showEdit, setShowEdit] = useState(false)
@@ -228,9 +229,34 @@ export default function ListingDetailsPage() {
                     <p className="text-sm text-telegram-textSecondary line-clamp-2">{r.message}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Button variant="secondary" onClick={() => {
-                      window.location.href = `/messages?responseId=${r.id}`
-                    }}>Написать</Button>
+                    <Button variant="secondary" onClick={() => { window.location.href = `/messages?responseId=${r.id}` }}>Написать</Button>
+                    {r.status === 'pending' && (
+                      <>
+                        <Button variant="primary" disabled={respActionLoading === r.id} onClick={async () => {
+                          try {
+                            setRespActionLoading(r.id)
+                            await responsesApi.accept(r.id)
+                            setReceivedResponses(prev => prev.map(x => x.id === r.id ? { ...x, status: 'accepted', acceptedAt: new Date().toISOString() } : x))
+                          } catch (e: any) {
+                            alert(String(e?.response?.data?.message || e?.message || 'Не удалось принять'))
+                          } finally {
+                            setRespActionLoading(null)
+                          }
+                        }}>Принять</Button>
+                        <Button variant="danger" disabled={respActionLoading === r.id} onClick={async () => {
+                          const reason = prompt('Причина отказа:') || 'Недостаточно данных'
+                          try {
+                            setRespActionLoading(r.id)
+                            await responsesApi.reject(r.id, reason)
+                            setReceivedResponses(prev => prev.map(x => x.id === r.id ? { ...x, status: 'rejected', rejectionReason: reason, rejectedAt: new Date().toISOString() } : x))
+                          } catch (e: any) {
+                            alert(String(e?.response?.data?.message || e?.message || 'Не удалось отклонить'))
+                          } finally {
+                            setRespActionLoading(null)
+                          }
+                        }}>Отклонить</Button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
