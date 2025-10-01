@@ -23,7 +23,6 @@ import { Button } from '@/components/ui/button'
 import { formatDate, getRelativeTime } from '@/lib/utils'
 import { ChatWindow } from '@/components/chat/ChatWindow'
 import { messagesApi } from '@/lib/api'
-import { useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 
