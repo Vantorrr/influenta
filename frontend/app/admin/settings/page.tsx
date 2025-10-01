@@ -312,19 +312,19 @@ export default function AdminSettingsPage() {
           <div className="grid md:grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-telegram-textSecondary">Версия платформы</p>
-              <p className="font-medium">1.0.0</p>
+              <p className="font-medium">1.0.0 MVP</p>
             </div>
             <div>
               <p className="text-telegram-textSecondary">Последнее обновление</p>
-              <p className="font-medium">21 ноября 2024</p>
+              <p className="font-medium">{new Date().toLocaleDateString('ru-RU')}</p>
             </div>
             <div>
-              <p className="text-telegram-textSecondary">Размер базы данных</p>
-              <p className="font-medium">245 MB</p>
+              <p className="text-telegram-textSecondary">Окружение</p>
+              <p className="font-medium">{process.env.NODE_ENV === 'production' ? 'Production' : 'Development'}</p>
             </div>
             <div>
-              <p className="text-telegram-textSecondary">Активных сессий</p>
-              <p className="font-medium">1,234</p>
+              <p className="text-telegram-textSecondary">Статус</p>
+              <p className="font-medium text-telegram-success">Работает</p>
             </div>
           </div>
           
