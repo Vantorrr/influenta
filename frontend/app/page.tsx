@@ -16,15 +16,10 @@ export default function HomePage() {
   const [showScrollArrow, setShowScrollArrow] = useState(true)
 
   useEffect(() => {
-    // Проверяем авторизацию через Telegram WebApp
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      const tg = window.Telegram.WebApp
-      const user = tg.initDataUnsafe?.user
-      
-      if (user) {
-        // Автоматический переход если пользователь уже авторизован
-        // router.push('/dashboard')
-      }
+    // Если пользователь уже авторизован — редирект на дашборд
+    if (user?.id) {
+      router.push('/dashboard')
+      return
     }
 
     // Скрываем стрелку при скролле
@@ -38,7 +33,7 @@ export default function HomePage() {
 
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [router])
+  }, [user, router])
 
   const features = [
     {
