@@ -10,3 +10,7 @@ export class ListingSearchDto {
   @IsEnum(ListingStatus)
   status?: ListingStatus;
 }
+
+
+
+

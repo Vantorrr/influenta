@@ -67,6 +67,21 @@ export function Providers({ children }: { children: React.ReactNode }) {
       document.body.style.overflowY = 'auto'
       document.documentElement.style.overflowX = 'hidden'
       document.documentElement.style.overflowY = 'auto'
+
+      // Обработка deep-link параметров (start_param) от Telegram
+      try {
+        const initDataRaw = tg.initData || ''
+        const urlParams = new URLSearchParams(initDataRaw)
+        const startParam = urlParams.get('start_param') || ''
+        // Формат: listing_<id>
+        if (startParam && startParam.startsWith('listing_')) {
+          const listingId = startParam.replace('listing_', '')
+          if (listingId) {
+            // Откроем конкретное объявление
+            window.location.href = `/listings/${listingId}?source=bot&focus=response`
+          }
+        }
+      } catch {}
       
       // Cleanup
       return () => {

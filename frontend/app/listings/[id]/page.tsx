@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Calendar, DollarSign, MessageSquare, Shield, Save, Trash2, X } from 'lucide-react'
 import { Layout } from '@/components/layout/navigation'
@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks/useAuth'
 export default function ListingDetailsPage() {
   const params = useParams() as { id?: string }
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user } = useAuth()
   const [listing, setListing] = useState<any | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -47,6 +48,11 @@ export default function ListingDetailsPage() {
           budget: String(l?.budget || ''),
           format: String(l?.format || 'post')
         })
+        // Если пришли из бота с фокусом на отклик — сразу открыть модалку
+        const focus = searchParams?.get('focus')
+        if (focus === 'response' && user?.role === 'blogger') {
+          setShowRespond(true)
+        }
       } catch (e: any) {
         setError(e?.response?.data?.message || e?.message || 'Объявление не найдено')
       } finally {

@@ -57,12 +57,22 @@ export class ResponsesController {
     try {
       const listing = await this.listingsRepo.findOne({ where: { id: data.listingId }, relations: ['advertiser', 'advertiser.user'] })
       const frontendUrl = this.configService.get('app.frontendUrl') || 'https://influentaa.vercel.app'
+      const botUsername = this.configService.get('app.telegram.botUsername') || process.env.TELEGRAM_BOT_USERNAME
       const title = listing?.title || 'объявление'
       const advTgId = (listing as any)?.advertiser?.user?.telegramId
       const messageText = `📩 <b>Новый отклик</b>\n\nНа ваше объявление: <b>${title}</b>\nЦена: ${data.proposedPrice}₽`;
       if (advTgId) {
+        const webAppUrl = `${frontendUrl}/listings/${data.listingId}?source=bot&focus=response`
+        const startAppParam = `listing_${data.listingId}`
+        const startAppUrl = botUsername ? `https://t.me/${botUsername}?startapp=${encodeURIComponent(startAppParam)}` : undefined
+
+        const kbRow: any[] = [{ text: 'Открыть объявление', web_app: { url: webAppUrl } }]
+        if (startAppUrl) {
+          kbRow.push({ text: 'Открыть в Mini App', url: startAppUrl })
+        }
+
         await this.telegramService.sendMessage(parseInt(String(advTgId), 10), messageText, {
-          inline_keyboard: [[{ text: 'Открыть объявление', web_app: { url: `${frontendUrl}/listings/${data.listingId}` } }]],
+          inline_keyboard: [kbRow],
         })
       }
     } catch {}

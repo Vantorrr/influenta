@@ -17,3 +17,7 @@ export class BloggerSearchDto {
   @Transform(({ value }) => value === 'true' || value === true)
   verifiedOnly?: boolean;
 }
+
+
+
+

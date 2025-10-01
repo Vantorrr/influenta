@@ -181,3 +181,7 @@ railway variables
 - Frontend: `https://influenta-frontend.up.railway.app`
 - Backend API: `https://influenta-backend.up.railway.app/api`
 - Telegram Bot: @InfluentaBot
+
+
+
+
