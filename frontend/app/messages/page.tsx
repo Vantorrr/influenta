@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { 
   Search as SearchIcon, 
@@ -48,6 +48,20 @@ interface Chat {
 }
 
 export default function MessagesPage() {
+  return (
+    <Suspense fallback={
+      <Layout>
+        <div className="container h-[calc(100vh-8rem)] flex items-center justify-center text-telegram-textSecondary">
+          Загрузка сообщений...
+        </div>
+      </Layout>
+    }>
+      <MessagesPageContent />
+    </Suspense>
+  )
+}
+
+function MessagesPageContent() {
   const { user } = useAuth()
   const searchParams = useSearchParams()
   const [search, setSearch] = useState('')
@@ -220,6 +234,7 @@ export default function MessagesPage() {
     </Layout>
   )
 }
+
 
 
 
