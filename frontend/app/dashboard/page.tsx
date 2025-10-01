@@ -146,9 +146,6 @@ export default function DashboardPage() {
                     <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${stat.color} flex items-center justify-center`}>
                       <stat.icon className="w-5 h-5 text-white" />
                     </div>
-                    <Badge variant={stat.change.startsWith('+') ? 'success' : 'danger'}>
-                      {stat.change}
-                    </Badge>
                   </div>
                   <div className="space-y-1">
                     <p className="text-2xl font-bold">{stat.value}</p>
