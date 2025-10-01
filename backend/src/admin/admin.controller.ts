@@ -31,6 +31,13 @@ export class AdminController {
   async topBloggers() {
     return this.adminService.getTopBloggers();
   }
+
+  // Рекламодатели (для страницы admin/advertisers)
+  @Get('advertisers')
+  @UseGuards(JwtAuthGuard)
+  async advertisers() {
+    return this.adminService.getAdvertisersList();
+  }
 }
 
 
