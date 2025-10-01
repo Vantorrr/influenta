@@ -137,13 +137,15 @@ export default function ListingsPage() {
                         <h3 className="font-semibold text-lg line-clamp-2 mb-1">
                           {listing.title}
                         </h3>
-                        <div className="flex items-center gap-2 text-sm text-telegram-textSecondary">
-                          <Building className="w-4 h-4" />
-                          <span>{listing.advertiser?.companyName}</span>
-                          {listing.advertiser?.isVerified && (
-                            <Badge variant="primary" className="text-xs">✓</Badge>
-                          )}
-                        </div>
+                        {(listing.advertiser?.companyName && listing.advertiser?.companyName !== 'undefined') && (
+                          <div className="flex items-center gap-2 text-sm text-telegram-textSecondary">
+                            <Building className="w-4 h-4" />
+                            <span className="truncate">{listing.advertiser?.companyName}</span>
+                            {listing.advertiser?.isVerified && (
+                              <Badge variant="primary" className="text-xs">✓</Badge>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <ChevronRight className="w-5 h-5 text-telegram-textSecondary flex-shrink-0" />
                     </div>
@@ -180,7 +182,7 @@ export default function ListingsPage() {
                       {listing.deadline && (
                         <div className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
-                          <span>до {formatDate(listing.deadline)}</span>
+                          <span className="whitespace-nowrap">до {formatDate(listing.deadline)}</span>
                         </div>
                       )}
                     </div>
