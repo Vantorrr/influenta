@@ -199,12 +199,13 @@ export default function ListingDetailsPage() {
             )}
             {/* Кнопка переписки для автора отклика */}
             {user?.role === 'blogger' && myResponses.length > 0 && (
-              <div className="pt-2">
-                <Button variant="secondary" onClick={() => {
+              <div className="pt-4 border-t border-gray-700/50 mt-4">
+                <p className="text-sm text-telegram-textSecondary mb-2">Вы откликнулись на это объявление</p>
+                <Button variant="primary" fullWidth onClick={() => {
                   const resp = myResponses[0]
                   window.location.href = `/messages?responseId=${resp.id}`
                 }}>
-                  Открыть чат по отклику
+                  💬 Открыть чат по отклику
                 </Button>
               </div>
             )}
