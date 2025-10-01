@@ -212,7 +212,7 @@ export default function AdminAdvertisersPage() {
                   </div>
                   
                   <div className="flex items-center gap-2 flex-wrap justify-end">
-                  <Button variant="secondary" size="sm" className="px-2 min-w-[44px]" onClick={() => { if (typeof window !== 'undefined') window.location.href = `/bloggers/${advertiser.userId || advertiser.id}` }}>
+                  <Button variant="secondary" size="sm" className="px-2 min-w-[44px]" onClick={() => { if (typeof window !== 'undefined') window.location.href = `/admin/advertisers/${advertiser.userId || advertiser.id}` }}>
                       <Edit className="w-4 h-4 mr-1" />
                     <span className="hidden md:inline">Редактировать</span>
                     </Button>
