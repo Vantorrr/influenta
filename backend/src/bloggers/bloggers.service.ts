@@ -12,8 +12,8 @@ export class BloggersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async search(searchDto: BloggerSearchDto, paginationDto: PaginationDto) {
-    const { search, categories, verifiedOnly } = searchDto;
+  async search(searchDto: BloggerSearchDto & { minSubscribers?: number; maxPrice?: number }, paginationDto: PaginationDto) {
+    const { search, categories, verifiedOnly, minSubscribers, maxPrice } = searchDto;
     const { page = 1, limit = 20 } = paginationDto;
 
     const query = this.usersRepository
@@ -34,7 +34,24 @@ export class BloggersService {
       query.andWhere('user.isVerified = :isVerified', { isVerified: true });
     }
 
-    // TODO: Implement category filtering when blogger profiles are ready
+    // Фильтр по тематикам
+    if (categories && categories.length > 0) {
+      // у нас categories в users храним как строку через запятую
+      query.andWhere('user.categories IS NOT NULL AND user.categories <> ''''')
+      for (const c of categories) {
+        query.andWhere(`user.categories ILIKE :cat_${c}`, { [`cat_${c}`]: `%${c}%` })
+      }
+    }
+
+    // Фильтр по минимальным подписчикам
+    if (typeof minSubscribers === 'number' && !Number.isNaN(minSubscribers)) {
+      query.andWhere('COALESCE(user.subscribersCount, 0) >= :minSubs', { minSubs: minSubscribers })
+    }
+
+    // Фильтр по максимальной цене поста
+    if (typeof maxPrice === 'number' && !Number.isNaN(maxPrice)) {
+      query.andWhere('COALESCE(user.pricePerPost, 0) <= :maxPrice', { maxPrice })
+    }
 
     const [data, total] = await query
       .skip((page - 1) * limit)

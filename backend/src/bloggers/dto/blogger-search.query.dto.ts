@@ -18,6 +18,19 @@ export class BloggerSearchQueryDto {
   @Transform(({ value }) => value === 'true' || value === true)
   verifiedOnly?: boolean;
 
+  // Дополнительные фильтры
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  minSubscribers?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  maxPrice?: number; // pricePerPost верхняя граница
+
   @IsOptional()
   @Type(() => Number)
   @IsInt()
