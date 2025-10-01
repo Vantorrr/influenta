@@ -50,6 +50,10 @@ async function bootstrap() {
   const port = parseInt(process.env.PORT || '', 10) || configService.get<number>('app.port') || 3001;
   // Static for uploads without serve-static package
   const uploadsDir = path.join(process.cwd(), 'uploads');
+  // Ensure uploads directory exists
+  if (!require('fs').existsSync(uploadsDir)) {
+    require('fs').mkdirSync(uploadsDir, { recursive: true });
+  }
   app.use('/uploads', express.static(uploadsDir));
   await app.listen(port, '0.0.0.0'); // Railway требует 0.0.0.0
 
