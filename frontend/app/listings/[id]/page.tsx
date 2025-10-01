@@ -65,7 +65,13 @@ export default function ListingDetailsPage() {
         } catch {}
 
         // Если я рекламодатель и это мое объявление — подгружаем все отклики
-        if (user?.role === 'advertiser' && (l?.advertiserId === (user as any)?.advertiser?.id || l?.advertiser?.userId === user?.id)) {
+        const myAdvertiserId = (user as any)?.advertiser?.id
+        const isOwner = user?.role === 'advertiser' && (
+          (myAdvertiserId && l?.advertiserId === myAdvertiserId) ||
+          l?.advertiser?.userId === user?.id ||
+          l?.advertiser?.user?.telegramId === user?.telegramId
+        )
+        if (isOwner) {
           try {
             const respList = await responsesApi.getByListing(params.id!)
             const list = (respList as any)?.data || respList?.data || []
@@ -81,7 +87,14 @@ export default function ListingDetailsPage() {
   }, [user, params?.id])
 
   const canRespond = user?.role === 'blogger'
-  const canEdit = user?.role === 'advertiser'
+  // canEdit только если это МОЁ объявление
+  const isMyListing = user?.role === 'advertiser' && (
+    listing?.advertiser?.userId === user.id ||
+    listing?.advertiser?.user?.id === user.id ||
+    listing?.advertiser?.user?.telegramId === user.telegramId
+  )
+  const canEdit = isMyListing
+  const canSeeResponses = isMyListing
 
   const handleSendResponse = async () => {
     if (!params?.id) return
@@ -214,7 +227,7 @@ export default function ListingDetailsPage() {
         </Card>
 
         {/* Список откликов для рекламодателя */}
-        {user?.role === 'advertiser' && receivedResponses.length > 0 && (
+        {canSeeResponses && receivedResponses.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle>Отклики ({receivedResponses.length})</CardTitle>
