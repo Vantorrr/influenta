@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards, Patch, Param, Body } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 
@@ -44,6 +44,23 @@ export class AdminController {
   @UseGuards(JwtAuthGuard)
   async verificationRequests() {
     return this.adminService.getVerificationRequests();
+  }
+
+  // Одобрить верификацию пользователя
+  @Patch('users/:id/verify')
+  @UseGuards(JwtAuthGuard)
+  async verifyUser(@Param('id') id: string) {
+    return this.adminService.verifyUser(id);
+  }
+
+  // Отклонить верификацию пользователя
+  @Patch('users/:id/reject-verification')
+  @UseGuards(JwtAuthGuard)
+  async rejectVerification(
+    @Param('id') id: string,
+    @Body() body: { reason?: string },
+  ) {
+    return this.adminService.rejectVerification(id, body?.reason || 'Недостаточно данных');
   }
 }
 
