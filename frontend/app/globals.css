@@ -244,7 +244,6 @@
     }
   }
 }
-
 /* Fallback utility classes for color tokens (to avoid PostCSS unknown utility errors) */
 .bg-telegram-bg { background-color: var(--color-telegram-bg) !important; }
 .bg-telegram-bgSecondary { background-color: var(--color-telegram-bgSecondary) !important; }

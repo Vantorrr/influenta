@@ -12,5 +12,3 @@ import { Advertiser } from '@/advertisers/entities/advertiser.entity';
   exports: [ListingsService],
 })
 export class ListingsModule {}
-
-
