@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, OneToMany, Index } from 'typeorm';
 import { BaseEntity } from '../../common/entities/base.entity';
 import { Advertiser } from '../../advertisers/entities/advertiser.entity';
 import { BloggerCategory } from '../../bloggers/entities/blogger.entity';
@@ -41,9 +41,11 @@ export class Listing extends BaseEntity {
   })
   targetCategories: BloggerCategory[];
 
+  @Index('idx_listings_budget')
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   budget: number;
 
+  @Index('idx_listings_format')
   @Column({
     type: 'enum',
     enum: PostFormat,
@@ -63,6 +65,7 @@ export class Listing extends BaseEntity {
   @Column({ type: 'date', nullable: true })
   deadline: Date;
 
+  @Index('idx_listings_status')
   @Column({
     type: 'enum',
     enum: ListingStatus,

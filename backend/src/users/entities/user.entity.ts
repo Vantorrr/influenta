@@ -1,4 +1,4 @@
-import { Entity, Column, OneToOne, OneToMany, ValueTransformer } from 'typeorm';
+import { Entity, Column, OneToOne, OneToMany, ValueTransformer, Index } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { BaseEntity } from '../../common/entities/base.entity';
 
@@ -56,6 +56,7 @@ export class User extends BaseEntity {
   instagramLink?: string;
 
   // Поля для блогеров
+  @Index('idx_users_subscribers_count')
   @Column({ nullable: true, type: 'bigint', transformer: User.bigIntToNumber })
   subscribersCount?: number | null;
 
@@ -75,6 +76,7 @@ export class User extends BaseEntity {
   @Column({ nullable: true, type: 'text' })
   description?: string;
 
+  @Index('idx_users_role')
   @Column({
     type: 'enum',
     enum: UserRole,
@@ -85,6 +87,7 @@ export class User extends BaseEntity {
   @Column({ default: true })
   isActive: boolean;
 
+  @Index('idx_users_is_verified')
   @Column({ default: false })
   isVerified: boolean;
 

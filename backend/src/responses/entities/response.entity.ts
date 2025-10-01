@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { BaseEntity } from '../../common/entities/base.entity';
 import { Blogger } from '../../bloggers/entities/blogger.entity';
 import { Listing } from '../../listings/entities/listing.entity';
@@ -16,6 +16,7 @@ export class Response extends BaseEntity {
   @JoinColumn()
   listing: Listing;
 
+  @Index('idx_responses_listing_id')
   @Column()
   listingId: string;
 
@@ -23,6 +24,7 @@ export class Response extends BaseEntity {
   @JoinColumn()
   blogger: Blogger;
 
+  @Index('idx_responses_blogger_id')
   @Column()
   bloggerId: string;
 
