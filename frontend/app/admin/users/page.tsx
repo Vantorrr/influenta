@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useMemo, useState } from 'react'
-import { Layout } from '@/components/layout/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -56,27 +55,30 @@ export default function AdminUsersPage() {
 
   if (loading) {
     return (
-      <Layout>
-        <div className="container py-6 text-telegram-textSecondary">Загрузка пользователей…</div>
-      </Layout>
+      <div className="space-y-6">
+        <div className="text-telegram-textSecondary">Загрузка пользователей…</div>
+      </div>
     )
   }
 
   if (error) {
     return (
-      <Layout>
-        <div className="container py-6">
-          <Card>
-            <CardContent className="p-6 text-telegram-danger">{error}</CardContent>
-          </Card>
-        </div>
-      </Layout>
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="p-6 text-telegram-danger">{error}</CardContent>
+        </Card>
+      </div>
     )
   }
 
   return (
-    <Layout>
-      <div className="container py-6 space-y-4">
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold mb-2">Управление пользователями</h1>
+        <p className="text-telegram-textSecondary">Всего пользователей: {users.length}</p>
+      </div>
+      
+      <div className="space-y-4">
         <div className="flex flex-wrap gap-3 items-center">
           <Input
             placeholder="Поиск по имени, @юзернейму или Telegram ID"
@@ -134,7 +136,7 @@ export default function AdminUsersPage() {
           </CardContent>
         </Card>
       </div>
-    </Layout>
+    </div>
   )
 }
 
