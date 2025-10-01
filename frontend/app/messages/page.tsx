@@ -94,7 +94,7 @@ function MessagesPageContent() {
               photoUrl: otherUserData?.photoUrl,
               role: iAmBlogger ? 'advertiser' : 'blogger',
             },
-          lastMessage: row.lastMessage ? {
+            lastMessage: row.lastMessage ? {
             content: row.lastMessage.content,
             createdAt: new Date(row.lastMessage.createdAt),
             isRead: !!row.lastMessage.isRead,
