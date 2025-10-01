@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not } from 'typeorm';
 import { Message } from './entities/message.entity';
 import { Response } from '../responses/entities/response.entity';
+import { TelegramService } from '../telegram/telegram.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ChatService {
@@ -11,6 +13,8 @@ export class ChatService {
     private messageRepository: Repository<Message>,
     @InjectRepository(Response)
     private responseRepository: Repository<Response>,
+    private readonly telegramService: TelegramService,
+    private readonly configService: ConfigService,
   ) {}
 
   async createMessage(data: {
@@ -26,7 +30,33 @@ export class ChatService {
       attachments: data.attachments || [],
     });
 
-    return await this.messageRepository.save(message);
+    const saved = await this.messageRepository.save(message);
+
+    // Отправляем уведомление получателю
+    try {
+      const response = await this.responseRepository.findOne({
+        where: { id: data.responseId },
+        relations: ['blogger', 'blogger.user', 'listing', 'listing.advertiser', 'listing.advertiser.user'],
+      });
+      if (response) {
+        const iAmBlogger = (response as any)?.blogger?.userId === data.senderId;
+        const recipientUser = iAmBlogger
+          ? (response as any)?.listing?.advertiser?.user
+          : (response as any)?.blogger?.user;
+        
+        if (recipientUser?.telegramId) {
+          const frontendUrl = this.configService.get('app.frontendUrl') || 'https://influentaa.vercel.app';
+          const messageText = `💬 <b>Новое сообщение</b>\n\n${data.content.slice(0, 100)}${data.content.length > 100 ? '...' : ''}`;
+          await this.telegramService.sendMessage(parseInt(String(recipientUser.telegramId), 10), messageText, {
+            inline_keyboard: [[{ text: 'Открыть чат', web_app: { url: `${frontendUrl}/messages?responseId=${data.responseId}` } }]],
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to send chat notification:', err);
+    }
+
+    return saved;
   }
 
   async getMessages(responseId: string, page = 1, limit = 50) {

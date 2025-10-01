@@ -352,7 +352,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
       </div>
 
       {/* Форма ввода */}
-      <div className="p-4 border-t border-gray-700/50 bg-telegram-bgSecondary">
+      <div className="p-4 pb-2 border-t border-gray-700/50 bg-telegram-bgSecondary">
         <div className="flex items-end gap-2">
           <div className="relative">
             <motion.button
