@@ -6,6 +6,8 @@ import { Home, Users, FileText, MessageCircle, User, Shield, CheckCircle } from 
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/hooks/useAuth'
+import { useEffect, useState } from 'react'
+import { messagesApi } from '@/lib/api'
 
 const navItems = [
   { href: '/dashboard', icon: Home, label: 'Главная' },
@@ -24,6 +26,20 @@ const adminNavItems = [
 export function Navigation() {
   const pathname = usePathname()
   const { isAdmin } = useAuth()
+  const [unread, setUnread] = useState<number>(0)
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const res = await messagesApi.getUnreadCount()
+        const data = (res as any)?.data || res
+        const count = typeof data?.count === 'number' ? data.count : (data?.count || 0)
+        setUnread(count)
+      } catch {
+        setUnread(0)
+      }
+    })()
+  }, [pathname])
   
   // Показываем админские ссылки только для админов и только на админских страницах
   const isAdminPage = pathname?.startsWith('/admin')
@@ -58,7 +74,14 @@ export function Navigation() {
                   }}
                 />
               )}
-              <Icon className="w-5 h-5 mb-1 relative z-10" />
+              <div className="relative">
+                <Icon className="w-5 h-5 mb-1 relative z-10" />
+                {item.href === '/messages' && unread > 0 && (
+                  <span className="absolute -top-1 -right-2 w-4 h-4 bg-telegram-primary text-white text-[10px] rounded-full flex items-center justify-center z-10">
+                    {unread > 9 ? '9+' : unread}
+                  </span>
+                )}
+              </div>
               <span className="text-xs relative z-10">{item.label}</span>
             </Link>
           )
@@ -89,6 +112,7 @@ export function Header({ title }: { title: string }) {
 }
 
 export { Layout } from './Layout'
+
 
 
 
