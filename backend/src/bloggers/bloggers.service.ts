@@ -37,7 +37,7 @@ export class BloggersService {
     // Фильтр по тематикам
     if (categories && categories.length > 0) {
       // у нас categories в users храним как строку через запятую
-      query.andWhere('user.categories IS NOT NULL AND user.categories <> ''''')
+      query.andWhere("user.categories IS NOT NULL AND user.categories <> ''")
       for (const c of categories) {
         query.andWhere(`user.categories ILIKE :cat_${c}`, { [`cat_${c}`]: `%${c}%` })
       }
