@@ -259,6 +259,22 @@ export default function ListingsPage() {
                 />
               </div>
 
+              {/* Format */}
+              <div className="mb-6">
+                <h4 className="font-medium mb-3">Формат</h4>
+                <select
+                  className="input"
+                  value={filters.format || ''}
+                  onChange={(e) => setFilters(prev => ({ ...prev, format: e.target.value || undefined }))}
+                >
+                  <option value="">Любой</option>
+                  <option value="post">Пост</option>
+                  <option value="story">Сторис</option>
+                  <option value="reels">Reels</option>
+                  <option value="live">Эфир</option>
+                </select>
+              </div>
+
               <div className="flex gap-3">
                 <Button variant="secondary" fullWidth onClick={() => { setFilters({ status: filters.status }); setShowFilters(false) }}>Сбросить</Button>
                 <Button variant="primary" fullWidth onClick={() => setShowFilters(false)}>Применить</Button>
