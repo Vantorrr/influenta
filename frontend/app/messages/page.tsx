@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button'
 import { formatDate, getRelativeTime } from '@/lib/utils'
 import { ChatWindow } from '@/components/chat/ChatWindow'
 import { messagesApi } from '@/lib/api'
+import { useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -107,6 +108,22 @@ function MessagesPageContent() {
       }
     })()
   }, [user])
+
+  // Маркируем как прочитанные при открытии чата
+  useEffect(() => {
+    (async () => {
+      if (!selectedChat) return
+      try {
+        const res = await messagesApi.getByResponse(selectedChat.responseId, 1, 50)
+        const items = (res as any)?.data || res?.data || []
+        for (const m of items) {
+          if (!m.isRead && m.senderId !== currentUserId) {
+            try { await messagesApi.markAsRead(m.id) } catch {}
+          }
+        }
+      } catch {}
+    })()
+  }, [selectedChat, currentUserId])
 
   // Автовыбор чата по responseId в query
   useEffect(() => {

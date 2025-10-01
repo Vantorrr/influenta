@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatTime, getRelativeTime } from '@/lib/utils'
 import { messagesApi } from '@/lib/api'
+import { chatService } from '@/lib/chat.service'
 
 interface Message {
   id: string
@@ -50,8 +51,9 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
   const [showAttachMenu, setShowAttachMenu] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const typingTimer = useRef<any>(null)
 
-  // Загрузка реальных сообщений
+  // Загрузка реальных сообщений и подключение к комнате
   useEffect(() => {
     let isMounted = true
     const load = async () => {
@@ -68,12 +70,51 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
           attachments: m.attachments || [],
         }))
         setMessages(normalized.reverse())
+        // Отметим как прочитанные входящие
+        for (const m of normalized) {
+          if (!m.isRead && m.senderId !== currentUserId) {
+            try { await messagesApi.markAsRead(m.id) } catch {}
+          }
+        }
       } catch {
         setMessages([])
       }
     }
     load()
-    return () => { isMounted = false }
+
+    // Подключаемся к комнате чата
+    try { chatService.joinChat(chat.responseId) } catch {}
+
+    // Слушатель новых сообщений
+    const onNewMessage = (data: any) => {
+      if (data?.responseId !== chat.responseId) return
+      const incoming: Message = {
+        id: data.id,
+        content: data.content,
+        senderId: data.senderId,
+        createdAt: new Date(data.createdAt || Date.now()),
+        isRead: data.isRead ?? (data.senderId === currentUserId),
+      }
+      setMessages(prev => [...prev, incoming])
+      if (incoming.senderId !== currentUserId && !incoming.isRead) {
+        try { messagesApi.markAsRead(incoming.id) } catch {}
+      }
+    }
+    const onTyping = (data: any) => {
+      if (data?.responseId !== chat.responseId || data?.userId === currentUserId) return
+      setIsTyping(true)
+      if (typingTimer.current) clearTimeout(typingTimer.current)
+      typingTimer.current = setTimeout(() => setIsTyping(false), 1500)
+    }
+    chatService.on('message', onNewMessage)
+    chatService.on('typing', onTyping)
+
+    return () => {
+      isMounted = false
+      try { chatService.leaveChat(chat.responseId) } catch {}
+      chatService.off('message', onNewMessage)
+      chatService.off('typing', onTyping)
+    }
   }, [chat.responseId, currentUserId])
 
   // Автоскролл к последнему сообщению
@@ -96,10 +137,19 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
         isRead: !!m.isRead,
       }
       setMessages(prev => [...prev, newMessage])
+      try { chatService.stopTyping(chat.responseId) } catch {}
     } catch (e) {
       // Возвращаем текст в инпут, если не отправилось
       setMessage(content)
     }
+  }
+
+  // Отправляем индикатор набора текста
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setMessage(e.target.value)
+    try { chatService.startTyping(chat.responseId) } catch {}
+    if (typingTimer.current) clearTimeout(typingTimer.current)
+    typingTimer.current = setTimeout(() => { try { chatService.stopTyping(chat.responseId) } catch {} }, 1000)
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -341,7 +391,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
           <textarea
             ref={inputRef}
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             placeholder="Напишите сообщение..."
             className="flex-1 bg-telegram-bg border border-gray-600 rounded-lg px-4 py-2 resize-none text-telegram-text placeholder-telegram-textSecondary focus:border-telegram-primary focus:outline-none transition-colors"
