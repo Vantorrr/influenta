@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { listingsApi, responsesApi } from '@/lib/api'
+import { listingsApi, responsesApi, messagesApi } from '@/lib/api'
 import { formatDate, formatPrice, getCategoryLabel, getPostFormatLabel } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -28,6 +28,7 @@ export default function ListingDetailsPage() {
   const [price, setPrice] = useState('')
   const [respError, setRespError] = useState<string | null>(null)
   const [respLoading, setRespLoading] = useState(false)
+  const [myResponses, setMyResponses] = useState<any[]>([])
 
   // Edit modal state
   const [showEdit, setShowEdit] = useState(false)
@@ -53,6 +54,13 @@ export default function ListingDetailsPage() {
         if (focus === 'response' && user?.role === 'blogger') {
           setShowRespond(true)
         }
+        // Подгрузим мои отклики для этого объявления, чтобы показать кнопку чата
+        try {
+          const my = await responsesApi.getMyResponses('sent', 1, 50)
+          const rows = (my as any)?.data || my?.data || []
+          const mineForThis = rows.filter((r: any) => r.listingId === params.id)
+          setMyResponses(mineForThis)
+        } catch {}
       } catch (e: any) {
         setError(e?.response?.data?.message || e?.message || 'Объявление не найдено')
       } finally {
@@ -162,6 +170,17 @@ export default function ListingDetailsPage() {
               <div className="pt-2">
                 <Button variant="primary" onClick={() => setShowRespond(true)}>
                   <MessageSquare className="w-4 h-4 mr-2" /> Откликнуться
+                </Button>
+              </div>
+            )}
+            {/* Кнопка переписки для автора отклика */}
+            {user?.role === 'blogger' && myResponses.length > 0 && (
+              <div className="pt-2">
+                <Button variant="secondary" onClick={() => {
+                  const resp = myResponses[0]
+                  window.location.href = `/messages?responseId=${resp.id}`
+                }}>
+                  Открыть чат по отклику
                 </Button>
               </div>
             )}

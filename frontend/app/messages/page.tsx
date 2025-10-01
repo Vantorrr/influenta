@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { 
   Search as SearchIcon, 
@@ -22,6 +22,8 @@ import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { formatDate, getRelativeTime } from '@/lib/utils'
 import { ChatWindow } from '@/components/chat/ChatWindow'
+import { messagesApi } from '@/lib/api'
+import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 
 interface Chat {
@@ -47,12 +49,59 @@ interface Chat {
 
 export default function MessagesPage() {
   const { user } = useAuth()
+  const searchParams = useSearchParams()
   const [search, setSearch] = useState('')
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
+  const [chats, setChats] = useState<Chat[]>([])
   const currentUserId = user?.id || ''
 
-  // TODO: Загружать реальные чаты из API
-  const chats: Chat[] = []
+  // Загрузка реального списка чатов
+  useEffect(() => {
+    if (!user) return
+    ;(async () => {
+      try {
+        const res = await messagesApi.getChatList()
+        const rows = (res as any)?.data || res
+        const normalized: Chat[] = (rows || []).map((row: any) => ({
+          id: row.responseId,
+          responseId: row.responseId,
+          listingTitle: row.response?.listing?.title || 'Объявление',
+          otherUser: {
+            firstName: row.response?.blogger?.user?.firstName || row.response?.listing?.advertiser?.user?.firstName || 'Пользователь',
+            lastName: row.response?.blogger?.user?.lastName || row.response?.listing?.advertiser?.user?.lastName || '',
+            username: row.response?.blogger?.user?.username || row.response?.listing?.advertiser?.user?.username || '',
+            photoUrl: row.response?.blogger?.user?.photoUrl || row.response?.listing?.advertiser?.user?.photoUrl,
+            role: row.response?.blogger ? 'blogger' : 'advertiser',
+          },
+          lastMessage: row.lastMessage ? {
+            content: row.lastMessage.content,
+            createdAt: new Date(row.lastMessage.createdAt),
+            isRead: !!row.lastMessage.isRead,
+            senderId: row.lastMessage.senderId,
+          } : {
+            content: 'Нет сообщений',
+            createdAt: new Date(),
+            isRead: true,
+            senderId: '',
+          },
+          unreadCount: row.unreadCount || 0,
+          status: 'active',
+        }))
+        setChats(normalized)
+      } catch {
+        setChats([])
+      }
+    })()
+  }, [user])
+
+  // Автовыбор чата по responseId в query
+  useEffect(() => {
+    const rid = searchParams?.get('responseId')
+    if (rid && chats.length > 0) {
+      const found = chats.find(c => c.responseId === rid)
+      if (found) setSelectedChat(found)
+    }
+  }, [searchParams, chats])
 
   const filteredChats = chats.filter(chat => {
     const searchLower = search.toLowerCase()
@@ -171,6 +220,7 @@ export default function MessagesPage() {
     </Layout>
   )
 }
+
 
 
 

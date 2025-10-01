@@ -231,7 +231,7 @@ export const responsesApi = {
 // Messages API
 export const messagesApi = {
   async send(responseId: string, content: string, attachments?: any[]): Promise<ApiResponse<Message>> {
-    const response = await api.post('/messages', {
+    const response = await api.post('/chat/messages', {
       responseId,
       content,
       attachments,
@@ -240,14 +240,24 @@ export const messagesApi = {
   },
 
   async getByResponse(responseId: string, page = 1, limit = 50): Promise<PaginatedResponse<Message>> {
-    const response = await api.get(`/messages/response/${responseId}`, {
+    const response = await api.get(`/chat/messages/${responseId}`, {
       params: { page, limit },
     })
     return response.data
   },
 
   async markAsRead(id: string): Promise<ApiResponse<Message>> {
-    const response = await api.patch(`/messages/${id}/read`)
+    const response = await api.post(`/chat/messages/${id}/read`)
+    return response.data
+  },
+  
+  async getChatList(): Promise<ApiResponse<any[]>> {
+    const response = await api.get('/chat/list')
+    return response.data
+  },
+
+  async getUnreadCount(): Promise<ApiResponse<{ count: number }>> {
+    const response = await api.get('/chat/unread-count')
     return response.data
   },
 }

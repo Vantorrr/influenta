@@ -21,6 +21,7 @@ import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatTime, getRelativeTime } from '@/lib/utils'
+import { messagesApi } from '@/lib/api'
 
 interface Message {
   id: string
@@ -50,90 +51,55 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
-  // Mock сообщения
+  // Загрузка реальных сообщений
   useEffect(() => {
-    setMessages([
-      {
-        id: '1',
-        content: 'Здравствуйте! Заинтересовало ваше предложение о рекламе.',
-        senderId: '2',
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
-        isRead: true,
-      },
-      {
-        id: '2',
-        content: 'Добрый день! Отлично, давайте обсудим детали. Какой у вас охват аудитории?',
-        senderId: currentUserId,
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 23),
-        isRead: true,
-      },
-      {
-        id: '3',
-        content: 'У меня 125К подписчиков, средний охват постов около 45К просмотров. В основном женская аудитория 18-35 лет.',
-        senderId: '2',
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 22),
-        isRead: true,
-      },
-      {
-        id: '4',
-        content: 'Отлично подходит под нашу ЦА! Можете показать примеры интеграций?',
-        senderId: currentUserId,
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 20),
-        isRead: true,
-      },
-      {
-        id: '5',
-        content: 'Конечно, вот несколько последних работ:',
-        senderId: '2',
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 19),
-        isRead: true,
-        attachments: [
-          { type: 'image', url: '/example1.jpg', name: 'Пример поста 1' },
-          { type: 'image', url: '/example2.jpg', name: 'Пример поста 2' },
-        ],
-      },
-      {
-        id: '6',
-        content: 'Отличная подача! Давайте работать вместе. Готовы начать?',
-        senderId: currentUserId,
-        createdAt: new Date(Date.now() - 1000 * 60 * 30),
-        isRead: true,
-      },
-      {
-        id: '7',
-        content: 'Отлично! Готова начать работу над постом. Когда нужно опубликовать?',
-        senderId: '2',
-        createdAt: new Date(Date.now() - 1000 * 60 * 15),
-        isRead: false,
-      },
-    ])
-  }, [currentUserId])
+    let isMounted = true
+    const load = async () => {
+      try {
+        const res = await messagesApi.getByResponse(chat.responseId, 1, 200)
+        const items = (res as any)?.data || res?.data || []
+        if (!isMounted) return
+        const normalized = items.map((m: any) => ({
+          id: m.id,
+          content: m.content,
+          senderId: m.senderId,
+          createdAt: new Date(m.createdAt),
+          isRead: !!m.isRead,
+          attachments: m.attachments || [],
+        }))
+        setMessages(normalized.reverse())
+      } catch {
+        setMessages([])
+      }
+    }
+    load()
+    return () => { isMounted = false }
+  }, [chat.responseId, currentUserId])
 
   // Автоскролл к последнему сообщению
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (!message.trim()) return
-
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      content: message,
-      senderId: currentUserId,
-      createdAt: new Date(),
-      isRead: false,
-    }
-
-    setMessages([...messages, newMessage])
+    const content = message
     setMessage('')
-    
-    // Имитация ответа
-    setIsTyping(true)
-    setTimeout(() => {
-      setIsTyping(false)
-      // Можно добавить автоответ
-    }, 2000)
+    try {
+      const res = await messagesApi.send(chat.responseId, content)
+      const m = (res as any)?.data || res
+      const newMessage: Message = {
+        id: m.id,
+        content: m.content,
+        senderId: m.senderId || currentUserId,
+        createdAt: new Date(m.createdAt || Date.now()),
+        isRead: !!m.isRead,
+      }
+      setMessages(prev => [...prev, newMessage])
+    } catch (e) {
+      // Возвращаем текст в инпут, если не отправилось
+      setMessage(content)
+    }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
