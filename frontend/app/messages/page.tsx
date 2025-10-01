@@ -107,8 +107,8 @@ function MessagesPageContent() {
             },
             unreadCount: row.unreadCount || 0,
             status: 'active',
-          };
-        }))
+          }
+        })
         setChats(normalized)
       } catch {
         setChats([])
