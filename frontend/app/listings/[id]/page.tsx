@@ -29,6 +29,7 @@ export default function ListingDetailsPage() {
   const [respError, setRespError] = useState<string | null>(null)
   const [respLoading, setRespLoading] = useState(false)
   const [myResponses, setMyResponses] = useState<any[]>([])
+  const [receivedResponses, setReceivedResponses] = useState<any[]>([])
 
   // Edit modal state
   const [showEdit, setShowEdit] = useState(false)
@@ -61,6 +62,15 @@ export default function ListingDetailsPage() {
           const mineForThis = rows.filter((r: any) => r.listingId === params.id)
           setMyResponses(mineForThis)
         } catch {}
+
+        // Если я рекламодатель и это мое объявление — подгружаем все отклики
+        if (user?.role === 'advertiser' && (l?.advertiserId === (user as any)?.advertiser?.id || l?.advertiser?.userId === user?.id)) {
+          try {
+            const respList = await responsesApi.getByListing(params.id!)
+            const list = (respList as any)?.data || respList?.data || []
+            setReceivedResponses(list)
+          } catch {}
+        }
       } catch (e: any) {
         setError(e?.response?.data?.message || e?.message || 'Объявление не найдено')
       } finally {
@@ -201,6 +211,32 @@ export default function ListingDetailsPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Список откликов для рекламодателя */}
+        {user?.role === 'advertiser' && receivedResponses.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Отклики ({receivedResponses.length})</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {receivedResponses.map((r: any) => (
+                <div key={r.id} className="flex items-center justify-between gap-3 p-3 bg-telegram-bgSecondary rounded-xl">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">
+                      {r.blogger?.user?.firstName} {r.blogger?.user?.lastName} @{r.blogger?.user?.username}
+                    </p>
+                    <p className="text-sm text-telegram-textSecondary line-clamp-2">{r.message}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button variant="secondary" onClick={() => {
+                      window.location.href = `/messages?responseId=${r.id}`
+                    }}>Написать</Button>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Respond modal */}
         {showRespond && (

@@ -53,6 +53,15 @@ export class ResponsesController {
     })
     await this.responsesRepo.save(resp)
 
+    // increment listing responsesCount
+    try {
+      const lst = await this.listingsRepo.findOne({ where: { id: data.listingId } })
+      if (lst) {
+        lst.responsesCount = (lst.responsesCount || 0) + 1
+        await this.listingsRepo.save(lst)
+      }
+    } catch {}
+
     // Send Telegram notifications
     try {
       const listing = await this.listingsRepo.findOne({ where: { id: data.listingId }, relations: ['advertiser', 'advertiser.user'] })
@@ -77,6 +86,28 @@ export class ResponsesController {
       }
     } catch {}
     return { success: true, data: resp }
+  }
+
+  @Get('listing/:id')
+  async byListing(@Param('id') listingId: string, @CurrentUser() user: User) {
+    const listing = await this.listingsRepo.findOne({ where: { id: listingId }, relations: ['advertiser'] })
+    if (!listing) return { data: [], total: 0 }
+
+    // ensure requester is owner (advertiser)
+    const advertiser = await this.advertisersRepo.findOne({ where: { userId: user.id } })
+    if (!advertiser || advertiser.id !== listing.advertiserId) {
+      return { data: [], total: 0 }
+    }
+
+    const list = await this.responsesRepo
+      .createQueryBuilder('r')
+      .leftJoinAndSelect('r.blogger', 'blogger')
+      .leftJoinAndSelect('blogger.user', 'bloggerUser')
+      .where('r.listingId = :id', { id: listingId })
+      .orderBy('r.createdAt', 'DESC')
+      .getMany()
+
+    return { data: list, total: list.length }
   }
 
   @Get('my/sent')

@@ -226,6 +226,11 @@ export const responsesApi = {
     const response = await api.get(`/responses/${id}`)
     return response.data
   },
+
+  async getByListing(listingId: string): Promise<PaginatedResponse<Response>> {
+    const response = await api.get(`/responses/listing/${listingId}`)
+    return response.data
+  },
 }
 
 // Messages API
