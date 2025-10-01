@@ -185,7 +185,7 @@ export default function ListingsPage() {
                       </div>
                       <div className="flex items-center gap-1">
                         <MessageSquare className="w-4 h-4" />
-                        <span>{listing.responsesCount} откликов</span>
+                        <span>{listing.responsesCount} {pluralizeResponses(listing.responsesCount)}</span>
                       </div>
                       {listing.deadline && (
                         <div className="flex items-center gap-1">
@@ -295,9 +295,13 @@ export default function ListingsPage() {
   )
 }
 
-
-
-
+function pluralizeResponses(count: number): string {
+  const mod10 = count % 10
+  const mod100 = count % 100
+  if (mod10 === 1 && mod100 !== 11) return 'отклик'
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'отклика'
+  return 'откликов'
+}
 
 
 
