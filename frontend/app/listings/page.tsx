@@ -84,8 +84,16 @@ export default function ListingsPage() {
             icon={<SearchIcon className="w-4 h-4" />}
             className="flex-1 h-11 rounded-lg"
           />
-          <Button variant="secondary" onClick={() => setShowFilters(true)} className="h-11 rounded-lg px-3 shrink-0 pointer-events-auto">
+          <Button variant="secondary" onClick={() => setShowFilters(true)} className="h-11 rounded-lg px-3 shrink-0 pointer-events-auto relative">
             <Filter className="w-4 h-4" />
+            {(() => {
+              const activeCount = (filters.minBudget ? 1 : 0) + (filters.maxBudget ? 1 : 0) + (filters.format ? 1 : 0)
+              return activeCount > 0 ? (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-telegram-primary text-white text-xs rounded-full flex items-center justify-center">
+                  {activeCount}
+                </span>
+              ) : null
+            })()}
           </Button>
           {user?.role === 'advertiser' && (
             <Button variant="primary" onClick={() => { if (typeof window !== 'undefined') window.location.href = '/listings/create' }} className="h-11 rounded-lg px-3 shrink-0 pointer-events-auto">
@@ -286,6 +294,7 @@ export default function ListingsPage() {
     </Layout>
   )
 }
+
 
 
 
