@@ -278,8 +278,7 @@ export default function ListingsPage() {
                   <option value="">Любой</option>
                   <option value="post">Пост</option>
                   <option value="story">Сторис</option>
-                  <option value="reels">Reels</option>
-                  <option value="live">Эфир</option>
+                  <option value="live">Эфир/Reels</option>
                 </select>
               </div>
 
