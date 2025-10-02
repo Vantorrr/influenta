@@ -7,10 +7,12 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import * as express from 'express';
 import * as path from 'path';
+import { DataSource } from 'typeorm';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
+  const dataSource = app.get(DataSource);
   
   // Enable CORS
   const allowedOrigins = [
@@ -35,6 +37,39 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+
+  // Safe enum/data migration: ensure 'live', 'post_and_story', 'any' exist and replace reels->live
+  try {
+    await dataSource.query(`
+      DO $$
+      DECLARE
+        enum_type regtype;
+        enum_type_name text;
+        need_value text;
+        required_values text[] := ARRAY['live','post_and_story','any'];
+        has_value boolean;
+      BEGIN
+        SELECT a.atttypid::regtype INTO enum_type
+        FROM pg_attribute a
+        JOIN pg_class c ON a.attrelid = c.oid
+        WHERE c.relname = 'listings' AND a.attname = 'format';
+
+        enum_type_name := enum_type::text;
+
+        FOREACH need_value IN ARRAY required_values LOOP
+          SELECT EXISTS(
+            SELECT 1 FROM pg_enum WHERE enumlabel = need_value AND enumtypid = enum_type
+          ) INTO has_value;
+          IF NOT has_value THEN
+            EXECUTE 'ALTER TYPE ' || enum_type_name || ' ADD VALUE ' || quote_literal(need_value);
+          END IF;
+        END LOOP;
+      END $$;
+    `);
+    await dataSource.query(`UPDATE listings SET format = 'live' WHERE format IN ('reels','reel');`);
+  } catch (e) {
+    console.warn('Enum/data migration skipped:', (e as any)?.message || e);
+  }
 
   // Swagger documentation
   const config = new DocumentBuilder()

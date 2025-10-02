@@ -269,38 +269,37 @@ export class AdminService {
   }
 
   async fixReelsToLive() {
-    // 1) Добавляем 'live' в postgres enum, если отсутствует
+    // 1) Гарантируем наличие значений в postgres enum listings_format_enum
     await this.listingsRepository.query(`
       DO $$
       BEGIN
         IF NOT EXISTS (
-          SELECT 1 FROM pg_enum 
-          WHERE enumlabel = 'live' 
-          AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'listings_format_enum')
+          SELECT 1 FROM pg_enum e
+          JOIN pg_type t ON t.oid = e.enumtypid
+          WHERE t.typname = 'listings_format_enum' AND e.enumlabel = 'live'
         ) THEN
           ALTER TYPE listings_format_enum ADD VALUE 'live';
         END IF;
-      END
-      $$;
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_enum e
+          JOIN pg_type t ON t.oid = e.enumtypid
+          WHERE t.typname = 'listings_format_enum' AND e.enumlabel = 'post_and_story'
+        ) THEN
+          ALTER TYPE listings_format_enum ADD VALUE 'post_and_story';
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_enum e
+          JOIN pg_type t ON t.oid = e.enumtypid
+          WHERE t.typname = 'listings_format_enum' AND e.enumlabel = 'any'
+        ) THEN
+          ALTER TYPE listings_format_enum ADD VALUE 'any';
+        END IF;
+      END $$;
     `);
 
-    // 2) Обновляем все объявления: reels/reel -> live
-    await this.listingsRepository.query(`
-      UPDATE listings SET format = 'live' WHERE format IN ('reels', 'reel');
-    `);
+    // 2) Обновляем старые данные: reels/reel -> live
+    await this.listingsRepository.query(`UPDATE listings SET format = 'live' WHERE format IN ('reels','reel');`);
 
-    // 3) Пробуем привести колонку к enum-типу, если сейчас строка
-    try {
-      await this.listingsRepository.query(`
-        ALTER TABLE listings
-        ALTER COLUMN format TYPE listings_format_enum
-        USING (
-          CASE WHEN format IN ('reels','reel') THEN 'live' ELSE format END
-        )::listings_format_enum;
-      `);
-    } catch {
-      // Пропускаем, если уже enum
-    }
     return { success: true };
   }
 }
