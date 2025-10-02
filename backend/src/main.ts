@@ -12,6 +12,32 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
   
+  // Run migrations on startup (add reels to enum if needed)
+  if (process.env.DATABASE_URL) {
+    try {
+      const { Pool } = require('pg');
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+      const migrationSQL = `
+        DO $$
+        BEGIN
+          IF NOT EXISTS (
+            SELECT 1 FROM pg_enum 
+            WHERE enumlabel = 'reels' 
+            AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'listings_format_enum')
+          ) THEN
+            ALTER TYPE listings_format_enum ADD VALUE 'reels';
+          END IF;
+        END
+        $$;
+      `;
+      await pool.query(migrationSQL);
+      await pool.end();
+      console.log('✅ Migration: reels added to listings_format_enum');
+    } catch (err) {
+      console.warn('⚠️ Migration warning (likely already applied):', err.message);
+    }
+  }
+  
   // Enable CORS
   const allowedOrigins = [
     configService.get('FRONTEND_URL') || 'http://localhost:3000',
