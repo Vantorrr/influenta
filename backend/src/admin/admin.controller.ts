@@ -69,6 +69,13 @@ export class AdminController {
   async syncCounters() {
     return this.adminService.syncListingCounters();
   }
+
+  // Разовая миграция формата объявлений: reels/reel -> live
+  @Post('fix-reels')
+  @UseGuards(JwtAuthGuard)
+  async fixReels() {
+    return this.adminService.fixReelsToLive();
+  }
 }
 
 

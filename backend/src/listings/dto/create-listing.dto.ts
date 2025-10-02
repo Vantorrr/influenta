@@ -1,4 +1,5 @@
 import { IsString, IsNumber, IsArray, IsEnum, IsOptional, IsDateString, IsObject, Min } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { BloggerCategory, PostFormat } from '@/types';
 
 export class CreateListingDto {
@@ -17,6 +18,7 @@ export class CreateListingDto {
   budget: number;
 
   @IsEnum(PostFormat)
+  @Transform(({ value }) => (value === 'reels' || value === 'reel' ? 'live' : value))
   format: PostFormat;
 
   @IsObject()

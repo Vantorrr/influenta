@@ -137,7 +137,6 @@ export enum ListingStatus {
 export enum PostFormat {
   POST = 'post',
   STORY = 'story',
-  REELS = 'reels',
   LIVE = 'live',
 }
 

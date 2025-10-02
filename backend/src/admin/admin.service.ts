@@ -267,5 +267,25 @@ export class AdminService {
     await this.listingsRepository.save(listings);
     return { success: true, updated: listings.length };
   }
+
+  async fixReelsToLive() {
+    // Обновляем все объявления: reels/reel -> live
+    await this.listingsRepository.query(`
+      UPDATE listings SET format = 'live' WHERE format IN ('reels', 'reel');
+    `);
+    // Пробуем привести колонку к enum-типу, если сейчас строка
+    try {
+      await this.listingsRepository.query(`
+        ALTER TABLE listings
+        ALTER COLUMN format TYPE listings_format_enum
+        USING (
+          CASE WHEN format IN ('reels','reel') THEN 'live' ELSE format END
+        )::listings_format_enum;
+      `);
+    } catch {
+      // Пропускаем, если уже enum
+    }
+    return { success: true };
+  }
 }
 

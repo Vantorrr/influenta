@@ -51,7 +51,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
 export const POST_FORMAT_LABELS: Record<string, string> = {
   post: 'Пост',
   story: 'Сторис',
-  reel: 'Reels',
+  live: 'Эфир/Reels',
   post_and_story: 'Пост + Сторис',
   any: 'Любой формат',
 }

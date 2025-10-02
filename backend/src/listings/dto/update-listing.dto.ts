@@ -1,4 +1,5 @@
 import { IsOptional, IsString, IsNumber, IsEnum, IsArray, IsObject } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { PostFormat, ListingStatus, BloggerCategory } from '@/types';
 
 export class UpdateListingDto {
@@ -21,6 +22,7 @@ export class UpdateListingDto {
 
   @IsOptional()
   @IsEnum(PostFormat)
+  @Transform(({ value }) => (value === 'reels' || value === 'reel' ? 'live' : value))
   format?: PostFormat;
 
   @IsOptional()
