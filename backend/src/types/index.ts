@@ -16,7 +16,6 @@ export enum BloggerCategory {
 export enum PostFormat {
   POST = 'post',
   STORY = 'story',
-  REELS = 'reels',
   LIVE = 'live',
   POST_AND_STORY = 'post_and_story',
   ANY = 'any',
