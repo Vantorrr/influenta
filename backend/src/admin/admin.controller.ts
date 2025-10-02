@@ -76,6 +76,20 @@ export class AdminController {
   async fixReels() {
     return this.adminService.fixReelsToLive();
   }
+
+  // Админ: список объявлений
+  @Get('listings')
+  @UseGuards(JwtAuthGuard)
+  async getListingsAdmin() {
+    return this.adminService.getListingsAdmin();
+  }
+
+  // Админ: детали объявления + отклики
+  @Get('listings/:id')
+  @UseGuards(JwtAuthGuard)
+  async getListingDetailAdmin(@Param('id') id: string) {
+    return this.adminService.getListingDetailAdmin(id);
+  }
 }
 
 

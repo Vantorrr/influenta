@@ -5,6 +5,7 @@ import { User } from '../users/entities/user.entity';
 import { Blogger } from '../bloggers/entities/blogger.entity';
 import { Advertiser } from '../advertisers/entities/advertiser.entity';
 import { Listing, ListingStatus } from '../listings/entities/listing.entity';
+import { Response as ListingResponse } from '../responses/entities/response.entity';
 import { ConfigService } from '@nestjs/config';
 import { TelegramService } from '../telegram/telegram.service';
 
@@ -15,6 +16,7 @@ export class AdminService {
     @InjectRepository(Blogger) private readonly bloggersRepository: Repository<Blogger>,
     @InjectRepository(Advertiser) private readonly advertisersRepository: Repository<Advertiser>,
     @InjectRepository(Listing) private readonly listingsRepository: Repository<Listing>,
+    @InjectRepository(ListingResponse) private readonly responsesRepository: Repository<ListingResponse>,
     private readonly configService: ConfigService,
     private readonly telegramService: TelegramService,
   ) {}
@@ -250,6 +252,112 @@ export class AdminService {
       campaigns: 0,
       rank: i + 1,
     }));
+  }
+
+  // Admin: list all listings with basic info and counters
+  async getListingsAdmin() {
+    const listings = await this.listingsRepository.find({
+      relations: ['advertiser', 'advertiser.user'],
+      order: { createdAt: 'DESC' },
+    });
+
+    return listings.map((l) => ({
+      id: l.id,
+      title: l.title,
+      description: l.description,
+      format: l.format,
+      budget: Number(l.budget ?? 0),
+      status: l.status,
+      createdAt: l.createdAt,
+      viewsCount: l.viewsCount ?? 0,
+      responsesCount: l.responsesCount ?? 0,
+      advertiser: l.advertiser
+        ? {
+            id: l.advertiser.id,
+            userId: (l.advertiser as any).userId,
+            companyName:
+              (l.advertiser as any).companyName ||
+              `${(l.advertiser as any).user?.firstName || ''} ${
+                (l.advertiser as any).user?.lastName || ''
+              }`.trim(),
+            user: (l.advertiser as any).user
+              ? {
+                  id: (l.advertiser as any).user.id,
+                  telegramId: (l.advertiser as any).user.telegramId,
+                  username: (l.advertiser as any).user.username,
+                }
+              : undefined,
+          }
+        : undefined,
+    }));
+  }
+
+  // Admin: listing details with responses
+  async getListingDetailAdmin(id: string) {
+    const listing = await this.listingsRepository.findOne({
+      where: { id },
+      relations: ['advertiser', 'advertiser.user'],
+    });
+    if (!listing) throw new NotFoundException('Listing not found');
+
+    const responses = await this.responsesRepository.find({
+      where: { listingId: id } as any,
+      relations: ['blogger', 'blogger.user'],
+      order: { createdAt: 'DESC' as any },
+    });
+
+    return {
+      id: listing.id,
+      title: listing.title,
+      description: listing.description,
+      format: listing.format,
+      budget: Number(listing.budget ?? 0),
+      status: listing.status,
+      createdAt: listing.createdAt,
+      requirements: listing.requirements || {},
+      viewsCount: listing.viewsCount ?? 0,
+      responsesCount: listing.responsesCount ?? responses.length,
+      advertiser: listing.advertiser
+        ? {
+            id: listing.advertiser.id,
+            userId: (listing.advertiser as any).userId,
+            companyName:
+              (listing.advertiser as any).companyName ||
+              `${(listing.advertiser as any).user?.firstName || ''} ${
+                (listing.advertiser as any).user?.lastName || ''
+              }`.trim(),
+            user: (listing.advertiser as any).user
+              ? {
+                  id: (listing.advertiser as any).user.id,
+                  telegramId: (listing.advertiser as any).user.telegramId,
+                  username: (listing.advertiser as any).user.username,
+                }
+              : undefined,
+          }
+        : undefined,
+      responses: responses.map((r) => ({
+        id: r.id,
+        message: r.message,
+        proposedPrice: Number(r.proposedPrice ?? 0),
+        status: r.status,
+        createdAt: r.createdAt,
+        blogger: r.blogger
+          ? {
+              id: r.blogger.id,
+              userId: (r.blogger as any).userId,
+              user: (r.blogger as any).user
+                ? {
+                    id: (r.blogger as any).user.id,
+                    telegramId: (r.blogger as any).user.telegramId,
+                    username: (r.blogger as any).user.username,
+                    firstName: (r.blogger as any).user.firstName,
+                    lastName: (r.blogger as any).user.lastName,
+                  }
+                : undefined,
+            }
+          : undefined,
+      })),
+    };
   }
 
   async syncListingCounters() {
