@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, Param, UseGuards, Put, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, UseGuards, Put, Patch, Delete } from '@nestjs/common';
 import { ListingsService } from './listings.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
@@ -51,6 +51,15 @@ export class ListingsController {
 
   @Put(':id')
   async update(
+    @Param('id') id: string,
+    @Body() updateListingDto: UpdateListingDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.listingsService.update(id, updateListingDto, user);
+  }
+
+  @Patch(':id')
+  async patch(
     @Param('id') id: string,
     @Body() updateListingDto: UpdateListingDto,
     @CurrentUser() user: User,
