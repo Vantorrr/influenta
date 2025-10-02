@@ -126,7 +126,7 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
                 </p>
               </div>
 
-              <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+              <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-200px)] pb-[env(safe-area-inset-bottom)]">
                 {/* Документы/Скриншоты */}
                 <div>
                   <h3 className="font-medium mb-3">
@@ -258,7 +258,7 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
                 </div>
               </div>
 
-              <div className="p-6 border-t border-telegram-border flex gap-3">
+              <div className="p-6 border-t border-telegram-border flex gap-3 sticky bottom-0 bg-telegram-bg">
                 <Button
                   variant="secondary"
                   onClick={onClose}
