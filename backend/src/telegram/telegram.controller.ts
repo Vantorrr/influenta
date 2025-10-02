@@ -135,7 +135,7 @@ export class TelegramController {
     const isAdmin = this.adminIds.includes(userId);
 
     if (data === 'stats') {
-      const statsMessage = this.telegramService.getStatsMessage();
+      const statsMessage = await this.telegramService.getStatsMessage();
       await this.telegramService.sendMessage(chatId, statsMessage);
     } else if (data === 'help') {
       const helpMessage = this.telegramService.getHelpMessage();

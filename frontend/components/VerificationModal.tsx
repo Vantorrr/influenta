@@ -6,6 +6,7 @@ import { X, Upload, Link as LinkIcon, Plus, Trash2, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
+import { validateUrl } from '@/lib/utils'
 
 interface SocialProof {
   platform: string
@@ -37,17 +38,29 @@ const SOCIAL_PLATFORMS = [
 export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationModalProps) {
   const [documents, setDocuments] = useState<string[]>([])
   const [documentUrl, setDocumentUrl] = useState('')
+  const [documentUrlError, setDocumentUrlError] = useState<string | null>(null)
   const [socialProofs, setSocialProofs] = useState<SocialProof[]>([])
   const [newProof, setNewProof] = useState<SocialProof>({ platform: 'Telegram', url: '', followers: undefined })
+  const [newProofUrlError, setNewProofUrlError] = useState<string | null>(null)
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
 
+  const normalizeUrl = (url: string) => {
+    const trimmed = url.trim()
+    if (!trimmed) return ''
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+  }
+
   const handleAddDocument = () => {
-    if (documentUrl.trim()) {
-      setDocuments([...documents, documentUrl.trim()])
-      setDocumentUrl('')
+    const candidate = normalizeUrl(documentUrl)
+    if (!candidate || !validateUrl(candidate)) {
+      setDocumentUrlError('Введите корректный URL (http/https)')
+      return
     }
+    setDocuments([...documents, candidate])
+    setDocumentUrl('')
+    setDocumentUrlError(null)
   }
 
   const handleUploadFile = async (file: File) => {
@@ -71,15 +84,25 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
   }
 
   const handleAddSocialProof = () => {
-    if (newProof.url.trim()) {
-      setSocialProofs([...socialProofs, { ...newProof, url: newProof.url.trim() }])
-      setNewProof({ platform: 'Telegram', url: '', followers: undefined })
+    const candidate = normalizeUrl(newProof.url)
+    if (!candidate || !validateUrl(candidate)) {
+      setNewProofUrlError('Введите корректный URL (http/https)')
+      return
     }
+    setSocialProofs([...socialProofs, { ...newProof, url: candidate }])
+    setNewProof({ platform: 'Telegram', url: '', followers: undefined })
+    setNewProofUrlError(null)
   }
 
   const handleSubmit = async () => {
     if (documents.length === 0 && socialProofs.length === 0) {
       alert('Добавьте хотя бы один документ или ссылку на социальную сеть')
+      return
+    }
+    const allDocsValid = documents.every((d) => validateUrl(d))
+    const allProofsValid = socialProofs.every((p) => validateUrl(p.url))
+    if (!allDocsValid || !allProofsValid) {
+      alert('Обнаружены некорректные ссылки. Проверьте URL.')
       return
     }
 
@@ -140,9 +163,12 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
                     <Input
                       placeholder="Ссылка на скриншот (imgur, prnt.sc и т.д.)"
                       value={documentUrl}
-                      onChange={(e) => setDocumentUrl(e.target.value)}
+                      onChange={(e) => { setDocumentUrl(e.target.value); setDocumentUrlError(null) }}
                       onKeyPress={(e) => e.key === 'Enter' && handleAddDocument()}
                     />
+                    {documentUrlError && (
+                      <div className="text-xs text-telegram-danger">{documentUrlError}</div>
+                    )}
                     <Button onClick={handleAddDocument} size="sm">
                       <Plus className="w-4 h-4" />
                     </Button>
@@ -197,8 +223,11 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
                     <Input
                       placeholder="Ссылка на профиль/канал"
                       value={newProof.url}
-                      onChange={(e) => setNewProof({ ...newProof, url: e.target.value })}
+                      onChange={(e) => { setNewProof({ ...newProof, url: e.target.value }); setNewProofUrlError(null) }}
                     />
+                    {newProofUrlError && (
+                      <div className="text-xs text-telegram-danger">{newProofUrlError}</div>
+                    )}
                     
                     <Input
                       type="number"
@@ -207,7 +236,7 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
                       onChange={(e) => setNewProof({ ...newProof, followers: e.target.value ? parseInt(e.target.value) : undefined })}
                     />
                     
-                    <Button onClick={handleAddSocialProof} fullWidth variant="secondary">
+                    <Button onClick={handleAddSocialProof} fullWidth variant="secondary" disabled={!newProof.url.trim()}>
                       <Plus className="w-4 h-4 mr-2" />
                       Добавить
                     </Button>

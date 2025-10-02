@@ -1,12 +1,26 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '@/users/entities/user.entity';
+import { Blogger } from '@/bloggers/entities/blogger.entity';
+import { Advertiser } from '@/advertisers/entities/advertiser.entity';
+import { Listing } from '@/listings/entities/listing.entity';
+import { Response as ListingResponse } from '@/responses/entities/response.entity';
 
 @Injectable()
 export class TelegramService {
   private readonly botToken: string;
   private readonly botApiUrl: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    @InjectRepository(User) private readonly usersRepo: Repository<User>,
+    @InjectRepository(Blogger) private readonly bloggersRepo: Repository<Blogger>,
+    @InjectRepository(Advertiser) private readonly advertisersRepo: Repository<Advertiser>,
+    @InjectRepository(Listing) private readonly listingsRepo: Repository<Listing>,
+    @InjectRepository(ListingResponse) private readonly responsesRepo: Repository<ListingResponse>,
+  ) {
     this.botToken = this.configService.get('app.telegram.botToken') || process.env.TELEGRAM_BOT_TOKEN || '';
     this.botApiUrl = `https://api.telegram.org/bot${this.botToken}`;
   }
@@ -120,18 +134,29 @@ ${isAdmin ? '• 🛠 Управлять платформой (админ пан
 По всем вопросам обращайтесь к администраторам.`;
   }
 
-  getStatsMessage() {
+  async getStatsMessage() {
+    // Собираем реальные данные
+    const [totalUsers, totalBloggers, totalAdvertisers, activeListings, totalResponses] = await Promise.all([
+      this.usersRepo.count().catch(() => 0),
+      this.bloggersRepo.count().catch(() => 0),
+      this.advertisersRepo.count().catch(() => 0),
+      this.listingsRepo.count({ where: { status: 'active' as any } }).catch(() => 0),
+      this.responsesRepo.count().catch(() => 0),
+    ]);
+
+    const activeUsersEstimate = Math.max(totalUsers - Math.floor(totalUsers * 0.15), 0); // грубая оценка 85%
+
     return `📊 <b>Статистика Influenta</b>
 
 👥 <b>Пользователи:</b>
-• Блогеров: 10,000+
-• Рекламодателей: 500+
-• Активных пользователей: 8,500+
+• Всего: ${totalUsers.toLocaleString('ru-RU')}
+• Блогеров: ${totalBloggers.toLocaleString('ru-RU')}
+• Рекламодателей: ${totalAdvertisers.toLocaleString('ru-RU')}
+• Активных: ~${activeUsersEstimate.toLocaleString('ru-RU')}
 
 📈 <b>Активность:</b>
-• Объявлений за месяц: 1,200+
-• Успешных сделок: 850+
-• Довольных клиентов: 95%
+• Активных объявлений: ${activeListings.toLocaleString('ru-RU')}
+• Всего откликов: ${totalResponses.toLocaleString('ru-RU')}
 
 🚀 <b>Присоединяйтесь к растущему сообществу!</b>`;
   }
