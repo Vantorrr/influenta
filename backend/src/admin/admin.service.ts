@@ -269,11 +269,27 @@ export class AdminService {
   }
 
   async fixReelsToLive() {
-    // Обновляем все объявления: reels/reel -> live
+    // 1) Добавляем 'live' в postgres enum, если отсутствует
+    await this.listingsRepository.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_enum 
+          WHERE enumlabel = 'live' 
+          AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'listings_format_enum')
+        ) THEN
+          ALTER TYPE listings_format_enum ADD VALUE 'live';
+        END IF;
+      END
+      $$;
+    `);
+
+    // 2) Обновляем все объявления: reels/reel -> live
     await this.listingsRepository.query(`
       UPDATE listings SET format = 'live' WHERE format IN ('reels', 'reel');
     `);
-    // Пробуем привести колонку к enum-типу, если сейчас строка
+
+    // 3) Пробуем привести колонку к enum-типу, если сейчас строка
     try {
       await this.listingsRepository.query(`
         ALTER TABLE listings
