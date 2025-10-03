@@ -37,6 +37,7 @@ export class AuthService {
       }
 
       console.log('🔴 Using telegram user from request:', telegramUser);
+      console.log('🔴 TG username field:', telegramUser.username, 'first_name:', telegramUser.first_name);
       
       // Ищем или создаем пользователя
       let user = await this.usersRepository.findOne({
@@ -56,15 +57,21 @@ export class AuthService {
         user.isVerified = false;
 
         user = await this.usersRepository.save(user);
+        console.log('🟢 Created new user:', { id: user.id, username: user.username, firstName: user.firstName });
       } else {
+        console.log('🟡 Existing user before update:', { id: user.id, username: user.username, firstName: user.firstName });
         // Обновляем данные существующего пользователя из Telegram
         user.firstName = telegramUser.first_name || user.firstName;
         user.lastName = telegramUser.last_name || user.lastName;
-        user.username = telegramUser.username || user.username;
+        // Если Telegram передал username — обновляем, иначе оставляем текущий
+        if (telegramUser.username !== undefined) {
+          user.username = telegramUser.username;
+        }
         user.photoUrl = telegramUser.photo_url || user.photoUrl;
         user.lastLoginAt = new Date();
         
         user = await this.usersRepository.save(user);
+        console.log('🟢 Updated user:', { id: user.id, username: user.username, firstName: user.firstName });
       }
 
       // Перезагружаем пользователя из БД, чтобы вернуть самые свежие данные
