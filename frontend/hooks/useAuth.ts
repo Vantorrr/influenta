@@ -33,12 +33,19 @@ export function useAuth() {
       const token = localStorage.getItem('influenta_token')
       if (!token) return
       try {
+        console.log('🔄 Fetching fresh profile on focus...')
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         if (res.ok) {
           const me = await res.json()
           const freshUser = (me && (me.user ?? me)) || null
+          console.log('✅ Fresh profile data:', {
+            id: freshUser?.id,
+            username: freshUser?.username,
+            firstName: freshUser?.firstName,
+            telegramId: freshUser?.telegramId
+          })
           if (freshUser?.id) {
             localStorage.setItem('influenta_user', JSON.stringify(freshUser))
             const isAdmin = ADMIN_CONFIG.telegramIds.includes(parseInt(freshUser.telegramId))
@@ -174,6 +181,12 @@ export function useAuth() {
 
             const authData = await response.json()
             console.log('🟢 Auth response:', authData)
+            console.log('🟢 User data from auth:', {
+              id: authData.user?.id,
+              username: authData.user?.username,
+              firstName: authData.user?.firstName,
+              telegramId: authData.user?.telegramId
+            })
             if (authData?.success && authData?.user?.telegramId) {
               localStorage.setItem('influenta_token', authData.token)
               localStorage.setItem('influenta_user', JSON.stringify(authData.user))

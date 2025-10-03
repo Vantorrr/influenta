@@ -67,7 +67,16 @@ export class AuthService {
         // Обновляем данные существующего пользователя: приоритет свежим данным из API
         user.firstName = freshTgData?.first_name || telegramUser.first_name || user.firstName;
         user.lastName = freshTgData?.last_name || telegramUser.last_name || user.lastName;
-        user.username = freshTgData?.username || telegramUser.username || user.username;
+        
+        // ВАЖНО: явно обновляем username, даже если он null/undefined (означает что у пользователя нет username в Telegram)
+        if (freshTgData && 'username' in freshTgData) {
+          user.username = freshTgData.username || null;
+          console.log('🔵 Setting username from fresh API data:', freshTgData.username);
+        } else if ('username' in telegramUser) {
+          user.username = telegramUser.username || null;
+          console.log('🔵 Setting username from initData:', telegramUser.username);
+        }
+        
         user.photoUrl = telegramUser.photo_url || user.photoUrl;
         user.lastLoginAt = new Date();
         
@@ -96,7 +105,7 @@ export class AuthService {
           telegramId: freshUser.telegramId,
           firstName: freshUser.firstName,
           lastName: freshUser.lastName || '',
-          username: freshUser.username || '',
+          username: freshUser.username || null,
           photoUrl: freshUser.photoUrl || '',
           isVerified: freshUser.isVerified,
           onboardingCompleted: freshUser.onboardingCompleted,
@@ -148,6 +157,12 @@ export class AuthService {
     if (!user) {
       throw new Error('User not found');
     }
+    console.log('📋 GetProfile returning user:', { 
+      id: user.id, 
+      username: user.username,
+      telegramId: user.telegramId 
+    });
+    
     return {
       success: true,
       user: {
@@ -155,7 +170,7 @@ export class AuthService {
         telegramId: user.telegramId,
         firstName: user.firstName,
         lastName: user.lastName || '',
-        username: user.username || '',
+        username: user.username || null, // Важно: возвращаем null, а не пустую строку
         photoUrl: user.photoUrl || '',
         isVerified: user.isVerified,
         email: user.email || null,
