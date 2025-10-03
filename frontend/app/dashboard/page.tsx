@@ -142,15 +142,16 @@ export default function DashboardPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
+              className="h-full"
             >
-              <Card>
-                <CardContent className="p-4">
+              <Card className="h-full">
+                <CardContent className="p-4 h-full flex flex-col">
                   <div className="flex items-start justify-between mb-4">
                     <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${stat.color} flex items-center justify-center`}>
                       <stat.icon className="w-5 h-5 text-white" />
                     </div>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 mt-auto">
                     <p className="text-2xl font-bold">{stat.value}</p>
                     <p className="text-sm text-telegram-textSecondary">{stat.title}</p>
                   </div>
