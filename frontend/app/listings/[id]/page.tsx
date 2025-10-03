@@ -348,13 +348,15 @@ export default function ListingDetailsPage() {
                         budget: editData.budget ? parseFloat(editData.budget) : undefined,
                         format: editData.format || undefined,
                       }
+                      console.log('Updating listing:', params.id, payload)
                       await listingsApi.update(params.id!, payload)
                       alert('Сохранено')
                       setShowEdit(false)
                       router.refresh()
                     } catch (e: any) {
-                      const msg = e?.response?.data?.message || e?.message
-                      setEditError(Array.isArray(msg) ? msg.join(', ') : String(msg || 'Не удалось сохранить'))
+                      console.error('Update error:', e)
+                      const msg = e?.response?.data?.message || e?.message || 'Не удалось сохранить'
+                      setEditError(Array.isArray(msg) ? msg.join(', ') : String(msg))
                     } finally {
                       setEditLoading(false)
                     }
