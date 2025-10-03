@@ -178,17 +178,17 @@ export default function ListingsPage() {
                       </Badge>
                     </div>
 
-                    <div className="flex items-center gap-4 text-sm text-telegram-textSecondary mb-3">
-                      <div className="flex items-center gap-1">
+                    <div className="flex items-center flex-wrap gap-x-4 gap-y-2 text-sm text-telegram-textSecondary mb-3">
+                      <div className="flex items-center gap-1 shrink-0">
                         <Eye className="w-4 h-4" />
                         <span>{listing.viewsCount}</span>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 shrink-0">
                         <MessageSquare className="w-4 h-4" />
                         <span>{listing.responsesCount} {pluralizeResponses(listing.responsesCount)}</span>
                       </div>
                       {listing.deadline && (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 shrink-0">
                           <Calendar className="w-4 h-4" />
                           <span className="whitespace-nowrap">до {formatDate(listing.deadline)}</span>
                         </div>

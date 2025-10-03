@@ -10,7 +10,10 @@ import {
   Star,
   Eye,
   DollarSign,
-  Activity
+  Activity,
+  Search,
+  User,
+  PlusCircle
 } from 'lucide-react'
 import { Layout } from '@/components/layout/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -246,9 +249,6 @@ export default function DashboardPage() {
     </Layout>
   )
 }
-
-// Missing imports fix
-import { Search, User, PlusCircle } from 'lucide-react'
 
 
 
