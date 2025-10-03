@@ -669,21 +669,21 @@ export default function ProfilePage() {
                 <h4 className="font-medium mb-3">Преимущества верификации:</h4>
                 <div className="space-y-2">
                   <div className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" />
                     <div>
                       <div className="font-medium">Доверие рекламодателей</div>
                       <div className="text-sm text-telegram-textSecondary">Верифицированные блогеры получают больше заказов</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" />
                     <div>
                       <div className="font-medium">Приоритет в поиске</div>
                       <div className="text-sm text-telegram-textSecondary">Ваш профиль будет выше в результатах</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" />
                     <div>
                       <div className="font-medium">Защита от мошенников</div>
                       <div className="text-sm text-telegram-textSecondary">Подтверждение подлинности аккаунта</div>
