@@ -149,7 +149,7 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
                 </p>
               </div>
 
-              <div className="p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
+              <div className="p-6 pb-8 space-y-6 overflow-y-auto flex-1 min-h-0 overscroll-contain">
                 {/* Документы/Скриншоты */}
                 <div>
                   <h3 className="font-medium mb-3">
@@ -273,7 +273,7 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
                 </div>
 
                 {/* Сообщение */}
-                <div>
+                <div className="pb-4">
                   <h3 className="font-medium mb-3">
                     Дополнительная информация
                   </h3>
@@ -282,7 +282,7 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     rows={4}
-                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg resize-none"
+                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg resize-y min-h-[100px] max-h-[200px]"
                   />
                 </div>
               </div>
