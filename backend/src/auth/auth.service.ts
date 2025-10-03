@@ -70,10 +70,10 @@ export class AuthService {
         
         // ВАЖНО: явно обновляем username, даже если он null/undefined (означает что у пользователя нет username в Telegram)
         if (freshTgData && 'username' in freshTgData) {
-          user.username = freshTgData.username || null;
+          user.username = freshTgData.username || undefined;
           console.log('🔵 Setting username from fresh API data:', freshTgData.username);
         } else if ('username' in telegramUser) {
-          user.username = telegramUser.username || null;
+          user.username = telegramUser.username || undefined;
           console.log('🔵 Setting username from initData:', telegramUser.username);
         }
         
@@ -291,6 +291,7 @@ export class AuthService {
     };
   }
 }
+
 
 
 

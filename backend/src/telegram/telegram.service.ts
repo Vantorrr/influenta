@@ -182,16 +182,6 @@ ${isAdmin ? '• 🛠 Управлять платформой (админ пан
 🚀 <b>Присоединяйтесь к растущему сообществу!</b>`;
   }
 
-  async getUserInfo(userId: number): Promise<any> {
-    try {
-      const response = await this.bot.telegram.getChat(userId);
-      console.log('🔍 Telegram getChat response:', response);
-      return response;
-    } catch (error) {
-      console.error('❌ Error fetching user info from Telegram:', error);
-      return null;
-    }
-  }
 }
 
 
