@@ -35,18 +35,48 @@ export class UploadsController {
   }))
   async uploadVerification(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
     const relative = `/uploads/verification/${file.filename}`;
-    // Prefer explicit BACKEND_URL if provided and valid
-    let baseUrl = process.env.BACKEND_URL;
-    const ensureHttp = (u?: string) => (!u ? undefined : /^https?:\/\//i.test(u) ? u : `https://${u}`);
-    if (!baseUrl) {
-      // Railway domain without protocol
-      baseUrl = ensureHttp(process.env.RAILWAY_PUBLIC_DOMAIN);
+    
+    let baseUrl: string;
+    
+    // 1. Сначала проверяем BACKEND_URL
+    if (process.env.BACKEND_URL) {
+      baseUrl = process.env.BACKEND_URL;
+      // Убедимся что есть протокол
+      if (!baseUrl.match(/^https?:\/\//i)) {
+        baseUrl = `https://${baseUrl}`;
+      }
     }
-    if (!baseUrl) {
-      const proto = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'http';
-      const host = (req.headers['x-forwarded-host'] as string) || req.get?.('host') || `localhost:${process.env.PORT || 3001}`;
-      baseUrl = `${proto}://${host}`;
+    // 2. Затем пробуем Railway domain
+    else if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+      baseUrl = `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
     }
+    // 3. Если на Railway без явного домена - используем заголовки
+    else {
+      const proto = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+      const host = req.headers['x-forwarded-host'] || req.headers['host'] || req.get('host');
+      
+      if (host && host.includes('railway.app')) {
+        // На Railway всегда HTTPS
+        baseUrl = `https://${host}`;
+      } else {
+        baseUrl = `${proto}://${host || 'localhost:' + (process.env.PORT || 3001)}`;
+      }
+    }
+    
+    // Удаляем двойные слеши кроме как после протокола
+    baseUrl = baseUrl.replace(/([^:]\/)\/+/g, '$1');
+    
+    console.log('📸 File upload:', {
+      filename: file.filename,
+      baseUrl,
+      fullUrl: `${baseUrl}${relative}`,
+      headers: {
+        'x-forwarded-proto': req.headers['x-forwarded-proto'],
+        'x-forwarded-host': req.headers['x-forwarded-host'],
+        'host': req.headers['host']
+      }
+    });
+    
     return { success: true, url: `${baseUrl}${relative}`, path: relative, filename: file.filename };
   }
 }
