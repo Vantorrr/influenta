@@ -57,22 +57,25 @@ export class AuthService {
 
         user = await this.usersRepository.save(user);
       } else {
-        // Обновляем данные существующего пользователя
-        user.firstName = telegramUser.first_name;
-        user.lastName = telegramUser.last_name;
-        user.username = telegramUser.username;
-        user.photoUrl = telegramUser.photo_url;
+        // Обновляем данные существующего пользователя из Telegram
+        user.firstName = telegramUser.first_name || user.firstName;
+        user.lastName = telegramUser.last_name || user.lastName;
+        user.username = telegramUser.username || user.username;
+        user.photoUrl = telegramUser.photo_url || user.photoUrl;
         user.lastLoginAt = new Date();
         
         user = await this.usersRepository.save(user);
       }
 
+      // Перезагружаем пользователя из БД, чтобы вернуть самые свежие данные
+      const freshUser = await this.usersRepository.findOne({ where: { id: user.id } }) || user;
+
       // Создаем JWT токен
       const payload = {
-        sub: user.id,
-        telegramId: user.telegramId,
-        username: user.username || '',
-        role: user.role,
+        sub: freshUser.id,
+        telegramId: freshUser.telegramId,
+        username: freshUser.username || '',
+        role: freshUser.role,
       };
 
       const token = this.jwtService.sign(payload);
@@ -81,17 +84,17 @@ export class AuthService {
         success: true,
         token,
         user: {
-          id: user.id,
-          telegramId: user.telegramId,
-          firstName: user.firstName,
-          lastName: user.lastName || '',
-          username: user.username || '',
-          photoUrl: user.photoUrl || '',
-          isVerified: user.isVerified,
-          onboardingCompleted: user.onboardingCompleted,
-          role: user.role,
-          email: user.email || null,
-          bio: user.bio || '',
+          id: freshUser.id,
+          telegramId: freshUser.telegramId,
+          firstName: freshUser.firstName,
+          lastName: freshUser.lastName || '',
+          username: freshUser.username || '',
+          photoUrl: freshUser.photoUrl || '',
+          isVerified: freshUser.isVerified,
+          onboardingCompleted: freshUser.onboardingCompleted,
+          role: freshUser.role,
+          email: freshUser.email || null,
+          bio: freshUser.bio || '',
         },
       };
     } catch (error) {
@@ -265,6 +268,7 @@ export class AuthService {
     };
   }
 }
+
 
 
 
