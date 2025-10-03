@@ -325,11 +325,11 @@ export default function ProfilePage() {
                   </label>
                   <input
                     type="text"
-                    value={user.username || 'Не указан'}
+                    value={user.username ? `@${user.username}` : 'Не указан (скрыт в Telegram)'}
                     disabled
                     className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bgSecondary text-telegram-textSecondary cursor-not-allowed"
                   />
-                  <p className="text-xs text-telegram-textSecondary mt-1">Синхронизируется с Telegram автоматически</p>
+                  <p className="text-xs text-telegram-textSecondary mt-1">Синхронизируется с Telegram автоматически. Если у вас нет публичного @username, он не будет отображаться.</p>
                 </div>
 
                 {/* Email */}
