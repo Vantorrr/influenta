@@ -39,6 +39,10 @@ export class AuthService {
       console.log('🔴 Using telegram user from request:', telegramUser);
       console.log('🔴 TG username field:', telegramUser.username, 'first_name:', telegramUser.first_name);
       
+      // Пытаемся получить актуальные данные напрямую из Telegram API
+      const freshTgData = await this.telegramService.getUserInfo(telegramUser.id).catch(() => null);
+      console.log('🔴 Fresh data from Telegram API:', freshTgData);
+
       // Ищем или создаем пользователя
       let user = await this.usersRepository.findOne({
         where: { telegramId: telegramUser.id.toString() }
@@ -48,9 +52,9 @@ export class AuthService {
         // Создаем нового пользователя
         user = new User();
         user.telegramId = telegramUser.id.toString();
-        user.firstName = telegramUser.first_name;
-        user.lastName = telegramUser.last_name;
-        user.username = telegramUser.username;
+        user.firstName = freshTgData?.first_name || telegramUser.first_name;
+        user.lastName = freshTgData?.last_name || telegramUser.last_name;
+        user.username = freshTgData?.username || telegramUser.username;
         user.photoUrl = telegramUser.photo_url;
         user.languageCode = telegramUser.language_code || 'ru';
         user.isActive = true;
@@ -60,13 +64,10 @@ export class AuthService {
         console.log('🟢 Created new user:', { id: user.id, username: user.username, firstName: user.firstName });
       } else {
         console.log('🟡 Existing user before update:', { id: user.id, username: user.username, firstName: user.firstName });
-        // Обновляем данные существующего пользователя из Telegram
-        user.firstName = telegramUser.first_name || user.firstName;
-        user.lastName = telegramUser.last_name || user.lastName;
-        // Если Telegram передал username — обновляем, иначе оставляем текущий
-        if (telegramUser.username !== undefined) {
-          user.username = telegramUser.username;
-        }
+        // Обновляем данные существующего пользователя: приоритет свежим данным из API
+        user.firstName = freshTgData?.first_name || telegramUser.first_name || user.firstName;
+        user.lastName = freshTgData?.last_name || telegramUser.last_name || user.lastName;
+        user.username = freshTgData?.username || telegramUser.username || user.username;
         user.photoUrl = telegramUser.photo_url || user.photoUrl;
         user.lastLoginAt = new Date();
         

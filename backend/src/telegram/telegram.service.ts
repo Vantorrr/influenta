@@ -51,6 +51,27 @@ export class TelegramService {
     }
   }
 
+  async getUserInfo(userId: number): Promise<{ username?: string; first_name?: string; last_name?: string } | null> {
+    try {
+      const url = `${this.botApiUrl}/getChat`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: userId }),
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      if (!data?.ok || !data?.result) return null;
+      return {
+        username: data.result.username,
+        first_name: data.result.first_name,
+        last_name: data.result.last_name,
+      };
+    } catch {
+      return null;
+    }
+  }
+
   async setWebhook(webhookUrl: string) {
     const url = `${this.botApiUrl}/setWebhook`;
     
