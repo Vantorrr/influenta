@@ -27,6 +27,31 @@ export function useAuth() {
     initAuth()
   }, [])
 
+  // Переодически обновляем профиль при фокусе страницы (чтобы подхватить изменения username в Telegram)
+  useEffect(() => {
+    const handleFocus = async () => {
+      const token = localStorage.getItem('influenta_token')
+      if (!token) return
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (res.ok) {
+          const me = await res.json()
+          const freshUser = (me && (me.user ?? me)) || null
+          if (freshUser?.id) {
+            localStorage.setItem('influenta_user', JSON.stringify(freshUser))
+            const isAdmin = ADMIN_CONFIG.telegramIds.includes(parseInt(freshUser.telegramId))
+            const isSuperAdmin = parseInt(freshUser.telegramId) === ADMIN_CONFIG.telegramIds[0]
+            setAuthState(prev => ({ ...prev, user: freshUser, isAdmin, isSuperAdmin }))
+          }
+        }
+      } catch {}
+    }
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [])
+
   const waitForTelegramReady = async (timeoutMs = 6000): Promise<void> => {
     const start = Date.now()
     while (Date.now() - start < timeoutMs) {
