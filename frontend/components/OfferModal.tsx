@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Send, DollarSign, Calendar, FileText } from 'lucide-react'
+import { X, Send, DollarSign, Calendar, FileText, Camera, MessageSquare } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -94,100 +94,130 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
               </div>
             </div>
 
-            <div className="p-6 pb-8 space-y-4 overflow-y-auto flex-1 min-h-0 overscroll-contain">
-              {/* Название проекта */}
-              <div>
-                <label className="text-sm font-medium flex items-center gap-2 mb-2">
-                  <FileText className="w-4 h-4" />
-                  Название проекта (опционально)
-                </label>
-                <Input
-                  placeholder="Например: Реклама нового продукта"
-                  value={projectTitle}
-                  onChange={(e) => setProjectTitle(e.target.value)}
-                />
-              </div>
-
-              {/* Бюджет */}
-              <div>
-                <label className="text-sm font-medium flex items-center gap-2 mb-2">
-                  <DollarSign className="w-4 h-4" />
-                  Бюджет (₽) *
-                </label>
-                <Input
-                  type="number"
-                  placeholder="Минимум 100₽"
-                  value={proposedBudget}
-                  onChange={(e) => setProposedBudget(e.target.value)}
-                  min="100"
-                />
-              </div>
-
-              {/* Формат */}
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Формат
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg"
-                  value={format}
-                  onChange={(e) => setFormat(e.target.value)}
-                >
-                  <option value="post">Пост</option>
-                  <option value="story">Сторис</option>
-                  <option value="live">Эфир/Reels</option>
-                  <option value="post_and_story">Пост + Сторис</option>
-                  <option value="any">Любой</option>
-                </select>
-              </div>
-
-              {/* Дедлайн */}
-              <div>
-                <label className="text-sm font-medium flex items-center gap-2 mb-2">
-                  <Calendar className="w-4 h-4" />
-                  Дедлайн (опционально)
-                </label>
-                <Input
-                  type="date"
-                  value={deadline}
-                  onChange={(e) => setDeadline(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                />
-              </div>
-
-              {/* Описание проекта */}
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Описание проекта (опционально)
-                </label>
-                <textarea
-                  placeholder="Расскажите подробнее о проекте..."
-                  value={projectDescription}
-                  onChange={(e) => setProjectDescription(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg resize-none"
-                />
-              </div>
-
-              {/* Сообщение */}
-              <div className="pb-4">
-                <label className="text-sm font-medium mb-2 block">
-                  Сообщение блогеру *
-                </label>
-                <textarea
-                  placeholder="Представьтесь и опишите ваше предложение..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg resize-y min-h-[100px] max-h-[200px]"
-                />
-              </div>
-
-              {error && (
-                <div className="p-3 bg-red-500/10 text-red-500 rounded-lg text-sm">
-                  {error}
+            <div className="p-6 pb-8 overflow-y-auto flex-1 min-h-0 overscroll-contain">
+              <div className="space-y-5">
+                {/* Название проекта */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    <span className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-telegram-primary" />
+                      Название проекта
+                    </span>
+                  </label>
+                  <Input
+                    placeholder="Например: Реклама нового продукта"
+                    value={projectTitle}
+                    onChange={(e) => setProjectTitle(e.target.value)}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-telegram-textSecondary mt-1">Необязательное поле</p>
                 </div>
-              )}
+
+                {/* Бюджет */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    <span className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-telegram-primary" />
+                      Бюджет
+                      <span className="text-red-500">*</span>
+                    </span>
+                  </label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      placeholder="10000"
+                      value={proposedBudget}
+                      onChange={(e) => setProposedBudget(e.target.value)}
+                      min="100"
+                      className="w-full pr-12"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-telegram-textSecondary">₽</span>
+                  </div>
+                  <p className="text-xs text-telegram-textSecondary mt-1">Минимальная сумма: 100₽</p>
+                </div>
+
+                {/* Формат */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    <span className="flex items-center gap-2">
+                      <Camera className="w-4 h-4 text-telegram-primary" />
+                      Формат контента
+                    </span>
+                  </label>
+                  <select
+                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg focus:outline-none focus:ring-2 focus:ring-telegram-primary appearance-none"
+                    value={format}
+                    onChange={(e) => setFormat(e.target.value)}
+                  >
+                    <option value="post">Пост</option>
+                    <option value="story">Сторис</option>
+                    <option value="live">Эфир/Reels</option>
+                    <option value="post_and_story">Пост + Сторис</option>
+                    <option value="any">Любой формат</option>
+                  </select>
+                </div>
+
+                {/* Дедлайн */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    <span className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-telegram-primary" />
+                      Дедлайн
+                    </span>
+                  </label>
+                  <Input
+                    type="date"
+                    value={deadline}
+                    onChange={(e) => setDeadline(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-telegram-textSecondary mt-1">Когда должен быть опубликован контент</p>
+                </div>
+
+                {/* Описание проекта */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    <span className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-telegram-primary" />
+                      Описание проекта
+                    </span>
+                  </label>
+                  <textarea
+                    placeholder="Расскажите подробнее о проекте, продукте или услуге"
+                    value={projectDescription}
+                    onChange={(e) => setProjectDescription(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg resize-none focus:outline-none focus:ring-2 focus:ring-telegram-primary"
+                  />
+                  <p className="text-xs text-telegram-textSecondary mt-1">Детали помогут блогеру лучше понять задачу</p>
+                </div>
+
+                {/* Сообщение */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    <span className="flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-telegram-primary" />
+                      Сообщение блогеру
+                      <span className="text-red-500">*</span>
+                    </span>
+                  </label>
+                  <textarea
+                    placeholder="Почему вы хотите сотрудничать именно с этим блогером?"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    rows={4}
+                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg resize-y min-h-[100px] max-h-[200px] focus:outline-none focus:ring-2 focus:ring-telegram-primary"
+                  />
+                  <p className="text-xs text-telegram-textSecondary mt-1">Персональное обращение повышает шансы на ответ</p>
+                </div>
+
+                {error && (
+                  <div className="p-3 bg-red-500/10 text-red-500 rounded-lg text-sm">
+                    {error}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="p-6 border-t border-telegram-border flex gap-3 flex-shrink-0 bg-telegram-bg pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
