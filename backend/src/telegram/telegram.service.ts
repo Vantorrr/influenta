@@ -187,30 +187,47 @@ ${isAdmin ? '• 🛠 Управлять платформой (админ пан
       const botUsername = process.env.TELEGRAM_BOT_USERNAME || 'influentaa_bot';
       const webAppUrl = `https://t.me/${botUsername}/app?startapp=${appPath.replace(/\//g, '-')}`;
       
+      console.log('📨 sendMessageWithButton called with:', {
+        chatId,
+        buttonText,
+        webAppUrl,
+        textLength: text.length
+      });
+      
       const url = `${this.botApiUrl}/sendMessage`;
+      const payload = {
+        chat_id: chatId,
+        text,
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: [[
+            {
+              text: buttonText,
+              url: webAppUrl
+            }
+          ]]
+        }
+      };
+      
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text,
-          parse_mode: 'HTML',
-          reply_markup: {
-            inline_keyboard: [[
-              {
-                text: buttonText,
-                url: webAppUrl
-              }
-            ]]
-          }
-        }),
+        body: JSON.stringify(payload),
       });
 
-      return await response.json();
+      const result = await response.json();
+      
+      if (!result.ok) {
+        console.error('❌ Telegram API error:', result);
+        throw new Error(result.description || 'Failed to send message');
+      }
+      
+      console.log('✅ Message sent successfully:', result.result.message_id);
+      return result;
     } catch (error) {
-      console.error('Error sending message with button:', error);
+      console.error('❌ Error sending message with button:', error);
       throw error;
     }
   }

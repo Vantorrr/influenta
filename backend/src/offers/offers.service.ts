@@ -70,7 +70,15 @@ export class OffersService {
 
     // Отправляем уведомление блогеру в Telegram
     const bloggerUser = blogger.user as any;
-    if (bloggerUser?.telegramId) {
+    console.log('🔍 Sending offer notification to blogger:', {
+      bloggerId: blogger.id,
+      userId: bloggerUser?.id,
+      firstName: bloggerUser?.firstName,
+      lastName: bloggerUser?.lastName,
+    });
+    
+    // Используем id вместо telegramId, так как в User entity id и есть telegramId
+    if (bloggerUser?.id) {
       try {
         const message = `🎯 <b>Новое предложение о сотрудничестве!</b>
 
@@ -81,16 +89,26 @@ ${createOfferDto.projectTitle ? `\nПроект: ${createOfferDto.projectTitle}`
 Сообщение:
 ${createOfferDto.message}`;
 
+        console.log('📤 Attempting to send message to Telegram ID:', bloggerUser.id);
+        
         // Отправляем сообщение с кнопкой
         await this.telegramService.sendMessageWithButton(
-          bloggerUser.telegramId,
+          bloggerUser.id,
           message,
           'Посмотреть предложение',
           `offers/${savedOffer.id}`
         );
+        
+        console.log('✅ Telegram notification sent successfully');
       } catch (error) {
-        console.error('Failed to send Telegram notification:', error);
+        console.error('❌ Failed to send Telegram notification:', error);
+        console.error('Error details:', {
+          message: error.message,
+          response: error.response?.data,
+        });
       }
+    } else {
+      console.warn('⚠️ No Telegram ID found for blogger');
     }
 
     return savedOffer;
@@ -191,13 +209,13 @@ ${createOfferDto.message}`;
 
     // Уведомляем рекламодателя
     const advertiserUser = offer.advertiser.user as any;
-    if (advertiserUser?.telegramId) {
+      if (advertiserUser?.id) {
       try {
         const message = respondDto.accept
           ? `✅ <b>Ваше предложение принято!</b>\n\nБлогер ${offer.blogger.user.firstName} принял ваше предложение.\nОткройте приложение для общения.`
           : `❌ <b>Предложение отклонено</b>\n\nБлогер ${offer.blogger.user.firstName} отклонил ваше предложение.\n${respondDto.rejectionReason ? `Причина: ${respondDto.rejectionReason}` : ''}`;
 
-        await this.telegramService.sendMessage(advertiserUser.telegramId, message);
+        await this.telegramService.sendMessage(advertiserUser.id, message);
       } catch (error) {
         console.error('Failed to send Telegram notification:', error);
       }
