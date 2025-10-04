@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
+import { VerificationTooltip } from '@/components/VerificationTooltip'
 import { 
   formatNumber, 
   formatPrice, 
@@ -171,11 +172,7 @@ export default function BloggersPage() {
                           <div>
                             <h3 className="font-semibold flex items-center gap-1">
                               {blogger.user?.firstName} {blogger.user?.lastName}
-                              {blogger.isVerified && (
-                                <div className="bg-green-500 rounded-full p-0.5 inline-flex">
-                                  <CheckCircle className="w-4 h-4 text-white" fill="currentColor" />
-                                </div>
-                              )}
+                              {blogger.isVerified && <VerificationTooltip />}
                             </h3>
                             <p className="text-sm text-telegram-textSecondary">
                               {blogger.user?.username}
@@ -398,6 +395,7 @@ export default function BloggersPage() {
     </Layout>
   )
 }
+
 
 
 
