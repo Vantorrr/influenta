@@ -74,8 +74,8 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
           className="w-full max-w-2xl"
           onClick={(e) => e.stopPropagation()}
         >
-          <Card className="mx-4 mb-4 md:mb-0">
-            <div className="p-6 border-b border-telegram-border">
+          <Card className="mx-4 mb-4 md:mb-0 max-h-[90vh] flex flex-col">
+            <div className="p-6 border-b border-telegram-border flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-semibold">Предложить сотрудничество</h2>
@@ -94,7 +94,7 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
               </div>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-6 pb-8 space-y-4 overflow-y-auto flex-1 min-h-0 overscroll-contain">
               {/* Название проекта */}
               <div>
                 <label className="text-sm font-medium flex items-center gap-2 mb-2">
@@ -170,7 +170,7 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
               </div>
 
               {/* Сообщение */}
-              <div>
+              <div className="pb-4">
                 <label className="text-sm font-medium mb-2 block">
                   Сообщение блогеру *
                 </label>
@@ -179,7 +179,7 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   rows={4}
-                  className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg resize-none"
+                  className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg resize-y min-h-[100px] max-h-[200px]"
                 />
               </div>
 
@@ -190,7 +190,7 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
               )}
             </div>
 
-            <div className="p-6 border-t border-telegram-border flex gap-3">
+            <div className="p-6 border-t border-telegram-border flex gap-3 flex-shrink-0 bg-telegram-bg pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
               <Button
                 variant="secondary"
                 onClick={onClose}
