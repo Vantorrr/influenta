@@ -182,6 +182,38 @@ ${isAdmin ? '• 🛠 Управлять платформой (админ пан
 🚀 <b>Присоединяйтесь к растущему сообществу!</b>`;
   }
 
+  async sendMessageWithButton(chatId: string | number, text: string, buttonText: string, appPath: string) {
+    try {
+      const botUsername = process.env.TELEGRAM_BOT_USERNAME || 'influentaa_bot';
+      const webAppUrl = `https://t.me/${botUsername}/app?startapp=${appPath.replace(/\//g, '-')}`;
+      
+      const url = `${this.botApiUrl}/sendMessage`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text,
+          parse_mode: 'HTML',
+          reply_markup: {
+            inline_keyboard: [[
+              {
+                text: buttonText,
+                url: webAppUrl
+              }
+            ]]
+          }
+        }),
+      });
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error sending message with button:', error);
+      throw error;
+    }
+  }
 }
 
 

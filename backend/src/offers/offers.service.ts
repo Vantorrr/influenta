@@ -79,11 +79,15 @@ export class OffersService {
 ${createOfferDto.projectTitle ? `\nПроект: ${createOfferDto.projectTitle}` : ''}
 
 Сообщение:
-${createOfferDto.message}
+${createOfferDto.message}`;
 
-<a href="${process.env.FRONTEND_URL || 'https://influentaa.vercel.app'}/offers/${savedOffer.id}">Посмотреть предложение</a>`;
-
-        await this.telegramService.sendMessage(bloggerUser.telegramId, message);
+        // Отправляем сообщение с кнопкой
+        await this.telegramService.sendMessageWithButton(
+          bloggerUser.telegramId,
+          message,
+          'Посмотреть предложение',
+          `offers/${savedOffer.id}`
+        );
       } catch (error) {
         console.error('Failed to send Telegram notification:', error);
       }

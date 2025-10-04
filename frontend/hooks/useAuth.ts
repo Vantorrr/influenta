@@ -74,6 +74,15 @@ export function useAuth() {
       console.log('🔵 Telegram WebApp available:', !!window.Telegram?.WebApp)
       console.log('🔵 Telegram user:', window.Telegram?.WebApp?.initDataUnsafe?.user)
       
+      // Проверяем startapp параметр для навигации
+      const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param
+      if (startParam) {
+        console.log('🔵 Start param detected:', startParam)
+        // Преобразуем обратно из offers-id в offers/id
+        const deepLink = startParam.replace(/-/g, '/')
+        localStorage.setItem('pendingDeepLink', deepLink)
+      }
+      
       // Проверяем сохраненную сессию
       const savedToken = localStorage.getItem('influenta_token')
       const savedUser = localStorage.getItem('influenta_user')
@@ -242,6 +251,18 @@ export function useAuth() {
               const completed = storedUser?.onboardingCompleted || authData.user.onboardingCompleted || onboardingLocal
               const role = storedUser?.role || authData.user.role
               const isNewUser = (!completed && role === 'blogger')
+              
+              // Проверяем pendingDeepLink
+              const pendingDeepLink = localStorage.getItem('pendingDeepLink')
+              if (pendingDeepLink && !isNewUser) {
+                console.log('🟢 Navigating to deep link:', pendingDeepLink)
+                localStorage.removeItem('pendingDeepLink')
+                setTimeout(() => {
+                  window.location.href = `/${pendingDeepLink}`
+                }, 500)
+                return true
+              }
+              
               if (isNewUser && typeof window !== 'undefined') {
                 console.log('🟢 New user detected, redirecting to onboarding')
                 setTimeout(() => {

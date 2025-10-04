@@ -33,6 +33,16 @@ export default function DashboardPage() {
     queryFn: () => statsApi.getDashboard(),
     enabled: !!user,
   })
+  
+  useEffect(() => {
+    // Проверяем pendingDeepLink при загрузке дашборда
+    const pendingDeepLink = localStorage.getItem('pendingDeepLink')
+    if (pendingDeepLink) {
+      console.log('🟢 Navigating to deep link from dashboard:', pendingDeepLink)
+      localStorage.removeItem('pendingDeepLink')
+      router.push(`/${pendingDeepLink}`)
+    }
+  }, [router])
 
   useEffect(() => {
     if (user?.id) {
