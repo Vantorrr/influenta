@@ -53,9 +53,9 @@ async function bootstrap() {
         FROM pg_attribute a
         JOIN pg_class c ON a.attrelid = c.oid
         WHERE c.relname = 'listings' AND a.attname = 'format';
-
+        
         enum_type_name := enum_type::text;
-
+        
         FOREACH need_value IN ARRAY required_values LOOP
           SELECT EXISTS(
             SELECT 1 FROM pg_enum WHERE enumlabel = need_value AND enumtypid = enum_type
@@ -69,6 +69,83 @@ async function bootstrap() {
     await dataSource.query(`UPDATE listings SET format = 'live' WHERE format IN ('reels','reel');`);
   } catch (e) {
     console.warn('Enum/data migration skipped:', (e as any)?.message || e);
+  }
+
+  // Create offers table if not exists
+  try {
+    await dataSource.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'offer_status_enum') THEN
+          CREATE TYPE offer_status_enum AS ENUM ('pending', 'accepted', 'rejected', 'expired');
+        END IF;
+      END $$;
+    `);
+
+    await dataSource.query(`
+      CREATE TABLE IF NOT EXISTS offers (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        "advertiserId" UUID NOT NULL,
+        "bloggerId" UUID NOT NULL,
+        message TEXT NOT NULL,
+        "proposedBudget" DECIMAL(10,2) NOT NULL,
+        status offer_status_enum DEFAULT 'pending',
+        "projectTitle" VARCHAR(255),
+        "projectDescription" TEXT,
+        format VARCHAR(50),
+        deadline TIMESTAMP,
+        "rejectionReason" TEXT,
+        "acceptedAt" TIMESTAMP,
+        "rejectedAt" TIMESTAMP,
+        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Add foreign key constraints if they don't exist
+    await dataSource.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.table_constraints 
+          WHERE constraint_name = 'fk_offers_advertiser'
+        ) THEN
+          ALTER TABLE offers 
+          ADD CONSTRAINT fk_offers_advertiser 
+          FOREIGN KEY ("advertiserId") REFERENCES advertisers(id) ON DELETE CASCADE;
+        END IF;
+      END $$;
+    `);
+
+    // Create indexes
+    await dataSource.query(`
+      CREATE INDEX IF NOT EXISTS idx_offers_advertiser ON offers("advertiserId");
+      CREATE INDEX IF NOT EXISTS idx_offers_blogger ON offers("bloggerId");
+      CREATE INDEX IF NOT EXISTS idx_offers_status ON offers(status);
+    `);
+
+    console.log('✅ Offers table created/verified');
+  } catch (e) {
+    console.error('❌ Error creating offers table:', e);
+  }
+
+  // Create messages table if not exists
+  try {
+    await dataSource.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        "userId" UUID NOT NULL,
+        "chatId" VARCHAR(255) NOT NULL,
+        text TEXT NOT NULL,
+        "isRead" BOOLEAN DEFAULT false,
+        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    console.log('✅ Messages table created/verified');
+  } catch (e) {
+    console.error('❌ Error creating messages table:', e);
   }
 
   // Swagger documentation
