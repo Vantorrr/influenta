@@ -235,41 +235,81 @@ export default function ListingDetailsPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {receivedResponses.map((r: any) => (
-                <div key={r.id} className="flex items-center justify-between gap-3 p-3 bg-telegram-bgSecondary rounded-xl">
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">
-                      {r.blogger?.user?.firstName} {r.blogger?.user?.lastName} @{r.blogger?.user?.username}
-                    </p>
-                    <p className="text-sm text-telegram-textSecondary line-clamp-2">{r.message}</p>
+                <div key={r.id} className="p-3 bg-telegram-bgSecondary rounded-xl">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium">
+                        {r.blogger?.user?.firstName} {r.blogger?.user?.lastName}
+                      </p>
+                      <p className="text-sm text-telegram-textSecondary">
+                        @{r.blogger?.user?.username}
+                      </p>
+                      <p className="text-sm text-telegram-textSecondary mt-2">{r.message}</p>
+                      {r.proposedPrice && (
+                        <p className="text-sm font-medium mt-1">
+                          Предложенная цена: {formatPrice(r.proposedPrice)}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button variant="secondary" onClick={() => { window.location.href = `/messages?responseId=${r.id}` }}>Написать</Button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button 
+                      variant="secondary" 
+                      size="sm"
+                      onClick={() => { window.location.href = `/messages?responseId=${r.id}` }}
+                    >
+                      Написать
+                    </Button>
                     {r.status === 'pending' && (
                       <>
-                        <Button variant="primary" disabled={respActionLoading === r.id} onClick={async () => {
-                          try {
-                            setRespActionLoading(r.id)
-                            await responsesApi.accept(r.id)
-                            setReceivedResponses(prev => prev.map(x => x.id === r.id ? { ...x, status: 'accepted', acceptedAt: new Date().toISOString() } : x))
-                          } catch (e: any) {
-                            alert(String(e?.response?.data?.message || e?.message || 'Не удалось принять'))
-                          } finally {
-                            setRespActionLoading(null)
-                          }
-                        }}>Принять</Button>
-                        <Button variant="danger" disabled={respActionLoading === r.id} onClick={async () => {
-                          const reason = prompt('Причина отказа:') || 'Недостаточно данных'
-                          try {
-                            setRespActionLoading(r.id)
-                            await responsesApi.reject(r.id, reason)
-                            setReceivedResponses(prev => prev.map(x => x.id === r.id ? { ...x, status: 'rejected', rejectionReason: reason, rejectedAt: new Date().toISOString() } : x))
-                          } catch (e: any) {
-                            alert(String(e?.response?.data?.message || e?.message || 'Не удалось отклонить'))
-                          } finally {
-                            setRespActionLoading(null)
-                          }
-                        }}>Отклонить</Button>
+                        <Button 
+                          variant="primary" 
+                          size="sm"
+                          disabled={respActionLoading === r.id} 
+                          onClick={async () => {
+                            try {
+                              setRespActionLoading(r.id)
+                              await responsesApi.accept(r.id)
+                              setReceivedResponses(prev => prev.map(x => x.id === r.id ? { ...x, status: 'accepted', acceptedAt: new Date().toISOString() } : x))
+                            } catch (e: any) {
+                              alert(String(e?.response?.data?.message || e?.message || 'Не удалось принять'))
+                            } finally {
+                              setRespActionLoading(null)
+                            }
+                          }}
+                        >
+                          Принять
+                        </Button>
+                        <Button 
+                          variant="danger" 
+                          size="sm"
+                          disabled={respActionLoading === r.id} 
+                          onClick={async () => {
+                            const reason = prompt('Причина отказа:') || 'Недостаточно данных'
+                            try {
+                              setRespActionLoading(r.id)
+                              await responsesApi.reject(r.id, reason)
+                              setReceivedResponses(prev => prev.map(x => x.id === r.id ? { ...x, status: 'rejected', rejectionReason: reason, rejectedAt: new Date().toISOString() } : x))
+                            } catch (e: any) {
+                              alert(String(e?.response?.data?.message || e?.message || 'Не удалось отклонить'))
+                            } finally {
+                              setRespActionLoading(null)
+                            }
+                          }}
+                        >
+                          Отклонить
+                        </Button>
                       </>
+                    )}
+                    {r.status === 'accepted' && (
+                      <Badge variant="success" className="text-xs">
+                        ✓ Принят
+                      </Badge>
+                    )}
+                    {r.status === 'rejected' && (
+                      <Badge variant="danger" className="text-xs">
+                        ✗ Отклонен
+                      </Badge>
                     )}
                   </div>
                 </div>
