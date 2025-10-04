@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Users, Eye, Star, Shield, Ban, CheckCircle, Trash2 } from 'lucide-react'
+import { ArrowLeft, Users, Eye, Star, Shield, Ban, CheckCircle, Trash2, MessageSquare } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
@@ -11,6 +11,7 @@ import { bloggersApi } from '@/lib/api'
 import { formatNumber } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
+import { OfferModal } from '@/components/OfferModal'
 
 export default function BloggerDetailsPage() {
   const params = useParams() as { id?: string }
@@ -18,6 +19,7 @@ export default function BloggerDetailsPage() {
   const { user, isAdmin } = useAuth()
   const [data, setData] = useState<any | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [showOfferModal, setShowOfferModal] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -148,11 +150,39 @@ export default function BloggerDetailsPage() {
               <p className="font-medium flex items-center gap-1"><Star className="w-4 h-4 text-yellow-500" />{blogger.rating || 0}</p>
             </div>
           </div>
+
+          {/* Кнопка для рекламодателей */}
+          {user?.role === 'advertiser' && (
+            <div className="mt-6 space-y-3">
+              <Button
+                variant="primary"
+                fullWidth
+                onClick={() => setShowOfferModal(true)}
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Предложить сотрудничество
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Модальное окно для отправки предложения */}
+      {showOfferModal && (
+        <OfferModal
+          bloggerId={params.id}
+          bloggerName={`${blogger.user?.firstName || ''} ${blogger.user?.lastName || ''}`.trim()}
+          onClose={() => setShowOfferModal(false)}
+          onSuccess={() => {
+            setShowOfferModal(false)
+            alert('Предложение отправлено! Блогер получит уведомление в Telegram.')
+          }}
+        />
+      )}
     </div>
   )
 }
+
 
 
 

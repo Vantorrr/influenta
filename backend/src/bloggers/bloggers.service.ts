@@ -139,7 +139,35 @@ export class BloggersService {
     console.log('🔍 All users:', users);
     return users;
   }
+
+  async getUserById(userId: string): Promise<any> {
+    return this.usersRepository.findOne({ 
+      where: { id: userId },
+    });
+  }
+
+  async findByUserId(userId: string): Promise<any> {
+    const user = await this.usersRepository.findOne({ 
+      where: { id: userId, role: UserRole.BLOGGER },
+    });
+    
+    if (!user) {
+      return null;
+    }
+    
+    // Возвращаем структуру похожую на Blogger entity
+    return {
+      id: user.id,
+      userId: user.id,
+      user: user,
+      subscribersCount: user.subscribersCount || 0,
+      averageViews: Math.floor((user.subscribersCount || 0) * 0.35),
+      categories: user.categories ? user.categories.split(',').filter(Boolean) : [],
+      isActive: user.isActive,
+    };
+  }
 }
+
 
 
 

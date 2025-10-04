@@ -283,6 +283,37 @@ export const statsApi = {
   },
 }
 
+// Offers API
+export const offersApi = {
+  async create(data: {
+    bloggerId: string
+    message: string
+    proposedBudget: number
+    projectTitle?: string
+    projectDescription?: string
+    format?: string
+    deadline?: string
+  }) {
+    const response = await api.post('/offers', data)
+    return response.data
+  },
+
+  async getMy() {
+    const response = await api.get('/offers/my')
+    return response.data
+  },
+
+  async getById(id: string) {
+    const response = await api.get(`/offers/${id}`)
+    return response.data
+  },
+
+  async respond(id: string, data: { accept: boolean; rejectionReason?: string }) {
+    const response = await api.post(`/offers/${id}/respond`, data)
+    return response.data
+  },
+}
+
 // Analytics API
 export const analyticsApi = {
   async track(event: string, params?: { targetType?: string; targetId?: string; targetUserId?: string; metadata?: any }) {

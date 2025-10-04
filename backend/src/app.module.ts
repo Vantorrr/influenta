@@ -6,11 +6,14 @@ import { AppService } from './app.service';
 import { ChatModule } from './chat/chat.module';
 import { AdminModule } from './admin/admin.module';
 import { TelegramModule } from './telegram/telegram.module';
+import { OffersModule } from './offers/offers.module';
 import { AuthModule } from './auth/auth.module';
 import { StatsModule } from './stats/stats.module';
 import { ResponsesModule } from './responses/responses.module';
 import { BloggersModule } from './bloggers/bloggers.module';
 import { ListingsModule } from './listings/listings.module';
+import { AdvertisersModule } from './advertisers/advertisers.module';
+import { MessagesModule } from './messages/messages.module';
 import databaseConfig from './config/database.config';
 import appConfig from './config/app.config';
 import { SeedModule } from './seed/seed.module';
@@ -44,9 +47,12 @@ import { UploadsModule } from './uploads/uploads.module';
     ResponsesModule,
     BloggersModule,
     ListingsModule,
+    AdvertisersModule,
+    MessagesModule,
     SeedModule,
     AnalyticsModule,
     UploadsModule,
+    OffersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
