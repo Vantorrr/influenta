@@ -224,4 +224,3 @@ ${createOfferDto.message}`;
     return offer;
   }
 }
-

@@ -163,7 +163,6 @@ async function bootstrap() {
   // Static for uploads without serve-static package
   const uploadsDir = path.join(process.cwd(), 'uploads');
   const verificationDir = path.join(uploadsDir, 'verification');
-  const avatarsDir = path.join(uploadsDir, 'avatars');
   
   // Ensure uploads directories exist
   if (!require('fs').existsSync(uploadsDir)) {
@@ -172,13 +171,9 @@ async function bootstrap() {
   if (!require('fs').existsSync(verificationDir)) {
     require('fs').mkdirSync(verificationDir, { recursive: true });
   }
-  if (!require('fs').existsSync(avatarsDir)) {
-    require('fs').mkdirSync(avatarsDir, { recursive: true });
-  }
   
   console.log('📁 Uploads directory:', uploadsDir);
   console.log('📁 Verification directory:', verificationDir);
-  console.log('📁 Avatars directory:', avatarsDir);
   
   app.use('/uploads', express.static(uploadsDir, {
     setHeaders: (res) => {

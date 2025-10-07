@@ -43,4 +43,3 @@ export class UpdateListingDto {
   status?: ListingStatus;
 }
 
-
