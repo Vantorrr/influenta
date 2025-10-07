@@ -86,7 +86,11 @@ export default function BloggerDetailsPage() {
                 </span>
                 {blogger.isVerified && <Shield className="w-4 h-4 text-telegram-primary" />}
               </div>
-              <p className="text-sm text-telegram-textSecondary truncate">{blogger.user?.username}</p>
+              <p className="text-sm text-telegram-textSecondary truncate">
+                {blogger.categories && blogger.categories.length > 0 
+                  ? blogger.categories.slice(0, 2).join(', ')
+                  : 'Контакты скрыты до сотрудничества'}
+              </p>
             </div>
           </CardTitle>
         </CardHeader>
@@ -182,6 +186,7 @@ export default function BloggerDetailsPage() {
     </div>
   )
 }
+
 
 
 

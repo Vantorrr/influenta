@@ -175,7 +175,9 @@ export default function BloggersPage() {
                               {blogger.isVerified && <VerificationTooltip />}
                             </h3>
                             <p className="text-sm text-telegram-textSecondary">
-                              {blogger.user?.username}
+                              {blogger.categories && blogger.categories.length > 0 
+                                ? getCategoryLabel(blogger.categories[0])
+                                : 'Блогер'}
                             </p>
                           </div>
                           <ChevronRight className="w-5 h-5 text-telegram-textSecondary flex-shrink-0" />
