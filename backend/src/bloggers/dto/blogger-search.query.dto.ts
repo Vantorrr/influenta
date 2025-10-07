@@ -29,7 +29,19 @@ export class BloggerSearchQueryDto {
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  maxPrice?: number; // pricePerPost верхняя граница
+  maxSubscribers?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  minPrice?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  maxPrice?: number;
 
   @IsOptional()
   @Type(() => Number)
