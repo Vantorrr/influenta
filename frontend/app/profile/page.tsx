@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Edit, Save, X, User, Mail, AtSign, FileText, Phone, Globe, Users2, DollarSign, Shield, CheckCircle, AlertCircle, Clock } from 'lucide-react'
+import { Edit, Save, X, User, Mail, AtSign, FileText, Phone, Globe, Users2, DollarSign, Shield, CheckCircle, AlertCircle, Clock, Camera, Upload } from 'lucide-react'
 import { Layout } from '@/components/layout/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -34,6 +34,7 @@ export default function ProfilePage() {
     website: '',
     telegramLink: '',
     instagramLink: '',
+    photoUrl: '',
     // Для блогеров
     subscribersCount: '',
     pricePerPost: '',
@@ -60,6 +61,7 @@ export default function ProfilePage() {
         website: (user as any).website || '',
         telegramLink: (user as any).telegramLink || '',
         instagramLink: (user as any).instagramLink || '',
+        photoUrl: user.photoUrl || '',
         subscribersCount: (user as any).subscribersCount || '',
         pricePerPost: (user as any).pricePerPost || '',
         pricePerStory: (user as any).pricePerStory || '',
@@ -85,6 +87,7 @@ export default function ProfilePage() {
         website: formData.website || undefined,
         telegramLink: formData.telegramLink || undefined,
         instagramLink: formData.instagramLink || undefined,
+        photoUrl: formData.photoUrl || undefined,
       }
 
       if (formData.subscribersCount !== '') payload.subscribersCount = parseInt(String(formData.subscribersCount).replace(/\./g, ''), 10) || 0
@@ -137,15 +140,19 @@ export default function ProfilePage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data?.message || 'Upload failed')
 
-      // Сохраняем url в профиле
-      await authApi.updateProfile({ photoUrl: data.url })
-
-      // Обновляем локальные данные
-      const profileResponse = await authApi.getCurrentUser()
-      const userData = (profileResponse as any)?.user || profileResponse
-      if (userData?.id) {
-        localStorage.setItem('influenta_user', JSON.stringify(userData))
-        window.location.reload()
+      // Если мы в режиме редактирования, обновляем formData
+      if (isEditing) {
+        setFormData(prev => ({ ...prev, photoUrl: data.url }))
+      } else {
+        // Иначе сразу сохраняем
+        await authApi.updateProfile({ photoUrl: data.url })
+        // Обновляем локальные данные
+        const profileResponse = await authApi.getCurrentUser()
+        const userData = (profileResponse as any)?.user || profileResponse
+        if (userData?.id) {
+          localStorage.setItem('influenta_user', JSON.stringify(userData))
+          window.location.reload()
+        }
       }
     } catch (err) {
       console.error('Avatar upload error:', err)
@@ -155,63 +162,64 @@ export default function ProfilePage() {
     }
   }
 
-      const handleCancel = () => {
-        setIsEditing(false)
-        setFormData({
-          firstName: '',
-          lastName: '',
-          email: '',
-          bio: '',
-          role: UserRole.BLOGGER,
-          phone: '',
-          website: '',
-          telegramLink: '',
-          instagramLink: '',
-          subscribersCount: '',
-          pricePerPost: '',
-          pricePerStory: '',
-          categories: []
-        })
-      }
+  const handleCancel = () => {
+    setIsEditing(false)
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      bio: '',
+      role: UserRole.BLOGGER,
+      phone: '',
+      website: '',
+      telegramLink: '',
+      instagramLink: '',
+      photoUrl: '',
+      subscribersCount: '',
+      pricePerPost: '',
+      pricePerStory: '',
+      categories: []
+    })
+  }
 
-      const handleRequestVerification = () => {
-        setShowVerificationModal(true)
-      }
+  const handleRequestVerification = () => {
+    setShowVerificationModal(true)
+  }
 
-      const handleVerificationSubmit = async (data: {
-        documents: string[]
-        socialProofs: { platform: string; url: string; followers?: number }[]
-        message: string
-      }) => {
-        try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/request-verification`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-          })
-          
-          const result = await response.json()
-          
-          if (response.ok) {
-            alert(result.message)
-            setShowVerificationModal(false)
-            // Обновляем профиль чтобы показать что заявка отправлена
-            const profileResponse = await authApi.getCurrentUser()
-            if ((profileResponse as any)?.user) {
-              localStorage.setItem('influenta_user', JSON.stringify((profileResponse as any).user))
-              window.location.reload()
-            }
-          } else {
-            alert(result.message || 'Ошибка при отправке заявки')
-          }
-        } catch (error) {
-          console.error('Error requesting verification:', error)
-          alert('Ошибка при отправке заявки на верификацию')
+  const handleVerificationSubmit = async (data: {
+    documents: string[]
+    socialProofs: { platform: string; url: string; followers?: number }[]
+    message: string
+  }) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/request-verification`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+      
+      const result = await response.json()
+      
+      if (response.ok) {
+        alert(result.message)
+        setShowVerificationModal(false)
+        // Обновляем профиль чтобы показать что заявка отправлена
+        const profileResponse = await authApi.getCurrentUser()
+        if ((profileResponse as any)?.user) {
+          localStorage.setItem('influenta_user', JSON.stringify((profileResponse as any).user))
+          window.location.reload()
         }
+      } else {
+        alert(result.message || 'Ошибка при отправке заявки')
       }
+    } catch (error) {
+      console.error('Error requesting verification:', error)
+      alert('Ошибка при отправке заявки на верификацию')
+    }
+  }
 
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">
@@ -257,23 +265,6 @@ export default function ProfilePage() {
                   lastName={user.lastName || 'Фамилия'}
                   size="xl"
                 />
-                <div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="sr-only"
-                    onChange={handleAvatarChange}
-                  />
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    disabled={avatarUploading}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    {avatarUploading ? 'Загрузка...' : 'Сменить фото'}
-                  </Button>
-                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h1 className="text-2xl font-bold truncate">
@@ -339,6 +330,50 @@ export default function ProfilePage() {
           <Card className="mb-6">
             <CardContent className="p-6">
               <h3 className="text-lg font-semibold mb-4">Редактирование профиля</h3>
+              
+              {/* Секция загрузки фото */}
+              <div className="mb-6 p-4 bg-telegram-bgSecondary rounded-lg">
+                <div className="flex items-center gap-4">
+                  <Avatar
+                    src={formData.photoUrl || user.photoUrl}
+                    firstName={formData.firstName || user.firstName || 'Имя'}
+                    lastName={formData.lastName || user.lastName || 'Фамилия'}
+                    size="lg"
+                  />
+                  <div className="flex-1">
+                    <h4 className="font-medium mb-1">Фото профиля</h4>
+                    <p className="text-sm text-telegram-textSecondary mb-3">
+                      Загрузите свою фотографию. Рекомендуемый размер 400x400 пикселей.
+                    </p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      onChange={handleAvatarChange}
+                    />
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={avatarUploading}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-2"
+                    >
+                      {avatarUploading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-telegram-primary"></div>
+                          Загрузка...
+                        </>
+                      ) : (
+                        <>
+                          <Camera className="w-4 h-4" />
+                          Загрузить фото
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Имя */}
