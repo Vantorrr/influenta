@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
 import { useAuth } from '@/hooks/useAuth'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { authApi, analyticsApi } from '@/lib/api'
 import { UserRole } from '@/types'
 import { VerificationModal } from '@/components/VerificationModal'
@@ -22,6 +22,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [showVerificationModal, setShowVerificationModal] = useState(false)
   const [formData, setFormData] = useState({
     firstName: '',
@@ -257,12 +258,21 @@ export default function ProfilePage() {
                   size="xl"
                 />
                 <div>
-                  <label className="inline-block">
-                    <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-                    <Button variant="secondary" size="sm" disabled={avatarUploading}>
-                      {avatarUploading ? 'Загрузка...' : 'Сменить фото'}
-                    </Button>
-                  </label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={handleAvatarChange}
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={avatarUploading}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {avatarUploading ? 'Загрузка...' : 'Сменить фото'}
+                  </Button>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
