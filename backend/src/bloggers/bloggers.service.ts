@@ -16,6 +16,8 @@ export class BloggersService {
     const { search, categories, verifiedOnly, minSubscribers, maxSubscribers, minPrice, maxPrice } = searchDto;
     const { page = 1, limit = 20 } = paginationDto;
 
+    console.log('🔍 Search filters:', { minSubscribers, maxSubscribers, minPrice, maxPrice, search, categories, verifiedOnly });
+
     const query = this.usersRepository
       .createQueryBuilder('user')
       .where('user.isActive = :isActive', { isActive: true })
@@ -63,15 +65,18 @@ export class BloggersService {
       query.andWhere('COALESCE(user.pricePerPost, 0) <= :maxPrice', { maxPrice })
     }
 
+    console.log('📝 SQL Query:', query.getSql());
+    console.log('📝 Parameters:', query.getParameters());
+
     const [data, total] = await query
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
 
-    console.log('🔍 Bloggers search:', { 
+    console.log('🔍 Bloggers search result:', { 
       total, 
       found: data.length, 
-      users: data.map(u => ({ id: u.id, firstName: u.firstName, role: u.role }))
+      users: data.map(u => ({ id: u.id, firstName: u.firstName, role: u.role, subscribersCount: u.subscribersCount, pricePerPost: u.pricePerPost }))
     });
 
     // Преобразуем пользователей в блогеров с реальными данными
