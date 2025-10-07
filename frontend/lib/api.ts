@@ -105,6 +105,8 @@ export const bloggersApi = {
     if (filters?.verifiedOnly) params.verifiedOnly = true
     if (filters?.categories && filters.categories.length > 0) params.categories = filters.categories
     if (typeof filters?.minSubscribers === 'number') params.minSubscribers = filters.minSubscribers
+    if (typeof filters?.maxSubscribers === 'number') params.maxSubscribers = filters.maxSubscribers
+    if (typeof filters?.minPrice === 'number') params.minPrice = filters.minPrice
     if (typeof filters?.maxPrice === 'number') params.maxPrice = filters.maxPrice
 
     const response = await api.get('/bloggers/search', { params })
