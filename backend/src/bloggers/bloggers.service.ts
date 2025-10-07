@@ -46,23 +46,39 @@ export class BloggersService {
     }
 
     // Фильтр по минимальным подписчикам
-    if (typeof minSubscribers === 'number' && !Number.isNaN(minSubscribers)) {
-      query.andWhere('COALESCE(user.subscribersCount, 0) >= :minSubs', { minSubs: minSubscribers })
+    if (minSubscribers !== undefined && minSubscribers !== null) {
+      const minSubsNum = Number(minSubscribers);
+      if (!Number.isNaN(minSubsNum)) {
+        console.log('✅ Applying minSubscribers filter:', minSubsNum);
+        query.andWhere('COALESCE(user.subscribersCount, 0) >= :minSubs', { minSubs: minSubsNum });
+      }
     }
 
     // Фильтр по максимальным подписчикам
-    if (typeof maxSubscribers === 'number' && !Number.isNaN(maxSubscribers)) {
-      query.andWhere('COALESCE(user.subscribersCount, 0) <= :maxSubs', { maxSubs: maxSubscribers })
+    if (maxSubscribers !== undefined && maxSubscribers !== null) {
+      const maxSubsNum = Number(maxSubscribers);
+      if (!Number.isNaN(maxSubsNum)) {
+        console.log('✅ Applying maxSubscribers filter:', maxSubsNum);
+        query.andWhere('COALESCE(user.subscribersCount, 0) <= :maxSubs', { maxSubs: maxSubsNum });
+      }
     }
 
     // Фильтр по минимальной цене поста
-    if (typeof minPrice === 'number' && !Number.isNaN(minPrice)) {
-      query.andWhere('COALESCE(user.pricePerPost, 0) >= :minPrice', { minPrice })
+    if (minPrice !== undefined && minPrice !== null) {
+      const minPriceNum = Number(minPrice);
+      if (!Number.isNaN(minPriceNum)) {
+        console.log('✅ Applying minPrice filter:', minPriceNum);
+        query.andWhere('COALESCE(user.pricePerPost, 0) >= :minPrice', { minPrice: minPriceNum });
+      }
     }
 
     // Фильтр по максимальной цене поста
-    if (typeof maxPrice === 'number' && !Number.isNaN(maxPrice)) {
-      query.andWhere('COALESCE(user.pricePerPost, 0) <= :maxPrice', { maxPrice })
+    if (maxPrice !== undefined && maxPrice !== null) {
+      const maxPriceNum = Number(maxPrice);
+      if (!Number.isNaN(maxPriceNum)) {
+        console.log('✅ Applying maxPrice filter:', maxPriceNum);
+        query.andWhere('COALESCE(user.pricePerPost, 0) <= :maxPrice', { maxPrice: maxPriceNum });
+      }
     }
 
     console.log('📝 SQL Query:', query.getSql());
