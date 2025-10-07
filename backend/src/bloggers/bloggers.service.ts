@@ -12,8 +12,8 @@ export class BloggersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async search(searchDto: BloggerSearchDto & { minSubscribers?: number; maxPrice?: number }, paginationDto: PaginationDto) {
-    const { search, categories, verifiedOnly, minSubscribers, maxPrice } = searchDto;
+  async search(searchDto: BloggerSearchDto, paginationDto: PaginationDto) {
+    const { search, categories, verifiedOnly, minSubscribers, maxSubscribers, minPrice, maxPrice } = searchDto;
     const { page = 1, limit = 20 } = paginationDto;
 
     const query = this.usersRepository
@@ -46,6 +46,16 @@ export class BloggersService {
     // Фильтр по минимальным подписчикам
     if (typeof minSubscribers === 'number' && !Number.isNaN(minSubscribers)) {
       query.andWhere('COALESCE(user.subscribersCount, 0) >= :minSubs', { minSubs: minSubscribers })
+    }
+
+    // Фильтр по максимальным подписчикам
+    if (typeof maxSubscribers === 'number' && !Number.isNaN(maxSubscribers)) {
+      query.andWhere('COALESCE(user.subscribersCount, 0) <= :maxSubs', { maxSubs: maxSubscribers })
+    }
+
+    // Фильтр по минимальной цене поста
+    if (typeof minPrice === 'number' && !Number.isNaN(minPrice)) {
+      query.andWhere('COALESCE(user.pricePerPost, 0) >= :minPrice', { minPrice })
     }
 
     // Фильтр по максимальной цене поста
