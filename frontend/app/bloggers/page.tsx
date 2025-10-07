@@ -41,7 +41,7 @@ export default function BloggersPage() {
   })
 
   const { user } = useAuth()
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ['bloggers', filters, search],
     queryFn: () => bloggersApi.search({ ...filters, search }, 1, 20),
     placeholderData: (prev) => prev,
@@ -385,7 +385,10 @@ export default function BloggersPage() {
                 <Button
                   variant="primary"
                   fullWidth
-                  onClick={() => setShowFilters(false)}
+                  onClick={() => {
+                    setShowFilters(false)
+                    refetch()
+                  }}
                 >
                   Применить
                 </Button>
@@ -397,6 +400,7 @@ export default function BloggersPage() {
     </Layout>
   )
 }
+
 
 
 
