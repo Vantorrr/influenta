@@ -21,6 +21,7 @@ export default function ProfilePage() {
   }, [user?.id])
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
   const [showVerificationModal, setShowVerificationModal] = useState(false)
   const [formData, setFormData] = useState({
     firstName: '',
@@ -115,6 +116,41 @@ export default function ProfilePage() {
       alert('Ошибка сохранения профиля. Попробуйте еще раз.')
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAvatarUploading(true)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/uploads/avatar`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`,
+        },
+        body: form,
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.message || 'Upload failed')
+
+      // Сохраняем url в профиле
+      await authApi.updateProfile({ photoUrl: data.url })
+
+      // Обновляем локальные данные
+      const profileResponse = await authApi.getCurrentUser()
+      const userData = (profileResponse as any)?.user || profileResponse
+      if (userData?.id) {
+        localStorage.setItem('influenta_user', JSON.stringify(userData))
+        window.location.reload()
+      }
+    } catch (err) {
+      console.error('Avatar upload error:', err)
+      alert('Не удалось загрузить аватарку')
+    } finally {
+      setAvatarUploading(false)
     }
   }
 
@@ -220,6 +256,14 @@ export default function ProfilePage() {
                   lastName={user.lastName || 'Фамилия'}
                   size="xl"
                 />
+                <div>
+                  <label className="inline-block">
+                    <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                    <Button variant="secondary" size="sm" disabled={avatarUploading}>
+                      {avatarUploading ? 'Загрузка...' : 'Сменить фото'}
+                    </Button>
+                  </label>
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h1 className="text-2xl font-bold truncate">
