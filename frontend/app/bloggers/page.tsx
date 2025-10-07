@@ -41,10 +41,12 @@ export default function BloggersPage() {
   })
 
   const { user } = useAuth()
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ['bloggers', filters, search],
-    queryFn: () => bloggersApi.search({ ...filters, search }, 1, 20),
-    placeholderData: (prev) => prev,
+  const { data, isLoading } = useQuery({
+    queryKey: ['bloggers', JSON.stringify(filters), search],
+    queryFn: () => {
+      console.log('🔥 Fetching bloggers with filters:', filters);
+      return bloggersApi.search({ ...filters, search }, 1, 20);
+    },
     enabled: !!user,
   })
 
@@ -386,8 +388,8 @@ export default function BloggersPage() {
                   variant="primary"
                   fullWidth
                   onClick={() => {
+                    console.log('✅ Applying filters:', filters);
                     setShowFilters(false)
-                    refetch()
                   }}
                 >
                   Применить
