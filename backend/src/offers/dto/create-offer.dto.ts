@@ -29,3 +29,6 @@ export class CreateOfferDto {
   @IsDateString()
   deadline?: string;
 }
+
+
+

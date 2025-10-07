@@ -330,7 +330,16 @@ export default function ListingDetailsPage() {
                 </div>
                 <div>
                   <label className="label">Предложенная цена (₽)</label>
-                  <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Например: 10000" />
+                  <Input 
+                    type="number" 
+                    value={price} 
+                    onChange={(e) => setPrice(e.target.value)} 
+                    placeholder="Например: 10000"
+                    min="100"
+                    step="100"
+                    className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                  <p className="text-xs text-telegram-textSecondary mt-1">Введите желаемую сумму за размещение</p>
                 </div>
                 {respError && <div className="text-telegram-danger text-sm">{respError}</div>}
                 <div className="flex gap-3 pt-1">

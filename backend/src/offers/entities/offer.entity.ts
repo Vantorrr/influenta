@@ -65,3 +65,6 @@ export class Offer {
   @UpdateDateColumn()
   updatedAt: Date;
 }
+
+
+

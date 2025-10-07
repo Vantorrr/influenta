@@ -8,3 +8,6 @@ export class RespondOfferDto {
   @IsString()
   rejectionReason?: string;
 }
+
+
+

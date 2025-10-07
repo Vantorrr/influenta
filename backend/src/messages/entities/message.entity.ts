@@ -23,3 +23,6 @@ export class Message {
   @UpdateDateColumn()
   updatedAt: Date;
 }
+
+
+

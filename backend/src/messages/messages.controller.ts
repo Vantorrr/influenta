@@ -17,3 +17,6 @@ export class MessagesController {
     return this.messagesService.sendMessage(user.id, data.chatId, data.text);
   }
 }
+
+
+

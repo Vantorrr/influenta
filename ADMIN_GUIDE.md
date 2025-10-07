@@ -283,3 +283,6 @@
 **Дата:** Октябрь 2025  
 **Платформа:** Telegram Mini App (Next.js + NestJS + PostgreSQL)
 
+
+
+
