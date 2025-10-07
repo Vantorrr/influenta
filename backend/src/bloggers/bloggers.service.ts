@@ -79,11 +79,11 @@ export class BloggersService {
       categories: user.categories ? user.categories.split(',').filter(Boolean) : [],
       subscribersCount: user.subscribersCount || 0,
       averageViews: Math.floor((user.subscribersCount || 0) * 0.35), // ~35% от подписчиков
-      engagementRate: 4.2, // Временно захардкодим
+      engagementRate: 0, // TODO: Рассчитывать на основе реальной статистики
       pricePerPost: user.pricePerPost || 0,
       pricePerStory: user.pricePerStory || 0,
-      rating: 4.8, // Временно захардкодим
-      completedCampaigns: 0, // TODO: Track campaigns
+      rating: 0, // TODO: Рассчитывать на основе отзывов
+      completedCampaigns: 0, // TODO: Рассчитывать на основе завершенных откликов
       isVerified: user.isVerified,
     }));
 
@@ -122,11 +122,11 @@ export class BloggersService {
       categories: user.categories ? user.categories.split(',').filter(Boolean) : [],
       subscribersCount: user.subscribersCount || 0,
       averageViews: Math.floor((user.subscribersCount || 0) * 0.35), // ~35% от подписчиков
-      engagementRate: 4.2, // Временно захардкодим
+      engagementRate: 0, // TODO: Рассчитывать на основе реальной статистики
       pricePerPost: user.pricePerPost || 0,
       pricePerStory: user.pricePerStory || 0,
-      rating: 4.8, // Временно захардкодим
-      completedCampaigns: 0, // TODO: Track campaigns
+      rating: 0, // TODO: Рассчитывать на основе отзывов
+      completedCampaigns: 0, // TODO: Рассчитывать на основе завершенных откликов
       isVerified: user.isVerified,
     };
   }
@@ -167,6 +167,7 @@ export class BloggersService {
     };
   }
 }
+
 
 
 

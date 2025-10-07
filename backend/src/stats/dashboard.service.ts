@@ -40,8 +40,9 @@ export class DashboardStatsService {
       const acceptedResponses = blogger
         ? await this.responsesRepo.count({ where: { bloggerId: blogger.id, status: ResponseStatus.ACCEPTED } }).catch(() => 0)
         : 0
-      const earnings = acceptedResponses * 10000 // заглушка: 10к за кампанию
-      const rating = user.subscribersCount && user.subscribersCount > 0 ? 4.5 : 0
+      // TODO: В будущем здесь будет реальная сумма из завершенных сделок
+      const earnings = 0 // Пока нет системы платежей
+      const rating = 0 // Пока нет системы отзывов
 
       return {
         profileViews,
@@ -66,7 +67,7 @@ export class DashboardStatsService {
             .catch(() => 0)
         : 0
       const totalSpent = advertiser?.totalSpent || 0
-      const roi = totalSpent > 0 ? 2.5 : 0
+      const roi = 0 // TODO: Рассчитывать ROI на основе реальных сделок
 
       return {
         profileViews,
