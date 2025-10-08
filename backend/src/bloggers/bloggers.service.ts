@@ -38,10 +38,16 @@ export class BloggersService {
 
     // Фильтр по тематикам
     if (categories && categories.length > 0) {
-      // у нас categories в users храним как строку через запятую
+      // у нас categories в users храним как строку через запятую (могут быть как ключи enum, так и русские лейблы)
       query.andWhere("user.categories IS NOT NULL AND user.categories <> ''")
-      for (const c of categories) {
-        query.andWhere(`user.categories ILIKE :cat_${c}`, { [`cat_${c}`]: `%${c}%` })
+      for (const raw of categories) {
+        const c = String(raw)
+        const ru = (c.charAt(0) === c.charAt(0).toUpperCase()) ? c : undefined // эвристика: приходят на русском с большой буквы
+        const eng = c.toLowerCase()
+        query.andWhere('(user.categories ILIKE :catEng OR user.categories ILIKE :catRu)', {
+          catEng: `%${eng}%`,
+          catRu: ru ? `%${ru}%` : `%${eng}%`,
+        })
       }
     }
 
