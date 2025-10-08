@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Calendar, DollarSign, MessageSquare, Shield, Save, Trash2, X } from 'lucide-react'
+import { ArrowLeft, Calendar, DollarSign, MessageSquare, Shield, Save, Trash2, X, Edit } from 'lucide-react'
 import { Layout } from '@/components/layout/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -210,18 +210,34 @@ export default function ListingDetailsPage() {
               </div>
             )}
             {canEdit && (
-              <div className="pt-2 flex gap-3">
-                <Button variant="secondary" onClick={() => setShowEdit(true)}>Редактировать</Button>
-                <Button variant="danger" onClick={async () => {
-                  if (!confirm('Удалить объявление?')) return
-                  try {
-                    await listingsApi.delete(params.id!)
-                    alert('Объявление удалено')
-                    router.push('/listings')
-                  } catch (e: any) {
-                    alert(String(e?.response?.data?.message || e?.message || 'Не удалось удалить'))
-                  }
-                }}>Удалить</Button>
+              <div className="pt-4 border-t border-gray-700/50 flex gap-3">
+                <Button 
+                  variant="secondary" 
+                  onClick={() => setShowEdit(true)}
+                  fullWidth
+                  className="flex items-center justify-center gap-2"
+                >
+                  <Edit className="w-4 h-4" />
+                  Редактировать
+                </Button>
+                <Button 
+                  variant="danger" 
+                  onClick={async () => {
+                    if (!confirm('Удалить объявление?')) return
+                    try {
+                      await listingsApi.delete(params.id!)
+                      alert('Объявление удалено')
+                      router.push('/listings')
+                    } catch (e: any) {
+                      alert(String(e?.response?.data?.message || e?.message || 'Не удалось удалить'))
+                    }
+                  }}
+                  fullWidth
+                  className="flex items-center justify-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Удалить
+                </Button>
               </div>
             )}
           </CardContent>
@@ -421,5 +437,7 @@ export default function ListingDetailsPage() {
     </Layout>
   )
 }
+
+
 
 

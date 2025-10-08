@@ -113,7 +113,7 @@ export default function ListingsPage() {
           {statusTabs.map((tab) => (
             <Button
               key={tab.value}
-              variant={filters.status === tab.value ? 'primary' : 'ghost'}
+              variant={filters.status === tab.value ? 'primary' : 'secondary'}
               size="sm"
               onClick={() => setFilters(prev => ({ ...prev, status: tab.value }))}
               className="whitespace-nowrap"
