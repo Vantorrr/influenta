@@ -85,6 +85,14 @@ export default function CreateListingPage() {
       return
     }
 
+    // Валидация: мин. подписчиков не может быть больше макс.
+    const minSubsVal = formData.requirements.minSubscribers ? parseInt(formData.requirements.minSubscribers) : undefined
+    const maxSubsVal = formData.requirements.maxSubscribers ? parseInt(formData.requirements.maxSubscribers) : undefined
+    if (minSubsVal !== undefined && maxSubsVal !== undefined && !Number.isNaN(minSubsVal) && !Number.isNaN(maxSubsVal) && minSubsVal > maxSubsVal) {
+      setError('Минимальное количество подписчиков не может быть больше максимального')
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -403,6 +411,7 @@ export default function CreateListingPage() {
     </Layout>
   )
 }
+
 
 
 
