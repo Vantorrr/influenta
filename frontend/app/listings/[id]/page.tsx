@@ -210,12 +210,11 @@ export default function ListingDetailsPage() {
               </div>
             )}
             {canEdit && (
-              <div className="pt-4 border-t border-gray-700/50 flex gap-3">
+              <div className="pt-4 border-t border-gray-700/50 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button 
                   variant="secondary" 
                   onClick={() => setShowEdit(true)}
-                  fullWidth
-                  className="flex items-center justify-center gap-2"
+                  className="flex items-center justify-center gap-2 w-full"
                 >
                   <Edit className="w-4 h-4" />
                   Редактировать
@@ -232,8 +231,7 @@ export default function ListingDetailsPage() {
                       alert(String(e?.response?.data?.message || e?.message || 'Не удалось удалить'))
                     }
                   }}
-                  fullWidth
-                  className="flex items-center justify-center gap-2"
+                  className="flex items-center justify-center gap-2 w-full"
                 >
                   <Trash2 className="w-4 h-4" />
                   Удалить
