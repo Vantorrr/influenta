@@ -62,7 +62,7 @@ export function VerificationTooltip({ className = '' }: VerificationTooltipProps
                   </div>
                 </div>
 
-                <div className="p-5 space-y-4">
+                <div className="p-5 space-y-4 pb-8">
                   <p className="text-sm text-telegram-textSecondary">
                     Зеленая галочка означает, что блогер прошел проверку и подтвердил свою личность.
                   </p>
@@ -99,7 +99,7 @@ export function VerificationTooltip({ className = '' }: VerificationTooltipProps
                     </div>
                   </div>
 
-                  <div className="pt-2 pb-4">
+                  <div className="pt-4 pb-2">
                     <button
                       onClick={() => {
                         setShowTooltip(false)
