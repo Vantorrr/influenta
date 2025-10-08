@@ -220,12 +220,12 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
               </div>
             </div>
 
-            <div className="p-6 border-t border-telegram-border flex gap-3 flex-shrink-0 bg-telegram-bg pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+            <div className="p-6 border-t border-telegram-border grid grid-cols-1 sm:grid-cols-2 gap-3 flex-shrink-0 bg-telegram-bg pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
               <Button
                 variant="secondary"
                 onClick={onClose}
                 disabled={isSubmitting}
-                fullWidth
+                className="w-full"
               >
                 Отмена
               </Button>
@@ -233,12 +233,12 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
                 variant="primary"
                 onClick={handleSubmit}
                 disabled={isSubmitting || !message.trim() || !proposedBudget}
-                fullWidth
+                className="w-full"
               >
                 {isSubmitting ? 'Отправка...' : (
                   <>
                     <Send className="w-4 h-4 mr-2" />
-                    Отправить предложение
+                    Отправить
                   </>
                 )}
               </Button>
@@ -249,3 +249,4 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
     </AnimatePresence>
   )
 }
+
