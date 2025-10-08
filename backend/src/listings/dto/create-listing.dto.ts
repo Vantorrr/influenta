@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsArray, IsEnum, IsOptional, IsDateString, IsObject, Min, ValidateIf } from 'class-validator';
+import { IsString, IsNumber, IsArray, IsEnum, IsOptional, IsDateString, IsObject, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { BloggerCategory, PostFormat } from '@/types';
 
@@ -24,9 +24,7 @@ export class CreateListingDto {
   @IsObject()
   @IsOptional()
   requirements?: {
-    // кастомная проверка будет в сервисе
     minSubscribers?: number;
-    maxSubscribers?: number;
     minEngagementRate?: number;
     minRating?: number;
     verifiedOnly?: boolean;

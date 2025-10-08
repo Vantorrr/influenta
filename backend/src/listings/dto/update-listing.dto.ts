@@ -42,3 +42,4 @@ export class UpdateListingDto {
   @IsEnum(ListingStatus)
   status?: ListingStatus;
 }
+

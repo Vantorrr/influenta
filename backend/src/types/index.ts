@@ -35,18 +35,3 @@ export enum ResponseStatus {
   WITHDRAWN = 'withdrawn',
 }
 
-// Русские лейблы для сопоставления с сохраненными строками в БД
-export const BLOGGER_CATEGORY_LABEL_RU: Record<BloggerCategory, string> = {
-  [BloggerCategory.LIFESTYLE]: 'Лайфстайл',
-  [BloggerCategory.TECH]: 'Технологии',
-  [BloggerCategory.BEAUTY]: 'Красота',
-  [BloggerCategory.FASHION]: 'Мода',
-  [BloggerCategory.FOOD]: 'Еда',
-  [BloggerCategory.TRAVEL]: 'Путешествия',
-  [BloggerCategory.FITNESS]: 'Фитнес',
-  [BloggerCategory.GAMING]: 'Игры',
-  [BloggerCategory.EDUCATION]: 'Образование',
-  [BloggerCategory.BUSINESS]: 'Бизнес',
-  [BloggerCategory.ENTERTAINMENT]: 'Развлечения',
-  [BloggerCategory.OTHER]: 'Другое',
-}

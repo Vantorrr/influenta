@@ -118,13 +118,6 @@ export class ListingsService {
       advertiser = await this.advertisersRepository.save(advertiser);
     }
 
-    // Simple validation: minSubscribers <= maxSubscribers
-    const minSubs = (createListingDto as any)?.requirements?.minSubscribers
-    const maxSubs = (createListingDto as any)?.requirements?.maxSubscribers
-    if (typeof minSubs === 'number' && typeof maxSubs === 'number' && minSubs > maxSubs) {
-      throw new ForbiddenException('Минимальное число подписчиков не может быть больше максимального');
-    }
-
     const listing = new Listing();
     Object.assign(listing, createListingDto);
     listing.advertiserId = advertiser.id;
@@ -247,6 +240,7 @@ export class ListingsService {
     };
   }
 }
+
 
 
 

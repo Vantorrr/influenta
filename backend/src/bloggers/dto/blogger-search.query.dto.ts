@@ -9,12 +9,12 @@ export class BloggerSearchQueryDto {
   search?: string;
 
   @IsOptional()
-  @IsArray()
   @Transform(({ value }) => {
     if (Array.isArray(value)) return value
     if (typeof value === 'string') return value.split(',').map(v => v.trim()).filter(Boolean)
     return []
   })
+  @IsArray()
   categories?: (BloggerCategory | string)[];
 
   @IsOptional()
@@ -28,25 +28,25 @@ export class BloggerSearchQueryDto {
   @IsInt()
   @Min(0)
   minSubscribers?: number;
-  @IsOptional()
+
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(0)
   maxSubscribers?: number;
-  @Type(() => Number)
+
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(0)
   minPrice?: number;
-  @IsInt()
+
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(0)
   maxPrice?: number;
-  @Min(1)
+
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -60,18 +60,9 @@ export class BloggerSearchQueryDto {
   @Max(100)
   limit?: number = 20;
 }
-  page?: number = 1;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
 
 
 
-
-  @Max(100)
-  limit?: number = 20;
-}
 
 
 

@@ -11,3 +11,4 @@ export class SeedController {
     return { success: true, message: 'Database seeded successfully' };
   }
 }
+

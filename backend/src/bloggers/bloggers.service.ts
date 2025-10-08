@@ -12,11 +12,9 @@ export class BloggersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async search(searchDto: BloggerSearchDto, paginationDto: PaginationDto) {
+  async search(searchDto: BloggerSearchDto & { minSubscribers?: number; maxSubscribers?: number; minPrice?: number; maxPrice?: number }, paginationDto: PaginationDto) {
     const { search, categories, verifiedOnly, minSubscribers, maxSubscribers, minPrice, maxPrice } = searchDto;
     const { page = 1, limit = 20 } = paginationDto;
-
-    console.log('🔍 Search filters:', { minSubscribers, maxSubscribers, minPrice, maxPrice, search, categories, verifiedOnly });
 
     const query = this.usersRepository
       .createQueryBuilder('user')
@@ -38,82 +36,42 @@ export class BloggersService {
 
     // Фильтр по тематикам
     if (categories && categories.length > 0) {
-      // у нас categories в users храним как строку через запятую (могут быть как ключи enum, так и русские лейблы)
+      // у нас categories в users храним как строку через запятую
       query.andWhere("user.categories IS NOT NULL AND user.categories <> ''")
-      for (const raw of categories) {
-        const c = String(raw).trim()
-        const eng = c.toLowerCase()
-        // пытаемся сопоставить русские -> англ
-        const ruToEng: Record<string, string> = {
-          'Лайфстайл': 'lifestyle',
-          'Технологии': 'tech',
-          'Красота': 'beauty',
-          'Мода': 'fashion',
-          'Еда': 'food',
-          'Путешествия': 'travel',
-          'Фитнес': 'fitness',
-          'Игры': 'gaming',
-          'Образование': 'education',
-          'Бизнес': 'business',
-          'Развлечения': 'entertainment',
-          'Другое': 'other',
-        }
-        const mapped = ruToEng[c] || eng
-        query.andWhere('(user.categories ILIKE :catEng OR user.categories ILIKE :catRu)', {
-          catEng: `%${mapped}%`,
-          catRu: `%${c}%`,
-        })
+      for (const c of categories) {
+        query.andWhere(`user.categories ILIKE :cat_${c}`, { [`cat_${c}`]: `%${c}%` })
       }
     }
 
     // Фильтр по минимальным подписчикам
-    if (minSubscribers !== undefined && minSubscribers !== null) {
-      const minSubsNum = Number(minSubscribers);
-      if (!Number.isNaN(minSubsNum)) {
-        console.log('✅ Applying minSubscribers filter:', minSubsNum);
-        query.andWhere('COALESCE(user.subscribersCount, 0) >= :minSubs', { minSubs: minSubsNum });
-      }
+    if (typeof minSubscribers === 'number' && !Number.isNaN(minSubscribers)) {
+      query.andWhere('COALESCE(user.subscribersCount, 0) >= :minSubs', { minSubs: minSubscribers })
     }
 
     // Фильтр по максимальным подписчикам
-    if (maxSubscribers !== undefined && maxSubscribers !== null) {
-      const maxSubsNum = Number(maxSubscribers);
-      if (!Number.isNaN(maxSubsNum)) {
-        console.log('✅ Applying maxSubscribers filter:', maxSubsNum);
-        query.andWhere('COALESCE(user.subscribersCount, 0) <= :maxSubs', { maxSubs: maxSubsNum });
-      }
+    if (typeof maxSubscribers === 'number' && !Number.isNaN(maxSubscribers)) {
+      query.andWhere('COALESCE(user.subscribersCount, 0) <= :maxSubs', { maxSubs: maxSubscribers })
     }
 
-    // Фильтр по минимальной цене поста
-    if (minPrice !== undefined && minPrice !== null) {
-      const minPriceNum = Number(minPrice);
-      if (!Number.isNaN(minPriceNum)) {
-        console.log('✅ Applying minPrice filter:', minPriceNum);
-        query.andWhere('COALESCE(user.pricePerPost, 0) >= :minPrice', { minPrice: minPriceNum });
-      }
+    // Фильтр по минимальной цене
+    if (typeof minPrice === 'number' && !Number.isNaN(minPrice)) {
+      query.andWhere('COALESCE(user.pricePerPost, 0) >= :minPrice', { minPrice })
     }
 
     // Фильтр по максимальной цене поста
-    if (maxPrice !== undefined && maxPrice !== null) {
-      const maxPriceNum = Number(maxPrice);
-      if (!Number.isNaN(maxPriceNum)) {
-        console.log('✅ Applying maxPrice filter:', maxPriceNum);
-        query.andWhere('COALESCE(user.pricePerPost, 0) <= :maxPrice', { maxPrice: maxPriceNum });
-      }
+    if (typeof maxPrice === 'number' && !Number.isNaN(maxPrice)) {
+      query.andWhere('COALESCE(user.pricePerPost, 0) <= :maxPrice', { maxPrice })
     }
-
-    console.log('📝 SQL Query:', query.getSql());
-    console.log('📝 Parameters:', query.getParameters());
 
     const [data, total] = await query
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
 
-    console.log('🔍 Bloggers search result:', { 
+    console.log('🔍 Bloggers search:', { 
       total, 
       found: data.length, 
-      users: data.map(u => ({ id: u.id, firstName: u.firstName, role: u.role, subscribersCount: u.subscribersCount, pricePerPost: u.pricePerPost }))
+      users: data.map(u => ({ id: u.id, firstName: u.firstName, role: u.role }))
     });
 
     // Преобразуем пользователей в блогеров с реальными данными
