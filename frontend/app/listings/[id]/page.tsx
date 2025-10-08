@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Calendar, DollarSign, MessageSquare, Shield, Save, Trash2, X, Edit } from 'lucide-react'
+import { ArrowLeft, Calendar, DollarSign, MessageSquare, Shield, Save, Trash2, X, Edit, CheckCircle, XCircle, Pause } from 'lucide-react'
 import { Layout } from '@/components/layout/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -210,35 +210,98 @@ export default function ListingDetailsPage() {
               </div>
             )}
             {canEdit && (
-              <div className="pt-4 border-t border-gray-700/50 flex gap-3">
-                <Button 
-                  variant="secondary" 
-                  onClick={() => setShowEdit(true)}
-                  fullWidth
-                  className="flex items-center justify-center gap-2"
-                >
-                  <Edit className="w-4 h-4" />
-                  Редактировать
-                </Button>
-                <Button 
-                  variant="danger" 
-                  onClick={async () => {
-                    if (!confirm('Удалить объявление?')) return
-                    try {
-                      await listingsApi.delete(params.id!)
-                      alert('Объявление удалено')
-                      router.push('/listings')
-                    } catch (e: any) {
-                      alert(String(e?.response?.data?.message || e?.message || 'Не удалось удалить'))
-                    }
-                  }}
-                  fullWidth
-                  className="flex items-center justify-center gap-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Удалить
-                </Button>
-              </div>
+              <>
+                {/* Управление статусом */}
+                {listing.status === 'active' && (
+                  <div className="pt-4 border-t border-gray-700/50 grid grid-cols-2 gap-3">
+                    <Button 
+                      variant="secondary"
+                      onClick={async () => {
+                        if (!confirm('Приостановить объявление?')) return
+                        try {
+                          await listingsApi.updateStatus(params.id!, 'paused')
+                          alert('Объявление приостановлено')
+                          window.location.reload()
+                        } catch (e: any) {
+                          alert(String(e?.response?.data?.message || e?.message || 'Ошибка'))
+                        }
+                      }}
+                      className="flex items-center justify-center gap-2"
+                    >
+                      <Pause className="w-4 h-4" />
+                      Приостановить
+                    </Button>
+                    <Button 
+                      variant="secondary"
+                      onClick={async () => {
+                        if (!confirm('Завершить объявление?')) return
+                        try {
+                          await listingsApi.updateStatus(params.id!, 'completed')
+                          alert('Объявление завершено')
+                          window.location.reload()
+                        } catch (e: any) {
+                          alert(String(e?.response?.data?.message || e?.message || 'Ошибка'))
+                        }
+                      }}
+                      className="flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Завершить
+                    </Button>
+                  </div>
+                )}
+
+                {listing.status === 'paused' && (
+                  <div className="pt-4 border-t border-gray-700/50">
+                    <Button 
+                      variant="primary"
+                      fullWidth
+                      onClick={async () => {
+                        try {
+                          await listingsApi.updateStatus(params.id!, 'active')
+                          alert('Объявление активировано')
+                          window.location.reload()
+                        } catch (e: any) {
+                          alert(String(e?.response?.data?.message || e?.message || 'Ошибка'))
+                        }
+                      }}
+                      className="flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Активировать снова
+                    </Button>
+                  </div>
+                )}
+
+                {/* Редактирование и удаление */}
+                <div className="pt-4 border-t border-gray-700/50 grid grid-cols-2 gap-3">
+                  <Button 
+                    variant="secondary" 
+                    onClick={() => setShowEdit(true)}
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <Edit className="w-4 h-4" />
+                    Редактировать
+                  </Button>
+                  <Button 
+                    variant="danger" 
+                    onClick={async () => {
+                      if (!confirm('Удалить объявление?')) return
+                      try {
+                        await listingsApi.delete(params.id!)
+                        alert('Объявление удалено')
+                        router.push('/listings')
+                      } catch (e: any) {
+                        alert(String(e?.response?.data?.message || e?.message || 'Не удалось удалить'))
+                      }
+                    }}
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Удалить
+                  </Button>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
