@@ -42,9 +42,9 @@ export function VerificationTooltip({ className = '' }: VerificationTooltipProps
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 max-w-sm mx-auto max-h-[75vh] overflow-y-auto"
+              className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 max-w-sm mx-auto max-h-[70vh] overflow-y-auto"
             >
-              <div className="bg-telegram-bg rounded-2xl shadow-2xl overflow-hidden pb-8">
+              <div className="bg-telegram-bg rounded-2xl shadow-2xl overflow-hidden">
                 <div className="bg-green-500 p-4 text-white">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -99,7 +99,7 @@ export function VerificationTooltip({ className = '' }: VerificationTooltipProps
                     </div>
                   </div>
 
-                  <div className="pt-2">
+                  <div className="pt-2 pb-4">
                     <button
                       onClick={() => {
                         setShowTooltip(false)
@@ -120,6 +120,7 @@ export function VerificationTooltip({ className = '' }: VerificationTooltipProps
     </>
   )
 }
+
 
 
 

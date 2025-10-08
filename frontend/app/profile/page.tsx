@@ -662,7 +662,7 @@ export default function ProfilePage() {
         </Card>
 
         {/* Информация о профиле */}
-        <Card>
+        <Card className="mb-6">
           <CardContent className="p-6">
             <h3 className="text-lg font-semibold mb-4">Информация</h3>
             <div className="space-y-3">
