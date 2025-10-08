@@ -10,8 +10,12 @@ export class BloggerSearchQueryDto {
 
   @IsOptional()
   @IsArray()
-  @IsEnum(BloggerCategory, { each: true })
-  categories?: BloggerCategory[];
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) return value
+    if (typeof value === 'string') return value.split(',').map(v => v.trim()).filter(Boolean)
+    return []
+  })
+  categories?: (BloggerCategory | string)[];
 
   @IsOptional()
   @IsBoolean()

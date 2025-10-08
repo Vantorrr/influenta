@@ -41,12 +41,27 @@ export class BloggersService {
       // у нас categories в users храним как строку через запятую (могут быть как ключи enum, так и русские лейблы)
       query.andWhere("user.categories IS NOT NULL AND user.categories <> ''")
       for (const raw of categories) {
-        const c = String(raw)
-        const ru = (c.charAt(0) === c.charAt(0).toUpperCase()) ? c : undefined // эвристика: приходят на русском с большой буквы
+        const c = String(raw).trim()
         const eng = c.toLowerCase()
+        // пытаемся сопоставить русские -> англ
+        const ruToEng: Record<string, string> = {
+          'Лайфстайл': 'lifestyle',
+          'Технологии': 'tech',
+          'Красота': 'beauty',
+          'Мода': 'fashion',
+          'Еда': 'food',
+          'Путешествия': 'travel',
+          'Фитнес': 'fitness',
+          'Игры': 'gaming',
+          'Образование': 'education',
+          'Бизнес': 'business',
+          'Развлечения': 'entertainment',
+          'Другое': 'other',
+        }
+        const mapped = ruToEng[c] || eng
         query.andWhere('(user.categories ILIKE :catEng OR user.categories ILIKE :catRu)', {
-          catEng: `%${eng}%`,
-          catRu: ru ? `%${ru}%` : `%${eng}%`,
+          catEng: `%${mapped}%`,
+          catRu: `%${c}%`,
         })
       }
     }
