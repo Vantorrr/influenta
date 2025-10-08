@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
 import { bloggersApi } from '@/lib/api'
-import { formatNumber } from '@/lib/utils'
+import { formatNumber, getCategoryLabel } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { OfferModal } from '@/components/OfferModal'
@@ -136,7 +136,7 @@ export default function BloggerDetailsPage() {
           )}
           <div className="flex flex-wrap gap-2">
             {(blogger.categories || []).map((c: string) => (
-              <Badge key={c} variant="default">{c}</Badge>
+              <Badge key={c} variant="default">{getCategoryLabel(c)}</Badge>
             ))}
           </div>
 
