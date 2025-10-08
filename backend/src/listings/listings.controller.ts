@@ -81,6 +81,19 @@ export class ListingsController {
   async complete(@Param('id') id: string, @CurrentUser() user: User) {
     return this.listingsService.updateStatus(id, ListingStatus.COMPLETED, user);
   }
+
+  @Patch(':id/status')
+  async updateStatus(
+    @Param('id') id: string,
+    @Body() body: { status: string },
+    @CurrentUser() user: User
+  ) {
+    const validStatuses = ['active', 'paused', 'closed', 'completed'];
+    if (!validStatuses.includes(body.status)) {
+      throw new Error('Invalid status');
+    }
+    return this.listingsService.updateStatus(id, body.status as ListingStatus, user);
+  }
 }
 
 
