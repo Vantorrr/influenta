@@ -229,4 +229,3 @@ export interface ListingFilters {
   search?: string
 }
 
-

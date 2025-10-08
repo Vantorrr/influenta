@@ -104,10 +104,18 @@ export const bloggersApi = {
     if (filters?.search) params.search = filters.search
     if (filters?.verifiedOnly) params.verifiedOnly = true
     if (filters?.categories && filters.categories.length > 0) params.categories = filters.categories
+    const params: Record<string, any> = { page, limit }
+    if (filters?.search) params.search = filters.search
+    if (filters?.verifiedOnly) params.verifiedOnly = true
+    if (filters?.categories && filters.categories.length > 0) {
+      params.categories = filters.categories.join(',')
+    }
     if (typeof filters?.minSubscribers === 'number') params.minSubscribers = filters.minSubscribers
     if (typeof filters?.maxSubscribers === 'number') params.maxSubscribers = filters.maxSubscribers
     if (typeof filters?.minPrice === 'number') params.minPrice = filters.minPrice
     if (typeof filters?.maxPrice === 'number') params.maxPrice = filters.maxPrice
+
+    console.log('📤 Sending blogger search params:', params)
 
     const response = await api.get('/bloggers/search', { params })
     return response.data

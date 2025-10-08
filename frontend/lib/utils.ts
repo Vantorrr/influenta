@@ -186,4 +186,3 @@ export function generateInitials(firstName: string, lastName?: string): string {
   return first + last
 }
 
-

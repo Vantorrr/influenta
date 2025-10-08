@@ -50,4 +50,3 @@ export const BLOGGER_CATEGORY_LABEL_RU: Record<BloggerCategory, string> = {
   [BloggerCategory.ENTERTAINMENT]: 'Развлечения',
   [BloggerCategory.OTHER]: 'Другое',
 }
-

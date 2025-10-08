@@ -19,4 +19,3 @@ import { Response } from '@/responses/entities/response.entity';
   exports: [TelegramService],
 })
 export class TelegramModule {}
-

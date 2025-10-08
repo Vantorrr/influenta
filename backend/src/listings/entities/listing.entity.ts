@@ -82,4 +82,3 @@ export class Listing extends BaseEntity {
   @Column({ type: 'jsonb', nullable: true })
   additionalInfo: Record<string, any>;
 }
-

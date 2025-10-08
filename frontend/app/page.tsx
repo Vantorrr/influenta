@@ -78,8 +78,8 @@ export default function HomePage() {
   const scrollToFeatures = () => {
     document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })
   }
-
-  return (
+rom 'react'
+import { motion } from 'framer-motion'
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white overflow-x-hidden">
       {/* Анимированный фон */}
       <div className="fixed inset-0 z-0">
@@ -375,4 +375,380 @@ export default function HomePage() {
       </footer>
     </div>
   )
+}            {/* Logo */}
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 260, damping: 20 }}
+              className="mb-8 relative inline-block"
+            >
+              <div className="relative w-24 h-24 mx-auto rounded-2xl bg-gradient-to-br from-telegram-primary to-telegram-accent flex items-center justify-center">
+                <span className="text-5xl font-bold text-white">I</span>
+              </div>
+            </motion.div>
+
+            <h1 className="text-5xl md:text-7xl font-bold mb-6">
+              <span className="bg-gradient-to-r from-telegram-primary to-telegram-accent bg-clip-text text-transparent">
+                Influencer Platform
+              </span>
+            </h1>
+
+            <p className="text-xl md:text-2xl text-telegram-textSecondary mb-8 max-w-2xl mx-auto">
+              Связываем блогеров и рекламодателей в Telegram.
+              <span className="text-telegram-text font-medium"> Быстро, удобно, безопасно.</span>
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  setUserRole('blogger')
+                  router.push('/onboarding?role=blogger')
+                }}
+                className="btn-primary text-lg px-8 py-4 flex items-center justify-center gap-3"
+              >
+                <Users className="w-5 h-5" />
+                Я блогер
+              </motion.button>
+              
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  setUserRole('advertiser')
+                  router.push('/onboarding?role=advertiser')
+                }}
+                className="btn-secondary text-lg px-8 py-4 flex items-center justify-center gap-3"
+              >
+                <Briefcase className="w-5 h-5" />
+                Я рекламодатель
+              </motion.button>
+            </div>
+          </motion.div>
+
+
+        </div>
+      </section>
+
+      {/* Scroll Down Arrow - Fixed at bottom */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: showScrollArrow ? 0.7 : 0 }}
+        transition={{ duration: 0.5 }}
+        className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-30 pointer-events-none"
+      >
+        <motion.div
+          animate={{ 
+            y: [0, 6, 0],
+            opacity: [0.4, 0.8, 0.4]
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          <ChevronDown className="w-6 h-6 text-telegram-textSecondary" />
+        </motion.div>
+      </motion.div>
+
+      {/* Transparency Block */}
+      <section className="py-20 relative z-10">
+        <div className="container">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="max-w-4xl mx-auto text-center"
+          >
+            <div className="bg-gradient-to-r from-telegram-primary/10 to-telegram-accent/10 rounded-3xl p-8 md:p-12 border border-telegram-border">
+              <Shield className="w-16 h-16 text-telegram-primary mx-auto mb-6" />
+              <h3 className="text-2xl md:text-3xl font-bold mb-4">
+                Прозрачность — наш главный принцип
+              </h3>
+              <p className="text-lg text-telegram-textSecondary leading-relaxed">
+                В 95% случаев агентства скрывают реальные условия сделок от блогеров. 
+                Мы это меняем. Все цены, комиссии и условия фиксируются в системе и доступны обеим сторонам. 
+                Никаких скрытых процентов, никакого обмана. Только честное и прямое взаимодействие.
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-32 relative z-10">
+        <div className="container">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-3xl md:text-5xl font-bold text-center mb-16"
+          >
+            Почему выбирают{" "}
+            <span className="bg-gradient-to-r from-telegram-primary to-telegram-accent bg-clip-text text-transparent">
+              нас
+            </span>
+          </motion.h2>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                viewport={{ once: true }}
+                whileHover={{ y: -5 }}
+                className="card hover:border-telegram-primary/50 transition-all duration-300"
+              >
+                <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4`}>
+                  <feature.icon className="w-7 h-7 text-white" />
+                </div>
+                
+                <h3 className="text-xl font-semibold mb-3">
+                  {feature.title}
+                </h3>
+                
+                <p className="text-telegram-textSecondary">
+                  {feature.description}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How it Works */}
+      <section className="py-32 bg-telegram-bgSecondary/30 relative z-10">
+        <div className="container">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-3xl md:text-5xl font-bold text-center mb-16"
+          >
+            Как это{" "}
+            <span className="bg-gradient-to-r from-telegram-primary to-telegram-accent bg-clip-text text-transparent">
+              работает
+            </span>
+          </motion.h2>
+
+          <div className="grid md:grid-cols-2 gap-16 max-w-5xl mx-auto">
+            {/* Для блогеров */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-telegram-primary to-telegram-secondary flex items-center justify-center">
+                  <Users className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold">Для блогеров</h3>
+              </div>
+              
+              {[
+                'Создайте профиль и укажите тематику',
+                'Установите цены на размещение',
+                'Получайте заявки от рекламодателей',
+                'Выбирайте интересные предложения',
+                'Зарабатывайте на рекламе',
+              ].map((step, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  className="flex items-center gap-4 mb-6"
+                >
+                  <div className="w-10 h-10 rounded-full bg-telegram-bg border-2 border-telegram-primary flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-bold text-telegram-primary">
+                      {index + 1}
+                    </span>
+                  </div>
+                  <p className="text-lg text-telegram-textSecondary">
+                    {step}
+                  </p>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            {/* Для рекламодателей */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-telegram-accent to-telegram-primary flex items-center justify-center">
+                  <Briefcase className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold">Для рекламодателей</h3>
+              </div>
+              
+              {[
+                'Опубликуйте рекламное предложение',
+                'Укажите бюджет и требования',
+                'Получайте отклики от блогеров',
+                'Выбирайте подходящих исполнителей',
+                'Отслеживайте результаты',
+                'Ищите блогеров по критериям',
+              ].map((step, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  className="flex items-center gap-4 mb-6"
+                >
+                  <div className="w-10 h-10 rounded-full bg-telegram-bg border-2 border-telegram-accent flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-bold text-telegram-accent">
+                      {index + 1}
+                    </span>
+                  </div>
+                  <p className="text-lg text-telegram-textSecondary">
+                    {step}
+                  </p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-32 relative z-10">
+        <div className="container">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="bg-gradient-to-r from-telegram-primary to-telegram-accent rounded-3xl p-12 md:p-16 text-center"
+          >
+            <h2 className="text-4xl md:text-6xl font-bold mb-6 text-white">
+              Готовы начать?
+            </h2>
+            
+            <p className="text-xl md:text-2xl mb-10 text-white/90 max-w-2xl mx-auto">
+              Присоединяйтесь к тысячам блогеров и рекламодателей
+            </p>
+            
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => router.push('/onboarding')}
+              className="bg-white text-telegram-primary px-10 py-4 rounded-2xl font-bold text-lg inline-flex items-center gap-3 hover:bg-gray-50 transition-all"
+            >
+              Начать работу
+              <ArrowRight className="w-5 h-5" />
+            </motion.button>
+          </motion.div>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
+      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
+        <Image
+          className="dark:invert"
+          src="/next.svg"
+          alt="Next.js logo"
+          width={180}
+          height={38}
+          priority
+        />
+        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
+          <li className="mb-2 tracking-[-.01em]">
+            Get started by editing{" "}
+            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
+              app/page.tsx
+            </code>
+            .
+          </li>
+          <li className="tracking-[-.01em]">
+            Save and see your changes instantly.
+          </li>
+        </ol>
+
+        <div className="flex gap-4 items-center flex-col sm:flex-row">
+          <a
+            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
+            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Image
+              className="dark:invert"
+              src="/vercel.svg"
+              alt="Vercel logomark"
+              width={20}
+              height={20}
+            />
+            Deploy now
+          </a>
+          <a
+            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
+            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Read our docs
+          </a>
+        </div>
+      </main>
+      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
+        <a
+          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Image
+            aria-hidden
+            src="/file.svg"
+            alt="File icon"
+            width={16}
+            height={16}
+          />
+          Learn
+        </a>
+        <a
+          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Image
+            aria-hidden
+            src="/window.svg"
+            alt="Window icon"
+            width={16}
+            height={16}
+          />
+          Examples
+        </a>
+        <a
+          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Image
+            aria-hidden
+            src="/globe.svg"
+            alt="Globe icon"
+            width={16}
+            height={16}
+          />
+          Go to nextjs.org →
+        </a>
+      </footer>
+    </div>
+  );
 }

@@ -118,4 +118,3 @@ export class User extends BaseEntity {
   @Column({ type: 'jsonb', nullable: true })
   telegramData?: Record<string, any>;
 }
-

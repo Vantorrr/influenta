@@ -89,7 +89,3 @@ export class ListingsController {
 
 
 
-
-
-
-
