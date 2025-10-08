@@ -113,7 +113,7 @@ export default function ListingsPage() {
           {statusTabs.map((tab) => (
             <Button
               key={tab.value}
-              variant={filters.status === tab.value ? 'primary' : 'secondary'}
+              variant={filters.status === tab.value ? 'primary' : 'ghost'}
               size="sm"
               onClick={() => setFilters(prev => ({ ...prev, status: tab.value }))}
               className="whitespace-nowrap"
@@ -301,6 +301,7 @@ function pluralizeResponses(count: number): string {
   if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'отклика'
   return 'откликов'
 }
+
 
 
 

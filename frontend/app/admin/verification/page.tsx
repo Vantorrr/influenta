@@ -275,6 +275,3 @@ export default function VerificationPage() {
 
 
 
-
-
-
