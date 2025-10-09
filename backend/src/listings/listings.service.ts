@@ -25,8 +25,14 @@ export class ListingsService {
 
     const query = this.listingsRepository
       .createQueryBuilder('listing')
-      .leftJoinAndSelect('listing.advertiser', 'advertiser')
-      .where('listing.status = :status', { status });
+      .leftJoinAndSelect('listing.advertiser', 'advertiser');
+    
+    // Если статус "archive" - показываем все кроме активных, иначе фильтруем по статусу
+    if (status === 'archive') {
+      query.where('listing.status != :activeStatus', { activeStatus: ListingStatus.ACTIVE });
+    } else {
+      query.where('listing.status = :status', { status });
+    }
 
     // Поиск по названию или описанию
     if (search) {
