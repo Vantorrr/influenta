@@ -98,7 +98,8 @@ export default function ListingsPage() {
           </Button>
           {user?.role === 'advertiser' && (
             <Button variant="primary" onClick={() => { if (typeof window !== 'undefined') window.location.href = '/listings/create' }} className="h-11 rounded-lg px-3 shrink-0 pointer-events-auto">
-              Создать объявление
+              <span className="hidden sm:inline">Создать объявление</span>
+              <span className="sm:hidden inline">Создать</span>
             </Button>
           )}
           {user?.role === 'advertiser' && (
