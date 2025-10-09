@@ -23,14 +23,18 @@ export class ListingsService {
     const { search, status = ListingStatus.ACTIVE, minBudget, maxBudget, format } = searchDto;
     const { page = 1, limit = 20 } = paginationDto;
 
+    console.log('🔍 Listings search with status:', status);
+
     const query = this.listingsRepository
       .createQueryBuilder('listing')
       .leftJoinAndSelect('listing.advertiser', 'advertiser');
     
     // Если статус "archive" - показываем все кроме активных, иначе фильтруем по статусу
     if (status === 'archive') {
+      console.log('📦 Fetching archive listings (not active)');
       query.where('listing.status != :activeStatus', { activeStatus: ListingStatus.ACTIVE });
     } else {
+      console.log('📋 Fetching listings with status:', status);
       query.where('listing.status = :status', { status });
     }
 
@@ -59,6 +63,8 @@ export class ListingsService {
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
+
+    console.log('📊 Listings found:', total, 'statuses:', data.map(l => l.status));
 
     return {
       data: data.map(listing => this.formatListing(listing)),
