@@ -42,75 +42,53 @@ export function VerificationTooltip({ className = '' }: VerificationTooltipProps
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 max-w-sm mx-auto max-h-[70vh] overflow-y-auto"
+              className="fixed inset-x-4 bottom-20 z-50 max-w-sm mx-auto max-h-[60vh] overflow-y-auto"
             >
-              <div className="bg-telegram-bg rounded-2xl shadow-2xl overflow-hidden">
-                <div className="bg-green-500 p-4 text-white">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-white/20 rounded-full p-2">
-                        <CheckCircle className="w-6 h-6" />
-                      </div>
-                      <h3 className="text-lg font-semibold">Верификация</h3>
-                    </div>
-                    <button
-                      onClick={() => setShowTooltip(false)}
-                      className="p-1 hover:bg-white/10 rounded-full transition-colors"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
+              <div className="bg-telegram-bg rounded-2xl shadow-2xl">
+                <div className="bg-green-500 p-3 text-white flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5" />
+                    <h3 className="font-semibold">Верификация</h3>
                   </div>
+                  <button
+                    onClick={() => setShowTooltip(false)}
+                    className="p-1 hover:bg-white/10 rounded-full"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
 
-                <div className="p-5 space-y-4 pb-8">
+                <div className="p-4 space-y-3">
                   <p className="text-sm text-telegram-textSecondary">
-                    Зеленая галочка означает, что блогер прошел проверку и подтвердил свою личность.
+                    Верифицированный блогер - проверенная личность с подтвержденными данными.
                   </p>
 
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                      <UserCheck className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium">Подтвержденная личность</p>
-                        <p className="text-sm text-telegram-textSecondary">
-                          Реальный человек, а не бот
-                        </p>
-                      </div>
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2">
+                      <UserCheck className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm">Подтвержденная личность</p>
                     </div>
 
-                    <div className="flex items-start gap-3">
-                      <Shield className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium">Достоверная статистика</p>
-                        <p className="text-sm text-telegram-textSecondary">
-                          Проверенные данные о подписчиках
-                        </p>
-                      </div>
+                    <div className="flex items-start gap-2">
+                      <Shield className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm">Достоверная статистика</p>
                     </div>
 
-                    <div className="flex items-start gap-3">
-                      <TrendingUp className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium">Приоритет в поиске</p>
-                        <p className="text-sm text-telegram-textSecondary">
-                          Больше заказов от рекламодателей
-                        </p>
-                      </div>
+                    <div className="flex items-start gap-2">
+                      <TrendingUp className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm">Приоритет в поиске</p>
                     </div>
                   </div>
 
-                  <div className="pt-4 pb-2">
-                    <button
-                      onClick={() => {
-                        setShowTooltip(false)
-                        // Можно добавить переход на страницу верификации
-                        window.location.href = '/profile'
-                      }}
-                      className="w-full bg-green-500 text-white py-3 rounded-xl font-medium hover:bg-green-600 transition-colors"
-                    >
-                      Хочу верификацию
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => {
+                      setShowTooltip(false)
+                      window.location.href = '/profile'
+                    }}
+                    className="w-full bg-green-500 text-white py-3 rounded-xl font-medium hover:bg-green-600 transition-colors mt-4"
+                  >
+                    Хочу верификацию
+                  </button>
                 </div>
               </div>
             </motion.div>
@@ -120,6 +98,7 @@ export function VerificationTooltip({ className = '' }: VerificationTooltipProps
     </>
   )
 }
+
 
 
 
