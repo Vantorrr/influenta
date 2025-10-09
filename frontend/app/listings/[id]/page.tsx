@@ -86,7 +86,7 @@ export default function ListingDetailsPage() {
     })()
   }, [user, params?.id])
 
-  const canRespond = user?.role === 'blogger'
+  const canRespond = user?.role === 'blogger' && listing?.status === 'active'
   // canEdit только если это МОЁ объявление
   const isMyListing = user?.role === 'advertiser' && (
     listing?.advertiser?.userId === user.id ||
