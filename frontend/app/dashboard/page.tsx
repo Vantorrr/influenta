@@ -177,26 +177,42 @@ export default function DashboardPage() {
             <CardTitle>Быстрые действия</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-3">
               {userRole === 'blogger' ? (
                 <>
-                  <Button variant="secondary" fullWidth onClick={() => router.push('/listings')}>
-                    <Search className="w-4 h-4 mr-2" />
+                  <Button 
+                    variant="secondary" 
+                    onClick={() => router.push('/listings')}
+                    className="w-full h-14 text-base bg-telegram-bgSecondary hover:bg-telegram-bgSecondary/80"
+                  >
+                    <Search className="w-5 h-5 mr-3" />
                     Найти заказы
                   </Button>
-                  <Button variant="secondary" fullWidth onClick={() => router.push('/profile')}>
-                    <User className="w-4 h-4 mr-2" />
+                  <Button 
+                    variant="secondary" 
+                    onClick={() => router.push('/profile')}
+                    className="w-full h-14 text-base bg-telegram-bgSecondary hover:bg-telegram-bgSecondary/80"
+                  >
+                    <User className="w-5 h-5 mr-3" />
                     Мой профиль
                   </Button>
                 </>
               ) : (
                 <>
-                  <Button variant="secondary" fullWidth onClick={() => router.push('/listings/create')}>
-                    <PlusCircle className="w-5 h-5 mr-2" />
-                    Создать
+                  <Button 
+                    variant="primary" 
+                    onClick={() => router.push('/listings/create')}
+                    className="w-full h-14 text-base"
+                  >
+                    <PlusCircle className="w-5 h-5 mr-3" />
+                    Создать объявление
                   </Button>
-                  <Button variant="secondary" fullWidth onClick={() => router.push('/bloggers')}>
-                    <Users className="w-4 h-4 mr-2" />
+                  <Button 
+                    variant="secondary" 
+                    onClick={() => router.push('/bloggers')}
+                    className="w-full h-14 text-base bg-telegram-bgSecondary hover:bg-telegram-bgSecondary/80"
+                  >
+                    <Users className="w-5 h-5 mr-3" />
                     Найти блогеров
                   </Button>
                 </>
