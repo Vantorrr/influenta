@@ -120,20 +120,22 @@ export default function ListingsPage() {
           )}
         </div>
 
-        {/* Status Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {statusTabs.map((tab) => (
-            <Button
-              key={tab.value}
-              variant={filters.status === tab.value ? 'primary' : 'secondary'}
-              size="sm"
-              onClick={() => setFilters(prev => ({ ...prev, status: tab.value }))}
-              className="whitespace-nowrap"
-            >
-              {tab.label}
-            </Button>
-          ))}
-        </div>
+        {/* Status Tabs - только для рекламодателей */}
+        {user?.role === 'advertiser' && (
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {statusTabs.map((tab) => (
+              <Button
+                key={tab.value}
+                variant={filters.status === tab.value ? 'primary' : 'secondary'}
+                size="sm"
+                onClick={() => setFilters(prev => ({ ...prev, status: tab.value }))}
+                className="whitespace-nowrap"
+              >
+                {tab.label}
+              </Button>
+            ))}
+          </div>
+        )}
 
         {/* Results Count */}
         <p className="text-sm text-telegram-textSecondary">
