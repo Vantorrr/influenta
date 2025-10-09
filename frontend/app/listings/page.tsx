@@ -113,9 +113,9 @@ export default function ListingsPage() {
             })()}
           </Button>
           {user?.role === 'advertiser' && (
-            <Button variant="primary" onClick={() => { if (typeof window !== 'undefined') window.location.href = '/listings/create' }} className="h-11 rounded-lg px-3 shrink-0 pointer-events-auto flex items-center gap-2">
-              <PlusCircle className="w-4 h-4" />
-              Создать объявление
+            <Button variant="primary" onClick={() => { if (typeof window !== 'undefined') window.location.href = '/listings/create' }} className="h-11 rounded-lg px-4 shrink-0 pointer-events-auto flex items-center gap-2">
+              <PlusCircle className="w-5 h-5" />
+              <span className="font-medium">Создать</span>
             </Button>
           )}
         </div>
