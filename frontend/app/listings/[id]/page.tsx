@@ -243,9 +243,8 @@ export default function ListingDetailsPage() {
                           alert(String(e?.response?.data?.message || e?.message || 'Ошибка'))
                         }
                       }}
-                      className="flex items-center justify-center gap-2"
+                      className="flex items-center justify-center"
                     >
-                      <CheckCircle className="w-4 h-4" />
                       Завершить
                     </Button>
                   </div>
