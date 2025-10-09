@@ -10,7 +10,8 @@ import {
   Eye,
   MessageSquare,
   Building,
-  ChevronRight
+  ChevronRight,
+  PlusCircle
 } from 'lucide-react'
 import Link from 'next/link'
 import { Layout } from '@/components/layout/navigation'
@@ -97,9 +98,9 @@ export default function ListingsPage() {
             })()}
           </Button>
           {user?.role === 'advertiser' && (
-            <Button variant="primary" onClick={() => { if (typeof window !== 'undefined') window.location.href = '/listings/create' }} className="h-11 rounded-lg px-3 shrink-0 pointer-events-auto">
-              <span className="hidden sm:inline">Создать объявление</span>
-              <span className="sm:hidden inline">Создать</span>
+            <Button variant="primary" onClick={() => { if (typeof window !== 'undefined') window.location.href = '/listings/create' }} className="h-11 rounded-lg px-3 shrink-0 pointer-events-auto flex items-center gap-2">
+              <PlusCircle className="w-4 h-4" />
+              Создать объявление
             </Button>
           )}
           {user?.role === 'advertiser' && (
