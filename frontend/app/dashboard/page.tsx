@@ -183,7 +183,7 @@ export default function DashboardPage() {
                   <Button 
                     variant="secondary" 
                     onClick={() => router.push('/listings')}
-                    className="w-full h-14 text-base bg-telegram-bgSecondary hover:bg-telegram-bgSecondary/80"
+                    className="w-full h-14 text-base border-2 border-telegram-border hover:border-telegram-primary/50"
                   >
                     <Search className="w-5 h-5 mr-3" />
                     Найти заказы
@@ -191,7 +191,7 @@ export default function DashboardPage() {
                   <Button 
                     variant="secondary" 
                     onClick={() => router.push('/profile')}
-                    className="w-full h-14 text-base bg-telegram-bgSecondary hover:bg-telegram-bgSecondary/80"
+                    className="w-full h-14 text-base border-2 border-telegram-border hover:border-telegram-primary/50"
                   >
                     <User className="w-5 h-5 mr-3" />
                     Мой профиль
@@ -210,7 +210,7 @@ export default function DashboardPage() {
                   <Button 
                     variant="secondary" 
                     onClick={() => router.push('/bloggers')}
-                    className="w-full h-14 text-base bg-telegram-bgSecondary hover:bg-telegram-bgSecondary/80"
+                    className="w-full h-14 text-base border-2 border-telegram-border hover:border-telegram-primary/50"
                   >
                     <Users className="w-5 h-5 mr-3" />
                     Найти блогеров
@@ -276,6 +276,7 @@ export default function DashboardPage() {
     </Layout>
   )
 }
+
 
 
 
