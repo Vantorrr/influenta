@@ -207,7 +207,7 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     rows={4}
-                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg resize-y min-h-[100px] max-h-[200px] focus:outline-none focus:ring-2 focus:ring-telegram-primary"
+                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg resize-none focus:outline-none focus:ring-2 focus:ring-telegram-primary"
                   />
                   <p className="text-xs text-telegram-textSecondary mt-1">Персональное обращение повышает шансы на ответ</p>
                 </div>
