@@ -226,9 +226,8 @@ export default function ListingDetailsPage() {
                           alert(String(e?.response?.data?.message || e?.message || 'Ошибка'))
                         }
                       }}
-                      className="flex items-center justify-center gap-2"
+                      className="flex items-center justify-center"
                     >
-                      <Pause className="w-4 h-4" />
                       Приостановить
                     </Button>
                     <Button 
@@ -277,9 +276,8 @@ export default function ListingDetailsPage() {
                   <Button 
                     variant="secondary" 
                     onClick={() => setShowEdit(true)}
-                    className="flex items-center justify-center gap-2"
+                    className="flex items-center justify-center"
                   >
-                    <Edit className="w-4 h-4" />
                     Редактировать
                   </Button>
                   <Button 
