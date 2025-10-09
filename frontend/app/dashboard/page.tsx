@@ -192,8 +192,8 @@ export default function DashboardPage() {
               ) : (
                 <>
                   <Button variant="secondary" fullWidth onClick={() => router.push('/listings/create')}>
-                    <PlusCircle className="w-4 h-4 mr-2" />
-                    Создать объявление
+                    <PlusCircle className="w-5 h-5 mr-2" />
+                    Создать
                   </Button>
                   <Button variant="secondary" fullWidth onClick={() => router.push('/bloggers')}>
                     <Users className="w-4 h-4 mr-2" />
