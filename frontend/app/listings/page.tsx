@@ -46,18 +46,35 @@ export default function ListingsPage() {
   })
   const [showFilters, setShowFilters] = useState(false)
 
-  const [showMine, setShowMine] = useState(false)
-  const { data, isLoading } = useQuery({
-    queryKey: ['listings', filters, search, showMine],
+  const { data: rawData, isLoading } = useQuery({
+    queryKey: ['my-listings'],
     queryFn: async () => {
-      if (showMine && user?.role === 'advertiser') {
-        return await listingsApi.getMyListings(1, 20)
+      // Рекламодатели видят только свои объявления (все статусы)
+      if (user?.role === 'advertiser') {
+        return await listingsApi.getMyListings(1, 100) // Берем все, фильтруем на фронте
       }
-      return await listingsApi.search({ ...filters, search }, 1, 20)
+      // Блогеры видят все активные объявления
+      return await listingsApi.search({ status: ListingStatus.ACTIVE, search }, 1, 20)
     },
-    placeholderData: (prev) => prev,
     enabled: !!user,
   })
+
+  // Фильтруем на фронте для рекламодателей
+  const data = user?.role === 'advertiser' && rawData?.data ? {
+    ...rawData,
+    data: rawData.data.filter((listing: any) => {
+      // Фильтр по статусу
+      if (filters.status === 'archive') {
+        return listing.status !== 'active'
+      }
+      return listing.status === filters.status
+    }).filter((listing: any) => {
+      // Фильтр по поиску
+      if (!search) return true
+      const haystack = `${listing.title} ${listing.description}`.toLowerCase()
+      return haystack.includes(search.toLowerCase())
+    })
+  } : rawData
 
   useEffect(() => {
     analyticsApi.track('listings_list_view')
@@ -99,12 +116,6 @@ export default function ListingsPage() {
             <Button variant="primary" onClick={() => { if (typeof window !== 'undefined') window.location.href = '/listings/create' }} className="h-11 rounded-lg px-3 shrink-0 pointer-events-auto flex items-center gap-2">
               <PlusCircle className="w-4 h-4" />
               Создать объявление
-            </Button>
-          )}
-          {user?.role === 'advertiser' && (
-            <Button variant={showMine ? 'primary' : 'secondary'} className="h-11 rounded-lg px-3 shrink-0" onClick={() => setShowMine(v => !v)}>
-              <span className="hidden md:inline">{showMine ? 'Мои объявления' : 'Все объявления'}</span>
-              <span className="md:hidden inline">{showMine ? 'Мои' : 'Все'}</span>
             </Button>
           )}
         </div>
