@@ -24,7 +24,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     
     const variants = {
       primary: 'bg-telegram-primary text-white hover:bg-telegram-secondary',
-      secondary: 'bg-telegram-bgSecondary text-telegram-text hover:bg-opacity-80',
+      secondary: 'bg-telegram-bgSecondary border-2 border-telegram-border text-telegram-text hover:border-telegram-primary/50',
       danger: 'bg-telegram-danger text-white hover:bg-red-600',
       ghost: 'bg-transparent text-telegram-text hover:bg-telegram-bgSecondary',
     }
