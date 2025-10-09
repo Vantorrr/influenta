@@ -67,6 +67,7 @@ export default function ListingsPage() {
 
   const statusTabs = [
     { value: ListingStatus.ACTIVE, label: 'Активные' },
+    { value: 'paused' as any, label: 'Приостановленные' },
     { value: ListingStatus.CLOSED, label: 'Закрытые' },
     { value: ListingStatus.COMPLETED, label: 'Завершенные' },
   ]
