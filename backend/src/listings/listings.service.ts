@@ -30,7 +30,7 @@ export class ListingsService {
       .leftJoinAndSelect('listing.advertiser', 'advertiser');
     
     // Если статус "archive" - показываем все кроме активных, иначе фильтруем по статусу
-    if (status === 'archive') {
+    if ((status as string) === 'archive') {
       console.log('📦 Fetching archive listings (not active)');
       query.where('listing.status != :activeStatus', { activeStatus: ListingStatus.ACTIVE });
     } else {
