@@ -85,6 +85,14 @@ export default function CreateListingPage() {
       return
     }
 
+    // Валидация: минимум не может быть больше максимума
+    const minSubs = formData.requirements.minSubscribers ? parseInt(formData.requirements.minSubscribers) : 0
+    const maxSubs = formData.requirements.maxSubscribers ? parseInt(formData.requirements.maxSubscribers) : 0
+    if (minSubs > 0 && maxSubs > 0 && minSubs > maxSubs) {
+      setError('Минимальное количество подписчиков не может быть больше максимального')
+      return
+    }
+
     setLoading(true)
 
     try {
