@@ -220,29 +220,35 @@ function OnboardingInner() {
     try {
       // Подготавливаем данные для сохранения
       const profileData: any = {
-        role: data.role === 'blogger' ? UserRole.BLOGGER : UserRole.ADVERTISER,
+        // Для блогера роль по умолчанию уже blogger на сервере, лишний раз не шлём
+        // Для рекламодателя — явно выставляем роль
+        ...(data.role === 'advertiser' ? { role: UserRole.ADVERTISER } : {}),
         onboardingCompleted: true,
       }
 
       // Добавляем данные для блогеров
       if (data.role === 'blogger') {
         profileData.bio = data.bio || ''
-        profileData.categories = data.categories?.join(',') || ''
+        if (data.categories && data.categories.length > 0) {
+          profileData.categories = data.categories.join(',')
+        }
         
-        // Обрабатываем подписчиков
+        // Обрабатываем подписчиков (оставляем только цифры)
         if (data.subscribersCount) {
-          profileData.subscribersCount = parseInt(data.subscribersCount.replace(/\./g, '')) || 0
+          const digits = data.subscribersCount.toString().replace(/[^0-9]/g, '')
+          if (digits) profileData.subscribersCount = parseInt(digits, 10)
         }
         
         // Обрабатываем цены только если есть выбранные платформы
         if (data.socialPlatforms && data.socialPlatforms.length > 0) {
-          // Берём первую платформу для основных цен (для совместимости)
           const firstPlatform = data.socialPlatforms[0]
           if (firstPlatform.pricePost) {
-            profileData.pricePerPost = parseInt(firstPlatform.pricePost) || 0
+            const digits = firstPlatform.pricePost.toString().replace(/[^0-9]/g, '')
+            if (digits) profileData.pricePerPost = parseInt(digits, 10)
           }
           if (firstPlatform.priceStory) {
-            profileData.pricePerStory = parseInt(firstPlatform.priceStory) || 0
+            const digits = firstPlatform.priceStory.toString().replace(/[^0-9]/g, '')
+            if (digits) profileData.pricePerStory = parseInt(digits, 10)
           }
         }
       }
@@ -256,6 +262,13 @@ function OnboardingInner() {
         }
       }
 
+      // Удаляем undefined/NaN значения, чтобы не падать на валидации
+      Object.keys(profileData).forEach((k) => {
+        const v = (profileData as any)[k]
+        if (v === undefined || (typeof v === 'number' && Number.isNaN(v))) {
+          delete (profileData as any)[k]
+        }
+      })
       console.log('Saving profile data:', profileData)
       
       // Проверяем наличие токена
