@@ -98,20 +98,15 @@ export function LoadingScreen() {
             >
               <div className="relative">
                 <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                  className="absolute inset-0 rounded-full bg-gradient-to-r from-telegram-primary to-telegram-accent blur-xl opacity-50"
-                />
-                <motion.div
                   animate={{ scale: [1, 1.05, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
-                  className="relative w-28 h-28 mx-auto rounded-2xl bg-telegram-bgSecondary flex items-center justify-center shadow-2xl"
+                  className="relative mx-auto flex items-center justify-center"
                 >
                   <Image
                     src="/logo.jpg"
                     alt="Influenta"
-                    width={80}
-                    height={80}
+                    width={96}
+                    height={96}
                     className="rounded-2xl"
                   />
                 </motion.div>
