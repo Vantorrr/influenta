@@ -98,6 +98,20 @@ function OnboardingInner() {
       router.replace('/dashboard')
       return
     }
+    
+    // Проверяем наличие токена сразу при загрузке
+    const token = localStorage.getItem('influenta_token')
+    if (!token) {
+      console.error('No token found on onboarding page load')
+      // Даем время на авторизацию
+      setTimeout(() => {
+        const retryToken = localStorage.getItem('influenta_token')
+        if (!retryToken) {
+          alert('Ошибка авторизации. Пожалуйста, перезапустите приложение.')
+          router.push('/')
+        }
+      }, 2000)
+    }
   }, [])
 
   const categories = [
@@ -273,10 +287,50 @@ function OnboardingInner() {
       
       // Проверяем наличие токена
       const token = localStorage.getItem('influenta_token')
-      console.log('Token exists:', !!token, 'length:', token?.length)
+      const user = localStorage.getItem('influenta_user')
+      console.log('Token check:', {
+        hasToken: !!token,
+        tokenLength: token?.length,
+        hasUser: !!user,
+        allKeys: Object.keys(localStorage),
+        tokenValue: token?.substring(0, 20) + '...'
+      })
       
       if (!token) {
-        throw new Error('Токен авторизации не найден. Пожалуйста, перезапустите приложение.')
+        // Пытаемся получить токен из Telegram WebApp и переавторизоваться
+        if (window.Telegram?.WebApp?.initData) {
+          console.log('Attempting to re-authenticate...')
+          try {
+            const authResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/telegram`, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'X-Telegram-Init-Data': window.Telegram.WebApp.initData
+              },
+              body: JSON.stringify({ 
+                initData: window.Telegram.WebApp.initData,
+                user: window.Telegram.WebApp.initDataUnsafe?.user 
+              }),
+            })
+            
+            if (authResponse.ok) {
+              const authData = await authResponse.json()
+              if (authData?.token) {
+                localStorage.setItem('influenta_token', authData.token)
+                localStorage.setItem('influenta_user', JSON.stringify(authData.user))
+                console.log('Re-authenticated successfully')
+              }
+            }
+          } catch (e) {
+            console.error('Re-authentication failed:', e)
+          }
+        }
+        
+        // Проверяем еще раз
+        const retryToken = localStorage.getItem('influenta_token')
+        if (!retryToken) {
+          throw new Error('Токен авторизации не найден. Пожалуйста, перезапустите приложение.')
+        }
       }
       
       // Сохраняем через API
