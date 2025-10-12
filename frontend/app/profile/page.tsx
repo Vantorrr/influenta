@@ -11,7 +11,6 @@ import { useEffect, useRef } from 'react'
 import { authApi, analyticsApi } from '@/lib/api'
 import { UserRole } from '@/types'
 import { VerificationModal } from '@/components/VerificationModal'
-import { LoadingScreen } from '@/components/LoadingScreen'
 
 export default function ProfilePage() {
   const { user, isLoading } = useAuth()
@@ -223,7 +222,12 @@ export default function ProfilePage() {
   }
 
   if (isLoading) {
-    return <LoadingScreen text="Загрузка профиля..." />
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-telegram-primary mx-auto mb-4"></div>
+        <p className="text-telegram-textSecondary">Загрузка профиля...</p>
+      </div>
+    </div>
   }
 
   if (!user) {
