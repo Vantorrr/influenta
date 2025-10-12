@@ -59,13 +59,18 @@ export function useAuth() {
     return () => window.removeEventListener('focus', handleFocus)
   }, [])
 
-  const waitForTelegramReady = async (timeoutMs = 6000): Promise<void> => {
+  const waitForTelegramReady = async (timeoutMs = 8000): Promise<void> => {
     const start = Date.now()
     while (Date.now() - start < timeoutMs) {
       const tg = typeof window !== 'undefined' ? window.Telegram?.WebApp : undefined
-      if (tg?.initDataUnsafe?.user || (tg?.initData && tg.initData.length > 0)) return
-      await new Promise(r => setTimeout(r, 100))
+      // Ждем пока будет И initData И user
+      if (tg?.initDataUnsafe?.user?.id && tg?.initData && tg.initData.length > 10) {
+        console.log('✅ Telegram ready with user:', tg.initDataUnsafe.user)
+        return
+      }
+      await new Promise(r => setTimeout(r, 150))
     }
+    console.warn('⚠️ Telegram not ready after timeout')
   }
 
   const initAuth = async () => {
@@ -163,6 +168,13 @@ export function useAuth() {
         const attemptAuth = async (): Promise<boolean> => {
           const initData = tg.initData
           const telegramUser = tg.initDataUnsafe?.user
+          
+          // Проверяем что данные пользователя есть
+          if (!telegramUser?.id) {
+            console.warn('⚠️ No Telegram user data available yet')
+            return false
+          }
+          
           try {
             console.log('🟢 Sending auth request:', {
               url: `${process.env.NEXT_PUBLIC_API_URL}/auth/telegram`,
@@ -377,6 +389,8 @@ export function useAuth() {
     isAdminLoggedIn,
   }
 }
+
+
 
 
 
