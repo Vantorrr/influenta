@@ -258,6 +258,14 @@ function OnboardingInner() {
 
       console.log('Saving profile data:', profileData)
       
+      // Проверяем наличие токена
+      const token = localStorage.getItem('influenta_token')
+      console.log('Token exists:', !!token, 'length:', token?.length)
+      
+      if (!token) {
+        throw new Error('Токен авторизации не найден. Пожалуйста, перезапустите приложение.')
+      }
+      
       // Сохраняем через API
       const response = await authApi.updateProfile(profileData)
       console.log('Profile saved:', response)
