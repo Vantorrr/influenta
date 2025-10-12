@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
 
 export function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(true)
@@ -104,16 +105,15 @@ export function LoadingScreen() {
                 <motion.div
                   animate={{ scale: [1, 1.05, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
-                  className="relative w-28 h-28 mx-auto rounded-full bg-gradient-to-br from-telegram-primary to-telegram-accent flex items-center justify-center shadow-2xl"
+                  className="relative w-28 h-28 mx-auto rounded-2xl bg-telegram-bgSecondary flex items-center justify-center shadow-2xl"
                 >
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.5, type: "spring" }}
-                    className="text-5xl font-bold text-white"
-                  >
-                    I
-                  </motion.span>
+                  <Image
+                    src="/logo.jpg"
+                    alt="Influenta"
+                    width={80}
+                    height={80}
+                    className="rounded-2xl"
+                  />
                 </motion.div>
               </div>
             </motion.div>
@@ -245,6 +245,7 @@ export function LoadingScreen() {
     </AnimatePresence>
   )
 }
+
 
 
 
