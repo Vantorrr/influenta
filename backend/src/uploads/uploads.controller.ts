@@ -65,6 +65,34 @@ export class UploadsController {
     return this.handleFileUpload(file, req, 'avatars');
   }
 
+  @Post('platform-stats')
+  @ApiOperation({ summary: 'Upload platform statistics screenshot' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file', {
+    storage: diskStorage({
+      destination: (req, file, cb) => {
+        const dest = path.join(process.cwd(), 'uploads', 'platform-stats');
+        ensureDir(dest);
+        cb(null, dest);
+      },
+      filename: filenameGenerator,
+    }),
+    fileFilter: (req, file, cb) => {
+      // Only allow images
+      if (!file.mimetype.startsWith('image/')) {
+        cb(new Error('Only image files are allowed'), false);
+      } else {
+        cb(null, true);
+      }
+    },
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB for screenshots
+    }
+  }))
+  async uploadPlatformStats(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    return this.handleFileUpload(file, req, 'platform-stats');
+  }
+
   private handleFileUpload(file: Express.Multer.File, req: any, folder: string) {
     const relative = `/uploads/${folder}/${file.filename}`;
     
@@ -113,6 +141,7 @@ export class UploadsController {
     return { success: true, url: `${baseUrl}${relative}`, path: relative, filename: file.filename };
   }
 }
+
 
 
 

@@ -257,6 +257,69 @@ async function bootstrap() {
     `);
 
     console.log('✅ Social platforms table created/verified');
+
+    // Migrate existing telegram/instagram links to social platforms
+    try {
+      await dataSource.query(`
+        INSERT INTO social_platforms (
+          id, "userId", platform, username, url, "subscribersCount", 
+          "pricePerPost", "pricePerStory", "isActive", "isPrimary", 
+          "createdAt", "updatedAt"
+        )
+        SELECT 
+          uuid_generate_v4(),
+          u.id,
+          'telegram'::social_platform_platform_enum,
+          COALESCE(SUBSTRING(u."telegramLink" FROM '(?:t\.me/|telegram\.me/)([^/]+)'), u.username, 'channel'),
+          u."telegramLink",
+          COALESCE(u."subscribersCount", 0),
+          u."pricePerPost",
+          u."pricePerStory",
+          true,
+          true,
+          CURRENT_TIMESTAMP,
+          CURRENT_TIMESTAMP
+        FROM users u
+        WHERE u."telegramLink" IS NOT NULL 
+          AND u."telegramLink" != ''
+          AND NOT EXISTS (
+            SELECT 1 FROM social_platforms sp 
+            WHERE sp."userId" = u.id AND sp.platform = 'telegram'
+          )
+      `);
+
+      await dataSource.query(`
+        INSERT INTO social_platforms (
+          id, "userId", platform, username, url, "subscribersCount",
+          "pricePerPost", "pricePerStory", "isActive", "isPrimary",
+          "createdAt", "updatedAt"
+        )
+        SELECT 
+          uuid_generate_v4(),
+          u.id,
+          'instagram'::social_platform_platform_enum,
+          COALESCE(SUBSTRING(u."instagramLink" FROM '(?:instagram\.com/|instagr\.am/)([^/]+)'), 'profile'),
+          u."instagramLink",
+          COALESCE(u."subscribersCount", 0),
+          u."pricePerPost",
+          u."pricePerStory",
+          true,
+          false,
+          CURRENT_TIMESTAMP,
+          CURRENT_TIMESTAMP
+        FROM users u
+        WHERE u."instagramLink" IS NOT NULL 
+          AND u."instagramLink" != ''
+          AND NOT EXISTS (
+            SELECT 1 FROM social_platforms sp 
+            WHERE sp."userId" = u.id AND sp.platform = 'instagram'
+          )
+      `);
+
+      console.log('✅ Migrated existing social links to platforms table');
+    } catch (e) {
+      console.warn('⚠️ Social links migration skipped:', (e as any)?.message || e);
+    }
   } catch (e) {
     console.error('❌ Error creating social platforms table:', e);
   }
@@ -277,6 +340,7 @@ async function bootstrap() {
   const uploadsDir = path.join(process.cwd(), 'uploads');
   const verificationDir = path.join(uploadsDir, 'verification');
   const avatarsDir = path.join(uploadsDir, 'avatars');
+  const platformStatsDir = path.join(uploadsDir, 'platform-stats');
   
   // Ensure uploads directories exist
   if (!require('fs').existsSync(uploadsDir)) {
@@ -288,10 +352,14 @@ async function bootstrap() {
   if (!require('fs').existsSync(avatarsDir)) {
     require('fs').mkdirSync(avatarsDir, { recursive: true });
   }
+  if (!require('fs').existsSync(platformStatsDir)) {
+    require('fs').mkdirSync(platformStatsDir, { recursive: true });
+  }
   
   console.log('📁 Uploads directory:', uploadsDir);
   console.log('📁 Verification directory:', verificationDir);
   console.log('📁 Avatars directory:', avatarsDir);
+  console.log('📁 Platform stats directory:', platformStatsDir);
   
   app.use('/uploads', express.static(uploadsDir, {
     setHeaders: (res) => {

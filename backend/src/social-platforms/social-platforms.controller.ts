@@ -25,11 +25,22 @@ export class SocialPlatformsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Add a new social platform' })
-  create(
+  async create(
     @CurrentUser() user: any,
     @Body() createDto: CreateSocialPlatformDto,
   ) {
-    return this.socialPlatformsService.create(user.id, createDto);
+    console.log('Creating social platform:', {
+      userId: user.id,
+      dto: createDto,
+    });
+    try {
+      const result = await this.socialPlatformsService.create(user.id, createDto);
+      console.log('Platform created:', result);
+      return result;
+    } catch (error) {
+      console.error('Error creating platform:', error);
+      throw error;
+    }
   }
 
   @Get()

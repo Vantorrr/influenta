@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Edit2, Trash2, X, Upload, Eye, Star } from 'lucide-react'
+import { Plus, Edit2, Trash2, X, Upload, Eye, Star, Image as ImageIcon } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -120,6 +120,23 @@ export function SocialPlatformsSection() {
                           </div>
                         )}
                       </div>
+                      {platform.statisticsScreenshots && platform.statisticsScreenshots.length > 0 && (
+                        <div className="flex gap-1 mt-2">
+                          {platform.statisticsScreenshots.slice(0, 3).map((url, i) => (
+                            <img
+                              key={i}
+                              src={url}
+                              alt={`Stats ${i + 1}`}
+                              className="w-12 h-12 object-cover rounded border border-telegram-border"
+                            />
+                          ))}
+                          {platform.statisticsScreenshots.length > 3 && (
+                            <div className="w-12 h-12 rounded border border-telegram-border bg-telegram-bg flex items-center justify-center text-xs">
+                              +{platform.statisticsScreenshots.length - 3}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -210,14 +227,68 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
     pricePerStory: platform?.pricePerStory || undefined,
     pricePerReel: platform?.pricePerReel || undefined,
     isPrimary: platform?.isPrimary || false,
+    statisticsScreenshots: platform?.statisticsScreenshots || [],
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [uploadingScreenshot, setUploadingScreenshot] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleScreenshotUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      setUploadingScreenshot(true)
+      const formData = new FormData()
+      formData.append('file', file)
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/uploads/platform-stats`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`,
+        },
+        body: formData,
+      })
+      
+      if (!response.ok) throw new Error('Upload failed')
+      
+      const data = await response.json()
+      setFormData(prev => ({
+        ...prev,
+        statisticsScreenshots: [...(prev.statisticsScreenshots || []), data.url],
+      }))
+    } catch (error) {
+      console.error('Error uploading screenshot:', error)
+      alert('Ошибка при загрузке скриншота')
+    } finally {
+      setUploadingScreenshot(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const removeScreenshot = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      statisticsScreenshots: prev.statisticsScreenshots?.filter((_, i) => i !== index) || [],
+    }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
       setIsSubmitting(true)
-      await onSubmit(formData)
+      
+      // Подготовка данных для отправки
+      const dataToSubmit = {
+        ...formData,
+        // Убедимся, что subscribersCount - число
+        subscribersCount: typeof formData.subscribersCount === 'string' 
+          ? parseInt(formData.subscribersCount as any) || 0 
+          : formData.subscribersCount || 0,
+      }
+      
+      console.log('Submitting platform data:', dataToSubmit)
+      await onSubmit(dataToSubmit)
     } catch (error) {
       console.error('Error saving platform:', error)
       alert('Ошибка при сохранении')
@@ -334,6 +405,60 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
             />
           </div>
         )}
+      </div>
+
+      <div className="space-y-3">
+        <h4 className="font-medium">Скриншоты статистики</h4>
+        
+        {/* Uploaded screenshots */}
+        {formData.statisticsScreenshots && formData.statisticsScreenshots.length > 0 && (
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            {formData.statisticsScreenshots.map((url, index) => (
+              <div key={index} className="relative group">
+                <img
+                  src={url}
+                  alt={`Screenshot ${index + 1}`}
+                  className="w-full h-20 object-cover rounded-lg border border-telegram-border"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeScreenshot(index)}
+                  className="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-4 h-4 text-white" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {/* Upload button */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleScreenshotUpload}
+          className="hidden"
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          fullWidth
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploadingScreenshot}
+        >
+          {uploadingScreenshot ? (
+            'Загрузка...'
+          ) : (
+            <>
+              <ImageIcon className="w-4 h-4 mr-2" />
+              Добавить скриншот статистики
+            </>
+          )}
+        </Button>
+        <p className="text-xs text-telegram-textSecondary text-center">
+          Загрузите скриншоты из аналитики платформы
+        </p>
       </div>
 
       <label className="flex items-center gap-3 cursor-pointer">
