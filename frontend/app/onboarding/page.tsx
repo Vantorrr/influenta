@@ -103,7 +103,7 @@ function OnboardingInner() {
   const categories = [
     'lifestyle', 'tech', 'beauty', 'fashion', 'food', 
     'travel', 'fitness', 'gaming', 'education', 'business',
-    'entertainment', 'other'
+    'entertainment', 'humor', 'other'
   ]
 
   const bloggerSteps = [

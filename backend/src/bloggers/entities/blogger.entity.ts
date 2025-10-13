@@ -14,6 +14,7 @@ export enum BloggerCategory {
   EDUCATION = 'education',
   BUSINESS = 'business',
   ENTERTAINMENT = 'entertainment',
+  HUMOR = 'humor',
   OTHER = 'other',
 }
 

@@ -101,6 +101,7 @@ export function getCategoryLabel(category: string): string {
     education: 'Образование',
     business: 'Бизнес',
     entertainment: 'Развлечения',
+    humor: 'Юмор',
     other: 'Другое',
   }
   return labels[category.toLowerCase()] || category

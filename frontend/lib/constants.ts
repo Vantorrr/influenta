@@ -44,6 +44,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
   education: 'Образование',
   business: 'Бизнес',
   entertainment: 'Развлечения',
+  humor: 'Юмор',
   other: 'Другое',
 }
 
@@ -69,6 +70,7 @@ export const STATUS_LABELS: Record<string, string> = {
   rejected: 'Отклонено',
   withdrawn: 'Отозвано',
 }
+
 
 
 
