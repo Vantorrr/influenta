@@ -78,6 +78,7 @@ async function bootstrap() {
       DECLARE
         enum_type regtype;
         enum_type_name text;
+        base_type_name text;
         need_value text := 'humor';
         has_value boolean;
       BEGIN
@@ -89,11 +90,19 @@ async function bootstrap() {
 
         IF enum_type IS NOT NULL THEN
           enum_type_name := enum_type::text;
+          -- Remove [] from array type name to get base enum type
+          base_type_name := regexp_replace(enum_type_name, '\\[\\]$', '');
+          
+          -- Check if value exists in base enum type
           SELECT EXISTS(
-            SELECT 1 FROM pg_enum WHERE enumlabel = need_value AND enumtypid = enum_type
+            SELECT 1 FROM pg_enum e
+            JOIN pg_type t ON e.enumtypid = t.oid
+            WHERE t.typname = regexp_replace(base_type_name, '^.*\\.', '') -- remove schema if present
+            AND e.enumlabel = need_value
           ) INTO has_value;
+          
           IF NOT has_value THEN
-            EXECUTE 'ALTER TYPE ' || enum_type_name || ' ADD VALUE ' || quote_literal(need_value);
+            EXECUTE 'ALTER TYPE ' || base_type_name || ' ADD VALUE ' || quote_literal(need_value);
           END IF;
         END IF;
 
@@ -105,11 +114,19 @@ async function bootstrap() {
 
         IF enum_type IS NOT NULL THEN
           enum_type_name := enum_type::text;
+          -- Remove [] from array type name to get base enum type
+          base_type_name := regexp_replace(enum_type_name, '\\[\\]$', '');
+          
+          -- Check if value exists in base enum type
           SELECT EXISTS(
-            SELECT 1 FROM pg_enum WHERE enumlabel = need_value AND enumtypid = enum_type
+            SELECT 1 FROM pg_enum e
+            JOIN pg_type t ON e.enumtypid = t.oid
+            WHERE t.typname = regexp_replace(base_type_name, '^.*\\.', '') -- remove schema if present
+            AND e.enumlabel = need_value
           ) INTO has_value;
+          
           IF NOT has_value THEN
-            EXECUTE 'ALTER TYPE ' || enum_type_name || ' ADD VALUE ' || quote_literal(need_value);
+            EXECUTE 'ALTER TYPE ' || base_type_name || ' ADD VALUE ' || quote_literal(need_value);
           END IF;
         END IF;
       END $$;
