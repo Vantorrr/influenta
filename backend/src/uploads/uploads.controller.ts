@@ -34,7 +34,39 @@ export class UploadsController {
     })
   }))
   async uploadVerification(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
-    const relative = `/uploads/verification/${file.filename}`;
+    return this.handleFileUpload(file, req, 'verification');
+  }
+
+  @Post('avatar')
+  @ApiOperation({ summary: 'Upload user avatar' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file', {
+    storage: diskStorage({
+      destination: (req, file, cb) => {
+        const dest = path.join(process.cwd(), 'uploads', 'avatars');
+        ensureDir(dest);
+        cb(null, dest);
+      },
+      filename: filenameGenerator,
+    }),
+    fileFilter: (req, file, cb) => {
+      // Only allow images
+      if (!file.mimetype.startsWith('image/')) {
+        cb(new Error('Only image files are allowed'), false);
+      } else {
+        cb(null, true);
+      }
+    },
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB
+    }
+  }))
+  async uploadAvatar(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    return this.handleFileUpload(file, req, 'avatars');
+  }
+
+  private handleFileUpload(file: Express.Multer.File, req: any, folder: string) {
+    const relative = `/uploads/${folder}/${file.filename}`;
     
     let baseUrl: string;
     
@@ -68,6 +100,7 @@ export class UploadsController {
     
     console.log('📸 File upload:', {
       filename: file.filename,
+      folder,
       baseUrl,
       fullUrl: `${baseUrl}${relative}`,
       headers: {
@@ -80,6 +113,7 @@ export class UploadsController {
     return { success: true, url: `${baseUrl}${relative}`, path: relative, filename: file.filename };
   }
 }
+
 
 
 
