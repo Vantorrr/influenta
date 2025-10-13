@@ -64,11 +64,14 @@ export class AdminController {
     return this.adminService.rejectVerification(id, body?.reason || 'Недостаточно данных');
   }
 
-  // Снять верификацию у пользователя
+  // Снять верификацию у пользователя (с опциональной причиной)
   @Patch('users/:id/unverify')
   @UseGuards(JwtAuthGuard, AdminGuard)
-  async unverifyUser(@Param('id') id: string) {
-    return this.adminService.unverifyUser(id);
+  async unverifyUser(
+    @Param('id') id: string,
+    @Body() body: { reason?: string },
+  ) {
+    return this.adminService.unverifyUser(id, body?.reason || 'Без указания причины');
   }
 
   // Заблокировать/разблокировать пользователя (toggle)
@@ -106,6 +109,7 @@ export class AdminController {
     return this.adminService.getListingDetailAdmin(id);
   }
 }
+
 
 
 

@@ -106,8 +106,28 @@ export class AdminService {
     return { success: true };
   }
 
-  async unverifyUser(id: string) {
+  async unverifyUser(id: string, reason: string) {
     await this.usersRepository.update(id, { isVerified: false });
+    // Уведомления: пользователю и админам
+    try {
+      const user = await this.usersRepository.findOne({ where: { id } });
+      if (user?.telegramId) {
+        await this.telegramService.sendMessage(
+          parseInt(String(user.telegramId), 10),
+          `ℹ️ Верификация снята администратором. Причина: ${reason}`
+        );
+      }
+      // Сообщить всем админам
+      const admins = await this.getAdminsList();
+      for (const admin of admins) {
+        if (admin.telegramId) {
+          await this.telegramService.sendMessage(
+            parseInt(String(admin.telegramId), 10),
+            `👮 Снята верификация у @${user?.username || user?.firstName}. Причина: ${reason}`
+          );
+        }
+      }
+    } catch {}
     return { success: true };
   }
 

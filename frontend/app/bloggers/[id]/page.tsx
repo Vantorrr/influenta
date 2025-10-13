@@ -117,16 +117,33 @@ export default function BloggerDetailsPage() {
                 onClick={async () => {
                   try {
                     const uid = targetUserId
-                    const url = blogger.isVerified
-                      ? `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${uid}/unverify`
-                      : `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${uid}/verify`
-                    const resp = await fetch(url, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` } })
-                    if (!resp.ok) {
-                      const text = await resp.text()
-                      alert(`Ошибка: ${resp.status} ${text}`)
+                    if (blogger.isVerified) {
+                      const reason = prompt('Причина снятия верификации:') || 'Без указания причины'
+                      const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${uid}/unverify`, {
+                        method: 'PATCH',
+                        headers: {
+                          'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`,
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ reason }),
+                      })
+                      if (!resp.ok) {
+                        const text = await resp.text()
+                        alert(`Ошибка: ${resp.status} ${text}`)
+                        return
+                      }
                     } else {
-                      router.refresh()
+                      const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${uid}/verify`, {
+                        method: 'PATCH',
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` },
+                      })
+                      if (!resp.ok) {
+                        const text = await resp.text()
+                        alert(`Ошибка: ${resp.status} ${text}`)
+                        return
+                      }
                     }
+                    router.refresh()
                   } catch (e: any) {
                     alert(`Ошибка: ${e?.message || e}`)
                   }
