@@ -75,7 +75,8 @@ export default function BloggerDetailsPage() {
   }
 
   const blogger = data
-  const isOwner = !!user && (user.id === (blogger.user?.id || blogger.id))
+  const targetUserId = blogger.user?.id || blogger.userId || blogger.id
+  const isOwner = !!user && (user.id === targetUserId)
 
   return (
     <div className="min-h-screen bg-telegram-bg p-4 space-y-4">
@@ -114,11 +115,21 @@ export default function BloggerDetailsPage() {
                 variant={blogger.isVerified ? 'secondary' : 'primary'}
                 size="sm"
                 onClick={async () => {
-                  const url = blogger.isVerified
-                    ? `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${blogger.user?.id || blogger.id}/unverify`
-                    : `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${blogger.user?.id || blogger.id}/verify`
-                  await fetch(url, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` } })
-                  router.refresh()
+                  try {
+                    const uid = targetUserId
+                    const url = blogger.isVerified
+                      ? `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${uid}/unverify`
+                      : `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${uid}/verify`
+                    const resp = await fetch(url, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` } })
+                    if (!resp.ok) {
+                      const text = await resp.text()
+                      alert(`Ошибка: ${resp.status} ${text}`)
+                    } else {
+                      router.refresh()
+                    }
+                  } catch (e: any) {
+                    alert(`Ошибка: ${e?.message || e}`)
+                  }
                 }}
               >
                 {blogger.isVerified ? (<><Shield className="w-4 h-4 mr-1" /> Снять верификацию</>) : (<><CheckCircle className="w-4 h-4 mr-1" /> Верифицировать</>)}
