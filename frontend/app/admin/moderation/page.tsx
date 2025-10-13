@@ -88,7 +88,7 @@ export default function AdminModerationPage() {
       ) : (
         requests.map((r, i) => {
           const docs: string[] = Array.isArray(r?.verificationData?.documents) ? r.verificationData.documents : []
-          const proofs: string[] = Array.isArray(r?.verificationData?.socialProofs) ? r.verificationData.socialProofs : []
+          const proofs: any[] = Array.isArray(r?.verificationData?.socialProofs) ? r.verificationData.socialProofs : []
           const msg: string | undefined = r?.verificationData?.message
 
           return (
@@ -134,11 +134,16 @@ export default function AdminModerationPage() {
                   <div>
                     <p className="text-xs text-telegram-textSecondary mb-2">Соц. доказательства</p>
                     <div className="flex flex-wrap gap-2">
-                      {proofs.map((url, idx) => (
-                        <Button key={idx} size="sm" variant="secondary" onClick={() => openLink(url)}>
-                          Ссылка {idx + 1}
-                        </Button>
-                      ))}
+                      {proofs.map((proof, idx) => {
+                        const url = typeof proof === 'string' ? proof : proof?.url
+                        const label = typeof proof === 'string' ? `Ссылка ${idx + 1}` : `${proof?.platform || 'Ссылка'} ${idx + 1}`
+                        if (!url) return null
+                        return (
+                          <Button key={idx} size="sm" variant="secondary" onClick={() => openLink(url)}>
+                            {label}
+                          </Button>
+                        )
+                      })}
                     </div>
                   </div>
                 )}
