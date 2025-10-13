@@ -289,12 +289,25 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
       setIsSubmitting(true)
       
       // Подготовка данных для отправки
-      const dataToSubmit = {
+      const dataToSubmit: Partial<SocialPlatform> = {
         ...formData,
+        // Чистим username и url
+        username: (formData.username || '').trim().replace(/^@+/, ''),
+        url: formData.url && formData.url.trim().length > 0 ? formData.url.trim() : undefined,
         // Убедимся, что subscribersCount - число
-        subscribersCount: typeof formData.subscribersCount === 'string' 
-          ? parseInt(formData.subscribersCount as any) || 0 
-          : formData.subscribersCount || 0,
+        subscribersCount: typeof formData.subscribersCount === 'string'
+          ? (parseInt(formData.subscribersCount as any) || 0)
+          : (formData.subscribersCount || 0),
+        // Пустые цены превращаем в undefined
+        pricePerPost: formData.pricePerPost !== undefined && formData.pricePerPost !== ('' as any)
+          ? Number(formData.pricePerPost)
+          : undefined,
+        pricePerStory: formData.pricePerStory !== undefined && formData.pricePerStory !== ('' as any)
+          ? Number(formData.pricePerStory)
+          : undefined,
+        pricePerReel: formData.pricePerReel !== undefined && formData.pricePerReel !== ('' as any)
+          ? Number(formData.pricePerReel)
+          : undefined,
       }
       
       // Убедимся, что username заполнен
