@@ -95,10 +95,12 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
   }
 
   const handleSubmit = async () => {
-    if (documents.length === 0 && socialProofs.length === 0) {
-      alert('Добавьте хотя бы один документ или ссылку на социальную сеть')
+    // Обязательно должна быть хотя бы одна ссылка на канал/соцсеть
+    if (socialProofs.length === 0) {
+      alert('Добавьте хотя бы одну ссылку на ваш канал или социальную сеть для верификации')
       return
     }
+    
     const allDocsValid = documents.every((d) => validateUrl(d))
     const allProofsValid = socialProofs.every((p) => validateUrl(p.url))
     if (!allDocsValid || !allProofsValid) {
@@ -203,10 +205,10 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
                 {/* Социальные сети */}
                 <div>
                   <h3 className="font-medium mb-3">
-                    Социальные сети и каналы
+                    Социальные сети и каналы <span className="text-red-500">*</span>
                   </h3>
                   <p className="text-sm text-telegram-textSecondary mb-3">
-                    Добавьте ссылки на ваши официальные аккаунты
+                    Обязательно добавьте хотя бы одну ссылку на ваш канал или соцсеть
                   </p>
 
                   <div className="space-y-3 mb-3">
@@ -299,7 +301,7 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
                 <Button
                   variant="primary"
                   onClick={handleSubmit}
-                  disabled={isSubmitting || (documents.length === 0 && socialProofs.length === 0)}
+                  disabled={isSubmitting || socialProofs.length === 0}
                   fullWidth
                 >
                   {isSubmitting ? 'Отправка...' : (
