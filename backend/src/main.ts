@@ -362,7 +362,7 @@ async function bootstrap() {
   console.log('📁 Platform stats directory:', platformStatsDir);
   
   // Middleware для логирования запросов к uploads
-  app.use('/uploads', (req, res, next) => {
+  app.use('/uploads', (req: any, res: any, next: any) => {
     const filePath = path.join(uploadsDir, req.path);
     console.log('📸 Upload request:', {
       path: req.path,

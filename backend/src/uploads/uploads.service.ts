@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import * as FormData from 'form-data';
-import axios from 'axios';
+import FormData from 'form-data';
 
 @Injectable()
 export class UploadsService {
@@ -11,17 +10,22 @@ export class UploadsService {
       const formData = new FormData();
       formData.append('image', file.buffer.toString('base64'));
       
-      const response = await axios.post(
+      const fetch = (await import('node-fetch')).default;
+      
+      const response = await fetch(
         `https://api.imgbb.com/1/upload?key=${this.IMGBB_API_KEY}`,
-        formData,
         {
+          method: 'POST',
+          body: formData as any,
           headers: formData.getHeaders(),
         }
       );
+      
+      const data = await response.json();
 
-      if (response.data?.data?.url) {
-        console.log('✅ Image uploaded to ImgBB:', response.data.data.url);
-        return response.data.data.url;
+      if (data?.data?.url) {
+        console.log('✅ Image uploaded to ImgBB:', data.data.url);
+        return data.data.url;
       }
 
       throw new Error('Failed to upload image to ImgBB');
