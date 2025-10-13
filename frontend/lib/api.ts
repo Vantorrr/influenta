@@ -9,7 +9,8 @@ import type {
   Response,
   Message,
   BloggerFilters,
-  ListingFilters
+  ListingFilters,
+  SocialPlatform
 } from '@/types'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
@@ -340,6 +341,39 @@ export const offersApi = {
 export const analyticsApi = {
   async track(event: string, params?: { targetType?: string; targetId?: string; targetUserId?: string; metadata?: any }) {
     const response = await api.post('/analytics/track', { event, ...params })
+    return response.data
+  },
+}
+
+// Social Platforms API
+export const socialPlatformsApi = {
+  async create(data: Partial<SocialPlatform>): Promise<ApiResponse<SocialPlatform>> {
+    const response = await api.post('/social-platforms', data)
+    return response.data
+  },
+
+  async getMyPlatforms(): Promise<SocialPlatform[]> {
+    const response = await api.get('/social-platforms')
+    return response.data
+  },
+
+  async getUserPlatforms(userId: string): Promise<SocialPlatform[]> {
+    const response = await api.get(`/social-platforms/user/${userId}`)
+    return response.data
+  },
+
+  async update(id: string, data: Partial<SocialPlatform>): Promise<ApiResponse<SocialPlatform>> {
+    const response = await api.patch(`/social-platforms/${id}`, data)
+    return response.data
+  },
+
+  async delete(id: string): Promise<ApiResponse<void>> {
+    const response = await api.delete(`/social-platforms/${id}`)
+    return response.data
+  },
+
+  async addScreenshot(id: string, screenshotUrl: string): Promise<ApiResponse<SocialPlatform>> {
+    const response = await api.post(`/social-platforms/${id}/screenshot`, { screenshotUrl })
     return response.data
   },
 }

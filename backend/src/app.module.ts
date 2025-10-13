@@ -19,6 +19,7 @@ import appConfig from './config/app.config';
 import { SeedModule } from './seed/seed.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { SocialPlatformsModule } from './social-platforms/social-platforms.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { UploadsModule } from './uploads/uploads.module';
     AnalyticsModule,
     UploadsModule,
     OffersModule,
+    SocialPlatformsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

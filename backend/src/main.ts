@@ -212,6 +212,55 @@ async function bootstrap() {
     console.error('❌ Error creating messages table:', e);
   }
 
+  // Create social_platforms table
+  try {
+    // Create platform type enum
+    await dataSource.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'social_platform_platform_enum') THEN
+          CREATE TYPE social_platform_platform_enum AS ENUM (
+            'telegram', 'instagram', 'youtube', 'tiktok', 'vk', 
+            'twitter', 'facebook', 'twitch', 'linkedin', 'other'
+          );
+        END IF;
+      END $$;
+    `);
+
+    await dataSource.query(`
+      CREATE TABLE IF NOT EXISTS social_platforms (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        "userId" UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        platform social_platform_platform_enum NOT NULL,
+        username VARCHAR(255) NOT NULL,
+        url VARCHAR(500),
+        "subscribersCount" INTEGER DEFAULT 0,
+        "pricePerPost" DECIMAL(10,2),
+        "pricePerStory" DECIMAL(10,2),
+        "pricePerReel" DECIMAL(10,2),
+        "pricePerStream" DECIMAL(10,2),
+        "statisticsScreenshots" JSONB DEFAULT '[]',
+        "additionalInfo" JSONB,
+        "isActive" BOOLEAN DEFAULT true,
+        "isPrimary" BOOLEAN DEFAULT false,
+        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE("userId", platform)
+      );
+    `);
+
+    // Create indexes
+    await dataSource.query(`
+      CREATE INDEX IF NOT EXISTS idx_social_platforms_user ON social_platforms("userId");
+      CREATE INDEX IF NOT EXISTS idx_social_platforms_platform ON social_platforms(platform);
+      CREATE INDEX IF NOT EXISTS idx_social_platforms_active ON social_platforms("isActive");
+    `);
+
+    console.log('✅ Social platforms table created/verified');
+  } catch (e) {
+    console.error('❌ Error creating social platforms table:', e);
+  }
+
   // Swagger documentation
   const config = new DocumentBuilder()
     .setTitle('Influencer Platform API')

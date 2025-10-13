@@ -196,6 +196,48 @@ export interface MessageAttachment {
   size?: number
 }
 
+// Social Platform types
+export interface SocialPlatform {
+  id: string
+  userId: string
+  platform: PlatformType
+  username: string
+  url?: string
+  subscribersCount: number
+  pricePerPost?: number
+  pricePerStory?: number
+  pricePerReel?: number
+  pricePerStream?: number
+  statisticsScreenshots: string[]
+  additionalInfo?: {
+    averageViews?: number
+    engagementRate?: number
+    audienceAge?: string
+    audienceGender?: string
+    audienceLocation?: string
+    contentLanguage?: string
+    verificationStatus?: string
+    lastUpdated?: Date
+  }
+  isActive: boolean
+  isPrimary: boolean
+  createdAt: Date
+  updatedAt: Date
+}
+
+export enum PlatformType {
+  TELEGRAM = 'telegram',
+  INSTAGRAM = 'instagram',
+  YOUTUBE = 'youtube',
+  TIKTOK = 'tiktok',
+  VK = 'vk',
+  TWITTER = 'twitter',
+  FACEBOOK = 'facebook',
+  TWITCH = 'twitch',
+  LINKEDIN = 'linkedin',
+  OTHER = 'other',
+}
+
 // API Response types
 export interface ApiResponse<T> {
   data: T
