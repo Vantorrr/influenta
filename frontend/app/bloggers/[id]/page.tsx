@@ -24,6 +24,7 @@ export default function BloggerDetailsPage() {
   const [showOfferModal, setShowOfferModal] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showUnverifyModal, setShowUnverifyModal] = useState(false)
+  const [showUnverifyInline, setShowUnverifyInline] = useState(false)
   const [unverifyReason, setUnverifyReason] = useState('')
 
   // ID пользователя для загрузки платформ (после загрузки профиля)
@@ -121,7 +122,10 @@ export default function BloggerDetailsPage() {
                     const uid = targetUserId
                     if (blogger.isVerified) {
                       setUnverifyReason('')
-                      setShowUnverifyModal(true)
+                      // Покажем инлайн-поле прямо на странице (надежно для Mini App)
+                      setShowUnverifyInline(true)
+                      // И параллельно попытаемся открыть модалку (если окружение позволяет)
+                      try { setShowUnverifyModal(true) } catch {}
                     } else {
                       const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${uid}/verify`, {
                         method: 'PATCH',
@@ -164,6 +168,39 @@ export default function BloggerDetailsPage() {
               </Button>
             </div>
           )}
+        {isAdmin && showUnverifyInline && (
+          <div className="mt-3 p-3 border border-telegram-border rounded-lg bg-telegram-bg/60">
+            <p className="text-sm text-telegram-textSecondary mb-2">Укажите причину снятия верификации:</p>
+            <input
+              value={unverifyReason}
+              onChange={(e) => setUnverifyReason(e.target.value)}
+              placeholder="Причина"
+              className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text mb-2"
+            />
+            <div className="flex gap-2">
+              <Button variant="secondary" size="sm" onClick={() => { setShowUnverifyInline(false); setShowUnverifyModal(false) }}>Отмена</Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={async () => {
+                  const uid = targetUserId
+                  const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${uid}/unverify`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason: unverifyReason || 'Без указания причины' })
+                  })
+                  if (!resp.ok) {
+                    const text = await resp.text(); alert(`Ошибка: ${resp.status} ${text}`)
+                    return
+                  }
+                  setShowUnverifyInline(false)
+                  setShowUnverifyModal(false)
+                  router.refresh()
+                }}
+              >Снять</Button>
+            </div>
+          </div>
+        )}
           <div className="flex flex-wrap gap-2">
             {(blogger.categories || []).map((c: string) => (
               <Badge key={c} variant="default">{getCategoryLabel(c)}</Badge>
