@@ -24,11 +24,14 @@ export default function BloggerDetailsPage() {
   const [showOfferModal, setShowOfferModal] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Загружаем платформы блогера
+  // ID пользователя для загрузки платформ (после загрузки профиля)
+  const userIdForPlatforms = (data?.user?.id || data?.id) as string | undefined
+
+  // Загружаем платформы блогера (по userId)
   const { data: platforms = [] } = useQuery({
-    queryKey: ['blogger-platforms', params?.id],
-    queryFn: () => socialPlatformsApi.getUserPlatforms(params.id!),
-    enabled: !!params?.id && !!data?.user?.id,
+    queryKey: ['blogger-platforms', userIdForPlatforms],
+    queryFn: () => socialPlatformsApi.getUserPlatforms(userIdForPlatforms!),
+    enabled: !!userIdForPlatforms,
   })
 
   useEffect(() => {
@@ -179,6 +182,18 @@ export default function BloggerDetailsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Социальные сети блогера */}
+      {platforms && platforms.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Социальные сети</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PlatformsList platforms={platforms as any} />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Модальное окно для отправки предложения */}
       {showOfferModal && (
