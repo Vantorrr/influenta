@@ -361,6 +361,18 @@ async function bootstrap() {
   console.log('📁 Avatars directory:', avatarsDir);
   console.log('📁 Platform stats directory:', platformStatsDir);
   
+  // Middleware для логирования запросов к uploads
+  app.use('/uploads', (req, res, next) => {
+    const filePath = path.join(uploadsDir, req.path);
+    console.log('📸 Upload request:', {
+      path: req.path,
+      fullPath: filePath,
+      exists: require('fs').existsSync(filePath),
+      method: req.method
+    });
+    next();
+  });
+
   app.use('/uploads', express.static(uploadsDir, {
     setHeaders: (res) => {
       res.setHeader('Access-Control-Allow-Origin', '*');
