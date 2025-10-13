@@ -347,7 +347,7 @@ export const analyticsApi = {
 
 // Social Platforms API
 export const socialPlatformsApi = {
-  async create(data: Partial<SocialPlatform>): Promise<ApiResponse<SocialPlatform>> {
+  async create(data: Partial<SocialPlatform>): Promise<SocialPlatform> {
     const response = await api.post('/social-platforms', data)
     return response.data
   },
@@ -362,17 +362,17 @@ export const socialPlatformsApi = {
     return response.data
   },
 
-  async update(id: string, data: Partial<SocialPlatform>): Promise<ApiResponse<SocialPlatform>> {
+  async update(id: string, data: Partial<SocialPlatform>): Promise<SocialPlatform> {
     const response = await api.patch(`/social-platforms/${id}`, data)
     return response.data
   },
 
-  async delete(id: string): Promise<ApiResponse<void>> {
+  async delete(id: string): Promise<void> {
     const response = await api.delete(`/social-platforms/${id}`)
     return response.data
   },
 
-  async addScreenshot(id: string, screenshotUrl: string): Promise<ApiResponse<SocialPlatform>> {
+  async addScreenshot(id: string, screenshotUrl: string): Promise<SocialPlatform> {
     const response = await api.post(`/social-platforms/${id}/screenshot`, { screenshotUrl })
     return response.data
   },

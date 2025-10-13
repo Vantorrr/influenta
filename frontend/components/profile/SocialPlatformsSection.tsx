@@ -29,6 +29,11 @@ export function SocialPlatformsSection() {
       queryClient.invalidateQueries({ queryKey: ['social-platforms'] })
       setShowAddModal(false)
     },
+    onError: (error: any) => {
+      console.error('Create platform error:', error)
+      const message = error?.response?.data?.message || error?.message || 'Неизвестная ошибка'
+      alert(`Ошибка при создании платформы: ${message}`)
+    },
   })
 
   const updateMutation = useMutation({
@@ -189,13 +194,18 @@ export function SocialPlatformsSection() {
               <PlatformForm
                 platform={editingPlatform}
                 onSubmit={async (data) => {
-                  if (editingPlatform) {
-                    await updateMutation.mutateAsync({
-                      id: editingPlatform.id,
-                      data,
-                    })
-                  } else {
-                    await createMutation.mutateAsync(data)
+                  try {
+                    console.log('Form submission data:', data)
+                    if (editingPlatform) {
+                      await updateMutation.mutateAsync({
+                        id: editingPlatform.id,
+                        data,
+                      })
+                    } else {
+                      await createMutation.mutateAsync(data)
+                    }
+                  } catch (error) {
+                    console.error('Form submission error:', error)
                   }
                 }}
                 onCancel={() => {
@@ -287,11 +297,19 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
           : formData.subscribersCount || 0,
       }
       
+      // Убедимся, что username заполнен
+      if (!dataToSubmit.username || dataToSubmit.username.trim() === '') {
+        alert('Пожалуйста, укажите username или название канала')
+        setIsSubmitting(false)
+        return
+      }
+      
       console.log('Submitting platform data:', dataToSubmit)
       await onSubmit(dataToSubmit)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving platform:', error)
-      alert('Ошибка при сохранении')
+      const errorMessage = error?.response?.data?.message || error?.message || 'Неизвестная ошибка'
+      alert(`Ошибка при сохранении: ${errorMessage}`)
     } finally {
       setIsSubmitting(false)
     }
