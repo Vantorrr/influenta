@@ -7,11 +7,13 @@ import { ArrowLeft, Users, Eye, Star, Shield, Ban, CheckCircle, Trash2, MessageS
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
-import { bloggersApi } from '@/lib/api'
+import { bloggersApi, socialPlatformsApi } from '@/lib/api'
 import { formatNumber, getCategoryLabel } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { OfferModal } from '@/components/OfferModal'
+import { PlatformsList } from '@/components/profile/PlatformsList'
+import { useQuery } from '@tanstack/react-query'
 
 export default function BloggerDetailsPage() {
   const params = useParams() as { id?: string }
@@ -21,6 +23,13 @@ export default function BloggerDetailsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [showOfferModal, setShowOfferModal] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Загружаем платформы блогера
+  const { data: platforms = [] } = useQuery({
+    queryKey: ['blogger-platforms', params?.id],
+    queryFn: () => socialPlatformsApi.getUserPlatforms(params.id!),
+    enabled: !!params?.id && !!data?.user?.id,
+  })
 
   useEffect(() => {
     if (!user || !params?.id) return

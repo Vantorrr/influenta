@@ -11,6 +11,7 @@ import { useEffect, useRef } from 'react'
 import { authApi, analyticsApi } from '@/lib/api'
 import { UserRole } from '@/types'
 import { VerificationModal } from '@/components/VerificationModal'
+import { SocialPlatformsSection } from '@/components/profile/SocialPlatformsSection'
 
 export default function ProfilePage() {
   const { user, isLoading } = useAuth()
@@ -660,6 +661,13 @@ export default function ProfilePage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Социальные сети для блогеров */}
+        {user?.role === UserRole.BLOGGER && (
+          <div className="mb-6">
+            <SocialPlatformsSection />
+          </div>
+        )}
 
         {/* Информация о профиле */}
         <Card className="mb-6">
