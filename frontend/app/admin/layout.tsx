@@ -83,10 +83,7 @@ export default function AdminLayout({
     <div className="min-h-screen bg-telegram-bg">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
@@ -98,8 +95,13 @@ export default function AdminLayout({
         animate={{
           x: sidebarOpen ? 0 : '-100%',
         }}
+        transition={{
+          type: "tween",
+          duration: 0.2,
+          ease: "easeOut"
+        }}
         className={cn(
-          'fixed top-0 left-0 bottom-0 w-64 bg-telegram-bgSecondary border-r border-gray-700/50 z-50 lg:translate-x-0 lg:static lg:z-auto transition-transform'
+          'fixed top-0 left-0 bottom-0 w-64 bg-telegram-bgSecondary border-r border-gray-700/50 z-50 lg:translate-x-0 lg:static lg:z-auto will-change-transform'
         )}
       >
         <div className="flex flex-col h-full">
