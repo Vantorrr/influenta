@@ -23,6 +23,8 @@ export default function BloggerDetailsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [showOfferModal, setShowOfferModal] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showUnverifyModal, setShowUnverifyModal] = useState(false)
+  const [unverifyReason, setUnverifyReason] = useState('')
 
   // ID пользователя для загрузки платформ (после загрузки профиля)
   const userIdForPlatforms = (data?.user?.id || data?.id) as string | undefined
@@ -118,20 +120,8 @@ export default function BloggerDetailsPage() {
                   try {
                     const uid = targetUserId
                     if (blogger.isVerified) {
-                      const reason = prompt('Причина снятия верификации:') || 'Без указания причины'
-                      const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${uid}/unverify`, {
-                        method: 'PATCH',
-                        headers: {
-                          'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`,
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ reason }),
-                      })
-                      if (!resp.ok) {
-                        const text = await resp.text()
-                        alert(`Ошибка: ${resp.status} ${text}`)
-                        return
-                      }
+                      setUnverifyReason('')
+                      setShowUnverifyModal(true)
                     } else {
                       const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${uid}/verify`, {
                         method: 'PATCH',
@@ -142,8 +132,8 @@ export default function BloggerDetailsPage() {
                         alert(`Ошибка: ${resp.status} ${text}`)
                         return
                       }
+                      router.refresh()
                     }
-                    router.refresh()
                   } catch (e: any) {
                     alert(`Ошибка: ${e?.message || e}`)
                   }
@@ -222,6 +212,43 @@ export default function BloggerDetailsPage() {
           </CardContent>
         </Card>
       )}
+
+  {/* Modal: причина снятия верификации */}
+  {showUnverifyModal && (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowUnverifyModal(false)}>
+      <div className="bg-telegram-bgSecondary rounded-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-lg font-semibold mb-3">Снять верификацию</h3>
+        <p className="text-sm text-telegram-textSecondary mb-3">Укажите причину. Сообщение получит блогер в Telegram.</p>
+        <input
+          value={unverifyReason}
+          onChange={(e) => setUnverifyReason(e.target.value)}
+          placeholder="Причина снятия"
+          className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text mb-4"
+        />
+        <div className="flex gap-2">
+          <Button variant="secondary" fullWidth onClick={() => setShowUnverifyModal(false)}>Отмена</Button>
+          <Button
+            variant="primary"
+            fullWidth
+            onClick={async () => {
+              const uid = targetUserId
+              const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${uid}/unverify`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason: unverifyReason || 'Без указания причины' })
+              })
+              if (!resp.ok) {
+                const text = await resp.text(); alert(`Ошибка: ${resp.status} ${text}`)
+                return
+              }
+              setShowUnverifyModal(false)
+              router.refresh()
+            }}
+          >Снять</Button>
+        </div>
+      </div>
+    </div>
+  )}
 
       {/* Модальное окно для отправки предложения */}
       {showOfferModal && (
