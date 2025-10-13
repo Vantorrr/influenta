@@ -71,6 +71,53 @@ async function bootstrap() {
     console.warn('Enum/data migration skipped:', (e as any)?.message || e);
   }
 
+  // Safe enum migration: ensure blogger categories enum contains 'humor'
+  try {
+    await dataSource.query(`
+      DO $$
+      DECLARE
+        enum_type regtype;
+        enum_type_name text;
+        need_value text := 'humor';
+        has_value boolean;
+      BEGIN
+        -- bloggers.categories
+        SELECT a.atttypid::regtype INTO enum_type
+        FROM pg_attribute a
+        JOIN pg_class c ON a.attrelid = c.oid
+        WHERE c.relname = 'bloggers' AND a.attname = 'categories';
+
+        IF enum_type IS NOT NULL THEN
+          enum_type_name := enum_type::text;
+          SELECT EXISTS(
+            SELECT 1 FROM pg_enum WHERE enumlabel = need_value AND enumtypid = enum_type
+          ) INTO has_value;
+          IF NOT has_value THEN
+            EXECUTE 'ALTER TYPE ' || enum_type_name || ' ADD VALUE ' || quote_literal(need_value);
+          END IF;
+        END IF;
+
+        -- listings.targetCategories
+        SELECT a.atttypid::regtype INTO enum_type
+        FROM pg_attribute a
+        JOIN pg_class c ON a.attrelid = c.oid
+        WHERE c.relname = 'listings' AND a.attname = 'targetCategories';
+
+        IF enum_type IS NOT NULL THEN
+          enum_type_name := enum_type::text;
+          SELECT EXISTS(
+            SELECT 1 FROM pg_enum WHERE enumlabel = need_value AND enumtypid = enum_type
+          ) INTO has_value;
+          IF NOT has_value THEN
+            EXECUTE 'ALTER TYPE ' || enum_type_name || ' ADD VALUE ' || quote_literal(need_value);
+          END IF;
+        END IF;
+      END $$;
+    `);
+  } catch (e) {
+    console.warn("Blogger categories enum migration skipped:", (e as any)?.message || e);
+  }
+
   // Create offers table if not exists
   try {
     await dataSource.query(`
