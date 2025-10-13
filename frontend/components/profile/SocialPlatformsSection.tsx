@@ -280,9 +280,9 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
         <label className="label">Количество подписчиков</label>
         <Input
           type="number"
-          value={formData.subscribersCount}
+          value={formData.subscribersCount || ''}
           onChange={(e) =>
-            setFormData({ ...formData, subscribersCount: parseInt(e.target.value) || 0 })
+            setFormData({ ...formData, subscribersCount: e.target.value ? parseInt(e.target.value) : 0 })
           }
           placeholder="100000"
           min="0"
