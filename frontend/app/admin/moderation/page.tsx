@@ -153,12 +153,9 @@ export default function AdminModerationPage() {
           )
         })
       )}
-    </div>
-  )
-}
 
- {/* Modal: Указать причину снятия верификации */}
- {showUnverifyModal && (
+      {/* Modal: Указать причину снятия верификации */}
+      {showUnverifyModal && (
    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowUnverifyModal(false)}>
      <div className="bg-telegram-bgSecondary rounded-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
        <h3 className="text-lg font-semibold mb-3">Снять верификацию</h3>
@@ -193,6 +190,9 @@ export default function AdminModerationPage() {
      </div>
    </div>
  )}
+    </div>
+  )
+}
 
 
 
