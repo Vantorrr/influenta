@@ -33,18 +33,48 @@ export class UploadsController {
       fileSize: 10 * 1024 * 1024, // 10MB
     }
   }))
-  async uploadVerification(@UploadedFile() file: Express.Multer.File) {
+  async uploadVerification(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
     if (!file) {
       throw new BadRequestException('No file provided');
     }
 
-    try {
-      const url = await this.uploadsService.uploadToImgBB(file);
+    // Helper to build absolute URL
+    const getBaseUrl = () => {
+      let baseUrl: string | undefined = process.env.BACKEND_URL;
+      if (baseUrl) {
+        if (!/^https?:\/\//i.test(baseUrl)) baseUrl = `https://${baseUrl}`;
+        return baseUrl;
+      }
+      if (process.env.RAILWAY_PUBLIC_DOMAIN) return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+      const proto = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+      const host = req.headers['x-forwarded-host'] || req.headers['host'] || req.get('host');
+      return `${proto}://${host}`;
+    };
+
+    // Fallback local save
+    const saveLocal = () => {
+      const dest = path.join(process.cwd(), 'uploads', 'verification');
+      ensureDir(dest);
+      const ext = path.extname(file.originalname || '') || '.bin';
+      const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;
+      fs.writeFileSync(path.join(dest, filename), file.buffer);
+      const url = `${getBaseUrl()}/uploads/verification/${filename}`.replace(/([^:]\/)\/+/g, '$1');
       return { success: true, url };
-    } catch (error) {
-      console.error('Upload error:', error);
-      throw new BadRequestException('Failed to upload file');
+    };
+
+    // If image – try ImgBB first, then fallback locally
+    if (file.mimetype && file.mimetype.startsWith('image/')) {
+      try {
+        const url = await this.uploadsService.uploadToImgBB(file);
+        return { success: true, url };
+      } catch (error) {
+        console.warn('ImgBB upload failed, saving locally. Error:', (error as any)?.message || error);
+        return saveLocal();
+      }
     }
+
+    // Not an image – save locally
+    return saveLocal();
   }
 
   @Post('avatar')
