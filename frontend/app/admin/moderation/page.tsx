@@ -10,6 +10,9 @@ export default function AdminModerationPage() {
   const [requests, setRequests] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showUnverifyModal, setShowUnverifyModal] = useState(false)
+  const [unverifyUserId, setUnverifyUserId] = useState<string | null>(null)
+  const [unverifyReason, setUnverifyReason] = useState('')
 
   useEffect(() => {
     ;(async () => {
@@ -143,7 +146,7 @@ export default function AdminModerationPage() {
                 <div className="flex gap-2 pt-2">
                   <Button size="sm" variant="primary" onClick={async () => { await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${r.id}/verify`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` } }); setRequests(prev => prev.filter(x => x.id !== r.id)); try { window.dispatchEvent(new Event('refreshModerationCount')) } catch {} }}>Верифицировать</Button>
                   <Button size="sm" variant="danger" onClick={async () => { const reason = prompt('Причина отказа:') || 'недостаточно данных'; await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${r.id}/reject-verification`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) }); setRequests(prev => prev.filter(x => x.id !== r.id)); try { window.dispatchEvent(new Event('refreshModerationCount')) } catch {} }}>Отклонить</Button>
-                  <Button size="sm" variant="secondary" onClick={async () => { const reason = prompt('Причина снятия верификации:') || 'Без указания причины'; const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${r.id}/unverify`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) }); if (!resp.ok) { const text = await resp.text(); alert(`Ошибка: ${resp.status} ${text}`) } else { alert('Верификация снята'); } }}>Снять верификацию</Button>
+                  <Button size="sm" variant="secondary" onClick={() => { setUnverifyUserId(r.id); setUnverifyReason(''); setShowUnverifyModal(true) }}>Снять верификацию</Button>
                 </div>
               </CardContent>
             </Card>
@@ -153,6 +156,43 @@ export default function AdminModerationPage() {
     </div>
   )
 }
+
+ {/* Modal: Указать причину снятия верификации */}
+ {showUnverifyModal && (
+   <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowUnverifyModal(false)}>
+     <div className="bg-telegram-bgSecondary rounded-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+       <h3 className="text-lg font-semibold mb-3">Снять верификацию</h3>
+       <p className="text-sm text-telegram-textSecondary mb-3">Укажите причину снятия верификации. Это сообщение увидит пользователь.</p>
+       <input
+         value={unverifyReason}
+         onChange={(e) => setUnverifyReason(e.target.value)}
+         placeholder="Причина"
+         className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text mb-4"
+       />
+       <div className="flex gap-2">
+         <Button variant="secondary" fullWidth onClick={() => setShowUnverifyModal(false)}>Отмена</Button>
+         <Button
+           variant="primary"
+           fullWidth
+           onClick={async () => {
+             if (!unverifyUserId) return
+             const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${unverifyUserId}/unverify`, {
+               method: 'PATCH',
+               headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`, 'Content-Type': 'application/json' },
+               body: JSON.stringify({ reason: unverifyReason || 'Без указания причины' })
+             })
+             if (!resp.ok) {
+               const text = await resp.text(); alert(`Ошибка: ${resp.status} ${text}`)
+             } else {
+               alert('Верификация снята')
+               setShowUnverifyModal(false)
+             }
+           }}
+         >Снять</Button>
+       </div>
+     </div>
+   </div>
+ )}
 
 
 
