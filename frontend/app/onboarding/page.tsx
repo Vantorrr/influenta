@@ -218,6 +218,56 @@ function OnboardingInner() {
     console.log('Onboarding complete:', data)
     
     try {
+      // Вспомогательные функции для устойчивой авторизации перед сохранением профиля
+      const waitForTelegramReady = async (timeoutMs = 8000) => {
+        const start = Date.now()
+        while (Date.now() - start < timeoutMs) {
+          const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : undefined
+          if (tg?.initDataUnsafe?.user?.id && tg?.initData && tg.initData.length > 10) return
+          await new Promise(r => setTimeout(r, 150))
+        }
+      }
+
+      const reauthenticateWithTelegram = async (): Promise<string | null> => {
+        try {
+          const tg = (window as any).Telegram?.WebApp
+          if (!tg) return null
+          try { tg.ready?.() } catch {}
+          await waitForTelegramReady()
+          const initData = tg.initData || ''
+          const user = tg.initDataUnsafe?.user
+          if (!user?.id || !initData) return null
+          const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/telegram`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Telegram-Init-Data': initData,
+            },
+            body: JSON.stringify({ initData, user }),
+          })
+          if (!resp.ok) return null
+          const authData = await resp.json()
+          if (!authData?.token) return null
+          localStorage.setItem('influenta_token', authData.token)
+          if (authData?.user) localStorage.setItem('influenta_user', JSON.stringify(authData.user))
+          return authData.token as string
+        } catch {
+          return null
+        }
+      }
+
+      const ensureAuthToken = async (): Promise<string> => {
+        let token = localStorage.getItem('influenta_token') || ''
+        if (token && token.length > 0) return token
+        // до 3 попыток ре-авторизации через Telegram
+        for (let i = 0; i < 3; i++) {
+          const newToken = await reauthenticateWithTelegram()
+          if (newToken) return newToken
+          await new Promise(r => setTimeout(r, 500))
+        }
+        throw new Error('Токен авторизации не найден. Пожалуйста, перезапустите приложение.')
+      }
+
       // Подготавливаем данные для сохранения
       const profileData: any = {
         // Для блогера роль по умолчанию уже blogger на сервере, лишний раз не шлём
@@ -271,16 +321,22 @@ function OnboardingInner() {
       })
       console.log('Saving profile data:', profileData)
       
-      // Проверяем наличие токена
-      const token = localStorage.getItem('influenta_token')
-      console.log('Token exists:', !!token, 'length:', token?.length)
-      
-      if (!token) {
-        throw new Error('Токен авторизации не найден. Пожалуйста, перезапустите приложение.')
-      }
+      // Гарантируем наличие токена (с ретраями и ре-логином через Telegram при необходимости)
+      const token = await ensureAuthToken()
       
       // Сохраняем через API
-      const response = await authApi.updateProfile(profileData)
+      let response
+      try {
+        response = await authApi.updateProfile(profileData)
+      } catch (err: any) {
+        // Если вдруг сессия протухла — переавторизуемся и повторим один раз
+        if (err?.response?.status === 401) {
+          await ensureAuthToken()
+          response = await authApi.updateProfile(profileData)
+        } else {
+          throw err
+        }
+      }
       console.log('Profile saved:', response)
       
       // Подтягиваем свежий профиль с сервера

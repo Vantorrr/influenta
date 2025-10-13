@@ -47,3 +47,6 @@ export class CreateOffersTable1704358963000 implements MigrationInterface {
 
 
 
+
+
+
