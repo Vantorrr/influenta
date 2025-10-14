@@ -16,9 +16,10 @@ const nextConfig = {
       {
         source: '/:path*',
         headers: [
+          // Разрешаем открытие Mini App внутри Telegram WebView
           {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN',
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors 'self' https://t.me https://*.telegram.org https://web.telegram.org;",
           },
         ],
       },
