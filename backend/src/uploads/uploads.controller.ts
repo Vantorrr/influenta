@@ -99,12 +99,36 @@ export class UploadsController {
       throw new BadRequestException('No file provided');
     }
 
+    // Helper to build absolute URL
+    const getBaseUrl = () => {
+      let baseUrl: string | undefined = process.env.BACKEND_URL;
+      if (baseUrl) {
+        if (!/^https?:\/\//i.test(baseUrl)) baseUrl = `https://${baseUrl}`;
+        return baseUrl;
+      }
+      if (process.env.RAILWAY_PUBLIC_DOMAIN) return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+      // Fallback to request host if available later; for now use localhost as last resort
+      return '';
+    };
+
+    // Fallback local save (avatars)
+    const saveLocalAvatar = () => {
+      const dest = path.join(process.cwd(), 'uploads', 'avatars');
+      ensureDir(dest);
+      const ext = path.extname(file.originalname || '') || '.png';
+      const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;
+      fs.writeFileSync(path.join(dest, filename), file.buffer);
+      const base = getBaseUrl();
+      const url = `${base}/uploads/avatars/${filename}`.replace(/([^:]\/)\/+/g, '$1');
+      return { success: true, url };
+    };
+
     try {
       const url = await this.uploadsService.uploadToImgBB(file);
       return { success: true, url };
     } catch (error) {
-      console.error('Upload error:', error);
-      throw new BadRequestException('Failed to upload file');
+      console.warn('ImgBB upload failed for avatar, saving locally. Error:', (error as any)?.message || error);
+      return saveLocalAvatar();
     }
   }
 
@@ -130,15 +154,41 @@ export class UploadsController {
       throw new BadRequestException('No file provided');
     }
 
+    // Helper to build absolute URL
+    const getBaseUrl = () => {
+      let baseUrl: string | undefined = process.env.BACKEND_URL;
+      if (baseUrl) {
+        if (!/^https?:\/\//i.test(baseUrl)) baseUrl = `https://${baseUrl}`;
+        return baseUrl;
+      }
+      if (process.env.RAILWAY_PUBLIC_DOMAIN) return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+      return '';
+    };
+
+    // Fallback local save (platform-stats)
+    const saveLocalStats = () => {
+      const dest = path.join(process.cwd(), 'uploads', 'platform-stats');
+      ensureDir(dest);
+      const ext = path.extname(file.originalname || '') || '.png';
+      const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;
+      fs.writeFileSync(path.join(dest, filename), file.buffer);
+      const base = getBaseUrl();
+      const url = `${base}/uploads/platform-stats/${filename}`.replace(/([^:]\/)\/+/g, '$1');
+      return { success: true, url };
+    };
+
     try {
       const url = await this.uploadsService.uploadToImgBB(file);
       return { success: true, url };
     } catch (error) {
-      console.error('Upload error:', error);
-      throw new BadRequestException('Failed to upload file');
+      console.warn('ImgBB upload failed for platform-stats, saving locally. Error:', (error as any)?.message || error);
+      return saveLocalStats();
     }
   }
 }
+
+
+
 
 
 
