@@ -9,9 +9,11 @@ import { Avatar } from '@/components/ui/avatar'
 import { useAuth } from '@/hooks/useAuth'
 import { useEffect, useRef } from 'react'
 import { authApi, analyticsApi } from '@/lib/api'
-import { UserRole } from '@/types'
+import { UserRole, BloggerCategory } from '@/types'
 import { VerificationModal } from '@/components/VerificationModal'
 import { SocialPlatformsSection } from '@/components/profile/SocialPlatformsSection'
+import { getCategoryLabel } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
 
 export default function ProfilePage() {
   const { user, isLoading } = useAuth()
@@ -180,6 +182,31 @@ export default function ProfilePage() {
       pricePerPost: '',
       pricePerStory: '',
       categories: []
+    })
+  }
+
+  const toggleCategory = (category: string) => {
+    setFormData(prev => {
+      const currentCategories = prev.categories || []
+      const isSelected = currentCategories.includes(category)
+      
+      if (isSelected) {
+        // Убираем категорию
+        return {
+          ...prev,
+          categories: currentCategories.filter(c => c !== category)
+        }
+      } else {
+        // Добавляем категорию (максимум 2)
+        if (currentCategories.length >= 2) {
+          alert('Можно выбрать максимум 2 категории')
+          return prev
+        }
+        return {
+          ...prev,
+          categories: [...currentCategories, category]
+        }
+      }
     })
   }
 
@@ -572,6 +599,33 @@ export default function ProfilePage() {
                         placeholder="2000"
                       />
                     </div>
+
+                    {/* Категории для блогеров */}
+                    <div className="md:col-span-4">
+                      <label className="block text-sm font-medium mb-3">
+                        <FileText className="w-4 h-4 inline mr-1" />
+                        Категории (выберите до 2-х)
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {Object.values(BloggerCategory).map((category) => (
+                          <button
+                            key={category}
+                            type="button"
+                            onClick={() => toggleCategory(category)}
+                            className={`p-3 rounded-lg border-2 text-sm transition-all ${
+                              formData.categories?.includes(category)
+                                ? 'border-telegram-primary bg-telegram-primary/20'
+                                : 'border-gray-600 hover:border-gray-500'
+                            }`}
+                          >
+                            {getCategoryLabel(category)}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-telegram-textSecondary mt-2">
+                        Выбрано: {formData.categories?.length || 0} из 2
+                      </p>
+                    </div>
                   </>
                 )}
               </div>
@@ -581,37 +635,61 @@ export default function ProfilePage() {
 
         {/* Статистика профиля */}
         {user.role === UserRole.BLOGGER && (
-          <Card className="mb-6">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Статистика блогера</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-telegram-primary">
-                    {(user as any).subscribersCount ? `${(user as any).subscribersCount}` : '0'}
+          <>
+            <Card className="mb-6">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Статистика блогера</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-telegram-primary">
+                      {(user as any).subscribersCount ? `${(user as any).subscribersCount}` : '0'}
+                    </div>
+                    <div className="text-sm text-telegram-textSecondary">Подписчики</div>
                   </div>
-                  <div className="text-sm text-telegram-textSecondary">Подписчики</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-telegram-accent">
-                    {(user as any).pricePerPost ? `${(user as any).pricePerPost}₽` : 'Не указано'}
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-telegram-accent">
+                      {(user as any).pricePerPost ? `${(user as any).pricePerPost}₽` : 'Не указано'}
+                    </div>
+                    <div className="text-sm text-telegram-textSecondary">За пост</div>
                   </div>
-                  <div className="text-sm text-telegram-textSecondary">За пост</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-telegram-secondary">
-                    {(user as any).pricePerStory ? `${(user as any).pricePerStory}₽` : 'Не указано'}
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-telegram-secondary">
+                      {(user as any).pricePerStory ? `${(user as any).pricePerStory}₽` : 'Не указано'}
+                    </div>
+                    <div className="text-sm text-telegram-textSecondary">За сторис</div>
                   </div>
-                  <div className="text-sm text-telegram-textSecondary">За сторис</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-yellow-500">
-                    ⭐ 5.0
-                  </div>
-                  <div className="text-sm text-telegram-textSecondary">Рейтинг</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            {/* Категории блогера */}
+            {(() => {
+              const rawCats: any = (user as any).categories
+              const categories = Array.isArray(rawCats)
+                ? rawCats
+                : typeof rawCats === 'string'
+                  ? rawCats.split(',').map((c: string) => c.trim()).filter(Boolean)
+                  : []
+              
+              if (categories.length > 0) {
+                return (
+                  <Card className="mb-6">
+                    <CardContent className="p-6">
+                      <h3 className="text-lg font-semibold mb-3">Категории</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {categories.map((cat: string) => (
+                          <Badge key={cat} variant="default">
+                            {getCategoryLabel(cat)}
+                          </Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              }
+              return null
+            })()}
+          </>
         )}
 
         {/* Контакты и ссылки */}
