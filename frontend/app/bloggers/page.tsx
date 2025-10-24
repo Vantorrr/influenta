@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
-  Filter, 
+  SlidersHorizontal, 
   Search as SearchIcon, 
   Users, 
   Eye, 
@@ -97,7 +97,7 @@ export default function BloggersPage() {
             onClick={() => setShowFilters(true)}
             className="relative"
           >
-            <Filter className="w-4 h-4" />
+            <SlidersHorizontal className="w-4 h-4" />
             {activeFiltersCount > 0 && (
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-telegram-primary text-white text-xs rounded-full flex items-center justify-center">
                 {activeFiltersCount}

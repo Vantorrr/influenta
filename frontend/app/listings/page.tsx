@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
-  Filter, 
+  SlidersHorizontal, 
   Search as SearchIcon, 
   DollarSign, 
   Calendar,
@@ -109,7 +109,7 @@ export default function ListingsPage() {
             className="flex-1 h-11 rounded-lg"
           />
           <Button variant="secondary" onClick={() => setShowFilters(true)} className="h-11 rounded-lg px-3 shrink-0 pointer-events-auto relative">
-            <Filter className="w-4 h-4" />
+            <SlidersHorizontal className="w-4 h-4" />
             {(() => {
               const activeCount = (filters.minBudget ? 1 : 0) + (filters.maxBudget ? 1 : 0) + (filters.format ? 1 : 0) + ((filters.categories?.length || 0) > 0 ? 1 : 0)
               return activeCount > 0 ? (

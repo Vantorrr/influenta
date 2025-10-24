@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { 
   Search as SearchIcon, 
-  Filter,
+  SlidersHorizontal,
   Star,
   Users,
   Eye,
@@ -136,7 +136,7 @@ export default function AdminBloggersPage() {
           className="flex-1"
         />
         <Button variant="secondary">
-          <Filter className="w-4 h-4 mr-2" />
+          <SlidersHorizontal className="w-4 h-4 mr-2" />
           Фильтры
         </Button>
       </div>
@@ -248,6 +248,7 @@ export default function AdminBloggersPage() {
     </div>
   )
 }
+
 
 
 
