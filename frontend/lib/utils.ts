@@ -96,7 +96,7 @@ export function getCategoryLabel(category: string): string {
     education: 'Образование', 
     gaming: 'Игры',
     tech: 'Технологии',
-    fashion: 'Мода',
+    fashion: 'Мода/моделинг',
     lifestyle: 'Лайфстайл',
     beauty: 'Бьюти',
     business: 'Бизнес',
