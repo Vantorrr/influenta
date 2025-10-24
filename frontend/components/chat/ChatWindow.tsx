@@ -8,8 +8,6 @@ import {
   Paperclip,
   Image as ImageIcon,
   MoreVertical,
-  Phone,
-  Video,
   Info,
   CheckCircle,
   Clock,
@@ -207,26 +205,6 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
           </div>
         </div>
         
-        <div className="flex items-center gap-1">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => alert('Аудиозвонки скоро будут доступны')}
-            className="p-2 hover:bg-telegram-bg rounded-lg transition-colors"
-            title="Позвонить"
-          >
-            <Phone className="w-5 h-5" />
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => alert('Видеозвонки скоро будут доступны')}
-            className="p-2 hover:bg-telegram-bg rounded-lg transition-colors"
-            title="Видеозвонок"
-          >
-            <Video className="w-5 h-5" />
-          </motion.button>
-        </div>
       </div>
 
       {/* Сообщения */}

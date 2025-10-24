@@ -28,7 +28,7 @@ export class DashboardStatsService {
   async getDashboard(userId: string) {
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     const user = await this.usersRepo.findOne({ where: { id: userId } })
-    if (!user) return { profileViews: 0, activeResponses: 0, earnings: 0, rating: 0, recentActivity: [] }
+    if (!user) return { profileViews: 0, activeResponses: 0, recentActivity: [] }
 
     const profileViews = await this.analyticsRepo.count({ where: { event: 'profile_view', targetUserId: userId, createdAt: MoreThan(since) } }).catch(() => 0)
 
@@ -40,15 +40,9 @@ export class DashboardStatsService {
       const acceptedResponses = blogger
         ? await this.responsesRepo.count({ where: { bloggerId: blogger.id, status: ResponseStatus.ACCEPTED } }).catch(() => 0)
         : 0
-      // TODO: В будущем здесь будет реальная сумма из завершенных сделок
-      const earnings = 0 // Пока нет системы платежей
-      const rating = 0 // Пока нет системы отзывов
-
       return {
         profileViews,
         activeResponses,
-        earnings,
-        rating,
         recentActivity: [],
       }
     }
@@ -82,8 +76,6 @@ export class DashboardStatsService {
     return {
       profileViews,
       activeResponses: 0,
-      earnings: 0,
-      rating: 0,
       recentActivity: [],
     }
   }

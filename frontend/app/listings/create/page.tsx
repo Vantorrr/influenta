@@ -42,7 +42,6 @@ export default function CreateListingPage() {
       minSubscribers: '',
       maxSubscribers: '',
       minEngagementRate: '',
-      minRating: '',
       verifiedOnly: false,
     },
     deadline: '',
@@ -102,16 +101,13 @@ export default function CreateListingPage() {
         targetCategories: formData.targetCategories,
         budget: parseFloat(formData.budget),
         format: formData.format,
-        // DTO допускает только: minSubscribers, minEngagementRate, minRating, verifiedOnly
+        // DTO допускает только: minSubscribers, minEngagementRate, verifiedOnly
         requirements: {
           minSubscribers: formData.requirements.minSubscribers
             ? parseInt(formData.requirements.minSubscribers)
             : undefined,
           minEngagementRate: formData.requirements.minEngagementRate
             ? parseFloat(formData.requirements.minEngagementRate)
-            : undefined,
-          minRating: formData.requirements.minRating
-            ? parseFloat(formData.requirements.minRating)
             : undefined,
           verifiedOnly: formData.requirements.verifiedOnly,
         },
@@ -123,7 +119,6 @@ export default function CreateListingPage() {
         const cleanReq: any = {}
         if (req.requirements.minSubscribers !== undefined) cleanReq.minSubscribers = req.requirements.minSubscribers
         if (req.requirements.minEngagementRate !== undefined) cleanReq.minEngagementRate = req.requirements.minEngagementRate
-        if (req.requirements.minRating !== undefined) cleanReq.minRating = req.requirements.minRating
         if (req.requirements.verifiedOnly !== undefined) cleanReq.verifiedOnly = req.requirements.verifiedOnly
         req.requirements = cleanReq
       }
@@ -342,21 +337,6 @@ export default function CreateListingPage() {
                   />
                 </div>
                 
-                <div>
-                  <label className="label">Мин. рейтинг</label>
-                  <Input
-                    type="number"
-                    value={formData.requirements.minRating}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      requirements: { ...prev.requirements, minRating: e.target.value }
-                    }))}
-                    placeholder="Например: 4.0"
-                    min="0"
-                    max="5"
-                    step="0.1"
-                  />
-                </div>
               </div>
               
               <label className="flex items-center gap-3 cursor-pointer">
@@ -411,6 +391,7 @@ export default function CreateListingPage() {
     </Layout>
   )
 }
+
 
 
 

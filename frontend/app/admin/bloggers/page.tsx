@@ -52,7 +52,6 @@ export default function AdminBloggersPage() {
     total: bloggers.length,
     verified: bloggers.filter(b => !!b.isVerified).length,
     active: bloggers.filter(b => (b.subscribersCount || 0) > 0).length,
-    totalEarnings: bloggers.reduce((sum, b) => sum + ((b.completedCampaigns || 0) * (b.pricePerPost || 0)), 0),
   }
 
   if (isLoading) {
@@ -121,18 +120,6 @@ export default function AdminBloggersPage() {
                 <p className="text-sm text-telegram-textSecondary">Активных</p>
               </div>
               <TrendingUp className="w-8 h-8 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold">{formatPrice(stats.totalEarnings)}</p>
-                <p className="text-sm text-telegram-textSecondary">Общий заработок</p>
-              </div>
-              <DollarSign className="w-8 h-8 text-yellow-500" />
             </div>
           </CardContent>
         </Card>
@@ -250,14 +237,6 @@ export default function AdminBloggersPage() {
                         <p className="text-telegram-textSecondary">Цена за пост</p>
                         <p className="font-medium">{formatPrice(blogger.pricePerPost || 0)}</p>
                       </div>
-                      <div>
-                        <p className="text-telegram-textSecondary">Кампаний</p>
-                        <p className="font-medium">{blogger.completedCampaigns || 0}</p>
-                      </div>
-                      <div>
-                        <p className="text-telegram-textSecondary">Оцен. оборот</p>
-                        <p className="font-medium">{formatPrice((blogger.completedCampaigns || 0) * (blogger.pricePerPost || 0))}</p>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -269,6 +248,8 @@ export default function AdminBloggersPage() {
     </div>
   )
 }
+
+
 
 
 

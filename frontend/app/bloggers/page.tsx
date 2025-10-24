@@ -225,14 +225,6 @@ export default function BloggersPage() {
                                 {blogger.pricePerPost ? formatPrice(blogger.pricePerPost) : 'Договорная'}
                               </p>
                             </div>
-                            <div className="text-right">
-                              <p className="text-xs text-telegram-textSecondary">
-                                Выполнено кампаний
-                              </p>
-                              <p className="font-semibold">
-                                {blogger.completedCampaigns}
-                              </p>
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -397,6 +389,7 @@ export default function BloggersPage() {
     </Layout>
   )
 }
+
 
 
 

@@ -38,8 +38,6 @@ export interface Blogger {
   contacts?: ContactInfo
   isPublic: boolean
   isVerified: boolean
-  rating: number
-  completedCampaigns: number
   createdAt: Date
   updatedAt: Date
 }
@@ -85,8 +83,6 @@ export interface Advertiser {
   contacts?: ContactInfo
   campaignHistory: CampaignHistory[]
   isVerified: boolean
-  rating: number
-  completedCampaigns: number
   totalSpent: number
   createdAt: Date
   updatedAt: Date
@@ -124,7 +120,6 @@ export interface ListingRequirements {
   minSubscribers?: number
   maxSubscribers?: number
   minEngagementRate?: number
-  minRating?: number
   verifiedOnly?: boolean
 }
 
@@ -260,7 +255,6 @@ export interface BloggerFilters {
   maxSubscribers?: number
   minPrice?: number
   maxPrice?: number
-  minRating?: number
   verifiedOnly?: boolean
   search?: string
 }

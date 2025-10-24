@@ -26,7 +26,6 @@ export class CreateListingDto {
   requirements?: {
     minSubscribers?: number;
     minEngagementRate?: number;
-    minRating?: number;
     verifiedOnly?: boolean;
     categories?: BloggerCategory[];
   };

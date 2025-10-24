@@ -41,8 +41,6 @@ export class AdvertisersService {
         userId,
         companyName: user.companyName || 'Не указано',
         isVerified: false,
-        rating: 0,
-        completedCampaigns: 0,
         totalSpent: 0,
       });
 
@@ -52,3 +50,4 @@ export class AdvertisersService {
     return advertiser;
   }
 }
+

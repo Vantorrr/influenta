@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Users, Eye, Star, Shield, Ban, CheckCircle, Trash2, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Users, Eye, Shield, Ban, CheckCircle, Trash2, MessageSquare } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
@@ -207,7 +207,7 @@ export default function BloggerDetailsPage() {
             ))}
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-telegram-textSecondary">Подписчики</p>
               <p className="font-medium flex items-center gap-1"><Users className="w-4 h-4" />{formatNumber(blogger.subscribersCount || 0)}</p>
@@ -215,10 +215,6 @@ export default function BloggerDetailsPage() {
             <div>
               <p className="text-telegram-textSecondary">Ср. просмотры</p>
               <p className="font-medium flex items-center gap-1"><Eye className="w-4 h-4" />{formatNumber(blogger.averageViews || 0)}</p>
-            </div>
-            <div>
-              <p className="text-telegram-textSecondary">Рейтинг</p>
-              <p className="font-medium flex items-center gap-1"><Star className="w-4 h-4 text-yellow-500" />{blogger.rating || 0}</p>
             </div>
           </div>
 

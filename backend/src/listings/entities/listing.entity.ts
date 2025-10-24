@@ -58,7 +58,6 @@ export class Listing extends BaseEntity {
     minSubscribers?: number;
     maxSubscribers?: number;
     minEngagementRate?: number;
-    minRating?: number;
     verifiedOnly?: boolean;
   };
 

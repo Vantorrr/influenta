@@ -232,7 +232,6 @@ export class ListingsService {
         userId: (listing.advertiser as any).userId,
         companyName: (listing.advertiser as any).companyName || ((listing.advertiser as any).firstName + ' ' + ((listing.advertiser as any).lastName || '')),
         isVerified: (listing.advertiser as any).isVerified,
-        rating: 0,
         user: (listing.advertiser as any).user ? {
           id: (listing.advertiser as any).user.id,
           telegramId: (listing.advertiser as any).user.telegramId,
@@ -252,6 +251,7 @@ export class ListingsService {
     };
   }
 }
+
 
 
 

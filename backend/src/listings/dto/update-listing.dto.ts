@@ -30,7 +30,6 @@ export class UpdateListingDto {
   requirements?: {
     minSubscribers?: number;
     minEngagementRate?: number;
-    minRating?: number;
     verifiedOnly?: boolean;
   };
 
@@ -42,4 +41,5 @@ export class UpdateListingDto {
   @IsEnum(ListingStatus)
   status?: ListingStatus;
 }
+
 

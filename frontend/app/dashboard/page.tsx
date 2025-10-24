@@ -7,7 +7,6 @@ import {
   Users, 
   Briefcase, 
   MessageSquare,
-  Star,
   Eye,
   DollarSign,
   Activity,
@@ -66,20 +65,6 @@ export default function DashboardPage() {
       change: stats?.activeResponsesChange ? `+${stats.activeResponsesChange}` : '0',
       icon: MessageSquare,
       color: 'from-purple-500 to-pink-500',
-    },
-    {
-      title: 'Заработано',
-      value: stats?.earnings ? formatPrice(stats.earnings) : '₽0',
-      change: stats?.earningsChange ? `+${stats.earningsChange}%` : '0%',
-      icon: DollarSign,
-      color: 'from-green-500 to-emerald-500',
-    },
-    {
-      title: 'Рейтинг',
-      value: stats?.rating?.toString() || '0',
-      change: stats?.ratingChange ? `+${stats.ratingChange}` : '0',
-      icon: Star,
-      color: 'from-orange-500 to-yellow-500',
     },
   ]
 
@@ -276,6 +261,7 @@ export default function DashboardPage() {
     </Layout>
   )
 }
+
 
 
 

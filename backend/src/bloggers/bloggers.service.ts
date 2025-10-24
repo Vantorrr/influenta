@@ -92,8 +92,6 @@ export class BloggersService {
       engagementRate: 0, // TODO: Рассчитывать на основе реальной статистики
       pricePerPost: user.pricePerPost || 0,
       pricePerStory: user.pricePerStory || 0,
-      rating: 0, // TODO: Рассчитывать на основе отзывов
-      completedCampaigns: 0, // TODO: Рассчитывать на основе завершенных откликов
       isVerified: user.isVerified,
     }));
 
@@ -135,8 +133,6 @@ export class BloggersService {
       engagementRate: 0, // TODO: Рассчитывать на основе реальной статистики
       pricePerPost: user.pricePerPost || 0,
       pricePerStory: user.pricePerStory || 0,
-      rating: 0, // TODO: Рассчитывать на основе отзывов
-      completedCampaigns: 0, // TODO: Рассчитывать на основе завершенных откликов
       isVerified: user.isVerified,
     };
   }
