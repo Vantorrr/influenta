@@ -60,15 +60,18 @@ export default function ListingsPage() {
     enabled: !!user,
   })
 
-  // Фильтруем на фронте для рекламодателей
-  const data = user?.role === 'advertiser' && rawData?.data ? {
+  // Фильтруем на фронте
+  const data = rawData?.data ? {
     ...rawData,
     data: rawData.data.filter((listing: any) => {
-      // Фильтр по статусу
-      if (filters.status === 'archive') {
-        return listing.status !== 'active'
+      // Фильтр по статусу (только для рекламодателей)
+      if (user?.role === 'advertiser') {
+        if (filters.status === 'archive') {
+          return listing.status !== 'active'
+        }
+        return listing.status === filters.status
       }
-      return listing.status === filters.status
+      return true
     }).filter((listing: any) => {
       // Фильтр по поиску
       if (!search) return true
@@ -80,6 +83,16 @@ export default function ListingsPage() {
       return listing.targetCategories?.some((cat: string) => 
         filters.categories?.includes(cat)
       )
+    }).filter((listing: any) => {
+      // Фильтр по минимальному бюджету
+      if (filters.minBudget && listing.budget < filters.minBudget) return false
+      // Фильтр по максимальному бюджету
+      if (filters.maxBudget && listing.budget > filters.maxBudget) return false
+      return true
+    }).filter((listing: any) => {
+      // Фильтр по формату
+      if (!filters.format) return true
+      return listing.format === filters.format
     })
   } : rawData
 
@@ -331,7 +344,7 @@ export default function ListingsPage() {
               </div>
 
               <div className="flex gap-3">
-                <Button variant="secondary" fullWidth onClick={() => { setFilters({ status: filters.status }); setShowFilters(false) }}>Сбросить</Button>
+                <Button variant="secondary" fullWidth onClick={() => { setFilters({ status: filters.status, categories: [] }); setShowFilters(false) }}>Сбросить</Button>
                 <Button variant="primary" fullWidth onClick={() => setShowFilters(false)}>Применить</Button>
               </div>
             </motion.div>
