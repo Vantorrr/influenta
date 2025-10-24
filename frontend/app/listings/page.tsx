@@ -308,22 +308,24 @@ export default function ListingsPage() {
                 <h4 className="font-medium mb-3">Категории</h4>
                 <div className="grid grid-cols-2 gap-2">
                   {Object.values(BloggerCategory).map((category) => (
-                    <label key={category} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={filters.categories?.includes(category) || false}
-                        onChange={(e) => {
-                          setFilters(prev => ({
-                            ...prev,
-                            categories: e.target.checked
-                              ? [...(prev.categories || []), category]
-                              : prev.categories?.filter(c => c !== category)
-                          }))
-                        }}
-                        className="w-4 h-4 rounded border-gray-600 text-telegram-primary focus:ring-telegram-primary"
-                      />
-                      <span className="text-sm">{getCategoryLabel(category)}</span>
-                    </label>
+                    <button
+                      key={category}
+                      onClick={() => {
+                        setFilters(prev => ({
+                          ...prev,
+                          categories: prev.categories?.includes(category)
+                            ? prev.categories.filter(c => c !== category)
+                            : [...(prev.categories || []), category]
+                        }))
+                      }}
+                      className={`p-3 rounded-lg border-2 text-sm transition-all ${
+                        filters.categories?.includes(category)
+                          ? 'border-telegram-primary bg-telegram-primary/20'
+                          : 'border-gray-600 hover:border-gray-500'
+                      }`}
+                    >
+                      {getCategoryLabel(category)}
+                    </button>
                   ))}
                 </div>
               </div>
