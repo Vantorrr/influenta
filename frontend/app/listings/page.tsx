@@ -43,6 +43,7 @@ export default function ListingsPage() {
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<ListingFilters>({
     status: ListingStatus.ACTIVE,
+    categories: [],
   })
   const [showFilters, setShowFilters] = useState(false)
 
@@ -73,6 +74,12 @@ export default function ListingsPage() {
       if (!search) return true
       const haystack = `${listing.title} ${listing.description}`.toLowerCase()
       return haystack.includes(search.toLowerCase())
+    }).filter((listing: any) => {
+      // Фильтр по категориям
+      if (!filters.categories || filters.categories.length === 0) return true
+      return listing.targetCategories?.some((cat: string) => 
+        filters.categories?.includes(cat)
+      )
     })
   } : rawData
 
@@ -104,7 +111,7 @@ export default function ListingsPage() {
           <Button variant="secondary" onClick={() => setShowFilters(true)} className="h-11 rounded-lg px-3 shrink-0 pointer-events-auto relative">
             <Filter className="w-4 h-4" />
             {(() => {
-              const activeCount = (filters.minBudget ? 1 : 0) + (filters.maxBudget ? 1 : 0) + (filters.format ? 1 : 0)
+              const activeCount = (filters.minBudget ? 1 : 0) + (filters.maxBudget ? 1 : 0) + (filters.format ? 1 : 0) + ((filters.categories?.length || 0) > 0 ? 1 : 0)
               return activeCount > 0 ? (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-telegram-primary text-white text-xs rounded-full flex items-center justify-center">
                   {activeCount}
@@ -294,6 +301,31 @@ export default function ListingsPage() {
                   <option value="story">Сторис</option>
                   <option value="live">Эфир/Reels</option>
                 </select>
+              </div>
+
+              {/* Categories */}
+              <div className="mb-6">
+                <h4 className="font-medium mb-3">Категории</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.values(BloggerCategory).map((category) => (
+                    <label key={category} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={filters.categories?.includes(category) || false}
+                        onChange={(e) => {
+                          setFilters(prev => ({
+                            ...prev,
+                            categories: e.target.checked
+                              ? [...(prev.categories || []), category]
+                              : prev.categories?.filter(c => c !== category)
+                          }))
+                        }}
+                        className="w-4 h-4 rounded border-gray-600 text-telegram-primary focus:ring-telegram-primary"
+                      />
+                      <span className="text-sm">{getCategoryLabel(category)}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className="flex gap-3">

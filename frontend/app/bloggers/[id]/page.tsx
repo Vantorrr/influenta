@@ -146,7 +146,7 @@ export default function BloggerDetailsPage() {
                 {blogger.isVerified ? (<><Shield className="w-4 h-4 mr-1" /> Снять верификацию</>) : (<><CheckCircle className="w-4 h-4 mr-1" /> Верифицировать</>)}
               </Button>
               <Button
-                variant={blogger.user?.isActive === false ? 'success' : 'danger'}
+                variant={blogger.user?.isActive === false ? 'primary' : 'danger'}
                 size="sm"
                 onClick={async () => {
                   await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${blogger.user?.id || blogger.id}/block`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` } })
@@ -290,7 +290,7 @@ export default function BloggerDetailsPage() {
       {/* Модальное окно для отправки предложения */}
       {showOfferModal && (
         <OfferModal
-          bloggerId={params.id}
+          bloggerId={String(params.id || targetUserId)}
           bloggerName={`${blogger.user?.firstName || ''} ${blogger.user?.lastName || ''}`.trim()}
           onClose={() => setShowOfferModal(false)}
           onSuccess={() => {
@@ -302,6 +302,7 @@ export default function BloggerDetailsPage() {
     </div>
   )
 }
+
 
 
 

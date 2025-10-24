@@ -90,18 +90,18 @@ export function pluralize(count: number, one: string, few: string, many: string)
 
 export function getCategoryLabel(category: string): string {
   const labels: Record<string, string> = {
-    lifestyle: 'Лайфстайл',
-    tech: 'Технологии',
-    beauty: 'Красота',
-    fashion: 'Мода',
-    food: 'Еда',
-    travel: 'Путешествия',
-    fitness: 'Фитнес',
-    gaming: 'Игры',
-    education: 'Образование',
-    business: 'Бизнес',
-    entertainment: 'Развлечения',
     humor: 'Юмор',
+    food: 'Еда',
+    fitness: 'Фитнес',
+    education: 'Образование', 
+    gaming: 'Игры',
+    tech: 'Технологии',
+    fashion: 'Мода',
+    lifestyle: 'Лайфстайл',
+    beauty: 'Бьюти',
+    business: 'Бизнес',
+    hobby: 'Хобби',
+    travel: 'Путешествия',
     other: 'Другое',
   }
   return labels[category.toLowerCase()] || category

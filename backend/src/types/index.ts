@@ -1,16 +1,16 @@
 export enum BloggerCategory {
-  LIFESTYLE = 'lifestyle',
-  TECH = 'tech',
-  BEAUTY = 'beauty',
-  FASHION = 'fashion',
-  FOOD = 'food',
-  TRAVEL = 'travel',
-  FITNESS = 'fitness',
-  GAMING = 'gaming',
-  EDUCATION = 'education',
-  BUSINESS = 'business',
-  ENTERTAINMENT = 'entertainment',
   HUMOR = 'humor',
+  FOOD = 'food',
+  FITNESS = 'fitness',
+  EDUCATION = 'education',
+  GAMING = 'gaming',
+  TECH = 'tech',
+  FASHION = 'fashion',
+  LIFESTYLE = 'lifestyle',
+  BEAUTY = 'beauty',
+  BUSINESS = 'business',
+  HOBBY = 'hobby',
+  TRAVEL = 'travel',
   OTHER = 'other',
 }
 
@@ -35,5 +35,6 @@ export enum ResponseStatus {
   REJECTED = 'rejected',
   WITHDRAWN = 'withdrawn',
 }
+
 
 
