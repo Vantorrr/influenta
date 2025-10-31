@@ -25,7 +25,7 @@ import {
   type Listing 
 } from '@/types'
 import { listingsApi } from '@/lib/api'
-import { getCategoryLabel, getPostFormatLabel } from '@/lib/utils'
+import { getCategoryLabel, getPostFormatLabel, formatNumberInput, parseNumberInput } from '@/lib/utils'
 
 export default function CreateListingPage() {
   const router = useRouter()
@@ -256,12 +256,11 @@ export default function CreateListingPage() {
               <div>
                 <label className="label">Бюджет (₽) *</label>
                 <Input
-                  type="number"
-                  value={formData.budget}
-                  onChange={(e) => setFormData(prev => ({ ...prev, budget: e.target.value }))}
-                  placeholder="Например: 50000"
-                  min="1000"
-                  step="1000"
+                  type="text"
+                  inputMode="numeric"
+                  value={formatNumberInput(formData.budget)}
+                  onChange={(e) => setFormData(prev => ({ ...prev, budget: parseNumberInput(e.target.value).toString() }))}
+                  placeholder="50.000"
                 />
                 <p className="text-xs text-telegram-textSecondary mt-1">
                   Укажите общий бюджет на кампанию
@@ -296,28 +295,28 @@ export default function CreateListingPage() {
                 <div>
                   <label className="label">Мин. подписчиков</label>
                   <Input
-                    type="number"
-                    value={formData.requirements.minSubscribers}
+                    type="text"
+                    inputMode="numeric"
+                    value={formatNumberInput(formData.requirements.minSubscribers)}
                     onChange={(e) => setFormData(prev => ({
                       ...prev,
-                      requirements: { ...prev.requirements, minSubscribers: e.target.value }
+                      requirements: { ...prev.requirements, minSubscribers: parseNumberInput(e.target.value).toString() }
                     }))}
-                    placeholder="Например: 10000"
-                    min="0"
+                    placeholder="10.000"
                   />
                 </div>
                 
                 <div>
                   <label className="label">Макс. подписчиков</label>
                   <Input
-                    type="number"
-                    value={formData.requirements.maxSubscribers}
+                    type="text"
+                    inputMode="numeric"
+                    value={formatNumberInput(formData.requirements.maxSubscribers)}
                     onChange={(e) => setFormData(prev => ({
                       ...prev,
-                      requirements: { ...prev.requirements, maxSubscribers: e.target.value }
+                      requirements: { ...prev.requirements, maxSubscribers: parseNumberInput(e.target.value).toString() }
                     }))}
-                    placeholder="Например: 500000"
-                    min="0"
+                    placeholder="500.000"
                   />
                 </div>
                 
@@ -391,6 +390,8 @@ export default function CreateListingPage() {
     </Layout>
   )
 }
+
+
 
 
 

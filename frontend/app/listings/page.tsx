@@ -26,7 +26,9 @@ import {
   getCategoryLabel,
   getPostFormatLabel,
   getStatusLabel,
-  getStatusColor
+  getStatusColor,
+  formatNumberInput,
+  parseNumberInput
 } from '@/lib/utils'
 import { listingsApi, analyticsApi } from '@/lib/api'
 import { useQuery } from '@tanstack/react-query'
@@ -291,13 +293,13 @@ export default function ListingsPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-6">
-                <Input type="number" placeholder="Мин. бюджет"
-                  value={filters.minBudget || ''}
-                  onChange={(e) => setFilters(prev => ({ ...prev, minBudget: e.target.value ? parseInt(e.target.value) : undefined }))}
+                <Input type="text" inputMode="numeric" placeholder="Мин. бюджет"
+                  value={formatNumberInput(filters.minBudget)}
+                  onChange={(e) => setFilters(prev => ({ ...prev, minBudget: parseNumberInput(e.target.value) || undefined }))}
                 />
-                <Input type="number" placeholder="Макс. бюджет"
-                  value={filters.maxBudget || ''}
-                  onChange={(e) => setFilters(prev => ({ ...prev, maxBudget: e.target.value ? parseInt(e.target.value) : undefined }))}
+                <Input type="text" inputMode="numeric" placeholder="Макс. бюджет"
+                  value={formatNumberInput(filters.maxBudget)}
+                  onChange={(e) => setFilters(prev => ({ ...prev, maxBudget: parseNumberInput(e.target.value) || undefined }))}
                 />
               </div>
 

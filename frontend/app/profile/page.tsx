@@ -12,7 +12,7 @@ import { authApi, analyticsApi } from '@/lib/api'
 import { UserRole, BloggerCategory } from '@/types'
 import { VerificationModal } from '@/components/VerificationModal'
 import { SocialPlatformsSection } from '@/components/profile/SocialPlatformsSection'
-import { getCategoryLabel } from '@/lib/utils'
+import { getCategoryLabel, formatNumberInput, parseNumberInput } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 
 export default function ProfilePage() {
@@ -526,11 +526,12 @@ export default function ProfilePage() {
                         Количество подписчиков
                       </label>
                       <input
-                        type="number"
-                        value={formData.subscribersCount}
-                        onChange={(e) => setFormData({ ...formData, subscribersCount: e.target.value })}
+                        type="text"
+                        inputMode="numeric"
+                        value={formatNumberInput(formData.subscribersCount)}
+                        onChange={(e) => setFormData({ ...formData, subscribersCount: parseNumberInput(e.target.value).toString() })}
                         className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
-                        placeholder="10000"
+                        placeholder="10.000"
                       />
                     </div>
 
@@ -540,11 +541,12 @@ export default function ProfilePage() {
                         Цена за пост (₽)
                       </label>
                       <input
-                        type="number"
-                        value={formData.pricePerPost}
-                        onChange={(e) => setFormData({ ...formData, pricePerPost: e.target.value })}
+                        type="text"
+                        inputMode="numeric"
+                        value={formatNumberInput(formData.pricePerPost)}
+                        onChange={(e) => setFormData({ ...formData, pricePerPost: parseNumberInput(e.target.value).toString() })}
                         className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
-                        placeholder="5000"
+                        placeholder="5.000"
                       />
                     </div>
 
@@ -554,11 +556,12 @@ export default function ProfilePage() {
                         Цена за сторис (₽)
                       </label>
                       <input
-                        type="number"
-                        value={formData.pricePerStory}
-                        onChange={(e) => setFormData({ ...formData, pricePerStory: e.target.value })}
+                        type="text"
+                        inputMode="numeric"
+                        value={formatNumberInput(formData.pricePerStory)}
+                        onChange={(e) => setFormData({ ...formData, pricePerStory: parseNumberInput(e.target.value).toString() })}
                         className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
-                        placeholder="2000"
+                        placeholder="2.000"
                       />
                     </div>
 

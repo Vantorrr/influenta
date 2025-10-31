@@ -25,7 +25,9 @@ import {
   formatNumber, 
   formatPrice, 
   getCategoryLabel,
-  cn
+  cn,
+  formatNumberInput,
+  parseNumberInput
 } from '@/lib/utils'
 import { bloggersApi, analyticsApi } from '@/lib/api'
 import { useQuery } from '@tanstack/react-query'
@@ -334,21 +336,23 @@ export default function BloggersPage() {
                 <h4 className="font-medium mb-3">Количество подписчиков</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <Input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     placeholder="От"
-                    value={filters.minSubscribers || ''}
+                    value={formatNumberInput(filters.minSubscribers)}
                     onChange={(e) => setFilters(prev => ({
                       ...prev,
-                      minSubscribers: e.target.value ? parseInt(e.target.value) : undefined
+                      minSubscribers: parseNumberInput(e.target.value) || undefined
                     }))}
                   />
                   <Input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     placeholder="До"
-                    value={filters.maxSubscribers || ''}
+                    value={formatNumberInput(filters.maxSubscribers)}
                     onChange={(e) => setFilters(prev => ({
                       ...prev,
-                      maxSubscribers: e.target.value ? parseInt(e.target.value) : undefined
+                      maxSubscribers: parseNumberInput(e.target.value) || undefined
                     }))}
                   />
                 </div>
@@ -359,21 +363,23 @@ export default function BloggersPage() {
                 <h4 className="font-medium mb-3">Цена за пост (₽)</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <Input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     placeholder="От"
-                    value={filters.minPrice || ''}
+                    value={formatNumberInput(filters.minPrice)}
                     onChange={(e) => setFilters(prev => ({
                       ...prev,
-                      minPrice: e.target.value ? parseInt(e.target.value) : undefined
+                      minPrice: parseNumberInput(e.target.value) || undefined
                     }))}
                   />
                   <Input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     placeholder="До"
-                    value={filters.maxPrice || ''}
+                    value={formatNumberInput(filters.maxPrice)}
                     onChange={(e) => setFilters(prev => ({
                       ...prev,
-                      maxPrice: e.target.value ? parseInt(e.target.value) : undefined
+                      maxPrice: parseNumberInput(e.target.value) || undefined
                     }))}
                   />
                 </div>
@@ -423,6 +429,7 @@ export default function BloggersPage() {
     </Layout>
   )
 }
+
 
 
 

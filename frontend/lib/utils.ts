@@ -187,3 +187,17 @@ export function generateInitials(firstName: string, lastName?: string): string {
   return first + last
 }
 
+// Format number input with thousand separators (1000000 -> 1.000.000)
+export function formatNumberInput(value: string | number | undefined): string {
+  if (!value && value !== 0) return ''
+  const num = typeof value === 'string' ? parseInt(value.replace(/\D/g, '')) : value
+  if (isNaN(num)) return ''
+  return num.toLocaleString('ru-RU')
+}
+
+// Parse formatted number input to clean integer
+export function parseNumberInput(value: string): number {
+  const digits = value.replace(/\D/g, '')
+  return digits ? parseInt(digits, 10) : 0
+}
+
