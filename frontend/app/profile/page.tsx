@@ -692,12 +692,19 @@ export default function ProfilePage() {
           </>
         )}
 
-        {/* Контакты и ссылки */}
+        {/* Социальные сети для блогеров */}
+        {user?.role === UserRole.BLOGGER && (
+          <div className="mb-6">
+            <SocialPlatformsSection />
+          </div>
+        )}
+
+        {/* Контакты */}
         <Card className="mb-6">
           <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Контакты и ссылки</h3>
+            <h3 className="text-lg font-semibold mb-4">Контакты</h3>
             <div className="space-y-3">
-              {((user as any).phone || (user as any).website || (user as any).telegramLink || (user as any).instagramLink) ? (
+              {((user as any).phone || (user as any).website) ? (
                 <>
                   {(user as any).phone && (
                     <div className="flex items-center gap-3">
@@ -714,24 +721,6 @@ export default function ProfilePage() {
                       </a>
                     </div>
                   )}
-                  {(user as any).telegramLink && (
-                    <div className="flex items-center gap-3">
-                      <AtSign className="w-4 h-4 text-telegram-textSecondary" />
-                      <a href={(user as any).telegramLink} target="_blank" rel="noopener noreferrer"
-                         className="text-telegram-primary hover:underline">
-                        Telegram канал
-                      </a>
-                    </div>
-                  )}
-                  {(user as any).instagramLink && (
-                    <div className="flex items-center gap-3">
-                      <Globe className="w-4 h-4 text-telegram-textSecondary" />
-                      <a href={(user as any).instagramLink} target="_blank" rel="noopener noreferrer"
-                         className="text-telegram-primary hover:underline">
-                        Instagram
-                      </a>
-                    </div>
-                  )}
                 </>
               ) : (
                 <p className="text-telegram-textSecondary">Контакты не указаны</p>
@@ -739,13 +728,6 @@ export default function ProfilePage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Социальные сети для блогеров */}
-        {user?.role === UserRole.BLOGGER && (
-          <div className="mb-6">
-            <SocialPlatformsSection />
-          </div>
-        )}
 
         {/* Информация о профиле */}
         <Card className="mb-6">
