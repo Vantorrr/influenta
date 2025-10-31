@@ -34,13 +34,15 @@ export class BloggersService {
       query.andWhere('user.isVerified = :isVerified', { isVerified: true });
     }
 
-    // Фильтр по тематикам
+    // Фильтр по тематикам (хотя бы одна из выбранных)
     if (categories && categories.length > 0) {
       // у нас categories в users храним как строку через запятую
-      query.andWhere("user.categories IS NOT NULL AND user.categories <> ''")
-      for (const c of categories) {
-        query.andWhere(`user.categories ILIKE :cat_${c}`, { [`cat_${c}`]: `%${c}%` })
-      }
+      const orConditions = categories.map((c, i) => `user.categories ILIKE :cat_${i}`).join(' OR ')
+      const params: any = {}
+      categories.forEach((c, i) => {
+        params[`cat_${i}`] = `%${c}%`
+      })
+      query.andWhere(`(${orConditions})`, params)
     }
 
     // Фильтр по минимальным подписчикам
