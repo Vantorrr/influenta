@@ -35,8 +35,6 @@ export default function ProfilePage() {
     role: UserRole.BLOGGER,
     phone: '',
     website: '',
-    telegramLink: '',
-    instagramLink: '',
     photoUrl: '',
     // Для блогеров
     subscribersCount: '',
@@ -62,8 +60,6 @@ export default function ProfilePage() {
         role: user.role || UserRole.BLOGGER,
         phone: (user as any).phone || '',
         website: (user as any).website || '',
-        telegramLink: (user as any).telegramLink || '',
-        instagramLink: (user as any).instagramLink || '',
         photoUrl: user.photoUrl || '',
         subscribersCount: (user as any).subscribersCount || '',
         pricePerPost: (user as any).pricePerPost || '',
@@ -88,8 +84,6 @@ export default function ProfilePage() {
         role: formData.role || undefined,
         phone: formData.phone || undefined,
         website: formData.website || undefined,
-        telegramLink: formData.telegramLink || undefined,
-        instagramLink: formData.instagramLink || undefined,
         photoUrl: formData.photoUrl || undefined,
       }
 
@@ -175,8 +169,6 @@ export default function ProfilePage() {
       role: UserRole.BLOGGER,
       phone: '',
       website: '',
-      telegramLink: '',
-      instagramLink: '',
       photoUrl: '',
       subscribersCount: '',
       pricePerPost: '',
@@ -522,36 +514,6 @@ export default function ProfilePage() {
                     onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                     className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
                     placeholder="https://example.com"
-                  />
-                </div>
-
-                {/* Telegram ссылка */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    <AtSign className="w-4 h-4 inline mr-1" />
-                    Telegram канал
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.telegramLink}
-                    onChange={(e) => setFormData({ ...formData, telegramLink: e.target.value })}
-                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
-                    placeholder="https://t.me/channel"
-                  />
-                </div>
-
-                {/* Instagram ссылка */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    <Globe className="w-4 h-4 inline mr-1" />
-                    Instagram
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.instagramLink}
-                    onChange={(e) => setFormData({ ...formData, instagramLink: e.target.value })}
-                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
-                    placeholder="https://instagram.com/username"
                   />
                 </div>
 
