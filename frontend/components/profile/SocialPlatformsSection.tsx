@@ -381,12 +381,14 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
       <div>
         <label className="label">Количество подписчиков</label>
         <Input
-          type="number"
-          value={formData.subscribersCount || ''}
-          onChange={(e) =>
-            setFormData({ ...formData, subscribersCount: e.target.value ? parseInt(e.target.value) : 0 })
-          }
-          placeholder="100000"
+          type="text"
+          inputMode="numeric"
+          value={formData.subscribersCount ? formData.subscribersCount.toLocaleString('ru-RU') : ''}
+          onChange={(e) => {
+            const digits = e.target.value.replace(/\D/g, '')
+            setFormData({ ...formData, subscribersCount: digits ? parseInt(digits) : 0 })
+          }}
+          placeholder="100.000"
           min="0"
         />
       </div>
@@ -397,12 +399,14 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
         <div>
           <label className="label text-sm">Цена за пост</label>
           <Input
-            type="number"
-            value={formData.pricePerPost || ''}
-            onChange={(e) =>
-              setFormData({ ...formData, pricePerPost: e.target.value ? parseFloat(e.target.value) : undefined })
-            }
-            placeholder="5000"
+            type="text"
+            inputMode="numeric"
+            value={formData.pricePerPost ? formData.pricePerPost.toLocaleString('ru-RU') : ''}
+            onChange={(e) => {
+              const digits = e.target.value.replace(/\D/g, '')
+              setFormData({ ...formData, pricePerPost: digits ? parseFloat(digits) : undefined })
+            }}
+            placeholder="5.000"
             min="0"
           />
         </div>
@@ -410,12 +414,14 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
         <div>
           <label className="label text-sm">Цена за сторис</label>
           <Input
-            type="number"
-            value={formData.pricePerStory || ''}
-            onChange={(e) =>
-              setFormData({ ...formData, pricePerStory: e.target.value ? parseFloat(e.target.value) : undefined })
-            }
-            placeholder="2000"
+            type="text"
+            inputMode="numeric"
+            value={formData.pricePerStory ? formData.pricePerStory.toLocaleString('ru-RU') : ''}
+            onChange={(e) => {
+              const digits = e.target.value.replace(/\D/g, '')
+              setFormData({ ...formData, pricePerStory: digits ? parseFloat(digits) : undefined })
+            }}
+            placeholder="2.000"
             min="0"
           />
         </div>
@@ -426,12 +432,14 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
               Цена за {formData.platform === 'youtube' ? 'Shorts' : 'Reels'}
             </label>
             <Input
-              type="number"
-              value={formData.pricePerReel || ''}
-              onChange={(e) =>
-                setFormData({ ...formData, pricePerReel: e.target.value ? parseFloat(e.target.value) : undefined })
-              }
-              placeholder="3000"
+              type="text"
+              inputMode="numeric"
+              value={formData.pricePerReel ? formData.pricePerReel.toLocaleString('ru-RU') : ''}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, '')
+                setFormData({ ...formData, pricePerReel: digits ? parseFloat(digits) : undefined })
+              }}
+              placeholder="3.000"
               min="0"
             />
           </div>
