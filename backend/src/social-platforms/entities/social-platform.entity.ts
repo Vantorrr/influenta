@@ -74,3 +74,4 @@ export class SocialPlatform extends BaseEntity {
   @Column({ default: false })
   isPrimary: boolean; // Main platform for the blogger
 }
+

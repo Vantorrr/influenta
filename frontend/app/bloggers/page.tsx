@@ -74,7 +74,8 @@ export default function BloggersPage() {
     (filters.categories?.length || 0) + 
     (filters.verifiedOnly ? 1 : 0) +
     (filters.minSubscribers ? 1 : 0) +
-    (filters.minPrice || filters.maxPrice ? 1 : 0)
+    (filters.minPrice || filters.maxPrice ? 1 : 0) +
+    (filters.platform ? 1 : 0)
 
   // Реальные данные из БД
   const bloggers = data?.data || []
@@ -295,6 +296,39 @@ export default function BloggersPage() {
                 </div>
               </div>
 
+              {/* Social Platforms */}
+              <div className="mb-6">
+                <h4 className="font-medium mb-3">Социальные сети</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: 'telegram', label: 'Telegram' },
+                    { value: 'instagram', label: 'Instagram' },
+                    { value: 'youtube', label: 'YouTube' },
+                    { value: 'tiktok', label: 'TikTok' },
+                    { value: 'vk', label: 'VKontakte' },
+                    { value: 'other', label: 'Другие' },
+                  ].map(platform => (
+                    <button
+                      key={platform.value}
+                      onClick={() => {
+                        setFilters(prev => ({
+                          ...prev,
+                          platform: prev.platform === platform.value ? undefined : platform.value
+                        }))
+                      }}
+                      className={cn(
+                        'p-3 rounded-lg border-2 text-sm transition-all',
+                        filters.platform === platform.value
+                          ? 'border-telegram-primary bg-telegram-primary/20'
+                          : 'border-gray-600 hover:border-gray-500'
+                      )}
+                    >
+                      {platform.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Subscribers Range */}
               <div className="mb-6">
                 <h4 className="font-medium mb-3">Количество подписчиков</h4>
@@ -389,6 +423,7 @@ export default function BloggersPage() {
     </Layout>
   )
 }
+
 
 
 

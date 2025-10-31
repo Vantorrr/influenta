@@ -94,3 +94,4 @@ export const platformLabels: Record<string, string> = {
   linkedin: 'LinkedIn',
   other: 'Другое',
 }
+

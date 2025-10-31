@@ -68,3 +68,4 @@ export class CreateSocialPlatformDto {
   @IsBoolean()
   isPrimary?: boolean;
 }
+

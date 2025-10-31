@@ -77,3 +77,4 @@ export function PlatformsList({ platforms, compact = false }: PlatformsListProps
     </div>
   )
 }
+

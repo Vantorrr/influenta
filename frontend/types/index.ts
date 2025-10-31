@@ -251,6 +251,7 @@ export interface PaginatedResponse<T> {
 // Filter types
 export interface BloggerFilters {
   categories?: BloggerCategory[]
+  platform?: string
   minSubscribers?: number
   maxSubscribers?: number
   minPrice?: number

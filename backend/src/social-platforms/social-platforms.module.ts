@@ -11,3 +11,4 @@ import { SocialPlatformsController } from './social-platforms.controller';
   exports: [SocialPlatformsService],
 })
 export class SocialPlatformsModule {}
+
