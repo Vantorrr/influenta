@@ -95,3 +95,4 @@ export const platformLabels: Record<string, string> = {
   other: 'Другое',
 }
 
+

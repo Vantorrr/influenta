@@ -75,3 +75,4 @@ export class SocialPlatform extends BaseEntity {
   isPrimary: boolean; // Main platform for the blogger
 }
 
+
