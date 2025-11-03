@@ -50,14 +50,14 @@ export default function ListingsPage() {
   const [showFilters, setShowFilters] = useState(false)
 
   const { data: rawData, isLoading } = useQuery({
-    queryKey: ['my-listings'],
+    queryKey: ['listings', user?.role, search, filters],
     queryFn: async () => {
       // Рекламодатели видят только свои объявления (все статусы)
       if (user?.role === 'advertiser') {
         return await listingsApi.getMyListings(1, 100) // Берем все, фильтруем на фронте
       }
       // Блогеры видят все активные объявления
-      return await listingsApi.search({ status: ListingStatus.ACTIVE, search }, 1, 20)
+      return await listingsApi.search({ status: ListingStatus.ACTIVE, search }, 1, 100)
     },
     enabled: !!user,
   })
