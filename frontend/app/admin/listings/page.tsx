@@ -32,6 +32,7 @@ export default function AdminListingsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [showClosed, setShowClosed] = useState(false)
 
   const handleDelete = async (listingId: string, title: string) => {
     const reason = prompt(`Причина удаления объявления "${title}":`) || 'Модерация администратора'
@@ -53,8 +54,10 @@ export default function AdminListingsPage() {
         return
       }
       
-      // Обновляем список после удаления
-      setItems(prev => prev.filter(l => l.id !== listingId))
+      // Обновляем статус объявления на closed
+      setItems(prev => prev.map(l => 
+        l.id === listingId ? { ...l, status: 'closed' } : l
+      ))
       alert('Объявление закрыто')
     } catch (e: any) {
       alert(`Ошибка: ${e?.message || e}`)
@@ -82,13 +85,24 @@ export default function AdminListingsPage() {
   }, [])
 
   const filtered = useMemo(() => {
+    let result = items
+    
+    // Фильтр по статусу (скрываем закрытые по умолчанию)
+    if (!showClosed) {
+      result = result.filter(l => l.status !== 'closed')
+    }
+    
+    // Фильтр по поиску
     const s = search.trim().toLowerCase()
-    if (!s) return items
-    return items.filter(l => {
-      const hay = `${l.title || ''} ${l.description || ''} ${l.advertiser?.companyName || ''} ${l.advertiser?.user?.username || ''}`.toLowerCase()
-      return hay.includes(s)
-    })
-  }, [items, search])
+    if (s) {
+      result = result.filter(l => {
+        const hay = `${l.title || ''} ${l.description || ''} ${l.advertiser?.companyName || ''} ${l.advertiser?.user?.username || ''}`.toLowerCase()
+        return hay.includes(s)
+      })
+    }
+    
+    return result
+  }, [items, search, showClosed])
 
   if (loading) return <div className="text-telegram-textSecondary">Загрузка объявлений…</div>
   if (error) return (
@@ -99,7 +113,17 @@ export default function AdminListingsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-3xl font-bold">Объявления</h1>
-        <Badge variant="default">Всего: {items.length}</Badge>
+        <Badge variant="default">Активных: {filtered.length}</Badge>
+        {showClosed && <Badge variant="default">Всего: {items.length}</Badge>}
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showClosed}
+            onChange={(e) => setShowClosed(e.target.checked)}
+            className="w-4 h-4 rounded"
+          />
+          <span className="text-sm">Показать закрытые</span>
+        </label>
         <div className="ml-auto w-full sm:w-72">
           <Input placeholder="Поиск по названию/рекламодателю" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
@@ -137,13 +161,15 @@ export default function AdminListingsPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <Link href={`/admin/listings/${l.id}`} className="text-telegram-primary hover:underline">Открыть</Link>
-                      <Button
-                        size="sm"
-                        variant="danger"
-                        onClick={() => handleDelete(l.id, l.title)}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
+                      {l.status !== 'closed' && (
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => handleDelete(l.id, l.title)}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
