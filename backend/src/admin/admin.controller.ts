@@ -108,6 +108,16 @@ export class AdminController {
   async getListingDetailAdmin(@Param('id') id: string) {
     return this.adminService.getListingDetailAdmin(id);
   }
+
+  // Админ: удалить/закрыть объявление
+  @Patch('listings/:id/delete')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  async deleteListing(
+    @Param('id') id: string,
+    @Body() body: { reason?: string }
+  ) {
+    return this.adminService.deleteListing(id, body?.reason || 'Модерация администратора');
+  }
 }
 
 

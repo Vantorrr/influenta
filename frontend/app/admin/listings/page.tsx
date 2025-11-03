@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Trash2 } from 'lucide-react'
 import { formatDateTime, formatPrice, getPostFormatLabel } from '@/lib/utils'
 
 type AdminListing = {
@@ -30,6 +32,34 @@ export default function AdminListingsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+
+  const handleDelete = async (listingId: string, title: string) => {
+    const reason = prompt(`Причина удаления объявления "${title}":`) || 'Модерация администратора'
+    if (!confirm(`Удалить объявление "${title}"?`)) return
+    
+    try {
+      const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/listings/${listingId}/delete`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason })
+      })
+      
+      if (!resp.ok) {
+        const text = await resp.text()
+        alert(`Ошибка: ${resp.status} ${text}`)
+        return
+      }
+      
+      // Обновляем список после удаления
+      setItems(prev => prev.filter(l => l.id !== listingId))
+      alert('Объявление закрыто')
+    } catch (e: any) {
+      alert(`Ошибка: ${e?.message || e}`)
+    }
+  }
 
   useEffect(() => {
     ;(async () => {
@@ -105,7 +135,16 @@ export default function AdminListingsPage() {
                   </td>
                   <td className="px-4 py-3">{formatDateTime(l.createdAt as any)}</td>
                   <td className="px-4 py-3">
-                    <Link href={`/admin/listings/${l.id}`} className="text-telegram-primary hover:underline">Открыть</Link>
+                    <div className="flex items-center gap-2">
+                      <Link href={`/admin/listings/${l.id}`} className="text-telegram-primary hover:underline">Открыть</Link>
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={() => handleDelete(l.id, l.title)}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
