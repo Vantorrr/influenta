@@ -5,3 +5,4 @@ export class UpdateSocialPlatformDto extends PartialType(CreateSocialPlatformDto
 
 
 
+

@@ -91,7 +91,6 @@ export class BloggersService {
       categories: user.categories ? user.categories.split(',').filter(Boolean) : [],
       subscribersCount: user.subscribersCount || 0,
       averageViews: Math.floor((user.subscribersCount || 0) * 0.35), // ~35% от подписчиков
-      engagementRate: 0, // TODO: Рассчитывать на основе реальной статистики
       pricePerPost: user.pricePerPost || 0,
       pricePerStory: user.pricePerStory || 0,
       isVerified: user.isVerified,
@@ -132,7 +131,6 @@ export class BloggersService {
       categories: user.categories ? user.categories.split(',').filter(Boolean) : [],
       subscribersCount: user.subscribersCount || 0,
       averageViews: Math.floor((user.subscribersCount || 0) * 0.35), // ~35% от подписчиков
-      engagementRate: 0, // TODO: Рассчитывать на основе реальной статистики
       pricePerPost: user.pricePerPost || 0,
       pricePerStory: user.pricePerStory || 0,
       isVerified: user.isVerified,

@@ -44,9 +44,6 @@ export class Blogger extends BaseEntity {
   @Column({ default: 0 })
   averageViews: number;
 
-  @Column({ default: 0 })
-  engagementRate: number;
-
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   pricePerPost: number;
 

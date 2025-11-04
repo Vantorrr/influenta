@@ -31,7 +31,6 @@ export interface Blogger {
   categories: BloggerCategory[]
   subscribersCount: number
   averageViews: number
-  engagementRate: number
   pricePerPost: number
   pricePerStory?: number
   postExamples: PostExample[]
@@ -119,7 +118,6 @@ export interface Listing {
 export interface ListingRequirements {
   minSubscribers?: number
   maxSubscribers?: number
-  minEngagementRate?: number
   verifiedOnly?: boolean
 }
 

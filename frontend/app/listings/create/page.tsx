@@ -41,7 +41,6 @@ export default function CreateListingPage() {
     requirements: {
       minSubscribers: '',
       maxSubscribers: '',
-      minEngagementRate: '',
       verifiedOnly: false,
     },
     deadline: '',
@@ -101,13 +100,10 @@ export default function CreateListingPage() {
         targetCategories: formData.targetCategories,
         budget: parseFloat(formData.budget),
         format: formData.format,
-        // DTO допускает только: minSubscribers, minEngagementRate, verifiedOnly
+        // DTO допускает только: minSubscribers, verifiedOnly
         requirements: {
           minSubscribers: formData.requirements.minSubscribers
             ? parseInt(formData.requirements.minSubscribers)
-            : undefined,
-          minEngagementRate: formData.requirements.minEngagementRate
-            ? parseFloat(formData.requirements.minEngagementRate)
             : undefined,
           verifiedOnly: formData.requirements.verifiedOnly,
         },
@@ -118,7 +114,6 @@ export default function CreateListingPage() {
       if (req.requirements) {
         const cleanReq: any = {}
         if (req.requirements.minSubscribers !== undefined) cleanReq.minSubscribers = req.requirements.minSubscribers
-        if (req.requirements.minEngagementRate !== undefined) cleanReq.minEngagementRate = req.requirements.minEngagementRate
         if (req.requirements.verifiedOnly !== undefined) cleanReq.verifiedOnly = req.requirements.verifiedOnly
         req.requirements = cleanReq
       }
@@ -291,7 +286,7 @@ export default function CreateListingPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="label">Мин. подписчиков</label>
                   <Input
@@ -319,23 +314,6 @@ export default function CreateListingPage() {
                     placeholder="500.000"
                   />
                 </div>
-                
-                <div>
-                  <label className="label">Мин. вовлеченность (%)</label>
-                  <Input
-                    type="number"
-                    value={formData.requirements.minEngagementRate}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      requirements: { ...prev.requirements, minEngagementRate: e.target.value }
-                    }))}
-                    placeholder="Например: 3.5"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                  />
-                </div>
-                
               </div>
               
               <label className="flex items-center gap-3 cursor-pointer">
@@ -390,6 +368,10 @@ export default function CreateListingPage() {
     </Layout>
   )
 }
+
+
+
+
 
 
 
