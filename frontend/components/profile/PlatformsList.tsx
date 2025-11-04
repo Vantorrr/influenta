@@ -60,6 +60,11 @@ export function PlatformsList({ platforms, compact = false }: PlatformsListProps
             <p className="text-sm text-telegram-textSecondary mb-2">
               @{platform.username}
             </p>
+            {platform.url && (
+              <a href={platform.url} target="_blank" rel="noopener noreferrer" className="text-sm text-telegram-primary underline mb-2 inline-block">
+                Открыть профиль
+              </a>
+            )}
             <div className="flex flex-wrap gap-3 text-sm">
               <div className="flex items-center gap-1">
                 <Eye className="w-3.5 h-3.5 text-telegram-textSecondary" />
@@ -72,6 +77,16 @@ export function PlatformsList({ platforms, compact = false }: PlatformsListProps
                 </div>
               )}
             </div>
+
+            {Array.isArray(platform.statisticsScreenshots) && platform.statisticsScreenshots.length > 0 && (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {platform.statisticsScreenshots.slice(0, 6).map((src, idx) => (
+                  <button key={idx} onClick={() => window.open(src, "_blank")} className="relative group" aria-label="Открыть скриншот">
+                    <img src={src} alt="Скриншот статистики" loading="lazy" className="w-full h-24 object-cover rounded-lg border border-telegram-border group-hover:opacity-90" onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden" }} />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       ))}
