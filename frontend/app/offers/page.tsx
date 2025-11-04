@@ -102,6 +102,16 @@ export default function OffersPage() {
                           ? `От: ${offer.advertiser?.user?.firstName} ${offer.advertiser?.user?.lastName || ''}`
                           : `Блогеру: ${offer.blogger?.user?.firstName} ${offer.blogger?.user?.lastName || ''}`}
                       </p>
+                      {user?.role === 'advertiser' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => router.push(`/bloggers/${offer.blogger?.user?.id || offer.blogger?.id}`)}
+                          className="px-0 text-telegram-primary"
+                        >
+                          Открыть профиль блогера
+                        </Button>
+                      )}
                     </div>
                     {getStatusBadge(offer.status)}
                   </div>

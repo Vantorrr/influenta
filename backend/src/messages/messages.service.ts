@@ -25,6 +25,21 @@ export class MessagesService {
     });
     return this.messagesRepository.save(message);
   }
+
+  async getByChat(chatId: string, page = 1, limit = 50) {
+    const [data, total] = await this.messagesRepository.findAndCount({
+      where: { chatId },
+      order: { createdAt: 'ASC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return { data, total };
+  }
+
+  async markAsRead(id: string) {
+    await this.messagesRepository.update({ id }, { isRead: true });
+    return this.messagesRepository.findOne({ where: { id } });
+  }
 }
 
 
