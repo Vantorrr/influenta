@@ -292,7 +292,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
 
       {/* Форма ввода */}
       <div className="p-4 pb-2 border-t border-gray-700/50 bg-telegram-bgSecondary">
-        <div className="flex items-end gap-2">
+        <div className="flex items-center gap-2">
           <textarea
             ref={inputRef}
             value={message}
