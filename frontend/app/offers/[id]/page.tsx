@@ -11,8 +11,9 @@ import { formatDate, formatPrice } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { 
   ArrowLeft, Clock, CheckCircle, XCircle, MessageSquare, 
-  DollarSign, Calendar, User, Briefcase, FileText 
+  RubIcon, Calendar, User, Briefcase, FileText 
 } from 'lucide-react'
+import { RubIcon } from '@/components/ui/ruble-icon'
 
 export default function OfferDetailsPage() {
   const params = useParams() as { id: string }
@@ -156,7 +157,7 @@ export default function OfferDetailsPage() {
             <div className="space-y-4 mb-6">
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className="w-4 h-4 text-telegram-textSecondary" />
+                  <RubIcon className="w-4 h-4 text-telegram-textSecondary" />
                   <span className="font-medium">Бюджет</span>
                 </div>
                 <div className="text-xl font-bold text-telegram-primary">

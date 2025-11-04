@@ -7,12 +7,13 @@ import {
   ArrowLeft,
   Save,
   Calendar,
-  DollarSign,
+  RubIcon,
   FileText,
   Target,
   Users,
   AlertCircle
 } from 'lucide-react'
+import { RubIcon } from '@/components/ui/ruble-icon'
 import Link from 'next/link'
 import { Layout } from '@/components/layout/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -243,7 +244,7 @@ export default function CreateListingPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5" />
+                <RubIcon className="w-5 h-5" />
                 Бюджет и сроки
               </CardTitle>
             </CardHeader>

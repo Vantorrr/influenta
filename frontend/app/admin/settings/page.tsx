@@ -5,7 +5,6 @@ import { motion } from 'framer-motion'
 import { 
   Settings as SettingsIcon,
   Globe,
-  DollarSign,
   Shield,
   Bell,
   Database,
@@ -15,6 +14,7 @@ import {
   CheckCircle
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { RubIcon } from '@/components/ui/ruble-icon'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -113,7 +113,7 @@ export default function AdminSettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <DollarSign className="w-5 h-5" />
+            <RubIcon className="text-xl" />
             Комиссии и платежи
           </CardTitle>
         </CardHeader>

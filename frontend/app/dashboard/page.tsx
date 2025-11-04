@@ -8,13 +8,13 @@ import {
   Briefcase, 
   MessageSquare,
   Eye,
-  DollarSign,
   Activity,
   Search,
   User,
   PlusCircle
 } from 'lucide-react'
 import { Layout } from '@/components/layout/navigation'
+import { RubIcon } from '@/components/ui/ruble-icon'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -87,7 +87,7 @@ export default function DashboardPage() {
       title: 'Потрачено',
       value: stats?.totalSpent ? formatPrice(stats.totalSpent) : '₽0',
       change: stats?.totalSpentChange ? `+${stats.totalSpentChange}%` : '0%',
-      icon: DollarSign,
+      icon: RubIcon,
       color: 'from-green-500 to-emerald-500',
     },
     {

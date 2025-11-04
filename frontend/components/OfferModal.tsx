@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Send, DollarSign, Calendar, FileText, Camera, MessageSquare } from 'lucide-react'
+import { X, Send, RubIcon, Calendar, FileText, Camera, MessageSquare } from 'lucide-react'
+import { RubIcon } from '@/components/ui/ruble-icon'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -134,7 +135,7 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     <span className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-telegram-primary" />
+                      <RubIcon className="w-4 h-4 text-telegram-primary" />
                       Бюджет
                       <span className="text-red-500">*</span>
                     </span>

@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Edit, Save, X, User, Mail, AtSign, FileText, Phone, Globe, Users2, DollarSign, Shield, CheckCircle, AlertCircle, Clock, Camera, Upload } from 'lucide-react'
+import { Edit, Save, X, User, Mail, AtSign, FileText, Phone, Globe, Users2, Shield, CheckCircle, AlertCircle, Clock, Camera, Upload } from 'lucide-react'
 import { Layout } from '@/components/layout/navigation'
+import { RubIcon } from '@/components/ui/ruble-icon'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
@@ -537,7 +538,7 @@ export default function ProfilePage() {
 
                     <div>
                       <label className="block text-sm font-medium mb-2">
-                        <DollarSign className="w-4 h-4 inline mr-1" />
+                        <RubIcon className="text-sm inline mr-1" />
                         Цена за пост (₽)
                       </label>
                       <input
@@ -552,7 +553,7 @@ export default function ProfilePage() {
 
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium mb-2">
-                        <DollarSign className="w-4 h-4 inline mr-1" />
+                        <RubIcon className="text-sm inline mr-1" />
                         Цена за сторис (₽)
                       </label>
                       <input

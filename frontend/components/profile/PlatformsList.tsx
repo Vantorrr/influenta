@@ -1,5 +1,6 @@
 import React from 'react'
-import { Eye, DollarSign } from 'lucide-react'
+import { Eye, RubIcon } from 'lucide-react'
+import { RubIcon } from '@/components/ui/ruble-icon'
 import { SocialPlatform } from '@/types'
 import { getPlatformIcon, platformLabels } from '@/components/icons/PlatformIcons'
 import { formatNumber, formatPrice } from '@/lib/utils'
@@ -66,7 +67,7 @@ export function PlatformsList({ platforms, compact = false }: PlatformsListProps
               </div>
               {platform.pricePerPost && (
                 <div className="flex items-center gap-1">
-                  <DollarSign className="w-3.5 h-3.5 text-telegram-textSecondary" />
+                  <RubIcon className="w-3.5 h-3.5 text-telegram-textSecondary" />
                   <span>Пост: {formatPrice(platform.pricePerPost)}</span>
                 </div>
               )}

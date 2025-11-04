@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button'
 import { offersApi } from '@/lib/api'
 import { formatDate, formatPrice } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
-import { Clock, CheckCircle, XCircle, MessageSquare, DollarSign, Calendar } from 'lucide-react'
+import { Clock, CheckCircle, XCircle, MessageSquare, RubIcon, Calendar } from 'lucide-react'
+import { RubIcon } from '@/components/ui/ruble-icon'
 import { useRouter } from 'next/navigation'
 
 export default function OffersPage() {
@@ -107,7 +108,7 @@ export default function OffersPage() {
 
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center gap-2 text-sm">
-                      <DollarSign className="w-4 h-4 text-telegram-textSecondary" />
+                      <RubIcon className="w-4 h-4 text-telegram-textSecondary" />
                       <span>Бюджет: {formatPrice(offer.proposedBudget)}</span>
                     </div>
                     {offer.deadline && (

@@ -6,7 +6,8 @@ import { Layout } from '@/components/layout/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Building, Globe, Shield, ArrowLeft, FileText, DollarSign } from 'lucide-react'
+import { Building, Globe, Shield, ArrowLeft, FileText, RubIcon } from 'lucide-react'
+import { RubIcon } from '@/components/ui/ruble-icon'
 import { advertisersApi } from '@/lib/api'
 import { formatDate, formatPrice } from '@/lib/utils'
 
@@ -117,7 +118,7 @@ export default function AdminAdvertiserDetailsPage() {
                 <FileText className="w-4 h-4 mr-2" /> Объявления
               </Button>
               <Button variant="secondary" onClick={() => { window.location.href = '/admin/dashboard' }}>
-                <DollarSign className="w-4 h-4 mr-2" /> Дашборд
+                <RubIcon className="w-4 h-4 mr-2" /> Дашборд
               </Button>
             </div>
           </CardContent>

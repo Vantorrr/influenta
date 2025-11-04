@@ -10,7 +10,6 @@ import {
   Briefcase, 
   Camera, 
   Target, 
-  DollarSign, 
   Building,
   Link as LinkIcon,
   CheckCircle,
@@ -21,6 +20,7 @@ import {
 } from 'lucide-react'
 import { CATEGORY_LABELS } from '@/lib/constants'
 import { authApi, analyticsApi } from '@/lib/api'
+import { RubIcon } from '@/components/ui/ruble-icon'
 import { UserRole } from '@/types'
 
 // Branded minimal icons (no external deps)
@@ -125,7 +125,7 @@ function OnboardingInner() {
     {
       title: 'Стоимость',
       description: 'Установите цены на рекламу',
-      icon: DollarSign,
+      icon: RubIcon,
     },
   ]
 

@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Calendar, DollarSign, MessageSquare, Shield, Save, Trash2, X, Edit, CheckCircle, XCircle, Pause } from 'lucide-react'
+import { ArrowLeft, Calendar, MessageSquare, Shield, Save, Trash2, X, Edit, CheckCircle, XCircle, Pause } from 'lucide-react'
 import { Layout } from '@/components/layout/navigation'
+import { RubIcon } from '@/components/ui/ruble-icon'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -421,7 +422,7 @@ export default function ListingDetailsPage() {
                 <div className="flex gap-3 pt-1">
                   <Button variant="secondary" fullWidth onClick={() => setShowRespond(false)}>Отмена</Button>
                   <Button variant="primary" fullWidth onClick={handleSendResponse} disabled={respLoading}>
-                    <DollarSign className="w-4 h-4 mr-2" /> {respLoading ? 'Отправка...' : 'Отправить'}
+                    <RubIcon className="text-base mr-2" /> {respLoading ? 'Отправка...' : 'Отправить'}
                   </Button>
                 </div>
               </div>

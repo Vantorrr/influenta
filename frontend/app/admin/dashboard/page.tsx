@@ -8,7 +8,6 @@ import {
   Briefcase, 
   FileText,
   TrendingUp,
-  DollarSign,
   Activity,
   Eye,
   ArrowUp,
@@ -17,6 +16,7 @@ import {
   Crown
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { RubIcon } from '@/components/ui/ruble-icon'
 import { Badge } from '@/components/ui/badge'
 import { formatNumber, formatPrice, getRelativeTime } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
@@ -76,7 +76,7 @@ export default function AdminDashboardPage() {
       title: 'Комиссия платформы',
       value: stats.platformCommission || 0,
       change: 0, // TODO: Calculate change
-      icon: DollarSign,
+      icon: RubIcon,
       color: 'from-green-500 to-emerald-500',
     },
   ] : [
@@ -105,7 +105,7 @@ export default function AdminDashboardPage() {
       title: 'Комиссия платформы',
       value: 0,
       change: 0,
-      icon: DollarSign,
+      icon: RubIcon,
       color: 'from-green-500 to-emerald-500',
     },
   ]
@@ -269,7 +269,7 @@ export default function AdminDashboardPage() {
               </div>
               <div className="text-right">
                 <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-2">
-                  <DollarSign className="w-8 h-8" />
+                  <RubIcon className="text-3xl text-white" />
                 </div>
                 <div className="flex items-center gap-1 text-sm">
                   <ArrowUp className="w-4 h-4" />

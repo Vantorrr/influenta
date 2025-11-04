@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   SlidersHorizontal, 
   Search as SearchIcon, 
-  DollarSign, 
   Calendar,
   Eye,
   MessageSquare,
@@ -14,6 +13,7 @@ import {
   PlusCircle
 } from 'lucide-react'
 import Link from 'next/link'
+import { RubIcon } from '@/components/ui/ruble-icon'
 import { Layout } from '@/components/layout/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'

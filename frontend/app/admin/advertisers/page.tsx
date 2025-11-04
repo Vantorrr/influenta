@@ -6,7 +6,6 @@ import {
   Search as SearchIcon, 
   SlidersHorizontal,
   Building,
-  DollarSign,
   FileText,
   Globe,
   Shield,
@@ -16,6 +15,7 @@ import {
   BarChart
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { RubIcon } from '@/components/ui/ruble-icon'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -137,7 +137,7 @@ export default function AdminAdvertisersPage() {
                 <p className="text-2xl font-bold">{formatPrice(stats.totalSpent)}</p>
                 <p className="text-sm text-telegram-textSecondary">Общие расходы</p>
               </div>
-              <DollarSign className="w-8 h-8 text-yellow-500" />
+              <RubIcon className="text-2xl text-yellow-500" />
             </div>
           </CardContent>
         </Card>
