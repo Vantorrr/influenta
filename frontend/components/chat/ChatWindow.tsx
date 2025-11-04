@@ -5,15 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   ArrowLeft,
   Send,
-  Paperclip,
-  Image as ImageIcon,
-  MoreVertical,
   Info,
   CheckCircle,
   Clock,
   X,
-  File,
-  Link as LinkIcon
 } from 'lucide-react'
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -28,12 +23,6 @@ interface Message {
   senderId: string
   createdAt: Date
   isRead: boolean
-  attachments?: Array<{
-    type: 'image' | 'document' | 'link'
-    url: string
-    name?: string
-    size?: number
-  }>
 }
 
 interface ChatWindowProps {
@@ -46,7 +35,6 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [isTyping, setIsTyping] = useState(false)
-  const [showAttachMenu, setShowAttachMenu] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const typingTimer = useRef<any>(null)
@@ -65,7 +53,6 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
           senderId: m.senderId,
           createdAt: new Date(m.createdAt),
           isRead: !!m.isRead,
-          attachments: m.attachments || [],
         }))
         setMessages(normalized.reverse())
         // Отметим как прочитанные входящие
@@ -248,32 +235,6 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
                   >
                     <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                     
-                    {msg.attachments && msg.attachments.length > 0 && (
-                      <div className="mt-2 space-y-2">
-                        {msg.attachments.map((attachment, idx) => (
-                          <div key={idx} className="flex items-center gap-2">
-                            {attachment.type === 'image' ? (
-                              <div className="relative">
-                                <div className="w-48 h-32 bg-telegram-bg rounded-lg flex items-center justify-center">
-                                  <ImageIcon className="w-8 h-8 text-telegram-textSecondary" />
-                                </div>
-                                <p className="text-xs mt-1">{attachment.name}</p>
-                              </div>
-                            ) : attachment.type === 'document' ? (
-                              <div className="flex items-center gap-2 p-2 bg-telegram-bg/50 rounded-lg">
-                                <File className="w-5 h-5" />
-                                <span className="text-sm">{attachment.name}</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-2 p-2 bg-telegram-bg/50 rounded-lg">
-                                <LinkIcon className="w-5 h-5" />
-                                <span className="text-sm">{attachment.url}</span>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
                   
                   <div className="flex items-center gap-2 px-2">
@@ -332,41 +293,6 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
       {/* Форма ввода */}
       <div className="p-4 pb-2 border-t border-gray-700/50 bg-telegram-bgSecondary">
         <div className="flex items-end gap-2">
-          <div className="relative">
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setShowAttachMenu(!showAttachMenu)}
-              className="p-2 hover:bg-telegram-bg rounded-lg transition-colors"
-            >
-              <Paperclip className="w-5 h-5" />
-            </motion.button>
-            
-            <AnimatePresence>
-              {showAttachMenu && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.8, y: 10 }}
-                  className="absolute bottom-full left-0 mb-2 bg-telegram-bgSecondary rounded-lg shadow-lg p-2"
-                >
-                  <button className="flex items-center gap-2 px-3 py-2 hover:bg-telegram-bg rounded-lg transition-colors w-full">
-                    <ImageIcon className="w-4 h-4" />
-                    <span className="text-sm">Фото</span>
-                  </button>
-                  <button className="flex items-center gap-2 px-3 py-2 hover:bg-telegram-bg rounded-lg transition-colors w-full">
-                    <File className="w-4 h-4" />
-                    <span className="text-sm">Файл</span>
-                  </button>
-                  <button className="flex items-center gap-2 px-3 py-2 hover:bg-telegram-bg rounded-lg transition-colors w-full">
-                    <LinkIcon className="w-4 h-4" />
-                    <span className="text-sm">Ссылка</span>
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-          
           <textarea
             ref={inputRef}
             value={message}
