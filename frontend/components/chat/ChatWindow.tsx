@@ -5,17 +5,22 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   ArrowLeft,
   Send,
+  Paperclip,
+  Image as ImageIcon,
+  MoreVertical,
+  Phone,
+  Video,
   Info,
   CheckCircle,
   Clock,
   X,
+  File,
+  Link as LinkIcon
 } from 'lucide-react'
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatTime, getRelativeTime } from '@/lib/utils'
-import { messagesApi } from '@/lib/api'
-import { chatService } from '@/lib/chat.service'
 
 interface Message {
   id: string
@@ -23,6 +28,12 @@ interface Message {
   senderId: string
   createdAt: Date
   isRead: boolean
+  attachments?: Array<{
+    type: 'image' | 'document' | 'link'
+    url: string
+    name?: string
+    size?: number
+  }>
 }
 
 interface ChatWindowProps {
@@ -35,110 +46,94 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [isTyping, setIsTyping] = useState(false)
+  const [showAttachMenu, setShowAttachMenu] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
-  const typingTimer = useRef<any>(null)
 
-  // Загрузка реальных сообщений и подключение к комнате
+  // Mock сообщения
   useEffect(() => {
-    let isMounted = true
-    const load = async () => {
-      try {
-        const res = await messagesApi.getByResponse(chat.responseId, 1, 200)
-        const items = (res as any)?.data || res?.data || []
-        if (!isMounted) return
-        const normalized = items.map((m: any) => ({
-          id: m.id,
-          content: m.content,
-          senderId: m.senderId,
-          createdAt: new Date(m.createdAt),
-          isRead: !!m.isRead,
-        }))
-        setMessages(normalized.reverse())
-        // Отметим как прочитанные входящие
-        for (const m of normalized) {
-          if (!m.isRead && m.senderId !== currentUserId) {
-            try { await messagesApi.markAsRead(m.id) } catch {}
-          }
-        }
-      } catch {
-        setMessages([])
-      }
-    }
-    load()
-
-    // Подключаемся к комнате чата
-    try { chatService.joinChat(chat.responseId) } catch {}
-
-    // Слушатель новых сообщений
-    const onNewMessage = (data: any) => {
-      if (data?.responseId !== chat.responseId) return
-      const incoming: Message = {
-        id: data.id,
-        content: data.content,
-        senderId: data.senderId,
-        createdAt: new Date(data.createdAt || Date.now()),
-        isRead: data.isRead ?? (data.senderId === currentUserId),
-      }
-      setMessages(prev => [...prev, incoming])
-      if (incoming.senderId !== currentUserId && !incoming.isRead) {
-        try { messagesApi.markAsRead(incoming.id) } catch {}
-      }
-    }
-    const onTyping = (data: any) => {
-      if (data?.responseId !== chat.responseId || data?.userId === currentUserId) return
-      setIsTyping(true)
-      if (typingTimer.current) clearTimeout(typingTimer.current)
-      typingTimer.current = setTimeout(() => setIsTyping(false), 1500)
-    }
-    chatService.on('message', onNewMessage)
-    chatService.on('typing', onTyping)
-
-    return () => {
-      isMounted = false
-      try { chatService.leaveChat(chat.responseId) } catch {}
-      chatService.off('message', onNewMessage)
-      chatService.off('typing', onTyping)
-    }
-  }, [chat.responseId, currentUserId])
+    setMessages([
+      {
+        id: '1',
+        content: 'Здравствуйте! Заинтересовало ваше предложение о рекламе.',
+        senderId: '2',
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
+        isRead: true,
+      },
+      {
+        id: '2',
+        content: 'Добрый день! Отлично, давайте обсудим детали. Какой у вас охват аудитории?',
+        senderId: currentUserId,
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 23),
+        isRead: true,
+      },
+      {
+        id: '3',
+        content: 'У меня 125К подписчиков, средний охват постов около 45К просмотров. В основном женская аудитория 18-35 лет.',
+        senderId: '2',
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 22),
+        isRead: true,
+      },
+      {
+        id: '4',
+        content: 'Отлично подходит под нашу ЦА! Можете показать примеры интеграций?',
+        senderId: currentUserId,
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 20),
+        isRead: true,
+      },
+      {
+        id: '5',
+        content: 'Конечно, вот несколько последних работ:',
+        senderId: '2',
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 19),
+        isRead: true,
+        attachments: [
+          { type: 'image', url: '/example1.jpg', name: 'Пример поста 1' },
+          { type: 'image', url: '/example2.jpg', name: 'Пример поста 2' },
+        ],
+      },
+      {
+        id: '6',
+        content: 'Отличная подача! Давайте работать вместе. Готовы начать?',
+        senderId: currentUserId,
+        createdAt: new Date(Date.now() - 1000 * 60 * 30),
+        isRead: true,
+      },
+      {
+        id: '7',
+        content: 'Отлично! Готова начать работу над постом. Когда нужно опубликовать?',
+        senderId: '2',
+        createdAt: new Date(Date.now() - 1000 * 60 * 15),
+        isRead: false,
+      },
+    ])
+  }, [currentUserId])
 
   // Автоскролл к последнему сообщению
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const sendMessage = async () => {
+  const sendMessage = () => {
     if (!message.trim()) return
-    const content = message
-    setMessage('')
-    try {
-      console.log('📤 Sending message:', { responseId: chat.responseId, content })
-      const res = await messagesApi.send(chat.responseId, content)
-      console.log('✅ Message sent:', res)
-      const m = (res as any)?.data || res
-      const newMessage: Message = {
-        id: m.id || Date.now().toString(),
-        content: m.content || content,
-        senderId: m.senderId || currentUserId,
-        createdAt: new Date(m.createdAt || Date.now()),
-        isRead: !!m.isRead,
-      }
-      setMessages(prev => [...prev, newMessage])
-      try { chatService.stopTyping(chat.responseId) } catch {}
-    } catch (e: any) {
-      console.error('❌ Message send error:', e)
-      alert(`Не удалось отправить: ${e?.response?.data?.message || e?.message || 'Неизвестная ошибка'}`)
-      // Возвращаем текст в инпут, если не отправилось
-      setMessage(content)
-    }
-  }
 
-  // Отправляем индикатор набора текста
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(e.target.value)
-    try { chatService.startTyping(chat.responseId) } catch {}
-    if (typingTimer.current) clearTimeout(typingTimer.current)
-    typingTimer.current = setTimeout(() => { try { chatService.stopTyping(chat.responseId) } catch {} }, 1000)
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      content: message,
+      senderId: currentUserId,
+      createdAt: new Date(),
+      isRead: false,
+    }
+
+    setMessages([...messages, newMessage])
+    setMessage('')
+    
+    // Имитация ответа
+    setIsTyping(true)
+    setTimeout(() => {
+      setIsTyping(false)
+      // Можно добавить автоответ
+    }, 2000)
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -177,7 +172,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
             size="sm"
           />
           
-          <div>
+          <div onClick={() => { if (chat.otherUser?.role === 'blogger' && chat.otherUser?.id) { window.location.href = `/bloggers/${chat.otherUser.id}` } }} className={chat.otherUser?.role === 'blogger' && chat.otherUser?.id ? 'cursor-pointer' : ''}>
             <h3 className="font-medium flex items-center gap-2">
               {chat.otherUser.firstName} {chat.otherUser.lastName}
               {chat.status === 'accepted' && (
@@ -192,6 +187,29 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
           </div>
         </div>
         
+        <div className="flex items-center gap-2">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="p-2 hover:bg-telegram-bg rounded-lg transition-colors"
+          >
+            <Phone className="w-5 h-5" />
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="p-2 hover:bg-telegram-bg rounded-lg transition-colors"
+          >
+            <Video className="w-5 h-5" />
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="p-2 hover:bg-telegram-bg rounded-lg transition-colors"
+          >
+            <Info className="w-5 h-5" />
+          </motion.button>
+        </div>
       </div>
 
       {/* Сообщения */}
@@ -235,6 +253,32 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
                   >
                     <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                     
+                    {msg.attachments && msg.attachments.length > 0 && (
+                      <div className="mt-2 space-y-2">
+                        {msg.attachments.map((attachment, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            {attachment.type === 'image' ? (
+                              <div className="relative">
+                                <div className="w-48 h-32 bg-telegram-bg rounded-lg flex items-center justify-center">
+                                  <ImageIcon className="w-8 h-8 text-telegram-textSecondary" />
+                                </div>
+                                <p className="text-xs mt-1">{attachment.name}</p>
+                              </div>
+                            ) : attachment.type === 'document' ? (
+                              <div className="flex items-center gap-2 p-2 bg-telegram-bg/50 rounded-lg">
+                                <File className="w-5 h-5" />
+                                <span className="text-sm">{attachment.name}</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 p-2 bg-telegram-bg/50 rounded-lg">
+                                <LinkIcon className="w-5 h-5" />
+                                <span className="text-sm">{attachment.url}</span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   
                   <div className="flex items-center gap-2 px-2">
@@ -291,12 +335,47 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
       </div>
 
       {/* Форма ввода */}
-      <div className="p-4 pb-2 border-t border-gray-700/50 bg-telegram-bgSecondary">
-        <div className="flex items-center gap-2">
+      <div className="p-4 border-t border-gray-700/50 bg-telegram-bgSecondary">
+        <div className="flex items-end gap-2">
+          <div className="relative">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setShowAttachMenu(!showAttachMenu)}
+              className="p-2 hover:bg-telegram-bg rounded-lg transition-colors"
+            >
+              <Paperclip className="w-5 h-5" />
+            </motion.button>
+            
+            <AnimatePresence>
+              {showAttachMenu && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.8, y: 10 }}
+                  className="absolute bottom-full left-0 mb-2 bg-telegram-bgSecondary rounded-lg shadow-lg p-2"
+                >
+                  <button className="flex items-center gap-2 px-3 py-2 hover:bg-telegram-bg rounded-lg transition-colors w-full">
+                    <ImageIcon className="w-4 h-4" />
+                    <span className="text-sm">Фото</span>
+                  </button>
+                  <button className="flex items-center gap-2 px-3 py-2 hover:bg-telegram-bg rounded-lg transition-colors w-full">
+                    <File className="w-4 h-4" />
+                    <span className="text-sm">Файл</span>
+                  </button>
+                  <button className="flex items-center gap-2 px-3 py-2 hover:bg-telegram-bg rounded-lg transition-colors w-full">
+                    <LinkIcon className="w-4 h-4" />
+                    <span className="text-sm">Ссылка</span>
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          
           <textarea
             ref={inputRef}
             value={message}
-            onChange={handleInputChange}
+            onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Напишите сообщение..."
             className="flex-1 bg-telegram-bg border border-gray-600 rounded-lg px-4 py-2 resize-none text-telegram-text placeholder-telegram-textSecondary focus:border-telegram-primary focus:outline-none transition-colors"
