@@ -43,6 +43,16 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
       return
     }
 
+    if (deadline) {
+      const selectedDate = new Date(`${deadline}T00:00:00`)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      if (selectedDate < today) {
+        setError('Дедлайн не может быть в прошлом')
+        return
+      }
+    }
+
     setIsSubmitting(true)
     setError(null)
 
