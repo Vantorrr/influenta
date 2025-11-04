@@ -181,7 +181,13 @@ export default function ListingsPage() {
                         <h3 className="font-semibold text-lg line-clamp-2 mb-1">
                           {listing.title}
                         </h3>
-                        {(listing.advertiser?.companyName && listing.advertiser?.companyName !== 'undefined') && (
+                        {(() => {
+                          const name = (listing.advertiser?.companyName || '').trim()
+                          if (!name) return false
+                          const lower = name.toLowerCase()
+                          if (lower === 'undefined' || lower === 'не указано' || name === '-') return false
+                          return true
+                        })() && (
                           <div className="flex items-center gap-2 text-sm text-telegram-textSecondary">
                             <Building className="w-4 h-4" />
                             <span className="truncate">{listing.advertiser?.companyName}</span>
