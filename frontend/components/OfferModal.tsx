@@ -26,8 +26,15 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
   const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async () => {
-    if (!message.trim() || !proposedBudget) {
-      setError('Заполните обязательные поля')
+    if (!proposedBudget) {
+      setError('Укажите бюджет')
+      return
+    }
+
+    const trimmedMessage = message.trim()
+
+    if (trimmedMessage && trimmedMessage.length < 10) {
+      setError('Сообщение должно быть не короче 10 символов или оставьте поле пустым')
       return
     }
 
@@ -42,7 +49,7 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
     try {
       await offersApi.create({
         bloggerId,
-        message: message.trim(),
+        message: trimmedMessage || undefined,
         proposedBudget: parseInt(proposedBudget),
         projectTitle: projectTitle.trim() || undefined,
         projectDescription: projectDescription.trim() || undefined,
@@ -199,7 +206,6 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
                     <span className="flex items-center gap-2">
                       <MessageSquare className="w-4 h-4 text-telegram-primary" />
                       Сообщение блогеру
-                      <span className="text-red-500">*</span>
                     </span>
                   </label>
                   <textarea
@@ -209,7 +215,7 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
                     rows={4}
                     className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg resize-none focus:outline-none focus:ring-2 focus:ring-telegram-primary"
                   />
-                  <p className="text-xs text-telegram-textSecondary mt-1">Персональное обращение повышает шансы на ответ</p>
+                  <p className="text-xs text-telegram-textSecondary mt-1">Необязательное поле, но персональное обращение повышает шансы на ответ</p>
                 </div>
 
                 {error && (
@@ -232,7 +238,7 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
               <Button
                 variant="primary"
                 onClick={handleSubmit}
-                disabled={isSubmitting || !message.trim() || !proposedBudget}
+                disabled={isSubmitting || !proposedBudget}
                 className="w-full"
               >
                 {isSubmitting ? 'Отправка...' : (
