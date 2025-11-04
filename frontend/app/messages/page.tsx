@@ -31,6 +31,7 @@ interface Chat {
   responseId: string
   listingTitle: string
   otherUser: {
+    id?: string
     firstName: string
     lastName: string
     username: string
@@ -88,6 +89,7 @@ function MessagesPageContent() {
             responseId: row.responseId,
             listingTitle: row.response?.listing?.title || 'Объявление',
             otherUser: {
+              id: otherUserData?.id,
               firstName: otherUserData?.firstName || 'Пользователь',
               lastName: otherUserData?.lastName || '',
               username: otherUserData?.username || '',
@@ -212,6 +214,11 @@ function MessagesPageContent() {
                           <p className="text-xs text-telegram-textSecondary">
                             {chat.listingTitle}
                           </p>
+                          {chat.otherUser.role === "blogger" && chat.otherUser.id && (
+                            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); window.location.href = `/bloggers/${chat.otherUser.id}` }} className="px-0 text-telegram-primary">
+                              Открыть профиль блогера
+                            </Button>
+                          )}
                         </div>
                         <span className="text-xs text-telegram-textSecondary">
                           {getRelativeTime(chat.lastMessage.createdAt)}

@@ -90,8 +90,8 @@ export default function OffersPage() {
         ) : (
           <div className="space-y-4">
             {offers.map((offer) => (
-              <Card key={offer.id}>
-                <CardContent className="p-4">
+              <Card key={offer.id} hover onClick={() => router.push(`/offers/${offer.id}`)}>
+                <CardContent className="p-4 cursor-pointer">
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <h3 className="font-semibold">
@@ -110,6 +110,16 @@ export default function OffersPage() {
                           className="px-0 text-telegram-primary"
                         >
                           Открыть профиль блогера
+                        </Button>
+                      )}
+                      {user?.role === 'blogger' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); /* нет публичной страницы рекламодателя */ alert('Профиль рекламодателя пока недоступен'); }}
+                          className="px-0 text-telegram-textSecondary"
+                        >
+                          Рекламодатель: {offer.advertiser?.user?.firstName}
                         </Button>
                       )}
                     </div>
