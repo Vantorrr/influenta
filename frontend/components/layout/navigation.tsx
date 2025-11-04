@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Users, FileText, MessageCircle, User, Shield, CheckCircle } from 'lucide-react'
+import { Home, Users, FileText, MessageCircle, User, Shield, CheckCircle, Handshake } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/hooks/useAuth'
@@ -13,6 +13,7 @@ const navItems = [
   { href: '/dashboard', icon: Home, label: 'Главная' },
   { href: '/bloggers', icon: Users, label: 'Блогеры' },
   { href: '/listings', icon: FileText, label: 'Объявления' },
+  { href: '/offers', icon: Handshake, label: 'Предложения' },
   { href: '/messages', icon: MessageCircle, label: 'Сообщения' },
   { href: '/profile', icon: User, label: 'Профиль' },
 ]

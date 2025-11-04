@@ -11,7 +11,7 @@ import { formatDate, formatPrice } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { 
   ArrowLeft, Clock, CheckCircle, XCircle, MessageSquare, 
-  RubIcon, Calendar, User, Briefcase, FileText 
+  Calendar, User, Briefcase, FileText 
 } from 'lucide-react'
 import { RubIcon } from '@/components/ui/ruble-icon'
 

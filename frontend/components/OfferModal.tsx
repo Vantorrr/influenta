@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Send, RubIcon, Calendar, FileText, Camera, MessageSquare } from 'lucide-react'
+import { X, Send, Calendar, FileText, Camera, MessageSquare } from 'lucide-react'
 import { RubIcon } from '@/components/ui/ruble-icon'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'

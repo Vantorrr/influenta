@@ -1,5 +1,5 @@
 import React from 'react'
-import { Eye, RubIcon } from 'lucide-react'
+import { Eye } from 'lucide-react'
 import { RubIcon } from '@/components/ui/ruble-icon'
 import { SocialPlatform } from '@/types'
 import { getPlatformIcon, platformLabels } from '@/components/icons/PlatformIcons'

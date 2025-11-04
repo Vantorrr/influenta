@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   Save,
   Calendar,
-  RubIcon,
   FileText,
   Target,
   Users,

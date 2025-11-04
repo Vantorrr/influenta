@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { offersApi } from '@/lib/api'
 import { formatDate, formatPrice } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
-import { Clock, CheckCircle, XCircle, MessageSquare, RubIcon, Calendar } from 'lucide-react'
+import { Clock, CheckCircle, XCircle, MessageSquare, Calendar } from 'lucide-react'
 import { RubIcon } from '@/components/ui/ruble-icon'
 import { useRouter } from 'next/navigation'
 
