@@ -5,9 +5,10 @@ export class CreateOfferDto {
   @IsString()
   bloggerId: string;
 
+  @IsOptional()
   @IsString()
   @MinLength(10, { message: 'Сообщение должно содержать минимум 10 символов' })
-  message: string;
+  message?: string;
 
   @IsNumber()
   @Min(100, { message: 'Минимальный бюджет 100₽' })

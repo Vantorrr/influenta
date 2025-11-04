@@ -310,7 +310,7 @@ export const statsApi = {
 export const offersApi = {
   async create(data: {
     bloggerId: string
-    message: string
+    message?: string
     proposedBudget: number
     projectTitle?: string
     projectDescription?: string

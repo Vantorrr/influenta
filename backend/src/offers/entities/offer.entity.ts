@@ -29,8 +29,8 @@ export class Offer {
   @Column()
   bloggerId: string;
 
-  @Column({ type: 'text' })
-  message: string;
+  @Column({ type: 'text', nullable: true })
+  message?: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   proposedBudget: number;
