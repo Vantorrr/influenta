@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole } from '@/users/entities/user.entity';
+import { SocialPlatform } from '@/social-platforms/entities/social-platform.entity';
 import { BloggerSearchDto } from './dto/blogger-search.dto';
 import { PaginationDto } from '@/common/dto/pagination.dto';
 
@@ -10,6 +11,8 @@ export class BloggersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(SocialPlatform)
+    private socialPlatformsRepository: Repository<SocialPlatform>,
   ) {}
 
   async search(searchDto: BloggerSearchDto & { minSubscribers?: number; maxSubscribers?: number; minPrice?: number; maxPrice?: number }, paginationDto: PaginationDto) {
