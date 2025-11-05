@@ -152,7 +152,7 @@ export default function DashboardPage() {
               } else {
                 // For advertiser: go to first listing with responses
                 if (stats?.firstListingWithResponses) {
-                  router.push(\`/listings/\${stats.firstListingWithResponses}\`)
+                  router.push(`/listings/${stats.firstListingWithResponses}`)
                 } else {
                   router.push('/listings')
                 }
