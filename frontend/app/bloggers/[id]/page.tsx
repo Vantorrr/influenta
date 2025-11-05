@@ -69,8 +69,14 @@ export default function BloggerDetailsPage() {
           <ArrowLeft className="w-4 h-4" /> Назад
         </button>
         <Card>
-          <CardContent className="p-6 text-center text-telegram-textSecondary">
-            {String(error || 'Профиль не найден')}
+          <CardContent className="p-6 text-center">
+            <p className="text-lg mb-2">😔</p>
+            <p className="text-telegram-textSecondary">
+              Профиль блогера не найден или недоступен
+            </p>
+            <Button variant="primary" className="mt-4" onClick={() => router.push('/bloggers')}>
+              К списку блогеров
+            </Button>
           </CardContent>
         </Card>
       </div>
