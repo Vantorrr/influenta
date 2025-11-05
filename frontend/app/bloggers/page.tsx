@@ -202,34 +202,7 @@ export default function BloggersPage() {
                             </Badge>
                           )}
                         </div>
-                        
-                        <div className="flex items-center gap-4 text-sm">
-                          <div className="flex items-center gap-1">
-                            <Users className="w-4 h-4 text-telegram-textSecondary" />
-                            <span>{formatNumber(blogger.subscribersCount)}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Eye className="w-4 h-4 text-telegram-textSecondary" />
-                            <span>{formatNumber(blogger.averageViews)}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Star className="w-4 h-4 text-yellow-500" />
-                            <span>{blogger.rating}</span>
-                          </div>
-                        </div>
-                        
-                        <div className="mt-3 pt-3 border-t border-gray-700/50">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-xs text-telegram-textSecondary">
-                                Цена за пост
-                              </p>
-                              <p className="font-semibold">
-                                {blogger.pricePerPost ? formatPrice(blogger.pricePerPost) : 'Договорная'}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
+
                       </div>
                     </div>
                   </CardContent>
