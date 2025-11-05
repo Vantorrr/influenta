@@ -100,7 +100,7 @@ export default function DashboardPage() {
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-3xl font-bold">
-              Добро пожаловать, {user?.firstName}! 👋
+              Добро пожаловать, {user?.firstName}!
             </h2>
           </div>
           <p className="text-lg opacity-90 mb-6 leading-relaxed">
@@ -110,11 +110,10 @@ export default function DashboardPage() {
           </p>
           <Button
             variant="secondary"
-            size="lg"
-            className="bg-white text-telegram-primary hover:bg-white/90 font-semibold px-6"
-            onClick={() => router.push(userRole === 'blogger' ? '/listings' : '/listings')}
+            className="bg-white text-telegram-primary hover:bg-white/90 font-medium"
+            onClick={() => router.push('/listings')}
           >
-            {userRole === 'blogger' ? '🎯 Найти заказы' : '👥 Найти блогеров'}
+            Посмотреть отклики
           </Button>
         </motion.div>
 
