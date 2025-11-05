@@ -29,10 +29,11 @@ import {
   formatNumberInput,
   parseNumberInput
 } from '@/lib/utils'
-import { bloggersApi, analyticsApi } from '@/lib/api'
+import { bloggersApi, analyticsApi, socialPlatformsApi } from '@/lib/api'
 import { useQuery } from '@tanstack/react-query'
 import { BloggerCategory, type BloggerFilters } from '@/types'
 import { useAuth } from '@/hooks/useAuth'
+import { getPlatformIcon } from '@/components/icons/PlatformIcons'
 
 export default function BloggersPage() {
   const [search, setSearch] = useState('')
