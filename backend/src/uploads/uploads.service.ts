@@ -7,6 +7,8 @@ export class UploadsService {
   private readonly imgbbApiKey = process.env.IMGBB_API_KEY || 'f4ac89ea03c2eb1836fb63aa2e0e99e8';
 
   async uploadToImgBB(buffer: Buffer, filename: string): Promise<string> {
+    console.log('📤 Uploading to ImgBB:', { filename, size: buffer.length, hasKey: !!this.imgbbApiKey });
+    
     try {
       const form = new FormData();
       form.append('image', buffer.toString('base64'));
@@ -21,11 +23,14 @@ export class UploadsService {
       );
 
       const data = await response.json() as any;
+      console.log('📥 ImgBB response:', { success: data.success, hasUrl: !!data.data?.url });
 
       if (!data.success) {
+        console.error('❌ ImgBB API error:', data.error);
         throw new Error(data.error?.message || 'ImgBB upload failed');
       }
 
+      console.log('✅ ImgBB URL:', data.data.url);
       return data.data.url;
     } catch (error) {
       console.error('❌ ImgBB upload error:', error);
