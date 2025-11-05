@@ -83,20 +83,6 @@ export default function DashboardPage() {
       icon: MessageSquare,
       color: 'from-purple-500 to-pink-500',
     },
-    {
-      title: 'Потрачено',
-      value: stats?.totalSpent ? formatPrice(stats.totalSpent) : '₽0',
-      change: stats?.totalSpentChange ? `+${stats.totalSpentChange}%` : '0%',
-      icon: RubIcon,
-      color: 'from-green-500 to-emerald-500',
-    },
-    {
-      title: 'ROI',
-      value: stats?.roi ? `${stats.roi}x` : '0x',
-      change: stats?.roiChange ? `+${stats.roiChange}x` : '0x',
-      icon: TrendingUp,
-      color: 'from-orange-500 to-yellow-500',
-    },
   ]
 
   const currentStats = userRole === 'blogger' ? bloggerStats : advertiserStats
@@ -110,30 +96,33 @@ export default function DashboardPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-telegram-primary to-telegram-accent rounded-xl p-6 text-white"
+          className="bg-gradient-to-br from-telegram-primary via-telegram-accent to-telegram-primary rounded-2xl p-8 text-white shadow-lg"
         >
-          <h2 className="text-2xl font-bold mb-2">
-            Добро пожаловать! 👋
-          </h2>
-          <p className="opacity-90 mb-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-3xl font-bold">
+              Добро пожаловать, {user?.firstName}! 👋
+            </h2>
+          </div>
+          <p className="text-lg opacity-90 mb-6 leading-relaxed">
             {userRole === 'blogger' 
               ? `У вас ${stats?.activeResponses ?? 0} новых предложений от рекламодателей`
               : `На ваши объявления откликнулись ${stats?.totalResponses ?? 0} блогеров`}
           </p>
           <Button
             variant="secondary"
-            className="bg-white/20 hover:bg-white/30 text-white"
+            size="lg"
+            className="bg-white text-telegram-primary hover:bg-white/90 font-semibold px-6"
             onClick={() => router.push(userRole === 'blogger' ? '/listings' : '/bloggers')}
           >
-            Посмотреть
+            {userRole === 'blogger' ? '🎯 Найти заказы' : '👥 Найти блогеров'}
           </Button>
         </motion.div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {currentStats.map((stat, index) => {
-            const clickable = (userRole === 'blogger' && stat.title === 'Активные отклики')
-            const handleClick = () => { if (clickable) router.push('/messages') }
+            const clickable = (userRole === 'blogger' && stat.title === 'Активные отклики') || (userRole === 'advertiser' && stat.title === 'Отклики')
+            const handleClick = () => { if (clickable) router.push('/listings') }
             return (
             <motion.div
               key={stat.title}
@@ -210,43 +199,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Последняя активность</CardTitle>
-            <Activity className="w-5 h-5 text-telegram-textSecondary" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentActivity.map((activity) => (
-                <motion.div
-                  key={activity.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  whileHover={{ x: 5 }}
-                  className="flex items-start gap-3 cursor-pointer"
-                >
-                  <div className="w-2 h-2 rounded-full bg-telegram-primary mt-2" />
-                  <div className="flex-1">
-                    <p className="text-sm">{activity.title}</p>
-                    <p className="text-xs text-telegram-textSecondary">
-                      {getRelativeTime(activity.time)}
-                    </p>
-                  </div>
-                  {activity.status === 'new' && (
-                    <Badge variant="primary">Новое</Badge>
-                  )}
-                  {activity.status === 'unread' && (
-                    <Badge variant="warning">Непрочитано</Badge>
-                  )}
-                  {activity.status === 'success' && (
-                    <Badge variant="success">Принято</Badge>
-                  )}
-                </motion.div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Performance Chart Placeholder */}
         <Card>
