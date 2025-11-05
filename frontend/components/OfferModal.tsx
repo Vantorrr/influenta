@@ -142,11 +142,14 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
                   </label>
                   <div className="relative">
                     <Input
-                      type="number"
-                      placeholder="10000"
-                      value={proposedBudget}
-                      onChange={(e) => setProposedBudget(e.target.value)}
-                      min="100"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="10.000"
+                      value={proposedBudget ? proposedBudget.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
+                      onChange={(e) => {
+                        const cleaned = e.target.value.replace(/\D/g, '')
+                        setProposedBudget(cleaned)
+                      }}
                       className="w-full pr-12"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-telegram-textSecondary">₽</span>
