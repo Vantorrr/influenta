@@ -6,6 +6,9 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatPrice(price: number): string {
+  if (price === -1 || price < 0) {
+    return 'Договорная'
+  }
   return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
     currency: 'RUB',
