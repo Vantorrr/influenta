@@ -38,13 +38,6 @@ export class OffersService {
     if (!targetUser || targetUser.role !== 'blogger') {
       throw new NotFoundException('Блогер не найден');
     }
-    
-    // Создаем виртуальный объект blogger для совместимости
-    const blogger = {
-      id: createOfferDto.bloggerId,
-      userId: createOfferDto.bloggerId,
-      user: targetUser,
-    };
 
     // Проверяем, нет ли уже активного предложения
     const existingOffer = await this.offersRepository.findOne({
@@ -59,10 +52,16 @@ export class OffersService {
       throw new BadRequestException('У вас уже есть активное предложение этому блогеру');
     }
 
-    // Создаем предложение
+    // Создаем предложение (используем только ID, без eager relations)
     const offer = this.offersRepository.create({
-      ...createOfferDto,
+      bloggerId: createOfferDto.bloggerId,
       advertiserId: advertiser.id,
+      message: createOfferDto.message,
+      proposedBudget: createOfferDto.proposedBudget,
+      projectTitle: createOfferDto.projectTitle,
+      projectDescription: createOfferDto.projectDescription,
+      format: createOfferDto.format,
+      deadline: createOfferDto.deadline ? new Date(createOfferDto.deadline) : undefined,
       status: OfferStatus.PENDING,
     });
 
@@ -76,7 +75,7 @@ export class OffersService {
     }
 
     // Отправляем уведомление блогеру в Telegram
-    const bloggerUser = blogger.user as any;
+    const bloggerUser = targetUser;
     const telegramChatId = bloggerUser?.telegramId || bloggerUser?.id;
     console.log('🔍 Sending offer notification to blogger:', {
       bloggerId: blogger.id,
