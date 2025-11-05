@@ -22,25 +22,25 @@ export class CreateSocialPlatformDto {
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  @Min(0)
+  @Min(-1, { message: 'Цена должна быть >= 0 или -1 для договорной' })
   pricePerPost?: number;
 
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  @Min(0)
+  @Min(-1, { message: 'Цена должна быть >= 0 или -1 для договорной' })
   pricePerStory?: number;
 
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  @Min(0)
+  @Min(-1, { message: 'Цена должна быть >= 0 или -1 для договорной' })
   pricePerReel?: number;
 
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  @Min(0)
+  @Min(-1, { message: 'Цена должна быть >= 0 или -1 для договорной' })
   pricePerStream?: number;
 
   @IsOptional()
