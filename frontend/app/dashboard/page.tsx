@@ -79,6 +79,7 @@ export default function DashboardPage() {
     {
       title: 'Отклики',
       value: stats?.totalResponses?.toString() || '0',
+      subtitle: 'На все объявления',
       change: stats?.totalResponsesChange ? `+${stats.totalResponsesChange}` : '0',
       icon: MessageSquare,
       color: 'from-purple-500 to-pink-500',
@@ -144,7 +145,15 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {currentStats.map((stat, index) => {
             const clickable = (userRole === 'blogger' && stat.title === 'Активные отклики') || (userRole === 'advertiser' && stat.title === 'Отклики')
-            const handleClick = () => { if (clickable) router.push('/listings') }
+            const handleClick = async () => { 
+              if (!clickable) return
+              if (userRole === 'blogger') {
+                router.push('/messages')
+              } else {
+                // For advertiser: go to listings page
+                router.push('/listings')
+              }
+            }
             return (
             <motion.div
               key={stat.title}
@@ -164,6 +173,9 @@ export default function DashboardPage() {
                   <div className="space-y-1 mt-auto">
                     <p className="text-2xl font-bold">{stat.value}</p>
                     <p className="text-sm text-telegram-textSecondary">{stat.title}</p>
+                    {(stat as any).subtitle && (
+                      <p className="text-xs text-telegram-textSecondary/70">{(stat as any).subtitle}</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
