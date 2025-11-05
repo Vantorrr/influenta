@@ -112,13 +112,13 @@ export function SocialPlatformsSection() {
                           <Eye className="w-4 h-4 text-telegram-textSecondary" />
                           <span>{formatNumber(platform.subscribersCount)} подписчиков</span>
                         </div>
-                        {platform.pricePerPost && (
+                        {(platform.pricePerPost || platform.pricePerPost === -1) && (
                           <div>
                             <span className="text-telegram-textSecondary">Пост: </span>
                             <span className="font-medium">{platform.pricePerPost === -1 ? 'Договорная' : formatPrice(platform.pricePerPost)}</span>
                           </div>
                         )}
-                        {platform.pricePerStory && (
+                        {(platform.pricePerStory || platform.pricePerStory === -1) && (
                           <div>
                             <span className="text-telegram-textSecondary">Сторис: </span>
                             <span className="font-medium">{platform.pricePerStory === -1 ? 'Договорная' : formatPrice(platform.pricePerStory)}</span>
