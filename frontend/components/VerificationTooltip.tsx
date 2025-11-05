@@ -14,7 +14,7 @@ export function VerificationTooltip({ className = '' }: VerificationTooltipProps
   return (
     <>
       <div 
-        className={`bg-blue-500 rounded-full inline-flex cursor-help relative ${className}`}
+        className={`bg-blue-500 rounded-full w-5 h-5 flex items-center justify-center cursor-help relative ${className}`}
         onClick={(e) => {
           e.preventDefault()
           e.stopPropagation()
@@ -22,8 +22,8 @@ export function VerificationTooltip({ className = '' }: VerificationTooltipProps
         }}
         title="Верифицирован"
       >
-        <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+        <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
         </svg>
       </div>
 
