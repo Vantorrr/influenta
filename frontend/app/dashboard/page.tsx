@@ -133,9 +133,9 @@ export default function DashboardPage() {
             <Button
               variant="secondary"
               className="bg-white text-telegram-primary hover:bg-white/95 font-medium shadow-lg"
-              onClick={() => router.push('/listings')}
+              onClick={() => router.push(userRole === 'blogger' ? '/offers' : '/listings')}
             >
-              {userRole === 'blogger' ? 'Смотреть заказы' : 'Мои объявления'}
+              {userRole === 'blogger' ? 'Посмотреть предложения' : 'Мои объявления'}
             </Button>
           </div>
         </motion.div>
@@ -182,7 +182,7 @@ export default function DashboardPage() {
                 <>
                   <Button 
                     variant="secondary" 
-                    onClick={() => router.push('/listings')}
+                    onClick={() => router.push(userRole === 'blogger' ? '/offers' : '/listings')}
                     className="w-full h-14 text-base border-2 border-telegram-border hover:border-telegram-primary/50"
                   >
                     <Search className="w-5 h-5 mr-3" />
