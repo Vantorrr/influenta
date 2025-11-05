@@ -79,7 +79,7 @@ function MessagesPageContent() {
         const rows = (res as any)?.data || res
         const normalized: Chat[] = (rows || []).map((row: any) => {
           // Определяем, кто я: блогер (автор отклика) или рекламодатель (владелец объявления)
-          const iAmBlogger = row.response?.blogger?.userId === user.id
+          const iAmBlogger = user.role === 'blogger'
           const otherUserData = iAmBlogger
             ? row.response?.listing?.advertiser?.user // Я блогер → собеседник рекламодатель
             : row.response?.blogger?.user // Я рекламодатель → собеседник блогер
