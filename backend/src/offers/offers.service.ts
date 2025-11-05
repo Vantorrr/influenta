@@ -78,7 +78,7 @@ export class OffersService {
     const bloggerUser = targetUser;
     const telegramChatId = bloggerUser?.telegramId || bloggerUser?.id;
     console.log('🔍 Sending offer notification to blogger:', {
-      bloggerId: blogger.id,
+      bloggerId: createOfferDto.bloggerId,
       userId: bloggerUser?.id,
       telegramId: bloggerUser?.telegramId,
       firstName: bloggerUser?.firstName,
