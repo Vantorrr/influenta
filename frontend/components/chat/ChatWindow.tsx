@@ -152,9 +152,24 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
     if (msg.senderId !== currentUserId) return null
     
     if (msg.isRead) {
-      return <CheckCircle className="w-4 h-4 text-telegram-primary" />
+      // Прочитано - две синие галочки
+      return (
+        <div className="flex -space-x-1">
+          <svg className="w-4 h-4 text-telegram-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          <svg className="w-4 h-4 text-telegram-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+      )
     } else {
-      return <Clock className="w-4 h-4 text-telegram-textSecondary" />
+      // Отправлено - одна серая галочка
+      return (
+        <svg className="w-4 h-4 text-telegram-textSecondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      )
     }
   }
 
