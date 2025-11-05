@@ -73,7 +73,7 @@ export function PlatformsList({ platforms, compact = false }: PlatformsListProps
               {(platform.pricePerPost || platform.pricePerPost === -1) && (
                 <div className="flex items-center gap-1">
                   <RubIcon className="w-3.5 h-3.5 text-telegram-textSecondary" />
-                  <span>Пост: {(platform.pricePerPost === -1 || platform.pricePerPost === '-1' || platform.pricePerPost < 0) ? 'Договорная' : formatPrice(platform.pricePerPost)}</span>
+                  <span onClick={() => alert(`DEBUG: pricePerPost = ${platform.pricePerPost}, type = ${typeof platform.pricePerPost}`)}>Пост: {(platform.pricePerPost === -1 || platform.pricePerPost === '-1' || Number(platform.pricePerPost) === -1 || platform.pricePerPost < 0) ? 'Договорная' : formatPrice(platform.pricePerPost)}</span>
                 </div>
               )}
             </div>
