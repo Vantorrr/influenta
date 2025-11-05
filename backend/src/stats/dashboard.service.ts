@@ -61,13 +61,33 @@ export class DashboardStatsService {
             .getCount()
             .catch(() => 0)
         : 0
+      
+      // Найти первое объявление с pending откликами
+      let firstListingWithResponses = null
+      if (advertiser && totalResponses > 0) {
+        const responseWithListing = await this.responsesRepo
+          .createQueryBuilder('r')
+          .innerJoin('r.listing', 'listing')
+          .where('listing.advertiserId = :aid', { aid: advertiser.id })
+          .andWhere('r.status = :status', { status: 'pending' })
+          .select(['r.id', 'r.listingId'])
+          .orderBy('r.createdAt', 'DESC')
+          .getOne()
+          .catch(() => null)
+        
+        if (responseWithListing) {
+          firstListingWithResponses = responseWithListing.listingId
+        }
+      }
+      
       const totalSpent = advertiser?.totalSpent || 0
-      const roi = 0 // TODO: Рассчитывать ROI на основе реальных сделок
+      const roi = 0
 
       return {
         profileViews,
         activeCampaigns,
         totalResponses,
+        firstListingWithResponses,
         totalSpent,
         roi,
         recentActivity: [],

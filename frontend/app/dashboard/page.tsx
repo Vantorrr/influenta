@@ -150,8 +150,12 @@ export default function DashboardPage() {
               if (userRole === 'blogger') {
                 router.push('/messages')
               } else {
-                // For advertiser: go to listings page
-                router.push('/listings')
+                // For advertiser: go to first listing with responses
+                if (stats?.firstListingWithResponses) {
+                  router.push(\`/listings/\${stats.firstListingWithResponses}\`)
+                } else {
+                  router.push('/listings')
+                }
               }
             }
             return (
