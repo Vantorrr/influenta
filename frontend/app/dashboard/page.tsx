@@ -106,13 +106,13 @@ export default function DashboardPage() {
           <p className="text-lg opacity-90 mb-6 leading-relaxed">
             {userRole === 'blogger' 
               ? `У вас ${stats?.activeResponses ?? 0} новых предложений от рекламодателей`
-              : `На ваши объявления откликнулись ${stats?.totalResponses ?? 0} блогеров`}
+              : `Всего откликов на ваши объявления: ${stats?.totalResponses ?? 0}`}
           </p>
           <Button
             variant="secondary"
             size="lg"
             className="bg-white text-telegram-primary hover:bg-white/90 font-semibold px-6"
-            onClick={() => router.push(userRole === 'blogger' ? '/listings' : '/bloggers')}
+            onClick={() => router.push(userRole === 'blogger' ? '/listings' : '/listings')}
           >
             {userRole === 'blogger' ? '🎯 Найти заказы' : '👥 Найти блогеров'}
           </Button>
