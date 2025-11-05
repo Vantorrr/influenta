@@ -57,6 +57,7 @@ export class DashboardStatsService {
             .createQueryBuilder('r')
             .innerJoin('r.listing', 'listing')
             .where('listing.advertiserId = :aid', { aid: advertiser.id })
+            .andWhere('r.status = :status', { status: 'pending' })
             .getCount()
             .catch(() => 0)
         : 0
