@@ -298,16 +298,16 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
         subscribersCount: typeof formData.subscribersCount === 'string'
           ? (parseInt(formData.subscribersCount as any) || 0)
           : (formData.subscribersCount || 0),
-        // Пустые цены превращаем в undefined
-        pricePerPost: formData.pricePerPost !== undefined && formData.pricePerPost !== ('' as any)
-          ? Number(formData.pricePerPost)
-          : undefined,
-        pricePerStory: formData.pricePerStory !== undefined && formData.pricePerStory !== ('' as any)
-          ? Number(formData.pricePerStory)
-          : undefined,
-        pricePerReel: formData.pricePerReel !== undefined && formData.pricePerReel !== ('' as any)
-          ? Number(formData.pricePerReel)
-          : undefined,
+        // Обрабатываем цены: -1 для договорной, undefined для пустого
+        pricePerPost: formData.pricePerPost === -1 
+          ? -1 
+          : (formData.pricePerPost && formData.pricePerPost !== ('' as any) ? Number(formData.pricePerPost) : undefined),
+        pricePerStory: formData.pricePerStory === -1 
+          ? -1 
+          : (formData.pricePerStory && formData.pricePerStory !== ('' as any) ? Number(formData.pricePerStory) : undefined),
+        pricePerReel: formData.pricePerReel === -1 
+          ? -1 
+          : (formData.pricePerReel && formData.pricePerReel !== ('' as any) ? Number(formData.pricePerReel) : undefined),
       }
       
       // Убедимся, что username заполнен
