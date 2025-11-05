@@ -5,11 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   ArrowLeft,
   Send,
-  Paperclip,
   Image as ImageIcon,
   MoreVertical,
-  Phone,
-  Video,
   Info,
   CheckCircle,
   Clock,
@@ -193,14 +190,12 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
             whileTap={{ scale: 0.9 }}
             className="p-2 hover:bg-telegram-bg rounded-lg transition-colors"
           >
-            <Phone className="w-5 h-5" />
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             className="p-2 hover:bg-telegram-bg rounded-lg transition-colors"
           >
-            <Video className="w-5 h-5" />
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.1 }}
@@ -344,7 +339,6 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
               onClick={() => setShowAttachMenu(!showAttachMenu)}
               className="p-2 hover:bg-telegram-bg rounded-lg transition-colors"
             >
-              <Paperclip className="w-5 h-5" />
             </motion.button>
             
             <AnimatePresence>
