@@ -4,7 +4,7 @@ import fetch from 'node-fetch';
 
 @Injectable()
 export class UploadsService {
-  private readonly imgbbApiKey = process.env.IMGBB_API_KEY || '5c3a7e95496f3e3b7d8e4c8f3a2e1b9d';
+  private readonly imgbbApiKey = process.env.IMGBB_API_KEY || '3ffd0220725efce6d632009003948a21';
 
   async uploadToImgBB(buffer: Buffer, filename: string): Promise<string> {
     console.log('📤 Uploading to ImgBB:', { filename, size: buffer.length, hasKey: !!this.imgbbApiKey });
