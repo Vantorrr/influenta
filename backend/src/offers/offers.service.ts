@@ -170,7 +170,7 @@ ${createOfferDto.message}`;
     const offer = await this.findOne(id, user);
 
     // Только блогер может отвечать на предложение
-    if (user.role !== 'blogger' || offer.blogger.userId !== user.id) {
+    if (user.role !== 'blogger' || offer.bloggerId !== user.id) {
       throw new ForbiddenException('Только блогер может отвечать на предложение');
     }
 
