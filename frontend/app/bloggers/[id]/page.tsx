@@ -207,17 +207,6 @@ export default function BloggerDetailsPage() {
             ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-telegram-textSecondary">Подписчики</p>
-              <p className="font-medium flex items-center gap-1"><Users className="w-4 h-4" />{formatNumber(blogger.subscribersCount || 0)}</p>
-            </div>
-            <div>
-              <p className="text-telegram-textSecondary">Ср. просмотры</p>
-              <p className="font-medium flex items-center gap-1"><Eye className="w-4 h-4" />{formatNumber(blogger.averageViews || 0)}</p>
-            </div>
-          </div>
-
           {/* Кнопка для рекламодателей */}
           {user?.role === 'advertiser' && (
             <div className="mt-6 space-y-3">
