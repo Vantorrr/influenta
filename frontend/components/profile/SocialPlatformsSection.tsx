@@ -115,13 +115,13 @@ export function SocialPlatformsSection() {
                         {platform.pricePerPost && (
                           <div>
                             <span className="text-telegram-textSecondary">Пост: </span>
-                            <span className="font-medium">{formatPrice(platform.pricePerPost)}</span>
+                            <span className="font-medium">{platform.pricePerPost === -1 ? 'Договорная' : formatPrice(platform.pricePerPost)}</span>
                           </div>
                         )}
                         {platform.pricePerStory && (
                           <div>
                             <span className="text-telegram-textSecondary">Сторис: </span>
-                            <span className="font-medium">{formatPrice(platform.pricePerStory)}</span>
+                            <span className="font-medium">{platform.pricePerStory === -1 ? 'Договорная' : formatPrice(platform.pricePerStory)}</span>
                           </div>
                         )}
                       </div>
@@ -401,14 +401,24 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
           <Input
             type="text"
             inputMode="numeric"
-            value={formData.pricePerPost ? formData.pricePerPost.toLocaleString('ru-RU') : ''}
+            value={formData.pricePerPost === -1 ? '' : (formData.pricePerPost ? formData.pricePerPost.toLocaleString('ru-RU') : '')}
             onChange={(e) => {
               const digits = e.target.value.replace(/\D/g, '')
               setFormData({ ...formData, pricePerPost: digits ? parseFloat(digits) : undefined })
             }}
-            placeholder="5.000"
+            placeholder={formData.pricePerPost === -1 ? "Договорная" : "5.000 или пусто"}
             min="0"
+            disabled={formData.pricePerPost === -1}
           />
+          <label className="flex items-center gap-2 mt-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.pricePerPost === -1}
+              onChange={(e) => setFormData({ ...formData, pricePerPost: e.target.checked ? -1 : undefined })}
+              className="w-4 h-4"
+            />
+            <span className="text-sm">Договорная</span>
+          </label>
         </div>
 
         <div>
@@ -416,14 +426,24 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
           <Input
             type="text"
             inputMode="numeric"
-            value={formData.pricePerStory ? formData.pricePerStory.toLocaleString('ru-RU') : ''}
+            value={formData.pricePerStory === -1 ? '' : (formData.pricePerStory ? formData.pricePerStory.toLocaleString('ru-RU') : '')}
             onChange={(e) => {
               const digits = e.target.value.replace(/\D/g, '')
               setFormData({ ...formData, pricePerStory: digits ? parseFloat(digits) : undefined })
             }}
-            placeholder="2.000"
+            placeholder={formData.pricePerStory === -1 ? "Договорная" : "2.000 или пусто"}
             min="0"
+            disabled={formData.pricePerStory === -1}
           />
+          <label className="flex items-center gap-2 mt-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.pricePerStory === -1}
+              onChange={(e) => setFormData({ ...formData, pricePerStory: e.target.checked ? -1 : undefined })}
+              className="w-4 h-4"
+            />
+            <span className="text-sm">Договорная</span>
+          </label>
         </div>
 
         {['instagram', 'youtube', 'tiktok'].includes(formData.platform as string) && (
