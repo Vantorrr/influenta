@@ -38,9 +38,6 @@ export default function ProfilePage() {
     website: '',
     photoUrl: '',
     // Для блогеров
-    subscribersCount: '',
-    pricePerPost: '',
-    pricePerStory: '',
     categories: [] as string[]
   })
 
@@ -62,10 +59,7 @@ export default function ProfilePage() {
         phone: (user as any).phone || '',
         website: (user as any).website || '',
         photoUrl: user.photoUrl || '',
-        subscribersCount: (user as any).subscribersCount || '',
-        pricePerPost: (user as any).pricePerPost || '',
-        pricePerStory: (user as any).pricePerStory || '',
-        categories: normalizedCategories,
+              categories: normalizedCategories,
       })
     }
     setIsEditing(true)
@@ -88,9 +82,6 @@ export default function ProfilePage() {
         photoUrl: formData.photoUrl || undefined,
       }
 
-      if (formData.subscribersCount !== '') payload.subscribersCount = parseInt(String(formData.subscribersCount).replace(/\./g, ''), 10) || 0
-      if (formData.pricePerPost !== '') payload.pricePerPost = parseInt(String(formData.pricePerPost).replace(/\./g, ''), 10) || 0
-      if (formData.pricePerStory !== '') payload.pricePerStory = parseInt(String(formData.pricePerStory).replace(/\./g, ''), 10) || 0
       if (formData.categories && formData.categories.length > 0) payload.categories = formData.categories.join(',')
 
       console.log('Отправляем данные:', payload)
@@ -171,10 +162,7 @@ export default function ProfilePage() {
       phone: '',
       website: '',
       photoUrl: '',
-      subscribersCount: '',
-      pricePerPost: '',
-      pricePerStory: '',
-      categories: []
+            categories: []
     })
   }
 
@@ -521,51 +509,6 @@ export default function ProfilePage() {
                 {/* Дополнительные поля для блогеров */}
                 {formData.role === UserRole.BLOGGER && (
                   <>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        <Users2 className="w-4 h-4 inline mr-1" />
-                        Количество подписчиков
-                      </label>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={formatNumberInput(formData.subscribersCount)}
-                        onChange={(e) => setFormData({ ...formData, subscribersCount: parseNumberInput(e.target.value).toString() })}
-                        className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
-                        placeholder="10.000"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        <RubIcon className="text-sm inline mr-1" />
-                        Цена за пост (₽)
-                      </label>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={formatNumberInput(formData.pricePerPost)}
-                        onChange={(e) => setFormData({ ...formData, pricePerPost: parseNumberInput(e.target.value).toString() })}
-                        className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
-                        placeholder="5.000"
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium mb-2">
-                        <RubIcon className="text-sm inline mr-1" />
-                        Цена за сторис (₽)
-                      </label>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={formatNumberInput(formData.pricePerStory)}
-                        onChange={(e) => setFormData({ ...formData, pricePerStory: parseNumberInput(e.target.value).toString() })}
-                        className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
-                        placeholder="2.000"
-                      />
-                    </div>
-
                     {/* Категории для блогеров */}
                     <div className="md:col-span-4">
                       <label className="block text-sm font-medium mb-3">

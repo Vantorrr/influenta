@@ -183,28 +183,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
             </p>
           </div>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="p-2 hover:bg-telegram-bg rounded-lg transition-colors"
-          >
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="p-2 hover:bg-telegram-bg rounded-lg transition-colors"
-          >
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="p-2 hover:bg-telegram-bg rounded-lg transition-colors"
-          >
-            <Info className="w-5 h-5" />
-          </motion.button>
-        </div>
+
       </div>
 
       {/* Сообщения */}
