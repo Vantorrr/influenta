@@ -56,7 +56,7 @@ export class OffersService {
     const offer = this.offersRepository.create({
       bloggerId: createOfferDto.bloggerId,
       advertiserId: advertiser.id,
-      message: createOfferDto.message,
+      message: createOfferDto.message || '',
       proposedBudget: createOfferDto.proposedBudget,
       projectTitle: createOfferDto.projectTitle,
       projectDescription: createOfferDto.projectDescription,
