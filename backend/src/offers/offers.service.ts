@@ -66,7 +66,14 @@ export class OffersService {
       status: OfferStatus.PENDING,
     });
 
-    const savedOffer = await this.offersRepository.save(offer);
+    let savedOffer;
+    try {
+      savedOffer = await this.offersRepository.save(offer);
+      console.log('✅ Offer saved:', savedOffer.id);
+    } catch (error) {
+      console.error('❌ Failed to save offer:', error);
+      throw new BadRequestException(`Не удалось сохранить предложение: ${error.message}`);
+    }
 
     // Отправляем уведомление блогеру в Telegram
     const bloggerUser = blogger.user as any;
