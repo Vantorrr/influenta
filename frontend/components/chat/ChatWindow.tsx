@@ -177,7 +177,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
             size="sm"
           />
           
-          <div onClick={() => { if (chat.otherUser?.role === 'blogger' && chat.otherUser?.id) { window.location.href = `/bloggers/${chat.otherUser.id}` } }} className={chat.otherUser?.role === 'blogger' && chat.otherUser?.id ? 'cursor-pointer hover:opacity-80' : ''}>
+          <div onClick={() => { console.log('🖱️ Click on name:', chat.otherUser); if (chat.otherUser?.role === 'blogger' && chat.otherUser?.id) { console.log('→ Opening /bloggers/' + chat.otherUser.id); window.location.href = `/bloggers/${chat.otherUser.id}` } else { console.warn('Not clickable:', { role: chat.otherUser?.role, id: chat.otherUser?.id }) } }} className={chat.otherUser?.role === 'blogger' && chat.otherUser?.id ? 'cursor-pointer hover:opacity-80 hover:underline' : ''}>
             <h3 className="font-medium flex items-center gap-2">
               {chat.otherUser.firstName} {chat.otherUser.lastName}
               {chat.status === 'accepted' && (
