@@ -1,7 +1,8 @@
 import { Controller, Post, UseInterceptors, UploadedFile, Req } from '@nestjs/common';
 import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
+import { diskStorage, memoryStorage } from 'multer';
+import { UploadsService } from './uploads.service';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -20,6 +21,7 @@ function filenameGenerator(req: any, file: any, cb: (error: Error | null, filena
 @ApiTags('Uploads')
 @Controller('uploads')
 export class UploadsController {
+  constructor(private readonly uploadsService: UploadsService) {}
   @Post('verification')
   @ApiOperation({ summary: 'Upload verification document' })
   @ApiConsumes('multipart/form-data')
@@ -69,16 +71,8 @@ export class UploadsController {
   @ApiOperation({ summary: 'Upload platform statistics screenshot' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file', {
-    storage: diskStorage({
-      destination: (req, file, cb) => {
-        const dest = path.join(process.cwd(), 'uploads', 'platform-stats');
-        ensureDir(dest);
-        cb(null, dest);
-      },
-      filename: filenameGenerator,
-    }),
+    storage: memoryStorage(),
     fileFilter: (req, file, cb) => {
-      // Only allow images
       if (!file.mimetype.startsWith('image/')) {
         cb(new Error('Only image files are allowed'), false);
       } else {
@@ -86,11 +80,42 @@ export class UploadsController {
       }
     },
     limits: {
-      fileSize: 10 * 1024 * 1024, // 10MB for screenshots
+      fileSize: 10 * 1024 * 1024, // 10MB
     }
   }))
-  async uploadPlatformStats(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
-    return this.handleFileUpload(file, req, 'platform-stats');
+  async uploadPlatformStats(@UploadedFile() file: Express.Multer.File) {
+    try {
+      // Try ImgBB first
+      const url = await this.uploadsService.uploadToImgBB(file.buffer, file.originalname);
+      console.log('✅ Platform screenshot uploaded to ImgBB:', url);
+      return { success: true, url };
+    } catch (error) {
+      console.error('❌ ImgBB upload failed, using local fallback:', error);
+      
+      // Fallback to local storage
+      const dest = path.join(process.cwd(), 'uploads', 'platform-stats');
+      ensureDir(dest);
+      const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}${path.extname(file.originalname)}`;
+      const filepath = path.join(dest, filename);
+      fs.writeFileSync(filepath, file.buffer);
+      
+      const baseUrl = this.getBaseUrl();
+      const url = `${baseUrl}/uploads/platform-stats/${filename}`;
+      console.log('💾 Saved locally (temporary):', url);
+      return { success: true, url };
+    }
+  }
+
+  private getBaseUrl(): string {
+    if (process.env.BACKEND_URL) {
+      return process.env.BACKEND_URL.match(/^https?:\/\//i) 
+        ? process.env.BACKEND_URL 
+        : `https://${process.env.BACKEND_URL}`;
+    }
+    if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+      return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+    }
+    return `http://localhost:${process.env.PORT || 3001}`;
   }
 
   private handleFileUpload(file: Express.Multer.File, req: any, folder: string) {
