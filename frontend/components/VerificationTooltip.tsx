@@ -14,15 +14,17 @@ export function VerificationTooltip({ className = '' }: VerificationTooltipProps
   return (
     <>
       <div 
-        className={`bg-green-500 rounded-full p-0.5 inline-flex cursor-help relative ${className}`}
+        className={`bg-blue-500 rounded-full inline-flex cursor-help relative ${className}`}
         onClick={(e) => {
           e.preventDefault()
           e.stopPropagation()
           setShowTooltip(true)
         }}
-        title="Что это значит?"
+        title="Верифицирован"
       >
-        <CheckCircle className="w-4 h-4 text-white" />
+        <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+        </svg>
       </div>
 
       <AnimatePresence>
@@ -45,9 +47,11 @@ export function VerificationTooltip({ className = '' }: VerificationTooltipProps
               className="fixed inset-x-4 bottom-20 z-50 max-w-sm mx-auto max-h-[60vh] overflow-y-auto"
             >
               <div className="bg-telegram-bg rounded-2xl shadow-2xl">
-                <div className="bg-green-500 p-3 text-white flex items-center justify-between">
+                <div className="bg-blue-500 p-3 text-white flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5" />
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
                     <h3 className="font-semibold">Верификация</h3>
                   </div>
                   <button
@@ -65,17 +69,17 @@ export function VerificationTooltip({ className = '' }: VerificationTooltipProps
 
                   <div className="space-y-2">
                     <div className="flex items-start gap-2">
-                      <UserCheck className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <UserCheck className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                       <p className="text-sm">Подтвержденная личность</p>
                     </div>
 
                     <div className="flex items-start gap-2">
-                      <Shield className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <Shield className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                       <p className="text-sm">Достоверная статистика</p>
                     </div>
 
                     <div className="flex items-start gap-2">
-                      <TrendingUp className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <TrendingUp className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                       <p className="text-sm">Приоритет в поиске</p>
                     </div>
                   </div>
@@ -85,7 +89,7 @@ export function VerificationTooltip({ className = '' }: VerificationTooltipProps
                       setShowTooltip(false)
                       window.location.href = '/profile'
                     }}
-                    className="w-full bg-green-500 text-white py-3 rounded-xl font-medium hover:bg-green-600 transition-colors mt-4"
+                    className="w-full bg-blue-500 text-white py-3 rounded-xl font-medium hover:bg-blue-600 transition-colors mt-4"
                   >
                     Хочу верификацию
                   </button>
