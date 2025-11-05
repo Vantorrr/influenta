@@ -315,7 +315,10 @@ export default function ListingDetailsPage() {
                 <div key={r.id} className="p-3 bg-telegram-bgSecondary rounded-xl">
                   <div className="flex items-start gap-3 mb-3">
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium">
+                      <p 
+                        className="font-medium cursor-pointer text-telegram-primary hover:underline"
+                        onClick={() => window.location.href = `/bloggers/${r.blogger?.user?.id || r.blogger?.userId || r.bloggerId}`}
+                      >
                         {r.blogger?.user?.firstName} {r.blogger?.user?.lastName}
                       </p>
                       <p className="text-sm text-telegram-textSecondary">
