@@ -319,6 +319,7 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
       
       console.log('Submitting platform data:', dataToSubmit)
       await onSubmit(dataToSubmit)
+      alert('Платформа сохранена!')
     } catch (error: any) {
       console.error('Error saving platform:', error)
       const errorMessage = error?.response?.data?.message || error?.message || 'Неизвестная ошибка'
