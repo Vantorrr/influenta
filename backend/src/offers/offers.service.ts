@@ -38,6 +38,13 @@ export class OffersService {
     if (!targetUser || targetUser.role !== 'blogger') {
       throw new NotFoundException('Блогер не найден');
     }
+    
+    // Создаем виртуальный объект blogger для совместимости
+    const blogger = {
+      id: createOfferDto.bloggerId,
+      userId: createOfferDto.bloggerId,
+      user: targetUser,
+    };
 
     // Проверяем, нет ли уже активного предложения
     const existingOffer = await this.offersRepository.findOne({
@@ -52,61 +59,46 @@ export class OffersService {
       throw new BadRequestException('У вас уже есть активное предложение этому блогеру');
     }
 
-    // Создаем предложение (используем только ID, без eager relations)
+    // Создаем предложение
     const offer = this.offersRepository.create({
-      bloggerId: createOfferDto.bloggerId,
+      ...createOfferDto,
       advertiserId: advertiser.id,
-      message: createOfferDto.message || '',
-      proposedBudget: createOfferDto.proposedBudget,
-      projectTitle: createOfferDto.projectTitle,
-      projectDescription: createOfferDto.projectDescription,
-      format: createOfferDto.format,
-      deadline: createOfferDto.deadline ? new Date(createOfferDto.deadline) : undefined,
       status: OfferStatus.PENDING,
     });
 
-    let savedOffer;
-    try {
-      savedOffer = await this.offersRepository.save(offer);
-      console.log('✅ Offer saved:', savedOffer.id);
-    } catch (error) {
-      console.error('❌ Failed to save offer:', error);
-      throw new BadRequestException(`Не удалось сохранить предложение: ${error.message}`);
-    }
+    const savedOffer = await this.offersRepository.save(offer);
 
     // Отправляем уведомление блогеру в Telegram
-    const bloggerUser = targetUser;
-    const telegramChatId = bloggerUser?.telegramId || bloggerUser?.id;
+    const bloggerUser = blogger.user as any;
     console.log('🔍 Sending offer notification to blogger:', {
-      bloggerId: createOfferDto.bloggerId,
+      bloggerId: blogger.id,
       userId: bloggerUser?.id,
-      telegramId: bloggerUser?.telegramId,
       firstName: bloggerUser?.firstName,
       lastName: bloggerUser?.lastName,
     });
-
-    if (telegramChatId) {
+    
+    // Используем id вместо telegramId, так как в User entity id и есть telegramId
+    if (bloggerUser?.id) {
       try {
-        const budgetNumber = Number(createOfferDto.proposedBudget) || 0;
-        const budgetFormatted = new Intl.NumberFormat('ru-RU').format(budgetNumber);
         const message = `🎯 <b>Новое предложение о сотрудничестве!</b>
 
 От: ${user.firstName} ${user.lastName || ''} ${user.companyName ? `(${user.companyName})` : ''}
-Бюджет: ${budgetFormatted}₽
+Бюджет: ${createOfferDto.proposedBudget}₽
 ${createOfferDto.projectTitle ? `\nПроект: ${createOfferDto.projectTitle}` : ''}
 
 Сообщение:
-${createOfferDto.message || '—'}`;
+${createOfferDto.message}`;
 
-        console.log('📤 Attempting to send message to Telegram ID:', telegramChatId);
-
+        console.log('📤 Attempting to send message to Telegram ID:', bloggerUser.id);
+        
+        // Отправляем сообщение с кнопкой
         await this.telegramService.sendMessageWithButton(
-          telegramChatId,
+          bloggerUser.id,
           message,
           'Посмотреть предложение',
           `offers/${savedOffer.id}`
         );
-
+        
         console.log('✅ Telegram notification sent successfully');
       } catch (error) {
         console.error('❌ Failed to send Telegram notification:', error);
