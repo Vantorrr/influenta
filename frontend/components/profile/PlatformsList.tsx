@@ -70,10 +70,10 @@ export function PlatformsList({ platforms, compact = false }: PlatformsListProps
                 <Eye className="w-3.5 h-3.5 text-telegram-textSecondary" />
                 <span>{formatNumber(platform.subscribersCount)} подписчиков</span>
               </div>
-              {platform.pricePerPost && (
+              {(platform.pricePerPost || platform.pricePerPost === -1) && (
                 <div className="flex items-center gap-1">
                   <RubIcon className="w-3.5 h-3.5 text-telegram-textSecondary" />
-                  <span>Пост: {formatPrice(platform.pricePerPost)}</span>
+                  <span>Пост: {platform.pricePerPost === -1 ? 'Договорная' : formatPrice(platform.pricePerPost)}</span>
                 </div>
               )}
             </div>
