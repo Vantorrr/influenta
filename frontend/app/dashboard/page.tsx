@@ -34,6 +34,11 @@ export default function DashboardPage() {
     queryFn: () => statsApi.getDashboard(),
     enabled: !!user,
   })
+  const { data: series } = useQuery({
+    queryKey: ['dashboard-series'],
+    queryFn: () => statsApi.getSeries(),
+    enabled: !!user,
+  })
   
   useEffect(() => {
     // Проверяем pendingDeepLink при загрузке дашборда
@@ -262,17 +267,53 @@ export default function DashboardPage() {
         </div>
 
 
-        {/* Performance Chart Placeholder */}
+        {/* Performance Chart */}
         <Card>
           <CardHeader>
             <CardTitle>
-              {userRole === 'blogger' ? 'Статистика просмотров' : 'Эффективность кампаний'}
+              {userRole === 'blogger' ? 'Динамика: просмотры и отклики (7 дней)' : 'Динамика откликов (7 дней)'}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-48 bg-telegram-bg rounded-lg flex items-center justify-center">
-              <p className="text-telegram-textSecondary">График будет доступен позже</p>
-            </div>
+            {series?.labels?.length ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-7 gap-2 items-end h-40">
+                  {(() => {
+                    const max = Math.max(
+                      ...series.series.flatMap(s => s.data),
+                      1
+                    )
+                    return series.labels.map((label, idx) => {
+                      const sumAtIdx = series.series.reduce((acc, s) => acc + (s.data[idx] || 0), 0)
+                      const h = Math.round((sumAtIdx / max) * 100)
+                      return (
+                        <div key={label} className="flex flex-col items-center gap-2">
+                          <div className="w-full bg-telegram-bgSecondary rounded-md overflow-hidden h-32 flex items-end">
+                            <div
+                              className="w-full bg-gradient-to-t from-telegram-primary to-telegram-accent"
+                              style={{ height: `${Math.max(8, Math.min(h, 100))}%` }}
+                            />
+                          </div>
+                          <span className="text-[10px] text-telegram-textSecondary">{label.slice(5)}</span>
+                        </div>
+                      )
+                    })
+                  })()}
+                </div>
+                <div className="flex gap-4 text-xs text-telegram-textSecondary">
+                  {series.series.map(s => (
+                    <div key={s.name} className="flex items-center gap-2">
+                      <span className="inline-block w-3 h-3 rounded-sm bg-gradient-to-t from-telegram-primary to-telegram-accent" />
+                      {s.name}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="h-48 bg-telegram-bg rounded-lg flex items-center justify-center">
+                <p className="text-telegram-textSecondary">Недостаточно данных</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

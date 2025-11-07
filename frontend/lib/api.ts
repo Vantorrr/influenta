@@ -304,6 +304,10 @@ export const statsApi = {
     const response = await api.get('/stats/dashboard')
     return response.data
   },
+  async getSeries(): Promise<{ labels: string[]; series: { name: string; data: number[] }[] }> {
+    const response = await api.get('/stats/series')
+    return response.data
+  },
 }
 
 // Offers API

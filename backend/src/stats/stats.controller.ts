@@ -15,6 +15,12 @@ export class StatsController {
   async dashboard(@CurrentUser() user: User) {
     return this.statsService.getDashboard(user.id)
   }
+
+  @Get('series')
+  @UseGuards(JwtAuthGuard)
+  async series(@CurrentUser() user: User) {
+    return this.statsService.getSeries(user.id)
+  }
 }
 
 

@@ -100,6 +100,75 @@ export class DashboardStatsService {
       recentActivity: [],
     }
   }
+
+  async getSeries(userId: string) {
+    const user = await this.usersRepo.findOne({ where: { id: userId } })
+    const days = 7
+    const labels: string[] = []
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date()
+      d.setDate(d.getDate() - i)
+      labels.push(d.toISOString().slice(0, 10))
+    }
+
+    const viewsByDay: Record<string, number> = {}
+    const responsesByDay: Record<string, number> = {}
+    labels.forEach(l => { viewsByDay[l] = 0; responsesByDay[l] = 0 })
+
+    // Profile views per day (analytics events)
+    try {
+      const raw = await this.analyticsRepo
+        .createQueryBuilder('a')
+        .select("to_char(a.createdAt, 'YYYY-MM-DD')", 'd')
+        .addSelect('COUNT(*)', 'c')
+        .where('a.event = :event', { event: 'profile_view' })
+        .andWhere('a.targetUserId = :uid', { uid: userId })
+        .andWhere("a.createdAt >= NOW() - INTERVAL '7 days'")
+        .groupBy("to_char(a.createdAt, 'YYYY-MM-DD')")
+        .getRawMany()
+      raw.forEach((r: any) => { viewsByDay[r.d] = parseInt(r.c, 10) })
+    } catch {}
+
+    // Responses per day
+    try {
+      if (user?.role === 'blogger') {
+        const blogger = await this.bloggersRepo.findOne({ where: { userId } })
+        if (blogger) {
+          const raw = await this.responsesRepo
+            .createQueryBuilder('r')
+            .select("to_char(r.createdAt, 'YYYY-MM-DD')", 'd')
+            .addSelect('COUNT(*)', 'c')
+            .where('r.bloggerId = :bid', { bid: blogger.id })
+            .andWhere("r.createdAt >= NOW() - INTERVAL '7 days'")
+            .groupBy("to_char(r.createdAt, 'YYYY-MM-DD')")
+            .getRawMany()
+          raw.forEach((r: any) => { responsesByDay[r.d] = parseInt(r.c, 10) })
+        }
+      } else if (user?.role === 'advertiser') {
+        const advertiser = await this.advertisersRepo.findOne({ where: { userId } })
+        if (advertiser) {
+          const raw = await this.responsesRepo
+            .createQueryBuilder('r')
+            .innerJoin('r.listing', 'l')
+            .select("to_char(r.createdAt, 'YYYY-MM-DD')", 'd')
+            .addSelect('COUNT(*)', 'c')
+            .where('l.advertiserId = :aid', { aid: advertiser.id })
+            .andWhere("r.createdAt >= NOW() - INTERVAL '7 days'")
+            .groupBy("to_char(r.createdAt, 'YYYY-MM-DD')")
+            .getRawMany()
+          raw.forEach((r: any) => { responsesByDay[r.d] = parseInt(r.c, 10) })
+        }
+      }
+    } catch {}
+
+    return {
+      labels,
+      series: [
+        { name: 'Просмотры', data: labels.map(l => viewsByDay[l] || 0) },
+        { name: 'Отклики', data: labels.map(l => responsesByDay[l] || 0) },
+      ],
+    }
+  }
 }
 
 
