@@ -46,7 +46,7 @@ export default function BloggersPage() {
   const { user } = useAuth()
   const { data, isLoading } = useQuery({
     queryKey: ['bloggers', filters, search],
-    queryFn: () => bloggersApi.search({ ...filters, search }, 1, 1000),
+    queryFn: () => bloggersApi.search({ ...filters, search }, 1, 20),
     placeholderData: (prev) => prev,
     enabled: !!user,
   })

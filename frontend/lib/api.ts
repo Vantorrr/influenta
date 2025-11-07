@@ -99,7 +99,7 @@ export const bloggersApi = {
   async search(
     filters: BloggerFilters,
     page = 1,
-    limit = 1000
+    limit = 20
   ): Promise<PaginatedResponse<Blogger>> {
     const params: Record<string, any> = { page, limit }
     if (filters?.search) params.search = filters.search
