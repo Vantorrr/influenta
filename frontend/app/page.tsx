@@ -347,6 +347,39 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Support Section */}
+      <section className="py-24 relative z-10">
+        <div className="container">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-gradient-to-br from-telegram-primary/15 via-telegram-accent/10 to-telegram-primary/15 border border-telegram-border rounded-3xl p-8 md:p-12 overflow-hidden"
+          >
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-telegram-primary to-telegram-accent flex items-center justify-center shadow-lg">
+                <Shield className="w-8 h-8 text-white" />
+              </div>
+              <div className="flex-1 text-center md:text-left">
+                <h3 className="text-2xl md:text-3xl font-bold mb-3">Нужна помощь?</h3>
+                <p className="text-telegram-textSecondary text-lg mb-6">
+                  Мы оперативно отвечаем в Telegram. Напишите Полине — она поможет решить любой вопрос.
+                </p>
+                <a
+                  href="https://t.me/polina_khristya"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-3 bg-telegram-primary text-white px-6 py-3 rounded-xl font-semibold hover:bg-telegram-primary/90 transition-colors"
+                >
+                  Связаться с поддержкой
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-32 relative z-10">
         <div className="container">
