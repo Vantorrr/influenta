@@ -53,6 +53,33 @@ export default function BloggerDetailsPage() {
     ;(async () => { await loadBlogger(params.id!) })()
   }, [user, params?.id])
 
+  // Фолбэк: автообновление при возврате/фокусе мини‑приложения
+  useEffect(() => {
+    const onFocus = () => { if (params?.id) loadBlogger(params.id) }
+    const onVisibility = () => { if (typeof document !== 'undefined' && !document.hidden && params?.id) loadBlogger(params.id) }
+    try { window.addEventListener('focus', onFocus) } catch {}
+    try { document.addEventListener('visibilitychange', onVisibility) } catch {}
+    return () => {
+      try { window.removeEventListener('focus', onFocus) } catch {}
+      try { document.removeEventListener('visibilitychange', onVisibility) } catch {}
+    }
+  }, [params?.id])
+
+  // Короткий поллинг после действий админа: если еще не верифицировано, попробуем подтянуть изменения
+  useEffect(() => {
+    if (!params?.id) return
+    if (!data || data.isVerified) return
+    let tick = 0
+    const interval = setInterval(() => {
+      tick += 1
+      loadBlogger(params.id!)
+      if (tick >= 5 || (data && data.isVerified)) {
+        clearInterval(interval)
+      }
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [params?.id, data?.isVerified])
+
   useEffect(() => {
     const handler = (e: any) => {
       const verifiedUserId = e?.detail?.userId
