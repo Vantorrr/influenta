@@ -30,7 +30,7 @@ import {
   parseNumberInput
 } from '@/lib/utils'
 import { bloggersApi, analyticsApi, socialPlatformsApi } from '@/lib/api'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { BloggerCategory, type BloggerFilters } from '@/types'
 import { useAuth } from '@/hooks/useAuth'
 import { getPlatformIcon } from '@/components/icons/PlatformIcons'
@@ -44,6 +44,7 @@ export default function BloggersPage() {
   })
 
   const { user } = useAuth()
+  const queryClient = useQueryClient()
   const { data, isLoading } = useQuery({
     queryKey: ['bloggers', filters, search],
     queryFn: () => bloggersApi.search({ ...filters, search }, 1, 1000),
@@ -54,6 +55,18 @@ export default function BloggersPage() {
   useEffect(() => {
     analyticsApi.track('bloggers_list_view')
   }, [])
+
+  useEffect(() => {
+    const handler = () => {
+      try {
+        queryClient.invalidateQueries({ queryKey: ['bloggers'] })
+      } catch {}
+    }
+    window.addEventListener('user-verified' as any, handler as any)
+    return () => {
+      window.removeEventListener('user-verified' as any, handler as any)
+    }
+  }, [queryClient])
 
   const categories = Object.values(BloggerCategory)
 

@@ -30,6 +30,17 @@ export default function BloggerDetailsPage() {
   // ID пользователя для загрузки платформ (после загрузки профиля)
   const userIdForPlatforms = (data?.user?.id || data?.id) as string | undefined
 
+  const loadBlogger = async (id: string) => {
+    try {
+      const resp = await bloggersApi.getById(id)
+      setData(resp.data || resp)
+    } catch (e: any) {
+      setError(e?.response?.data?.message || e?.message || 'Ошибка загрузки')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   // Загружаем платформы блогера (по userId)
   const { data: platforms = [] } = useQuery({
     queryKey: ['blogger-platforms', userIdForPlatforms],
@@ -39,17 +50,24 @@ export default function BloggerDetailsPage() {
 
   useEffect(() => {
     if (!user || !params?.id) return
-    ;(async () => {
-      try {
-        const resp = await bloggersApi.getById(params.id!)
-        setData(resp.data || resp)
-      } catch (e: any) {
-        setError(e?.response?.data?.message || e?.message || 'Ошибка загрузки')
-      } finally {
-        setIsLoading(false)
-      }
-    })()
+    ;(async () => { await loadBlogger(params.id!) })()
   }, [user, params?.id])
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      const verifiedId = e?.detail?.userId
+      const currentId = params?.id
+      if (!verifiedId || !currentId) return
+      if (verifiedId === currentId) {
+        setIsLoading(true)
+        loadBlogger(currentId)
+      }
+    }
+    window.addEventListener('user-verified' as any, handler as any)
+    return () => {
+      window.removeEventListener('user-verified' as any, handler as any)
+    }
+  }, [params?.id])
 
   if (isLoading) {
     return (
