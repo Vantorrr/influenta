@@ -55,19 +55,19 @@ export default function BloggerDetailsPage() {
 
   useEffect(() => {
     const handler = (e: any) => {
-      const verifiedId = e?.detail?.userId
-      const currentId = params?.id
-      if (!verifiedId || !currentId) return
-      if (verifiedId === currentId) {
+      const verifiedUserId = e?.detail?.userId
+      const currentTargetUserId = (data?.user?.id || data?.userId || data?.id) as string | undefined
+      if (!verifiedUserId || !currentTargetUserId) return
+      if (verifiedUserId === currentTargetUserId) {
         setIsLoading(true)
-        loadBlogger(currentId)
+        if (params?.id) loadBlogger(params.id)
       }
     }
     window.addEventListener('user-verified' as any, handler as any)
     return () => {
       window.removeEventListener('user-verified' as any, handler as any)
     }
-  }, [params?.id])
+  }, [params?.id, data?.user?.id, data?.userId, data?.id])
 
   if (isLoading) {
     return (
@@ -160,7 +160,11 @@ export default function BloggerDetailsPage() {
                         alert(`Ошибка: ${resp.status} ${text}`)
                         return
                       }
-                      router.refresh()
+                      // Оптимистичное обновление UI
+                      setData(prev => prev ? { ...prev, isVerified: true } : prev)
+                      try { (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.('success') } catch {}
+                      try { window.dispatchEvent(new CustomEvent('user-verified', { detail: { userId: uid } })) } catch {}
+                      try { router.refresh() } catch {}
                     }
                   } catch (e: any) {
                     alert(`Ошибка: ${e?.message || e}`)
