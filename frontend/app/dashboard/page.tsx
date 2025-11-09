@@ -292,7 +292,6 @@ export default function DashboardPage() {
                           onMouseEnter={() => setActiveIdx(idx)}
                           onMouseLeave={() => setActiveIdx(null)}
                           onClick={() => setActiveIdx(prev => prev === idx ? null : idx)}
-                          onTouchStart={(e) => { e.preventDefault(); setActiveIdx(idx) }}
                         >
                           <div className="text-[10px] font-semibold text-telegram-text h-4">
                             {sumAtIdx > 0 ? sumAtIdx : ''}
