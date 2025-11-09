@@ -197,7 +197,7 @@ export default function DashboardPage() {
             />
           </div>
           
-          <div className="relative z-10">
+          <div className="relative z-10 bg-black/30 backdrop-blur-sm rounded-2xl p-6">
             <div className="flex items-center gap-4 mb-4">
                 <motion.div
                   initial={{ rotate: -180, scale: 0 }}
