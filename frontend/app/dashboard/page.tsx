@@ -39,6 +39,7 @@ export default function DashboardPage() {
     queryFn: () => statsApi.getSeries(),
     enabled: !!user,
   })
+  const [activeIdx, setActiveIdx] = useState<number | null>(null)
   
   useEffect(() => {
     // Проверяем pendingDeepLink при загрузке дашборда
@@ -253,8 +254,23 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             {series?.labels?.length ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-7 gap-2 items-end h-40">
+              <div className="space-y-4">
+                {/* Итоги за 7 дней */}
+                <div className="flex flex-wrap gap-3 text-sm">
+                  {series.series.map(s => {
+                    const total = (s.data || []).reduce((a, b) => a + (b || 0), 0)
+                    return (
+                      <div key={s.name} className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-telegram-bgSecondary border border-telegram-border">
+                        <span className="inline-block w-3 h-3 rounded-sm bg-gradient-to-t from-telegram-primary to-telegram-accent" />
+                        <span className="text-telegram-textSecondary">{s.name}:</span>
+                        <span className="font-semibold">{formatNumber(total)}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Столбцы по дням */}
+                <div className="grid grid-cols-7 gap-2 items-end h-44">
                   {(() => {
                     const max = Math.max(
                       ...series.series.flatMap(s => s.data),
@@ -264,8 +280,20 @@ export default function DashboardPage() {
                       const sumAtIdx = series.series.reduce((acc, s) => acc + (s.data[idx] || 0), 0)
                       const h = Math.round((sumAtIdx / max) * 100)
                       return (
-                        <div key={label} className="flex flex-col items-center gap-2">
-                          <div className="w-full bg-telegram-bgSecondary rounded-md overflow-hidden h-32 flex items-end">
+                        <div 
+                          key={label} 
+                          className="flex flex-col items-center gap-2"
+                          onMouseEnter={() => setActiveIdx(idx)}
+                          onMouseLeave={() => setActiveIdx(null)}
+                          onClick={() => setActiveIdx(prev => prev === idx ? null : idx)}
+                        >
+                          {/* значение над столбцом */}
+                          <div className="h-5">
+                            <span className="text-[10px] text-telegram-textSecondary/80">
+                              {sumAtIdx > 0 ? formatNumber(sumAtIdx) : ''}
+                            </span>
+                          </div>
+                          <div className={`w-full bg-telegram-bgSecondary rounded-md overflow-hidden h-32 flex items-end ${activeIdx === idx ? 'ring-2 ring-telegram-primary/50' : ''}`}>
                             <div
                               className="w-full bg-gradient-to-t from-telegram-primary to-telegram-accent"
                               style={{ height: `${Math.max(8, Math.min(h, 100))}%` }}
@@ -277,14 +305,24 @@ export default function DashboardPage() {
                     })
                   })()}
                 </div>
-                <div className="flex gap-4 text-xs text-telegram-textSecondary">
-                  {series.series.map(s => (
-                    <div key={s.name} className="flex items-center gap-2">
-                      <span className="inline-block w-3 h-3 rounded-sm bg-gradient-to-t from-telegram-primary to-telegram-accent" />
-                      {s.name}
+                
+                {/* Детализация по активному дню */}
+                {typeof activeIdx === 'number' && activeIdx >= 0 && (
+                  <div className="rounded-xl border border-telegram-border bg-telegram-bgSecondary p-3">
+                    <div className="text-sm font-medium mb-2">Детали за {series.labels[activeIdx]}</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                      {series.series.map(s => (
+                        <div key={s.name} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-block w-3 h-3 rounded-sm bg-gradient-to-t from-telegram-primary to-telegram-accent" />
+                            <span className="text-telegram-textSecondary">{s.name}</span>
+                          </div>
+                          <span className="font-semibold">{formatNumber(s.data[activeIdx] || 0)}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="h-48 bg-telegram-bg rounded-lg flex items-center justify-center">
