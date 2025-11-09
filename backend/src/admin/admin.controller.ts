@@ -118,6 +118,13 @@ export class AdminController {
   ) {
     return this.adminService.deleteListing(id, body?.reason || 'Модерация администратора');
   }
+
+  // Админ: массовая рассылка о техработах
+  @Post('broadcast/maintenance')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  async broadcastMaintenance(@Body() body: { message?: string }) {
+    return this.adminService.broadcastMaintenance(body?.message);
+  }
 }
 
 

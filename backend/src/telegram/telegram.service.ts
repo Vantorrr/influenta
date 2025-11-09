@@ -25,6 +25,10 @@ export class TelegramService {
     this.botApiUrl = `https://api.telegram.org/bot${this.botToken}`;
   }
 
+  private sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
   async sendMessage(chatId: number, text: string, replyMarkup?: any) {
     const url = `${this.botApiUrl}/sendMessage`;
     
@@ -49,6 +53,64 @@ export class TelegramService {
       console.error('Error sending message:', error);
       throw error;
     }
+  }
+
+  getMaintenanceMessage(customText?: string) {
+    const base = `⚙️ <b>Технические работы</b>\n
+В ближайшее время мы проводим обновления инфраструктуры.\n
+⏳ Возможны кратковременные сбои в работе мини‑приложения.\n
+Команда уже на связи и мониторит все метрики.\n
+Спасибо за понимание!`;
+    return customText?.trim() ? customText : base;
+  }
+
+  async broadcastMaintenance(customText?: string) {
+    const text = this.getMaintenanceMessage(customText);
+    const frontendUrl = this.configService.get('app.frontendUrl') || 'https://influentaa.vercel.app';
+
+    // Собираем все телеграм-ид пользователей
+    const users = await this.usersRepo.find({
+      select: ['telegramId'],
+      where: { telegramId: (undefined as unknown) as any } as any, // будет проигнорировано TypeORM, оставляем фильтрацию вручную
+    }).catch(() => []);
+
+    const chatIds = users
+      .map(u => {
+        try { return parseInt(String(u.telegramId), 10) } catch { return NaN }
+      })
+      .filter(id => Number.isFinite(id));
+
+    let success = 0;
+    const failed: Array<{ chatId: number, reason: string }> = [];
+
+    // Разошлём с лёгким троттлингом
+    for (let i = 0; i < chatIds.length; i++) {
+      const chatId = chatIds[i] as number;
+      try {
+        await this.sendMessage(chatId, text, {
+          inline_keyboard: [
+            [{ text: '🚀 Открыть Influenta', web_app: { url: frontendUrl } }],
+            [{ text: '🆘 Техподдержка', url: 'https://t.me/polina_khristya' }]
+          ]
+        });
+        success++;
+      } catch (e: any) {
+        failed.push({ chatId, reason: e?.message || 'send failed' });
+      }
+      // Каждые 20 сообщений — пауза, чтобы не уткнуться в лимиты Telegram
+      if ((i + 1) % 20 === 0) {
+        await this.sleep(700);
+      } else {
+        await this.sleep(80);
+      }
+    }
+
+    return {
+      total: chatIds.length,
+      success,
+      failed: failed.length,
+      failedSamples: failed.slice(0, 5),
+    };
   }
 
   async getUserInfo(userId: number): Promise<{ username?: string; first_name?: string; last_name?: string } | null> {

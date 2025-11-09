@@ -173,6 +173,15 @@ export class AdminService {
     };
   }
 
+  async broadcastMaintenance(message?: string) {
+    try {
+      const result = await this.telegramService.broadcastMaintenance(message);
+      return { success: true, ...result };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'broadcast failed' };
+    }
+  }
+
   async getAdvertisersList() {
     try {
       const [advertisers, listingCounts] = await Promise.all([
