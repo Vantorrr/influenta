@@ -97,11 +97,13 @@ export default function CreateListingPage() {
     setLoading(true)
 
     try {
+      // Нормализуем и ограничиваем бюджет
+      const normalizedBudget = formData.negotiable ? -1 : Math.min(99999999, parseFloat(formData.budget))
       const req: Partial<Listing> = {
         title: formData.title,
         description: formData.description,
         targetCategories: formData.targetCategories,
-        budget: formData.negotiable ? -1 : parseFloat(formData.budget),
+        budget: normalizedBudget,
         format: formData.format,
         // DTO допускает только: minSubscribers, verifiedOnly
         requirements: {
@@ -253,7 +255,7 @@ export default function CreateListingPage() {
             <CardContent className="space-y-4">
               <div>
                 <label className="label">Бюджет (₽) *</label>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className="flex flex-col items-start gap-2">
                 <Input
                   type="text"
                   inputMode="numeric"
