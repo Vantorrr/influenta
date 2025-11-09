@@ -36,20 +36,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
       tg.setHeaderColor('#17212B')
       tg.setBackgroundColor('#17212B')
       
-      // Настройка viewport для полного экрана (только на мобильных)
+      // Настройка viewport для полного экрана
       const setViewportHeight = () => {
-        // На широких экранах (desktop) сбрасываем принудительные стили
-        if (window.innerWidth >= 1024) {
-          document.documentElement.style.height = ''
-          document.body.style.height = ''
-          const root = document.getElementById('__next')
-          if (root) {
-            root.style.height = ''
-            root.style.overflow = ''
-          }
-          return
-        }
-        
         const height = tg.viewportHeight || window.innerHeight
         document.documentElement.style.setProperty('--tg-viewport-height', `${height}px`)
         document.documentElement.style.height = `${height}px`
