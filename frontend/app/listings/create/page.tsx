@@ -277,7 +277,7 @@ export default function CreateListingPage() {
                 </p>
               </div>
               
-              <div>
+              <div className="mt-2">
                 <label className="label">Дедлайн</label>
                 <Input
                   type="date"
