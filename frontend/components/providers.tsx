@@ -39,26 +39,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
       // Настройка viewport для полного экрана
       const setViewportHeight = () => {
         const height = tg.viewportHeight || window.innerHeight
-        const platform = (tg.platform || '').toLowerCase()
-        const isDesktopApp = platform.includes('tdesktop') || platform.includes('mac') || platform.includes('win')
-        const isWide = window.innerWidth >= 1024 || isDesktopApp
-        if (!isWide) {
-          document.documentElement.style.setProperty('--tg-viewport-height', `${height}px`)
-          document.documentElement.style.height = `${height}px`
-          document.body.style.height = `${height}px`
-          const root = document.getElementById('__next')
-          if (root) {
-            root.style.height = `${height}px`
-            root.style.overflow = 'hidden'
-          }
-        } else {
-          document.documentElement.style.removeProperty('--tg-viewport-height')
-          document.documentElement.style.removeProperty('height')
-          document.body.style.removeProperty('height')
-          const target = document.getElementById('__next') || document.body
-          if (target) {
-            target.removeAttribute('style')
-          }
+        document.documentElement.style.setProperty('--tg-viewport-height', `${height}px`)
+        document.documentElement.style.height = `${height}px`
+        document.body.style.height = `${height}px`
+        
+        // Принудительно растягиваем на весь экран
+        const root = document.getElementById('__next')
+        if (root) {
+          root.style.height = `${height}px`
+          root.style.overflow = 'hidden'
         }
       }
       
