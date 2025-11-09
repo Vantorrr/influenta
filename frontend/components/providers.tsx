@@ -42,7 +42,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
         const platform = (tg.platform || '').toLowerCase()
         const isDesktopApp = platform.includes('tdesktop') || platform.includes('mac') || platform.includes('win')
         const isWide = window.innerWidth >= 1024 || isDesktopApp
-        // На широких экранах не форсим высоту, чтобы не ломать десктопную вёрстку админки
         if (!isWide) {
           document.documentElement.style.setProperty('--tg-viewport-height', `${height}px`)
           document.documentElement.style.height = `${height}px`
@@ -53,13 +52,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
             root.style.overflow = 'hidden'
           }
         } else {
-          // Сбрасываем возможные принудительные стили
+          document.documentElement.style.removeProperty('--tg-viewport-height')
           document.documentElement.style.removeProperty('height')
           document.body.style.removeProperty('height')
-          const root = document.getElementById('__next')
-          if (root) {
-            root.style.height = ''
-            root.style.overflow = ''
+          const target = document.getElementById('__next') || document.body
+          if (target) {
+            target.removeAttribute('style')
           }
         }
       }
