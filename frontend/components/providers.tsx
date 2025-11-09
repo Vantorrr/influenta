@@ -38,8 +38,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
       
       // Настройка viewport для полного экрана (только на мобильных)
       const setViewportHeight = () => {
-        // На широких экранах (desktop) не форсим высоту
+        // На широких экранах (desktop) сбрасываем принудительные стили
         if (window.innerWidth >= 1024) {
+          document.documentElement.style.height = ''
+          document.body.style.height = ''
+          const root = document.getElementById('__next')
+          if (root) {
+            root.style.height = ''
+            root.style.overflow = ''
+          }
           return
         }
         
