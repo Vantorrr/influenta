@@ -14,7 +14,7 @@ export class CreateListingDto {
   targetCategories: BloggerCategory[];
 
   @IsNumber()
-  @Min(0)
+  @Min(-1) // -1 = "Договорная"
   budget: number;
 
   @IsEnum(PostFormat)

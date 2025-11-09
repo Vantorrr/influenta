@@ -37,6 +37,7 @@ export default function CreateListingPage() {
     description: '',
     targetCategories: [] as BloggerCategory[],
     budget: '',
+    negotiable: false,
     format: PostFormat.ANY,
     requirements: {
       minSubscribers: '',
@@ -73,9 +74,11 @@ export default function CreateListingPage() {
       return
     }
     
-    if (!formData.budget || parseFloat(formData.budget) <= 0) {
-      setError('Укажите бюджет')
-      return
+    if (!formData.negotiable) {
+      if (!formData.budget || parseFloat(formData.budget) <= 0) {
+        setError('Укажите бюджет или отметьте «Договорная»')
+        return
+      }
     }
     
     if (formData.targetCategories.length === 0) {
@@ -98,7 +101,7 @@ export default function CreateListingPage() {
         title: formData.title,
         description: formData.description,
         targetCategories: formData.targetCategories,
-        budget: parseFloat(formData.budget),
+        budget: formData.negotiable ? -1 : parseFloat(formData.budget),
         format: formData.format,
         // DTO допускает только: minSubscribers, verifiedOnly
         requirements: {
@@ -250,15 +253,27 @@ export default function CreateListingPage() {
             <CardContent className="space-y-4">
               <div>
                 <label className="label">Бюджет (₽) *</label>
+              <div className="flex items-center gap-3">
                 <Input
                   type="text"
                   inputMode="numeric"
-                  value={formatNumberInput(formData.budget)}
+                  value={formData.negotiable ? '' : formatNumberInput(formData.budget)}
                   onChange={(e) => setFormData(prev => ({ ...prev, budget: parseNumberInput(e.target.value).toString() }))}
-                  placeholder="50.000"
+                  placeholder={formData.negotiable ? 'Договорная' : '50.000'}
+                  disabled={formData.negotiable}
                 />
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.negotiable}
+                    onChange={(e) => setFormData(prev => ({ ...prev, negotiable: e.target.checked }))}
+                    className="w-4 h-4 rounded border-gray-600 text-telegram-primary focus:ring-telegram-primary"
+                  />
+                  <span>Договорная</span>
+                </label>
+              </div>
                 <p className="text-xs text-telegram-textSecondary mt-1">
-                  Укажите общий бюджет на кампанию
+                Укажите общий бюджет на кампанию или отметьте «Договорная»
                 </p>
               </div>
               
