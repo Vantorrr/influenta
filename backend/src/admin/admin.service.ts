@@ -434,5 +434,106 @@ export class AdminService {
 
     return { success: true };
   }
+
+  // Ensure all BloggerCategory enum values exist in Postgres enum listings_targetcategories_enum
+  async fixTargetCategoriesEnum() {
+    await this.listingsRepository.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_enum e
+          JOIN pg_type t ON t.oid = e.enumtypid
+          WHERE t.typname = 'listings_targetcategories_enum' AND e.enumlabel = 'humor'
+        ) THEN
+          ALTER TYPE listings_targetcategories_enum ADD VALUE 'humor';
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_enum e
+          JOIN pg_type t ON t.oid = e.enumtypid
+          WHERE t.typname = 'listings_targetcategories_enum' AND e.enumlabel = 'food'
+        ) THEN
+          ALTER TYPE listings_targetcategories_enum ADD VALUE 'food';
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_enum e
+          JOIN pg_type t ON t.oid = e.enumtypid
+          WHERE t.typname = 'listings_targetcategories_enum' AND e.enumlabel = 'fitness'
+        ) THEN
+          ALTER TYPE listings_targetcategories_enum ADD VALUE 'fitness';
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_enum e
+          JOIN pg_type t ON t.oid = e.enumtypid
+          WHERE t.typname = 'listings_targetcategories_enum' AND e.enumlabel = 'education'
+        ) THEN
+          ALTER TYPE listings_targetcategories_enum ADD VALUE 'education';
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_enum e
+          JOIN pg_type t ON t.oid = e.enumtypid
+          WHERE t.typname = 'listings_targetcategories_enum' AND e.enumlabel = 'gaming'
+        ) THEN
+          ALTER TYPE listings_targetcategories_enum ADD VALUE 'gaming';
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_enum e
+          JOIN pg_type t ON t.oid = e.enumtypid
+          WHERE t.typname = 'listings_targetcategories_enum' AND e.enumlabel = 'tech'
+        ) THEN
+          ALTER TYPE listings_targetcategories_enum ADD VALUE 'tech';
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_enum e
+          JOIN pg_type t ON t.oid = e.enumtypid
+          WHERE t.typname = 'listings_targetcategories_enum' AND e.enumlabel = 'fashion'
+        ) THEN
+          ALTER TYPE listings_targetcategories_enum ADD VALUE 'fashion';
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_enum e
+          JOIN pg_type t ON t.oid = e.enumtypid
+          WHERE t.typname = 'listings_targetcategories_enum' AND e.enumlabel = 'lifestyle'
+        ) THEN
+          ALTER TYPE listings_targetcategories_enum ADD VALUE 'lifestyle';
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_enum e
+          JOIN pg_type t ON t.oid = e.enumtypid
+          WHERE t.typname = 'listings_targetcategories_enum' AND e.enumlabel = 'beauty'
+        ) THEN
+          ALTER TYPE listings_targetcategories_enum ADD VALUE 'beauty';
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_enum e
+          JOIN pg_type t ON t.oid = e.enumtypid
+          WHERE t.typname = 'listings_targetcategories_enum' AND e.enumlabel = 'business'
+        ) THEN
+          ALTER TYPE listings_targetcategories_enum ADD VALUE 'business';
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_enum e
+          JOIN pg_type t ON t.oid = e.enumtypid
+          WHERE t.typname = 'listings_targetcategories_enum' AND e.enumlabel = 'hobby'
+        ) THEN
+          ALTER TYPE listings_targetcategories_enum ADD VALUE 'hobby';
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_enum e
+          JOIN pg_type t ON t.oid = e.enumtypid
+          WHERE t.typname = 'listings_targetcategories_enum' AND e.enumlabel = 'travel'
+        ) THEN
+          ALTER TYPE listings_targetcategories_enum ADD VALUE 'travel';
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_enum e
+          JOIN pg_type t ON t.oid = e.enumtypid
+          WHERE t.typname = 'listings_targetcategories_enum' AND e.enumlabel = 'other'
+        ) THEN
+          ALTER TYPE listings_targetcategories_enum ADD VALUE 'other';
+        END IF;
+      END $$;
+    `);
+    return { success: true };
+  }
 }
 

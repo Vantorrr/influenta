@@ -95,6 +95,13 @@ export class AdminController {
     return this.adminService.fixReelsToLive();
   }
 
+  // Синхронизация enum категорий (добавит отсутствующие значения в listings_targetcategories_enum)
+  @Post('fix-target-categories')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  async fixTargetCategoriesEnum() {
+    return this.adminService.fixTargetCategoriesEnum();
+  }
+
   // Админ: список объявлений
   @Get('listings')
   @UseGuards(JwtAuthGuard, AdminGuard)

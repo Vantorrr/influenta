@@ -13,6 +13,7 @@ const DEFAULT_TEXT = `⚙️ Технические работы
 export default function AdminSettingsPage() {
   const [text, setText] = useState(DEFAULT_TEXT)
   const [loading, setLoading] = useState(false)
+  const [fixingEnums, setFixingEnums] = useState(false)
 
   const sendBroadcast = async () => {
     try {
@@ -70,6 +71,51 @@ export default function AdminSettingsPage() {
             </Button>
             <Button variant="secondary" onClick={() => setText(DEFAULT_TEXT)} disabled={loading}>
               Вернуть текст по умолчанию
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Синхронизация категорий объявлений</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-telegram-textSecondary">
+            Если при создании объявления возникает ошибка enum (например, «hobby»), нажмите кнопку ниже — недостающие значения будут добавлены в БД.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="primary"
+              onClick={async () => {
+                try {
+                  setFixingEnums(true)
+                  const token = typeof window !== 'undefined' ? localStorage.getItem('influenta_token') : null
+                  if (!token) {
+                    alert('Нет прав администратора (JWT не найден). Перезайдите в админку.')
+                    return
+                  }
+                  const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/fix-target-categories`, {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${token}`,
+                    },
+                  })
+                  if (!resp.ok) {
+                    const err = await resp.text()
+                    alert(`Ошибка: ${resp.status} ${err}`)
+                    return
+                  }
+                  alert('Готово! Категории синхронизированы.')
+                } catch (e: any) {
+                  alert(`Сбой: ${e?.message || 'неизвестная ошибка'}`)
+                } finally {
+                  setFixingEnums(false)
+                }
+              }}
+              loading={fixingEnums}
+            >
+              Обновить enum категорий
             </Button>
           </div>
         </CardContent>
