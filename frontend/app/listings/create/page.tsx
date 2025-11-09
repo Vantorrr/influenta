@@ -253,7 +253,7 @@ export default function CreateListingPage() {
             <CardContent className="space-y-4">
               <div>
                 <label className="label">Бюджет (₽) *</label>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                 <Input
                   type="text"
                   inputMode="numeric"
