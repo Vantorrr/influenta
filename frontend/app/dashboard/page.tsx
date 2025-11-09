@@ -278,19 +278,18 @@ export default function DashboardPage() {
                 {/* Столбцы по дням */}
                 <div className="grid grid-cols-7 gap-2 items-end h-44 select-none">
                   {(() => {
-                    const max = Math.max(
-                      ...series.series.flatMap(s => s.data),
-                      1
-                    )
+                    // Надёжно вычисляем максимум по всем точкам, приводя к числу
+                    const allValues = series.series.flatMap(s => (s.data || []).map((n: any) => Number(n) || 0))
+                    const max = Math.max(...allValues, 1)
                     return series.labels.map((label, idx) => {
                       const valuesBySeries = Object.fromEntries(
-                        series.series.map(s => [s.name, (s.data[idx] || 0)])
+                        series.series.map(s => [s.name, Number(s.data[idx] || 0)])
                       ) as Record<string, number>
                       const sumAtIdx = Object.values(valuesBySeries).reduce((a, b) => a + b, 0)
                       const viewsVal = valuesBySeries['Просмотры'] || 0
                       const responsesVal = valuesBySeries['Отклики'] || 0
-                      const viewsH = Math.round((viewsVal / max) * 100)
-                      const responsesH = Math.round((responsesVal / max) * 100)
+                      const viewsH = Math.max(3, Math.round((viewsVal / max) * 100))
+                      const responsesH = Math.max(3, Math.round((responsesVal / max) * 100))
                       return (
                         <div 
                           key={label} 
