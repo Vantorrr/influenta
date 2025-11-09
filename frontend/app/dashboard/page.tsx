@@ -40,6 +40,12 @@ export default function DashboardPage() {
     enabled: !!user,
   })
   const [activeIdx, setActiveIdx] = useState<number | null>(null)
+
+  // Цвета для разных метрик
+  const colorBySeries: Record<string, { bar: string; dot: string }> = {
+    'Просмотры': { bar: 'from-blue-500 to-cyan-500', dot: 'bg-blue-400' },
+    'Отклики': { bar: 'from-purple-500 to-pink-500', dot: 'bg-purple-400' },
+  }
   
   useEffect(() => {
     // Проверяем pendingDeepLink при загрузке дашборда
@@ -261,7 +267,7 @@ export default function DashboardPage() {
                     const total = (s.data || []).reduce((a, b) => a + (b || 0), 0)
                     return (
                       <div key={s.name} className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-telegram-bgSecondary border border-telegram-border">
-                        <span className="inline-block w-3 h-3 rounded-sm bg-gradient-to-t from-telegram-primary to-telegram-accent" />
+                        <span className={`inline-block w-3 h-3 rounded-sm ${colorBySeries[s.name]?.dot || 'bg-telegram-primary'}`} />
                         <span className="text-telegram-textSecondary">{s.name}:</span>
                         <span className="font-semibold">{formatNumber(total)}</span>
                       </div>
@@ -270,15 +276,21 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Столбцы по дням */}
-                <div className="grid grid-cols-7 gap-2 items-end h-44">
+                <div className="grid grid-cols-7 gap-2 items-end h-44 select-none">
                   {(() => {
                     const max = Math.max(
                       ...series.series.flatMap(s => s.data),
                       1
                     )
                     return series.labels.map((label, idx) => {
-                      const sumAtIdx = series.series.reduce((acc, s) => acc + (s.data[idx] || 0), 0)
-                      const h = Math.round((sumAtIdx / max) * 100)
+                      const valuesBySeries = Object.fromEntries(
+                        series.series.map(s => [s.name, (s.data[idx] || 0)])
+                      ) as Record<string, number>
+                      const sumAtIdx = Object.values(valuesBySeries).reduce((a, b) => a + b, 0)
+                      const viewsVal = valuesBySeries['Просмотры'] || 0
+                      const responsesVal = valuesBySeries['Отклики'] || 0
+                      const viewsH = Math.round((viewsVal / max) * 100)
+                      const responsesH = Math.round((responsesVal / max) * 100)
                       return (
                         <div 
                           key={label} 
@@ -286,6 +298,8 @@ export default function DashboardPage() {
                           onMouseEnter={() => setActiveIdx(idx)}
                           onMouseLeave={() => setActiveIdx(null)}
                           onClick={() => setActiveIdx(prev => prev === idx ? null : idx)}
+                          onTouchStart={() => setActiveIdx(idx)}
+                          onTouchEnd={() => {/* keep tooltip visible after tap */}}
                         >
                           {/* значение над столбцом */}
                           <div className="h-5">
@@ -293,11 +307,21 @@ export default function DashboardPage() {
                               {sumAtIdx > 0 ? formatNumber(sumAtIdx) : ''}
                             </span>
                           </div>
-                          <div className={`w-full bg-telegram-bgSecondary rounded-md overflow-hidden h-32 flex items-end ${activeIdx === idx ? 'ring-2 ring-telegram-primary/50' : ''}`}>
-                            <div
-                              className="w-full bg-gradient-to-t from-telegram-primary to-telegram-accent"
-                              style={{ height: `${Math.max(8, Math.min(h, 100))}%` }}
-                            />
+                          <div className={`w-full bg-telegram-bgSecondary rounded-md overflow-hidden h-32 flex items-end px-0.5 gap-1 ${activeIdx === idx ? 'ring-2 ring-telegram-primary/50' : ''}`}>
+                            {/* Просмотры */}
+                            <div className="w-1/2 flex items-end">
+                              <div
+                                className={`w-full bg-gradient-to-t ${colorBySeries['Просмотры']?.bar || 'from-telegram-primary to-telegram-accent'} rounded-sm`}
+                                style={{ height: `${Math.max(6, Math.min(viewsH, 100))}%` }}
+                              />
+                            </div>
+                            {/* Отклики */}
+                            <div className="w-1/2 flex items-end">
+                              <div
+                                className={`w-full bg-gradient-to-t ${colorBySeries['Отклики']?.bar || 'from-telegram-accent to-telegram-primary'} rounded-sm`}
+                                style={{ height: `${Math.max(6, Math.min(responsesH, 100))}%` }}
+                              />
+                            </div>
                           </div>
                           <span className="text-[10px] text-telegram-textSecondary">{label.slice(5)}</span>
                         </div>
@@ -314,7 +338,7 @@ export default function DashboardPage() {
                       {series.series.map(s => (
                         <div key={s.name} className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="inline-block w-3 h-3 rounded-sm bg-gradient-to-t from-telegram-primary to-telegram-accent" />
+                            <span className={`inline-block w-3 h-3 rounded-sm ${colorBySeries[s.name]?.dot || 'bg-telegram-primary'}`} />
                             <span className="text-telegram-textSecondary">{s.name}</span>
                           </div>
                           <span className="font-semibold">{formatNumber(s.data[activeIdx] || 0)}</span>
