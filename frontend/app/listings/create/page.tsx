@@ -47,7 +47,8 @@ export default function CreateListingPage() {
     deadline: '',
   })
 
-  const categories = Object.values(BloggerCategory)
+  // Временный обход: исключаем 'hobby' до синхронизации enum в БД
+  const categories = Object.values(BloggerCategory).filter(c => c !== 'hobby')
   const formats = Object.values(PostFormat)
 
   const toggleCategory = (category: BloggerCategory) => {
