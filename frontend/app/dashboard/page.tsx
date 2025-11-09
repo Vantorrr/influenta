@@ -143,7 +143,7 @@ export default function DashboardPage() {
           className="relative overflow-hidden bg-gradient-to-br from-telegram-primary via-blue-600 to-telegram-accent rounded-3xl p-8 text-white shadow-2xl"
         >
           {/* Animated background particles - optimized */}
-          <div className="absolute inset-0 opacity-15 will-change-transform">
+          <div className="absolute inset-0 opacity-8 will-change-transform">
             {[...Array(3)].map((_, i) => (
               <motion.div
                 key={i}
@@ -154,7 +154,7 @@ export default function DashboardPage() {
                 }}
                 animate={{
                   y: [0, -15, 0],
-                  opacity: [0.2, 0.5, 0.2],
+                  opacity: [0.1, 0.3, 0.1],
                 }}
                 transition={{
                   duration: 4 + i * 0.5,
@@ -167,7 +167,7 @@ export default function DashboardPage() {
           </div>
           
           {/* Animated gradient orbs - optimized with GPU acceleration */}
-          <div className="absolute inset-0 opacity-12 will-change-transform">
+          <div className="absolute inset-0 opacity-8 will-change-transform">
             <motion.div
               className="absolute top-0 right-0 w-72 h-72 bg-white rounded-full blur-3xl will-change-transform"
               animate={{
@@ -225,10 +225,10 @@ export default function DashboardPage() {
                 </motion.div>
                 {/* Glow effect - optimized */}
                 <motion.div
-                  className="absolute inset-0 bg-white rounded-full blur-xl opacity-40 will-change-transform"
+                  className="absolute inset-0 bg-white rounded-full blur-xl opacity-20 will-change-transform"
                   animate={{
                     scale: [1, 1.15, 1],
-                    opacity: [0.2, 0.4, 0.2],
+                    opacity: [0.1, 0.25, 0.1],
                   }}
                   transition={{
                     duration: 3,
@@ -242,7 +242,7 @@ export default function DashboardPage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.25 }}
-                  className="text-3xl font-bold mb-1"
+                  className="text-3xl font-bold mb-1 text-white drop-shadow-lg"
                 >
                   Привет, {user?.firstName || 'ADMIN'}!
                 </motion.h2>
@@ -253,8 +253,8 @@ export default function DashboardPage() {
                     transition={{ delay: 0.35 }}
                     className="flex items-center gap-2"
                   >
-                    <Shield className="w-4 h-4" />
-                    <span className="text-sm text-white/80">Администратор платформы</span>
+                    <Shield className="w-4 h-4 text-white drop-shadow-md" />
+                    <span className="text-sm text-white drop-shadow-md">Администратор платформы</span>
                   </motion.div>
                 )}
               </div>
@@ -264,7 +264,7 @@ export default function DashboardPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="text-white/90 mb-6 text-lg leading-relaxed"
+              className="text-white mb-6 text-lg leading-relaxed drop-shadow-md"
             >
               {userRole === 'admin'
                 ? 'Добро пожаловать в панель управления! Управляйте платформой и следите за метриками.'
