@@ -176,9 +176,10 @@ export class AdminService {
   async broadcastMaintenance(message?: string) {
     try {
       const result = await this.telegramService.broadcastMaintenance(message);
-      return { success: true, ...result };
+      // Используем 'ok', чтобы не конфликтовать с полем 'success' внутри result (число успешных отправок)
+      return { ok: true, ...result };
     } catch (e: any) {
-      return { success: false, error: e?.message || 'broadcast failed' };
+      return { ok: false, error: e?.message || 'broadcast failed' };
     }
   }
 
