@@ -198,84 +198,90 @@ export default function DashboardPage() {
           </div>
           
           <div className="relative z-10">
-            <div className="flex items-center gap-4 mb-4">
-              <motion.div
-                initial={{ rotate: -180, scale: 0 }}
-                animate={{ rotate: 0, scale: 1 }}
-                transition={{ 
-                  delay: 0.2, 
-                  type: "spring",
-                  stiffness: 150,
-                  damping: 20
-                }}
-                className="relative will-change-transform"
-              >
-                <motion.div
-                  className="will-change-transform"
-                  animate={{
-                    y: [0, -6, 0],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                >
-                  {userRole === 'admin' ? <AdminIcon /> : userRole === 'blogger' ? <BloggerIcon /> : <AdvertiserIcon />}
-                </motion.div>
-                {/* Glow effect - optimized */}
-                <motion.div
-                  className="absolute inset-0 bg-white rounded-full blur-xl opacity-20 will-change-transform"
-                  animate={{
-                    scale: [1, 1.15, 1],
-                    opacity: [0.1, 0.25, 0.1],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                />
-              </motion.div>
-              <div>
-                <motion.h2
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.25 }}
-                  className="text-3xl font-bold mb-1 text-white drop-shadow-lg"
-                >
-                  Привет, {user?.firstName || 'ADMIN'}!
-                </motion.h2>
-                {isAdmin && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.35 }}
-                    className="flex items-center gap-2"
-                  >
-                    <Shield className="w-4 h-4 text-white drop-shadow-md" />
-                    <span className="text-sm text-white drop-shadow-md">Администратор платформы</span>
-                  </motion.div>
-                )}
-              </div>
-            </div>
+            {/* Dark overlay for better text contrast */}
+            <div className="absolute inset-0 bg-black/20 rounded-3xl pointer-events-none" />
             
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="text-white mb-6 text-lg leading-relaxed drop-shadow-md"
-            >
-              {userRole === 'admin'
-                ? 'Добро пожаловать в панель управления! Управляйте платформой и следите за метриками.'
-                : userRole === 'blogger'
-                  ? stats?.activeResponses > 0
-                    ? `У вас ${stats.activeResponses} ${stats.activeResponses === 1 ? 'новое предложение' : 'новых предложений'}`
-                    : 'Новых предложений пока нет'
-                  : stats?.totalResponses > 0
-                    ? `Получено откликов: ${stats.totalResponses}`
-                    : 'Откликов пока нет'}
-            </motion.p>
+            <div className="relative">
+              <div className="flex items-center gap-4 mb-4">
+                <motion.div
+                  initial={{ rotate: -180, scale: 0 }}
+                  animate={{ rotate: 0, scale: 1 }}
+                  transition={{ 
+                    delay: 0.2, 
+                    type: "spring",
+                    stiffness: 150,
+                    damping: 20
+                  }}
+                  className="relative will-change-transform"
+                >
+                  <motion.div
+                    className="will-change-transform"
+                    animate={{
+                      y: [0, -6, 0],
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  >
+                    {userRole === 'admin' ? <AdminIcon /> : userRole === 'blogger' ? <BloggerIcon /> : <AdvertiserIcon />}
+                  </motion.div>
+                  {/* Glow effect - optimized */}
+                  <motion.div
+                    className="absolute inset-0 bg-white rounded-full blur-xl opacity-20 will-change-transform"
+                    animate={{
+                      scale: [1, 1.15, 1],
+                      opacity: [0.1, 0.25, 0.1],
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  />
+                </motion.div>
+                <div>
+                  <motion.h2
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.25 }}
+                    className="text-3xl font-bold mb-1 text-white"
+                    style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5), 0 0 2px rgba(0,0,0,0.8)' }}
+                  >
+                    Привет, {user?.firstName || 'ADMIN'}!
+                  </motion.h2>
+                  {isAdmin && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.35 }}
+                      className="flex items-center gap-2"
+                    >
+                      <Shield className="w-4 h-4 text-white" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }} />
+                      <span className="text-sm text-white" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Администратор платформы</span>
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+              
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="text-white mb-6 text-lg leading-relaxed"
+                style={{ textShadow: '0 1px 6px rgba(0,0,0,0.5), 0 0 2px rgba(0,0,0,0.7)' }}
+              >
+                {userRole === 'admin'
+                  ? 'Добро пожаловать в панель управления! Управляйте платформой и следите за метриками.'
+                  : userRole === 'blogger'
+                    ? stats?.activeResponses > 0
+                      ? `У вас ${stats.activeResponses} ${stats.activeResponses === 1 ? 'новое предложение' : 'новых предложений'}`
+                      : 'Новых предложений пока нет'
+                    : stats?.totalResponses > 0
+                      ? `Получено откликов: ${stats.totalResponses}`
+                      : 'Откликов пока нет'}
+              </motion.p>
             
             <motion.div
               initial={{ opacity: 0, y: 10 }}
