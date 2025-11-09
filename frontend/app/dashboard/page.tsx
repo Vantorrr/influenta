@@ -198,11 +198,7 @@ export default function DashboardPage() {
           </div>
           
           <div className="relative z-10">
-            {/* Dark overlay for better text contrast */}
-            <div className="absolute inset-0 bg-black/20 rounded-3xl pointer-events-none" />
-            
-            <div className="relative">
-              <div className="flex items-center gap-4 mb-4">
+            <div className="flex items-center gap-4 mb-4">
                 <motion.div
                   initial={{ rotate: -180, scale: 0 }}
                   animate={{ rotate: 0, scale: 1 }}
@@ -306,7 +302,6 @@ export default function DashboardPage() {
                 </Button>
               </motion.div>
             </motion.div>
-            </div>
           </div>
         </motion.div>
 
@@ -513,17 +508,4 @@ export default function DashboardPage() {
         </div>
       </div>
     </Layout>
-  )
-}
-
-
-
-
-
-
-
-
-
-
-
 
