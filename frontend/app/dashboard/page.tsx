@@ -26,8 +26,36 @@ import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 
+// Custom SVG Icons
+const BloggerIcon = () => (
+  <svg viewBox="0 0 64 64" className="w-12 h-12" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="32" cy="20" r="12" fill="white" opacity="0.9"/>
+    <path d="M16 48c0-8.8 7.2-16 16-16s16 7.2 16 16" stroke="white" strokeWidth="3" strokeLinecap="round" opacity="0.9"/>
+    <path d="M20 28l4-4 4 4 8-8 4 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"/>
+    <circle cx="24" cy="16" r="2" fill="#FFD700"/>
+    <circle cx="40" cy="16" r="2" fill="#FFD700"/>
+  </svg>
+)
+
+const AdvertiserIcon = () => (
+  <svg viewBox="0 0 64 64" className="w-12 h-12" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="12" y="16" width="40" height="32" rx="4" fill="white" opacity="0.9"/>
+    <path d="M20 24h24M20 32h16M20 40h20" stroke="#2AABEE" strokeWidth="2.5" strokeLinecap="round"/>
+    <circle cx="32" cy="12" r="6" fill="white" opacity="0.9"/>
+    <path d="M28 12l2 2 4-4" stroke="#2AABEE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+)
+
+const AdminIcon = () => (
+  <svg viewBox="0 0 64 64" className="w-12 h-12" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M32 8L40 20h12l-10 8 4 12-14-8-14 8 4-12L12 20h12L32 8z" fill="white" opacity="0.95"/>
+    <circle cx="32" cy="48" r="8" fill="white" opacity="0.9"/>
+    <path d="M20 56c0-6.6 5.4-12 12-12s12 5.4 12 12" stroke="white" strokeWidth="3" strokeLinecap="round" opacity="0.9"/>
+  </svg>
+)
+
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const router = useRouter()
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard-stats'],
@@ -63,7 +91,7 @@ export default function DashboardPage() {
     }
   }, [user?.id])
 
-  const userRole = user?.role || 'blogger'
+  const userRole = isAdmin ? 'admin' : (user?.role || 'blogger')
 
   const bloggerStats = [
     {
@@ -109,49 +137,167 @@ export default function DashboardPage() {
       <div className="container py-6 space-y-6">
         {/* Welcome Section */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-          className="relative overflow-hidden bg-gradient-to-br from-telegram-primary via-blue-600 to-telegram-accent rounded-3xl p-6 text-white shadow-2xl"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="relative overflow-hidden bg-gradient-to-br from-telegram-primary via-blue-600 to-telegram-accent rounded-3xl p-8 text-white shadow-2xl"
         >
-          {/* Animated background pattern */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full blur-2xl" />
+          {/* Animated background particles */}
+          <div className="absolute inset-0 opacity-20">
+            {[...Array(6)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-2 h-2 bg-white rounded-full"
+                style={{
+                  left: `${20 + i * 15}%`,
+                  top: `${30 + (i % 2) * 40}%`,
+                }}
+                animate={{
+                  y: [0, -20, 0],
+                  opacity: [0.3, 0.8, 0.3],
+                }}
+                transition={{
+                  duration: 3 + i * 0.5,
+                  repeat: Infinity,
+                  delay: i * 0.3,
+                }}
+              />
+            ))}
+          </div>
+          
+          {/* Animated gradient orbs */}
+          <div className="absolute inset-0 opacity-15">
+            <motion.div
+              className="absolute top-0 right-0 w-80 h-80 bg-white rounded-full blur-3xl"
+              animate={{
+                scale: [1, 1.2, 1],
+                x: [0, 20, 0],
+                y: [0, -20, 0],
+              }}
+              transition={{
+                duration: 8,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+            <motion.div
+              className="absolute bottom-0 left-0 w-64 h-64 bg-white rounded-full blur-2xl"
+              animate={{
+                scale: [1, 1.3, 1],
+                x: [0, -15, 0],
+                y: [0, 15, 0],
+              }}
+              transition={{
+                duration: 10,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 1,
+              }}
+            />
           </div>
           
           <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-4 mb-4">
               <motion.div
-                initial={{ rotate: -10, scale: 0 }}
+                initial={{ rotate: -180, scale: 0 }}
                 animate={{ rotate: 0, scale: 1 }}
-                transition={{ delay: 0.2, type: "spring" }}
-                className="text-4xl"
+                transition={{ 
+                  delay: 0.3, 
+                  type: "spring",
+                  stiffness: 200,
+                  damping: 15
+                }}
+                className="relative"
               >
-                {userRole === 'blogger' ? '🎨' : '📢'}
+                <motion.div
+                  animate={{
+                    y: [0, -8, 0],
+                  }}
+                  transition={{
+                    duration: 2.5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                >
+                  {userRole === 'admin' ? <AdminIcon /> : userRole === 'blogger' ? <BloggerIcon /> : <AdvertiserIcon />}
+                </motion.div>
+                {/* Glow effect */}
+                <motion.div
+                  className="absolute inset-0 bg-white rounded-full blur-xl opacity-50"
+                  animate={{
+                    scale: [1, 1.2, 1],
+                    opacity: [0.3, 0.6, 0.3],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                />
               </motion.div>
-              <h2 className="text-2xl font-bold">
-                Привет, {user?.firstName}!
-              </h2>
+              <div>
+                <motion.h2
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-3xl font-bold mb-1"
+                >
+                  Привет, {user?.firstName || 'ADMIN'}!
+                </motion.h2>
+                {isAdmin && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.6 }}
+                    className="flex items-center gap-2"
+                  >
+                    <Shield className="w-4 h-4" />
+                    <span className="text-sm text-white/80">Администратор платформы</span>
+                  </motion.div>
+                )}
+              </div>
             </div>
             
-            <p className="text-white/90 mb-5 text-base leading-relaxed">
-              {userRole === 'blogger' 
-                ? stats?.activeResponses > 0
-                  ? `У вас ${stats.activeResponses} ${stats.activeResponses === 1 ? 'новое предложение' : 'новых предложений'}`
-                  : 'Новых предложений пока нет'
-                : stats?.totalResponses > 0
-                  ? `Получено откликов: ${stats.totalResponses}`
-                  : 'Откликов пока нет'}
-            </p>
-            
-            <Button
-              variant="secondary"
-              className="bg-white text-telegram-primary hover:bg-white/95 font-medium shadow-lg"
-              onClick={() => router.push(userRole === 'blogger' ? '/offers' : '/listings')}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="text-white/90 mb-6 text-lg leading-relaxed"
             >
-              {userRole === 'blogger' ? 'Посмотреть предложения' : 'Мои объявления'}
-            </Button>
+              {userRole === 'admin'
+                ? 'Добро пожаловать в панель управления! Управляйте платформой и следите за метриками.'
+                : userRole === 'blogger'
+                  ? stats?.activeResponses > 0
+                    ? `У вас ${stats.activeResponses} ${stats.activeResponses === 1 ? 'новое предложение' : 'новых предложений'}`
+                    : 'Новых предложений пока нет'
+                  : stats?.totalResponses > 0
+                    ? `Получено откликов: ${stats.totalResponses}`
+                    : 'Откликов пока нет'}
+            </motion.p>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Button
+                  variant="secondary"
+                  className="bg-white text-telegram-primary hover:bg-white/95 font-semibold shadow-xl text-base px-6 py-3 rounded-xl"
+                  onClick={() => router.push(
+                    userRole === 'admin' ? '/admin/dashboard' :
+                    userRole === 'blogger' ? '/offers' : '/listings'
+                  )}
+                >
+                  {userRole === 'admin' ? 'Открыть админ-панель' :
+                   userRole === 'blogger' ? 'Посмотреть предложения' : 'Мои объявления'}
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </motion.div>
+            </motion.div>
           </div>
         </motion.div>
 
