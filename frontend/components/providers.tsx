@@ -39,15 +39,26 @@ export function Providers({ children }: { children: React.ReactNode }) {
       // Настройка viewport для полного экрана
       const setViewportHeight = () => {
         const height = tg.viewportHeight || window.innerHeight
-        document.documentElement.style.setProperty('--tg-viewport-height', `${height}px`)
-        document.documentElement.style.height = `${height}px`
-        document.body.style.height = `${height}px`
-        
-        // Принудительно растягиваем на весь экран
-        const root = document.getElementById('__next')
-        if (root) {
-          root.style.height = `${height}px`
-          root.style.overflow = 'hidden'
+        const isWide = window.innerWidth >= 1024
+        // На широких экранах не форсим высоту, чтобы не ломать десктопную вёрстку админки
+        if (!isWide) {
+          document.documentElement.style.setProperty('--tg-viewport-height', `${height}px`)
+          document.documentElement.style.height = `${height}px`
+          document.body.style.height = `${height}px`
+          const root = document.getElementById('__next')
+          if (root) {
+            root.style.height = `${height}px`
+            root.style.overflow = 'hidden'
+          }
+        } else {
+          // Сбрасываем возможные принудительные стили
+          document.documentElement.style.removeProperty('height')
+          document.body.style.removeProperty('height')
+          const root = document.getElementById('__next')
+          if (root) {
+            root.style.height = ''
+            root.style.overflow = ''
+          }
         }
       }
       
