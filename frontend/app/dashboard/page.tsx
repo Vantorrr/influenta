@@ -43,8 +43,8 @@ export default function DashboardPage() {
 
   // Цвета для разных метрик
   const colorBySeries: Record<string, { bar: string; dot: string }> = {
-    'Просмотры': { bar: 'from-blue-500 to-cyan-500', dot: 'bg-blue-400' },
-    'Отклики': { bar: 'from-purple-500 to-pink-500', dot: 'bg-purple-400' },
+    'Просмотры': { bar: 'from-telegram-primary to-telegram-accent', dot: 'bg-telegram-primary' },
+    'Отклики': { bar: 'from-telegram-accent to-telegram-primary', dot: 'bg-telegram-accent' },
   }
   
   useEffect(() => {
@@ -310,7 +310,7 @@ export default function DashboardPage() {
                             <div className="flex-1 flex items-end justify-center">
                               {viewsVal > 0 ? (
                                 <div
-                                  className="w-full rounded-t bg-blue-500"
+                                  className="w-full rounded-t bg-telegram-primary"
                                   style={{ height: `${Math.max(viewsH, 4)}%` }}
                                 />
                               ) : (
@@ -321,7 +321,7 @@ export default function DashboardPage() {
                             <div className="flex-1 flex items-end justify-center">
                               {responsesVal > 0 ? (
                                 <div
-                                  className="w-full rounded-t bg-fuchsia-500"
+                                  className="w-full rounded-t bg-telegram-accent"
                                   style={{ height: `${Math.max(responsesH, 4)}%` }}
                                 />
                               ) : (
