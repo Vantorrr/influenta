@@ -139,59 +139,60 @@ export default function DashboardPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
           className="relative overflow-hidden bg-gradient-to-br from-telegram-primary via-blue-600 to-telegram-accent rounded-3xl p-8 text-white shadow-2xl"
         >
-          {/* Animated background particles */}
-          <div className="absolute inset-0 opacity-20">
-            {[...Array(6)].map((_, i) => (
+          {/* Animated background particles - optimized */}
+          <div className="absolute inset-0 opacity-15 will-change-transform">
+            {[...Array(3)].map((_, i) => (
               <motion.div
                 key={i}
-                className="absolute w-2 h-2 bg-white rounded-full"
+                className="absolute w-1.5 h-1.5 bg-white rounded-full will-change-transform"
                 style={{
-                  left: `${20 + i * 15}%`,
-                  top: `${30 + (i % 2) * 40}%`,
+                  left: `${25 + i * 25}%`,
+                  top: `${35 + (i % 2) * 30}%`,
                 }}
                 animate={{
-                  y: [0, -20, 0],
-                  opacity: [0.3, 0.8, 0.3],
+                  y: [0, -15, 0],
+                  opacity: [0.2, 0.5, 0.2],
                 }}
                 transition={{
-                  duration: 3 + i * 0.5,
+                  duration: 4 + i * 0.5,
                   repeat: Infinity,
-                  delay: i * 0.3,
+                  delay: i * 0.5,
+                  ease: "easeInOut",
                 }}
               />
             ))}
           </div>
           
-          {/* Animated gradient orbs */}
-          <div className="absolute inset-0 opacity-15">
+          {/* Animated gradient orbs - optimized with GPU acceleration */}
+          <div className="absolute inset-0 opacity-12 will-change-transform">
             <motion.div
-              className="absolute top-0 right-0 w-80 h-80 bg-white rounded-full blur-3xl"
+              className="absolute top-0 right-0 w-72 h-72 bg-white rounded-full blur-3xl will-change-transform"
               animate={{
-                scale: [1, 1.2, 1],
-                x: [0, 20, 0],
-                y: [0, -20, 0],
-              }}
-              transition={{
-                duration: 8,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-            <motion.div
-              className="absolute bottom-0 left-0 w-64 h-64 bg-white rounded-full blur-2xl"
-              animate={{
-                scale: [1, 1.3, 1],
-                x: [0, -15, 0],
-                y: [0, 15, 0],
+                scale: [1, 1.15, 1],
+                x: [0, 15, 0],
+                y: [0, -15, 0],
               }}
               transition={{
                 duration: 10,
                 repeat: Infinity,
                 ease: "easeInOut",
-                delay: 1,
+              }}
+            />
+            <motion.div
+              className="absolute bottom-0 left-0 w-56 h-56 bg-white rounded-full blur-2xl will-change-transform"
+              animate={{
+                scale: [1, 1.2, 1],
+                x: [0, -10, 0],
+                y: [0, 10, 0],
+              }}
+              transition={{
+                duration: 12,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 1.5,
               }}
             />
           </div>
@@ -202,34 +203,35 @@ export default function DashboardPage() {
                 initial={{ rotate: -180, scale: 0 }}
                 animate={{ rotate: 0, scale: 1 }}
                 transition={{ 
-                  delay: 0.3, 
+                  delay: 0.2, 
                   type: "spring",
-                  stiffness: 200,
-                  damping: 15
+                  stiffness: 150,
+                  damping: 20
                 }}
-                className="relative"
+                className="relative will-change-transform"
               >
                 <motion.div
+                  className="will-change-transform"
                   animate={{
-                    y: [0, -8, 0],
+                    y: [0, -6, 0],
                   }}
                   transition={{
-                    duration: 2.5,
+                    duration: 3,
                     repeat: Infinity,
                     ease: "easeInOut",
                   }}
                 >
                   {userRole === 'admin' ? <AdminIcon /> : userRole === 'blogger' ? <BloggerIcon /> : <AdvertiserIcon />}
                 </motion.div>
-                {/* Glow effect */}
+                {/* Glow effect - optimized */}
                 <motion.div
-                  className="absolute inset-0 bg-white rounded-full blur-xl opacity-50"
+                  className="absolute inset-0 bg-white rounded-full blur-xl opacity-40 will-change-transform"
                   animate={{
-                    scale: [1, 1.2, 1],
-                    opacity: [0.3, 0.6, 0.3],
+                    scale: [1, 1.15, 1],
+                    opacity: [0.2, 0.4, 0.2],
                   }}
                   transition={{
-                    duration: 2,
+                    duration: 3,
                     repeat: Infinity,
                     ease: "easeInOut",
                   }}
@@ -239,7 +241,7 @@ export default function DashboardPage() {
                 <motion.h2
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 }}
+                  transition={{ delay: 0.25 }}
                   className="text-3xl font-bold mb-1"
                 >
                   Привет, {user?.firstName || 'ADMIN'}!
@@ -248,7 +250,7 @@ export default function DashboardPage() {
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 0.6 }}
+                    transition={{ delay: 0.35 }}
                     className="flex items-center gap-2"
                   >
                     <Shield className="w-4 h-4" />
@@ -261,7 +263,7 @@ export default function DashboardPage() {
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
+              transition={{ delay: 0.3 }}
               className="text-white/90 mb-6 text-lg leading-relaxed"
             >
               {userRole === 'admin'
@@ -278,7 +280,7 @@ export default function DashboardPage() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
+              transition={{ delay: 0.35 }}
             >
               <motion.div
                 whileHover={{ scale: 1.02 }}
