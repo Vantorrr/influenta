@@ -307,19 +307,19 @@ export default function DashboardPage() {
                               {sumAtIdx > 0 ? formatNumber(sumAtIdx) : ''}
                             </span>
                           </div>
-                          <div className={`w-full bg-telegram-bgSecondary rounded-md overflow-hidden h-32 flex items-end justify-center gap-1 border border-telegram-border/30 ${activeIdx === idx ? 'ring-2 ring-telegram-primary/50' : ''}`}>
+                          <div className={`w-full bg-telegram-bgSecondary rounded-md h-32 flex items-end justify-center gap-1 border border-telegram-border/40 ${activeIdx === idx ? 'ring-2 ring-telegram-primary/50' : ''}`}>
                             {/* Просмотры */}
-                            <div className="w-2 md:w-3 flex items-end">
+                            <div className="w-3 flex items-end">
                               <div
-                                className={`w-full bg-gradient-to-t ${colorBySeries['Просмотры']?.bar || 'from-telegram-primary to-telegram-accent'} rounded-sm`}
-                                style={{ height: `${Math.max(6, Math.min(viewsH, 100))}%` }}
+                                className={`w-full rounded-sm ${colorBySeries['Просмотры'] ? '' : ''} bg-blue-500`}
+                                style={{ height: `${Math.max(6, Math.min(viewsH, 100))}%`, minHeight: 8 }}
                               />
                             </div>
                             {/* Отклики */}
-                            <div className="w-2 md:w-3 flex items-end">
+                            <div className="w-3 flex items-end">
                               <div
-                                className={`w-full bg-gradient-to-t ${colorBySeries['Отклики']?.bar || 'from-telegram-accent to-telegram-primary'} rounded-sm`}
-                                style={{ height: `${Math.max(6, Math.min(responsesH, 100))}%` }}
+                                className={`w-full rounded-sm ${colorBySeries['Отклики'] ? '' : ''} bg-fuchsia-500`}
+                                style={{ height: `${Math.max(6, Math.min(responsesH, 100))}%`, minHeight: 8 }}
                               />
                             </div>
                           </div>
