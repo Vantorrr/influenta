@@ -276,18 +276,15 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Столбцы по дням */}
-                <div className="grid grid-cols-7 gap-2 items-end h-44 select-none">
+                <div className="grid grid-cols-7 gap-2 items-end h-40">
                   {(() => {
-                    // Вычисляем максимум по всем точкам
-                    const allValues = series.series.flatMap(s => (s.data || []).map((n: any) => Number(n) || 0))
-                    const max = Math.max(...allValues, 1)
+                    const max = Math.max(
+                      ...series.series.flatMap(s => s.data),
+                      1
+                    )
                     return series.labels.map((label, idx) => {
-                      const viewsVal = Number(series.series.find(s => s.name === 'Просмотры')?.data[idx] || 0)
-                      const responsesVal = Number(series.series.find(s => s.name === 'Отклики')?.data[idx] || 0)
-                      const sumAtIdx = viewsVal + responsesVal
-                      // Высота в процентах от максимума (без минималки, чтобы 0 был 0)
-                      const viewsH = viewsVal > 0 ? Math.round((viewsVal / max) * 100) : 0
-                      const responsesH = responsesVal > 0 ? Math.round((responsesVal / max) * 100) : 0
+                      const sumAtIdx = series.series.reduce((acc, s) => acc + (s.data[idx] || 0), 0)
+                      const h = Math.round((sumAtIdx / max) * 100)
                       return (
                         <div 
                           key={label} 
@@ -297,43 +294,14 @@ export default function DashboardPage() {
                           onClick={() => setActiveIdx(prev => prev === idx ? null : idx)}
                           onTouchStart={(e) => { e.preventDefault(); setActiveIdx(idx) }}
                         >
-                          {/* значение над столбцом */}
-                          <div className="h-5 flex items-center">
-                            {sumAtIdx > 0 && (
-                              <span className="text-[10px] font-medium text-telegram-text">
-                                {sumAtIdx}
-                              </span>
-                            )}
+                          <div className="text-[10px] font-semibold text-telegram-text h-4">
+                            {sumAtIdx > 0 ? sumAtIdx : ''}
                           </div>
-                          <div className={`w-full bg-telegram-bg rounded-lg h-32 flex items-end justify-center gap-1 p-1 border-2 transition-all ${activeIdx === idx ? 'border-telegram-primary shadow-lg' : 'border-telegram-border/30'}`}>
-                            {/* Просмотры */}
-                            <div className="flex-1 flex items-end justify-center">
-                              {viewsVal > 0 ? (
-                                <div
-                                  className="w-full rounded-t"
-                                  style={{ 
-                                    height: `${Math.max(viewsH, 4)}%`,
-                                    backgroundColor: '#3b82f6'
-                                  }}
-                                />
-                              ) : (
-                                <div className="w-full h-1 rounded" style={{ backgroundColor: '#374151' }} />
-                              )}
-                            </div>
-                            {/* Отклики */}
-                            <div className="flex-1 flex items-end justify-center">
-                              {responsesVal > 0 ? (
-                                <div
-                                  className="w-full rounded-t"
-                                  style={{ 
-                                    height: `${Math.max(responsesH, 4)}%`,
-                                    backgroundColor: '#a855f7'
-                                  }}
-                                />
-                              ) : (
-                                <div className="w-full h-1 rounded" style={{ backgroundColor: '#374151' }} />
-                              )}
-                            </div>
+                          <div className="w-full bg-telegram-bgSecondary rounded-md overflow-hidden h-32 flex items-end border border-telegram-border">
+                            <div
+                              className="w-full bg-gradient-to-t from-telegram-primary to-telegram-accent rounded-sm"
+                              style={{ height: `${Math.max(h, 8)}%` }}
+                            />
                           </div>
                           <span className="text-[10px] text-telegram-textSecondary">{label.slice(5)}</span>
                         </div>
