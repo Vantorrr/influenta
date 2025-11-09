@@ -310,22 +310,28 @@ export default function DashboardPage() {
                             <div className="flex-1 flex items-end justify-center">
                               {viewsVal > 0 ? (
                                 <div
-                                  className="w-full rounded-t bg-telegram-primary"
-                                  style={{ height: `${Math.max(viewsH, 4)}%` }}
+                                  className="w-full rounded-t"
+                                  style={{ 
+                                    height: `${Math.max(viewsH, 4)}%`,
+                                    backgroundColor: '#3b82f6'
+                                  }}
                                 />
                               ) : (
-                                <div className="w-full h-1 bg-telegram-border/20 rounded" />
+                                <div className="w-full h-1 rounded" style={{ backgroundColor: '#374151' }} />
                               )}
                             </div>
                             {/* Отклики */}
                             <div className="flex-1 flex items-end justify-center">
                               {responsesVal > 0 ? (
                                 <div
-                                  className="w-full rounded-t bg-telegram-accent"
-                                  style={{ height: `${Math.max(responsesH, 4)}%` }}
+                                  className="w-full rounded-t"
+                                  style={{ 
+                                    height: `${Math.max(responsesH, 4)}%`,
+                                    backgroundColor: '#a855f7'
+                                  }}
                                 />
                               ) : (
-                                <div className="w-full h-1 bg-telegram-border/20 rounded" />
+                                <div className="w-full h-1 rounded" style={{ backgroundColor: '#374151' }} />
                               )}
                             </div>
                           </div>
