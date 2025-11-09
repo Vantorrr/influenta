@@ -39,7 +39,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       // Настройка viewport для полного экрана
       const setViewportHeight = () => {
         const height = tg.viewportHeight || window.innerHeight
-        const isWide = window.innerWidth >= 1024
+        const platform = (tg.platform || '').toLowerCase()
+        const isDesktopApp = platform.includes('tdesktop') || platform.includes('mac') || platform.includes('win')
+        const isWide = window.innerWidth >= 1024 || isDesktopApp
         // На широких экранах не форсим высоту, чтобы не ломать десктопную вёрстку админки
         if (!isWide) {
           document.documentElement.style.setProperty('--tg-viewport-height', `${height}px`)
