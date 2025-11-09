@@ -68,11 +68,14 @@ export class TelegramService {
     const text = this.getMaintenanceMessage(customText);
     const frontendUrl = this.configService.get('app.frontendUrl') || 'https://influentaa.vercel.app';
 
-    // Собираем все телеграм-ид пользователей
-    const users = await this.usersRepo.find({
-      select: ['telegramId'],
-      where: { telegramId: (undefined as unknown) as any } as any, // будет проигнорировано TypeORM, оставляем фильтрацию вручную
-    }).catch(() => []);
+    // Собираем все телеграм-ид пользователей (только у кого он задан)
+    const users = await this.usersRepo
+      .createQueryBuilder('user')
+      .select(['user.telegramId'])
+      .where('user.telegramId IS NOT NULL')
+      .andWhere("user.telegramId <> ''")
+      .getMany()
+      .catch(() => []);
 
     const chatIds = users
       .map(u => {
