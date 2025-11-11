@@ -57,7 +57,7 @@ export class AdminService {
   async getVerificationRequests() {
     const users = await this.usersRepository.find({
       where: { verificationRequested: true, isVerified: false },
-      order: { verificationRequestedAt: 'ASC' },
+      order: { verificationRequestedAt: 'DESC' },
     });
     return users.map((u) => ({
       id: u.id,
