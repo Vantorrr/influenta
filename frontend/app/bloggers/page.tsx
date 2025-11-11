@@ -37,6 +37,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { getPlatformIcon } from '@/components/icons/PlatformIcons'
 
 export default function BloggersPage() {
+  // APP VERSION: v0.2.0 - Build timestamp: 2025-11-11T12:14:00
   const [search, setSearch] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState<BloggerFilters>({
