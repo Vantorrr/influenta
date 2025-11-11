@@ -53,7 +53,13 @@ export default function VerificationPage() {
       
       if (!response.ok) throw new Error('Failed to fetch')
       const data = await response.json()
-      setRequests(data)
+      
+      // Сортируем по дате - новые сверху
+      const sorted = (data || []).sort((a: VerificationRequest, b: VerificationRequest) => {
+        return new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime()
+      })
+      
+      setRequests(sorted)
     } catch (error) {
       console.error('Error fetching verification requests:', error)
     } finally {
