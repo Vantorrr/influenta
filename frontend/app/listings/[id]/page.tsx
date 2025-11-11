@@ -153,8 +153,8 @@ export default function ListingDetailsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between gap-3">
-              <span className="truncate">{listing.title}</span>
+            <CardTitle className="flex flex-col gap-3">
+              <div className="w-full"><span className="block break-words">{listing.title}</span></div>
               <div className="flex items-center gap-2">
                 <Badge variant="default">{getPostFormatLabel(listing.format)}</Badge>
                 {listing.advertiser?.isVerified && (
