@@ -10,7 +10,8 @@ import {
   Star,
   ChevronRight,
   X,
-  CheckCircle
+  CheckCircle,
+  Send
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -43,7 +44,7 @@ export default function BloggersPage() {
     verifiedOnly: false,
   })
 
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const queryClient = useQueryClient()
   const { data, isLoading } = useQuery({
     queryKey: ['bloggers', filters, search],
@@ -216,6 +217,23 @@ export default function BloggersPage() {
                             </Badge>
                           )}
                         </div>
+                        
+                        {isAdmin && (blogger.user?.username || blogger.user?.telegramUsername) && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              const username = (blogger.user?.username || blogger.user?.telegramUsername || '').replace('@', '')
+                              window.open(`https://t.me/${username}`, '_blank')
+                            }}
+                            className="mt-2"
+                          >
+                            <Send className="w-3 h-3 mr-1" />
+                            Telegram
+                          </Button>
+                        )}
 
                       </div>
                     </div>

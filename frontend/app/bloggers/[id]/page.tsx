@@ -285,7 +285,11 @@ export default function BloggerDetailsPage() {
             <CardTitle className="text-lg">Социальные сети</CardTitle>
           </CardHeader>
           <CardContent>
-            <PlatformsList platforms={platforms as any} />
+            <PlatformsList 
+              platforms={platforms as any}
+              isAdmin={isAdmin}
+              telegramUsername={blogger.user?.username || blogger.user?.telegramUsername}
+            />
           </CardContent>
         </Card>
       )}

@@ -91,84 +91,78 @@ export function SocialPlatformsSection() {
                 key={platform.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="border border-telegram-border rounded-lg p-4"
+                className="border border-telegram-border rounded-lg p-4 cursor-pointer hover:border-telegram-primary/50 hover:bg-telegram-bg/50 transition-all relative"
+                onClick={() => setEditingPlatform(platform)}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-telegram-bg flex items-center justify-center">
-                      {getPlatformIcon(platform.platform, { size: 20 })}
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-telegram-bg flex items-center justify-center flex-shrink-0">
+                    {getPlatformIcon(platform.platform, { size: 20 })}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-semibold">
+                        {platformLabels[platform.platform]}
+                      </h4>
+                      {platform.isPrimary && (
+                        <Badge variant="primary" className="text-xs">
+                          Основная
+                        </Badge>
+                      )}
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-semibold">
-                          {platformLabels[platform.platform]}
-                        </h4>
-                        {platform.isPrimary && (
-                          <Badge variant="primary" className="text-xs">
-                            Основная
-                          </Badge>
-                        )}
+                    <p className="text-sm text-telegram-textSecondary mb-2">
+                      @{platform.username}
+                    </p>
+                    <div className="flex flex-wrap gap-4 text-sm">
+                      <div className="flex items-center gap-1">
+                        <Eye className="w-4 h-4 text-telegram-textSecondary" />
+                        <span>{formatNumber(platform.subscribersCount)} подписчиков</span>
                       </div>
-                      <p className="text-sm text-telegram-textSecondary mb-2">
-                        @{platform.username}
-                      </p>
-                      <div className="flex flex-wrap gap-4 text-sm">
-                        <div className="flex items-center gap-1">
-                          <Eye className="w-4 h-4 text-telegram-textSecondary" />
-                          <span>{formatNumber(platform.subscribersCount)} подписчиков</span>
+                      {(platform.pricePerPost || platform.pricePerPost === -1) && (
+                        <div>
+                          <span className="text-telegram-textSecondary">Пост: </span>
+                          <span className="font-medium">{platform.pricePerPost === -1 ? 'Договорная' : formatPrice(platform.pricePerPost)}</span>
                         </div>
-                        {(platform.pricePerPost || platform.pricePerPost === -1) && (
-                          <div>
-                            <span className="text-telegram-textSecondary">Пост: </span>
-                            <span className="font-medium">{platform.pricePerPost === -1 ? 'Договорная' : formatPrice(platform.pricePerPost)}</span>
-                          </div>
-                        )}
-                        {(platform.pricePerStory || platform.pricePerStory === -1) && (
-                          <div>
-                            <span className="text-telegram-textSecondary">Сторис: </span>
-                            <span className="font-medium">{platform.pricePerStory === -1 ? 'Договорная' : formatPrice(platform.pricePerStory)}</span>
-                          </div>
-                        )}
-                      </div>
-                      {platform.statisticsScreenshots && platform.statisticsScreenshots.length > 0 && (
-                        <div className="flex gap-1 mt-2">
-                          {platform.statisticsScreenshots.slice(0, 3).map((url, i) => (
-                            <img
-                              key={i}
-                              src={url}
-                              alt={`Stats ${i + 1}`}
-                              className="w-12 h-12 object-cover rounded border border-telegram-border"
-                            />
-                          ))}
-                          {platform.statisticsScreenshots.length > 3 && (
-                            <div className="w-12 h-12 rounded border border-telegram-border bg-telegram-bg flex items-center justify-center text-xs">
-                              +{platform.statisticsScreenshots.length - 3}
-                            </div>
-                          )}
+                      )}
+                      {(platform.pricePerStory || platform.pricePerStory === -1) && (
+                        <div>
+                          <span className="text-telegram-textSecondary">Сторис: </span>
+                          <span className="font-medium">{platform.pricePerStory === -1 ? 'Договорная' : formatPrice(platform.pricePerStory)}</span>
                         </div>
                       )}
                     </div>
+                    {platform.statisticsScreenshots && platform.statisticsScreenshots.length > 0 && (
+                      <div className="flex gap-1 mt-2">
+                        {platform.statisticsScreenshots.slice(0, 3).map((url, i) => (
+                          <img
+                            key={i}
+                            src={url}
+                            alt={`Stats ${i + 1}`}
+                            className="w-12 h-12 object-cover rounded border border-telegram-border"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              window.open(url, '_blank')
+                            }}
+                          />
+                        ))}
+                        {platform.statisticsScreenshots.length > 3 && (
+                          <div className="w-12 h-12 rounded border border-telegram-border bg-telegram-bg flex items-center justify-center text-xs">
+                            +{platform.statisticsScreenshots.length - 3}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setEditingPlatform(platform)}
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        if (confirm('Удалить эту платформу?')) {
-                          deleteMutation.mutate(platform.id)
-                        }
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (confirm('Удалить эту платформу?')) {
+                        deleteMutation.mutate(platform.id)
+                      }
+                    }}
+                    className="absolute top-2 right-2 p-1.5 rounded-lg hover:bg-telegram-danger/20 text-telegram-danger transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </motion.div>
             ))}
