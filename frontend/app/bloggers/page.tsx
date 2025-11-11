@@ -40,6 +40,8 @@ export default function BloggersPage() {
   // APP VERSION: v0.2.0 - Build timestamp: 2025-11-11T12:14:00
   const [search, setSearch] = useState('')
   const [showFilters, setShowFilters] = useState(false)
+  const [page, setPage] = useState(1)
+  const [allBloggers, setAllBloggers] = useState<any[]>([])
   const [filters, setFilters] = useState<BloggerFilters>({
     categories: [],
     verifiedOnly: false,
@@ -47,12 +49,23 @@ export default function BloggersPage() {
 
   const { user, isAdmin } = useAuth()
   const queryClient = useQueryClient()
-  const { data, isLoading } = useQuery({
-    queryKey: ['bloggers', filters, search],
-    queryFn: () => bloggersApi.search({ ...filters, search }, 1, 1000),
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['bloggers', filters, search, page],
+    queryFn: () => bloggersApi.search({ ...filters, search }, page, 50),
     placeholderData: (prev) => prev,
     enabled: !!user,
   })
+  
+  // Накапливаем блогеров при подгрузке
+  useEffect(() => {
+    if (data?.data) {
+      if (page === 1) {
+        setAllBloggers(data.data)
+      } else {
+        setAllBloggers(prev => [...prev, ...data.data])
+      }
+    }
+  }, [data, page])
 
   useEffect(() => {
     analyticsApi.track('bloggers_list_view')
@@ -88,6 +101,12 @@ export default function BloggersPage() {
     })
   }
 
+  // Сброс страницы при изменении фильтров
+  useEffect(() => {
+    setPage(1)
+    setAllBloggers([])
+  }, [filters, search])
+
   const activeFiltersCount = 
     (filters.categories?.length || 0) + 
     (filters.verifiedOnly ? 1 : 0) +
@@ -95,8 +114,9 @@ export default function BloggersPage() {
     (filters.minPrice || filters.maxPrice ? 1 : 0) +
     (filters.platform ? 1 : 0)
 
-  // Реальные данные из БД
-  const bloggers = data?.data || []
+  // Используем накопленные данные
+  const bloggers = allBloggers
+  const hasMore = data?.hasMore || false
 
   return (
     <Layout>
@@ -171,9 +191,9 @@ export default function BloggersPage() {
           {bloggers.map((blogger, index) => (
             <motion.div
               key={blogger.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
             >
               <Link href={`/bloggers/${blogger.id}`}>
                 <Card hover className="overflow-hidden">
@@ -246,10 +266,14 @@ export default function BloggersPage() {
         </div>
 
         {/* Load More */}
-        {data?.hasMore && (
+        {hasMore && (
           <div className="flex justify-center pt-4">
-            <Button variant="secondary">
-              Загрузить еще
+            <Button 
+              variant="secondary"
+              onClick={() => setPage(p => p + 1)}
+              disabled={isFetching}
+            >
+              {isFetching ? 'Загрузка...' : 'Загрузить еще'}
             </Button>
           </div>
         )}
