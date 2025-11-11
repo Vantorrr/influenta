@@ -69,8 +69,10 @@ export default function BloggersPage() {
 
   // Бесконечный скролл - автоматическая подгрузка при достижении низа
   useEffect(() => {
+    if (!user) return
+    
     const handleScroll = () => {
-      if (isFetching || !hasMore) return
+      if (isFetching || !(data?.hasMore)) return
       
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop
       const scrollHeight = document.documentElement.scrollHeight
@@ -84,7 +86,7 @@ export default function BloggersPage() {
 
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [isFetching, hasMore])
+  }, [isFetching, data?.hasMore, user])
 
   useEffect(() => {
     analyticsApi.track('bloggers_list_view')
