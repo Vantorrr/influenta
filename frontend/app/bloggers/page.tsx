@@ -67,6 +67,25 @@ export default function BloggersPage() {
     }
   }, [data, page])
 
+  // Бесконечный скролл - автоматическая подгрузка при достижении низа
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isFetching || !hasMore) return
+      
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+      const scrollHeight = document.documentElement.scrollHeight
+      const clientHeight = document.documentElement.clientHeight
+      
+      // Подгружаем когда до конца осталось 500px
+      if (scrollTop + clientHeight >= scrollHeight - 500) {
+        setPage(p => p + 1)
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [isFetching, hasMore])
+
   useEffect(() => {
     analyticsApi.track('bloggers_list_view')
   }, [])
@@ -265,16 +284,19 @@ export default function BloggersPage() {
           ))}
         </div>
 
-        {/* Load More */}
-        {hasMore && (
-          <div className="flex justify-center pt-4">
-            <Button 
-              variant="secondary"
-              onClick={() => setPage(p => p + 1)}
-              disabled={isFetching}
-            >
-              {isFetching ? 'Загрузка...' : 'Загрузить еще'}
-            </Button>
+        {/* Loading indicator */}
+        {isFetching && (
+          <div className="flex justify-center pt-4 pb-8">
+            <div className="flex items-center gap-2 text-telegram-textSecondary">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-telegram-primary"></div>
+              <span>Загрузка...</span>
+            </div>
+          </div>
+        )}
+        
+        {!hasMore && bloggers.length > 0 && (
+          <div className="text-center pt-4 pb-8 text-telegram-textSecondary text-sm">
+            Все блогеры загружены ({bloggers.length})
           </div>
         )}
       </div>
