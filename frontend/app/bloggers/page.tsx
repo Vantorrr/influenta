@@ -40,8 +40,6 @@ export default function BloggersPage() {
   // APP VERSION: v0.2.0 - Build timestamp: 2025-11-11T12:14:00
   const [search, setSearch] = useState('')
   const [showFilters, setShowFilters] = useState(false)
-  const [page, setPage] = useState(1)
-  const [allBloggers, setAllBloggers] = useState<any[]>([])
   const [filters, setFilters] = useState<BloggerFilters>({
     categories: [],
     verifiedOnly: false,
@@ -49,44 +47,15 @@ export default function BloggersPage() {
 
   const { user, isAdmin } = useAuth()
   const queryClient = useQueryClient()
-  const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['bloggers', filters, search, page],
-    queryFn: () => bloggersApi.search({ ...filters, search }, page, 50),
-    placeholderData: (prev) => prev,
+  
+  // Загружаем всех блогеров одним запросом, но с оптимизацией
+  const { data, isLoading } = useQuery({
+    queryKey: ['bloggers', filters, search],
+    queryFn: () => bloggersApi.search({ ...filters, search }, 1, 500),
+    staleTime: 5 * 60 * 1000, // Кеш на 5 минут
+    gcTime: 10 * 60 * 1000, // Держим в памяти 10 минут
     enabled: !!user,
   })
-  
-  // Накапливаем блогеров при подгрузке
-  useEffect(() => {
-    if (data?.data) {
-      if (page === 1) {
-        setAllBloggers(data.data)
-      } else {
-        setAllBloggers(prev => [...prev, ...data.data])
-      }
-    }
-  }, [data, page])
-
-  // Бесконечный скролл - автоматическая подгрузка при достижении низа
-  useEffect(() => {
-    if (!user) return
-    
-    const handleScroll = () => {
-      if (isFetching || !(data?.hasMore)) return
-      
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-      const scrollHeight = document.documentElement.scrollHeight
-      const clientHeight = document.documentElement.clientHeight
-      
-      // Подгружаем когда до конца осталось 500px
-      if (scrollTop + clientHeight >= scrollHeight - 500) {
-        setPage(p => p + 1)
-      }
-    }
-
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [isFetching, data?.hasMore, user])
 
   useEffect(() => {
     analyticsApi.track('bloggers_list_view')
@@ -122,12 +91,6 @@ export default function BloggersPage() {
     })
   }
 
-  // Сброс страницы при изменении фильтров
-  useEffect(() => {
-    setPage(1)
-    setAllBloggers([])
-  }, [filters, search])
-
   const activeFiltersCount = 
     (filters.categories?.length || 0) + 
     (filters.verifiedOnly ? 1 : 0) +
@@ -135,9 +98,8 @@ export default function BloggersPage() {
     (filters.minPrice || filters.maxPrice ? 1 : 0) +
     (filters.platform ? 1 : 0)
 
-  // Используем накопленные данные
-  const bloggers = allBloggers
-  const hasMore = data?.hasMore || false
+  // Используем данные из React Query (они кешируются автоматически)
+  const bloggers = data?.data || []
 
   return (
     <Layout>
@@ -286,21 +248,6 @@ export default function BloggersPage() {
           ))}
         </div>
 
-        {/* Loading indicator */}
-        {isFetching && (
-          <div className="flex justify-center pt-4 pb-8">
-            <div className="flex items-center gap-2 text-telegram-textSecondary">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-telegram-primary"></div>
-              <span>Загрузка...</span>
-            </div>
-          </div>
-        )}
-        
-        {!hasMore && bloggers.length > 0 && (
-          <div className="text-center pt-4 pb-8 text-telegram-textSecondary text-sm">
-            Все блогеры загружены ({bloggers.length})
-          </div>
-        )}
       </div>
 
       {/* Filters Modal */}
