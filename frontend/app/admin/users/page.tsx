@@ -45,7 +45,13 @@ export default function AdminUsersPage() {
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase()
-    return users.filter(u => {
+    // Сначала сортируем: новые пользователи сверху
+    const sorted = [...users].sort((a, b) => {
+      const da = a.createdAt ? new Date(a.createdAt).getTime() : 0
+      const db = b.createdAt ? new Date(b.createdAt).getTime() : 0
+      return db - da
+    })
+    return sorted.filter(u => {
       if (role !== 'all' && (u.role || '').toLowerCase() !== role) return false
       if (!s) return true
       const hay = `${u.firstName || ''} ${u.lastName || ''} ${u.username || ''} ${u.telegramId || ''}`.toLowerCase()
