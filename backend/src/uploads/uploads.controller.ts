@@ -26,33 +26,36 @@ export class UploadsController {
   @ApiOperation({ summary: 'Upload verification document' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file', {
-    storage: diskStorage({
-      destination: (req, file, cb) => {
-        const dest = path.join(process.cwd(), 'uploads', 'verification');
-        ensureDir(dest);
-        cb(null, dest);
-      },
-      filename: filenameGenerator,
-    })
+    storage: memoryStorage(),
+    fileFilter: (req, file, cb) => {
+      if (!file.mimetype.startsWith('image/')) {
+        cb(new Error('Only image files are allowed'), false);
+      } else {
+        cb(null, true);
+      }
+    },
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB
+    }
   }))
-  async uploadVerification(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
-    return this.handleFileUpload(file, req, 'verification');
+  async uploadVerification(@UploadedFile() file: Express.Multer.File) {
+    try {
+      // Upload to ImgBB for persistence
+      const url = await this.uploadsService.uploadToImgBB(file.buffer, file.originalname);
+      console.log('✅ Verification document uploaded to ImgBB:', url);
+      return { success: true, url };
+    } catch (error) {
+      console.error('❌ ImgBB upload failed for verification:', error);
+      throw new Error('Failed to upload verification document');
+    }
   }
 
   @Post('avatar')
   @ApiOperation({ summary: 'Upload user avatar' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file', {
-    storage: diskStorage({
-      destination: (req, file, cb) => {
-        const dest = path.join(process.cwd(), 'uploads', 'avatars');
-        ensureDir(dest);
-        cb(null, dest);
-      },
-      filename: filenameGenerator,
-    }),
+    storage: memoryStorage(),
     fileFilter: (req, file, cb) => {
-      // Only allow images
       if (!file.mimetype.startsWith('image/')) {
         cb(new Error('Only image files are allowed'), false);
       } else {
@@ -63,8 +66,16 @@ export class UploadsController {
       fileSize: 5 * 1024 * 1024, // 5MB
     }
   }))
-  async uploadAvatar(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
-    return this.handleFileUpload(file, req, 'avatars');
+  async uploadAvatar(@UploadedFile() file: Express.Multer.File) {
+    try {
+      // Upload to ImgBB for persistence
+      const url = await this.uploadsService.uploadToImgBB(file.buffer, file.originalname);
+      console.log('✅ Avatar uploaded to ImgBB:', url);
+      return { success: true, url };
+    } catch (error) {
+      console.error('❌ ImgBB upload failed for avatar:', error);
+      throw new Error('Failed to upload avatar');
+    }
   }
 
   @Post('platform-stats')
