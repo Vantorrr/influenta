@@ -153,15 +153,15 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
                 {/* Документы/Скриншоты */}
                 <div>
                   <h3 className="font-medium mb-3">
-                    Документы и скриншоты
+                    Документ, удостоверяющий личность
                   </h3>
                   <p className="text-sm text-telegram-textSecondary mb-3">
-                    Загрузите скриншоты админ-панелей, статистики или другие доказательства
+                    Загрузите селфи с паспортом (как при регистрации на бирже). Документ должен быть читаемым, а ваше лицо — хорошо видно.
                   </p>
                   
                   <div className="flex gap-2 mb-3">
                     <Input
-                      placeholder="Ссылка на скриншот (imgur, prnt.sc и т.д.)"
+                      placeholder="Ссылка на фото (imgur, prnt.sc и т.д.)"
                       value={documentUrl}
                       onChange={(e) => { setDocumentUrl(e.target.value); setDocumentUrlError(null) }}
                       onKeyPress={(e) => e.key === 'Enter' && handleAddDocument()}
