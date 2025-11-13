@@ -61,23 +61,29 @@ export default function BloggersPage() {
     analyticsApi.track('bloggers_list_view')
   }, [])
 
-  // Robust scroll position save/restore
+  // Robust scroll position save/restore via localStorage flag + retries
   useEffect(() => {
-    const key = 'bloggers-scroll-position'
-    const save = () => {
-      try { sessionStorage.setItem(key, String(window.scrollY || 0)) } catch {}
-    }
-    const onVisibility = () => { if (document.hidden) save() }
+    const posKey = 'bloggers-scroll-pos'
+    const flagKey = 'bloggers-scroll-restore'
     try {
-      window.addEventListener('scroll', save, { passive: true })
-      document.addEventListener('visibilitychange', onVisibility)
+      const shouldRestore = localStorage.getItem(flagKey)
+      const saved = localStorage.getItem(posKey)
+      if (shouldRestore && saved) {
+        let attempts = 0
+        const maxAttempts = 30
+        const interval = setInterval(() => {
+          attempts += 1
+          try {
+            window.scrollTo(0, parseInt(saved || '0', 10))
+          } catch {}
+          if (attempts >= maxAttempts) {
+            clearInterval(interval)
+            try { localStorage.removeItem(flagKey) } catch {}
+          }
+        }, 50)
+        return () => clearInterval(interval)
+      }
     } catch {}
-    return () => {
-      try {
-        window.removeEventListener('scroll', save as any)
-        document.removeEventListener('visibilitychange', onVisibility)
-      } catch {}
-    }
   }, [])
 
   useEffect(() => {
@@ -214,9 +220,10 @@ export default function BloggersPage() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.2 }}
             >
-              <Link href={`/bloggers/${blogger.id}`} onClick={() => {
+              <Link href={`/bloggers/${blogger.id}`} scroll={false} onClick={() => {
                 try {
-                  sessionStorage.setItem('bloggers-scroll-position', String(window.scrollY || 0))
+                  localStorage.setItem('bloggers-scroll-pos', String(window.scrollY || 0))
+                  localStorage.setItem('bloggers-scroll-restore', '1')
                 } catch {}
               }}>
                 <Card hover className="overflow-hidden">
