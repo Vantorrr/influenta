@@ -66,130 +66,83 @@ function BloggersContent() {
 
   // Save scroll position continuously while scrolling
   useEffect(() => {
+    if (typeof window === 'undefined') return
+
     const saveScroll = () => {
       try {
         const pos = window.scrollY || document.documentElement.scrollTop || 0
-        sessionStorage.setItem('bloggers-scroll-pos', String(pos))
-        localStorage.setItem('bloggers-scroll-pos', String(pos))
+        if (pos > 0) {
+          sessionStorage.setItem('bloggers-scroll-pos', String(pos))
+          localStorage.setItem('bloggers-scroll-pos', String(pos))
+        }
       } catch {}
     }
 
     let scrollTimeout: NodeJS.Timeout
     const handleScroll = () => {
       clearTimeout(scrollTimeout)
-      scrollTimeout = setTimeout(saveScroll, 150)
+      scrollTimeout = setTimeout(saveScroll, 100)
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
     
-    // Also save on page unload
     const handleBeforeUnload = () => {
       saveScroll()
     }
     window.addEventListener('beforeunload', handleBeforeUnload)
-    
-    // Save on visibility change (when leaving tab)
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        saveScroll()
-      }
-    }
-    document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
       window.removeEventListener('scroll', handleScroll)
       window.removeEventListener('beforeunload', handleBeforeUnload)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
       clearTimeout(scrollTimeout)
-      // Final save on unmount
       saveScroll()
     }
   }, [])
 
-  // Restore scroll position on mount and pageshow (back/forward navigation)
+  // Restore scroll position when component mounts or data loads
   useEffect(() => {
     if (typeof window === 'undefined' || isLoading) return
 
-    let restoreInterval: NodeJS.Timeout | null = null
+    const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
+    if (!saved) return
+    
+    const target = parseInt(saved, 10)
+    if (isNaN(target) || target <= 0) return
 
-    const restoreScroll = () => {
+    const restore = () => {
       try {
-        const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
-        if (!saved) return
-        const target = parseInt(saved, 10)
-        if (isNaN(target) || target <= 0) return
-
-        // Force scroll with multiple attempts
-        const forceScroll = () => {
-          try {
-            window.scrollTo(0, target)
-            document.documentElement.scrollTop = target
-            document.body.scrollTop = target
-          } catch {}
-        }
-
-        // Try immediately and multiple times with delays
-        forceScroll()
-        requestAnimationFrame(forceScroll)
-        setTimeout(forceScroll, 50)
-        setTimeout(forceScroll, 100)
-        setTimeout(forceScroll, 200)
-        setTimeout(forceScroll, 300)
-        setTimeout(forceScroll, 500)
-        setTimeout(forceScroll, 800)
-        setTimeout(forceScroll, 1200)
-        setTimeout(forceScroll, 2000)
-        
-        // Also use interval for persistent restoration (clear previous if exists)
-        if (restoreInterval) clearInterval(restoreInterval)
-        let attempts = 0
-        const maxAttempts = 60
-        restoreInterval = setInterval(() => {
-          attempts++
-          try {
-            const current = window.scrollY || document.documentElement.scrollTop || 0
-            if (Math.abs(current - target) > 5) {
-              forceScroll()
-            } else {
-              if (restoreInterval) clearInterval(restoreInterval)
-              restoreInterval = null
-            }
-          } catch {}
-          if (attempts >= maxAttempts) {
-            if (restoreInterval) clearInterval(restoreInterval)
-            restoreInterval = null
-          }
-        }, 100)
+        window.scrollTo(0, target)
+        document.documentElement.scrollTop = target
       } catch {}
     }
 
-    // Restore on mount with multiple delays
-    const timeouts: NodeJS.Timeout[] = []
-    timeouts.push(setTimeout(restoreScroll, 100))
-    timeouts.push(setTimeout(restoreScroll, 300))
-    timeouts.push(setTimeout(restoreScroll, 600))
-    timeouts.push(setTimeout(restoreScroll, 1000))
-    timeouts.push(setTimeout(restoreScroll, 2000))
+    // Try multiple times with increasing delays
+    restore()
+    const t1 = setTimeout(restore, 100)
+    const t2 = setTimeout(restore, 300)
+    const t3 = setTimeout(restore, 600)
+    const t4 = setTimeout(restore, 1000)
+    const t5 = setTimeout(restore, 2000)
 
-    // Restore on pageshow (back/forward navigation)
-    const handlePageshow = () => {
-      restoreScroll()
-    }
-    window.addEventListener('pageshow', handlePageshow)
-
-    // Also restore on visibility change
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        restoreScroll()
+    // Also use interval to keep restoring if page resets scroll
+    let attempts = 0
+    const interval = setInterval(() => {
+      attempts++
+      const current = window.scrollY || document.documentElement.scrollTop || 0
+      if (Math.abs(current - target) > 10 && attempts < 50) {
+        restore()
+      } else {
+        clearInterval(interval)
       }
-    }
-    document.addEventListener('visibilitychange', handleVisibilityChange)
+    }, 200)
 
     return () => {
-      timeouts.forEach(clearTimeout)
-      if (restoreInterval) clearInterval(restoreInterval)
-      window.removeEventListener('pageshow', handlePageshow)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      clearTimeout(t1)
+      clearTimeout(t2)
+      clearTimeout(t3)
+      clearTimeout(t4)
+      clearTimeout(t5)
+      clearInterval(interval)
     }
   }, [isLoading])
 
