@@ -1,6 +1,6 @@
 'use client'
 import { Suspense } from 'react'
-import { useEffect, useLayoutEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   SlidersHorizontal, 
@@ -49,6 +49,8 @@ function BloggersContent() {
   const { user, isAdmin } = useAuth()
   const queryClient = useQueryClient()
   const router = useRouter()
+  const scrollRestoredRef = useRef(false)
+  const restoreIntervalRef = useRef<NodeJS.Timeout | null>(null)
   
   // Загружаем всех блогеров одним запросом, но с оптимизацией
   const { data, isLoading } = useQuery({
@@ -105,42 +107,9 @@ function BloggersContent() {
     }
   }, [])
 
-  // Restore scroll position synchronously before render
+  // Restore scroll position - aggressive approach
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return
-
-    const restore = () => {
-      const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
-      if (!saved) return
-      
-      const target = parseInt(saved, 10)
-      if (isNaN(target) || target <= 0) return
-
-      try {
-        window.scrollTo(0, target)
-        document.documentElement.scrollTop = target
-        document.body.scrollTop = target
-      } catch {}
-    }
-
-    restore()
-
-    // Also restore on pageshow (back/forward navigation)
-    const handlePageshow = () => {
-      setTimeout(restore, 0)
-      setTimeout(restore, 50)
-      setTimeout(restore, 100)
-    }
-    window.addEventListener('pageshow', handlePageshow)
-
-    return () => {
-      window.removeEventListener('pageshow', handlePageshow)
-    }
-  }, [])
-
-  // Also restore after data loads with multiple attempts
-  useEffect(() => {
-    if (typeof window === 'undefined' || isLoading) return
 
     const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
     if (!saved) return
@@ -148,37 +117,89 @@ function BloggersContent() {
     const target = parseInt(saved, 10)
     if (isNaN(target) || target <= 0) return
 
+    scrollRestoredRef.current = false
+
     const restore = () => {
       try {
         window.scrollTo(0, target)
         document.documentElement.scrollTop = target
         document.body.scrollTop = target
+        const current = window.scrollY || document.documentElement.scrollTop || 0
+        if (Math.abs(current - target) < 5) {
+          scrollRestoredRef.current = true
+        }
       } catch {}
     }
 
-    // Try many times with various delays
-    const timeouts: NodeJS.Timeout[] = []
-    for (let i = 0; i <= 20; i++) {
-      timeouts.push(setTimeout(restore, i * 100))
-    }
+    // Restore immediately
+    restore()
 
-    // Persistent interval to keep restoring for up to 15 seconds
+    // Track user scroll to stop restoration
+    let userScrolled = false
+    const handleUserScroll = () => {
+      userScrolled = true
+      if (restoreIntervalRef.current) {
+        clearInterval(restoreIntervalRef.current)
+        restoreIntervalRef.current = null
+      }
+    }
+    window.addEventListener('scroll', handleUserScroll, { once: true, passive: true })
+
+    // Aggressive interval restoration
+    if (restoreIntervalRef.current) clearInterval(restoreIntervalRef.current)
     let attempts = 0
-    const maxAttempts = 150
-    const interval = setInterval(() => {
+    restoreIntervalRef.current = setInterval(() => {
       attempts++
+      if (userScrolled || scrollRestoredRef.current || attempts > 200) {
+        if (restoreIntervalRef.current) {
+          clearInterval(restoreIntervalRef.current)
+          restoreIntervalRef.current = null
+        }
+        return
+      }
       const current = window.scrollY || document.documentElement.scrollTop || 0
-      if (Math.abs(current - target) > 5 && attempts < maxAttempts) {
+      if (Math.abs(current - target) > 5) {
         restore()
       } else {
-        clearInterval(interval)
+        scrollRestoredRef.current = true
+        if (restoreIntervalRef.current) {
+          clearInterval(restoreIntervalRef.current)
+          restoreIntervalRef.current = null
+        }
       }
-    }, 100)
+    }, 50)
+
+    // Also restore on pageshow
+    const handlePageshow = () => {
+      scrollRestoredRef.current = false
+      userScrolled = false
+      restore()
+    }
+    window.addEventListener('pageshow', handlePageshow)
 
     return () => {
-      timeouts.forEach(clearTimeout)
-      clearInterval(interval)
+      window.removeEventListener('scroll', handleUserScroll)
+      window.removeEventListener('pageshow', handlePageshow)
+      if (restoreIntervalRef.current) {
+        clearInterval(restoreIntervalRef.current)
+        restoreIntervalRef.current = null
+      }
     }
+  }, [])
+
+  // Trigger restoration when data loads
+  useEffect(() => {
+    if (typeof window === 'undefined' || isLoading) return
+    if (scrollRestoredRef.current) return
+
+    const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
+    if (!saved) return
+    
+    const target = parseInt(saved, 10)
+    if (isNaN(target) || target <= 0) return
+
+    // Reset restoration flag to trigger interval again
+    scrollRestoredRef.current = false
   }, [isLoading])
 
   // Also restore when restore query param is present
