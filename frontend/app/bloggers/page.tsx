@@ -85,16 +85,28 @@ function BloggersContent() {
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return
 
-    // Try URL hash first (most reliable for back navigation)
+    console.log('🔄 Attempting to restore scroll position...')
+
+    // Try history state first (most reliable for back navigation)
     let target: number | null = null
     let savedBloggerId: string | null = null
     
-    const hash = window.location.hash
-    if (hash && hash.startsWith('#scroll-')) {
-      const hashValue = hash.replace('#scroll-', '')
-      const parsed = parseInt(hashValue, 10)
-      if (!isNaN(parsed) && parsed > 0) {
-        target = parsed
+    const historyState = window.history.state
+    if (historyState?.scrollY) {
+      target = historyState.scrollY
+      console.log('✅ Found scroll position in history.state:', target)
+    }
+    
+    // Try URL hash
+    if (!target) {
+      const hash = window.location.hash
+      if (hash && hash.startsWith('#scroll-')) {
+        const hashValue = hash.replace('#scroll-', '')
+        const parsed = parseInt(hashValue, 10)
+        if (!isNaN(parsed) && parsed > 0) {
+          target = parsed
+          console.log('✅ Found scroll position in URL hash:', target)
+        }
       }
     }
     
@@ -105,6 +117,7 @@ function BloggersContent() {
     // Fallback to global variable
     if (!target && (window as any).__bloggersScrollPos) {
       target = (window as any).__bloggersScrollPos
+      console.log('✅ Found scroll position in global variable:', target)
     }
     
     // Fallback to sessionStorage
@@ -114,6 +127,7 @@ function BloggersContent() {
         const parsed = parseInt(saved, 10)
         if (!isNaN(parsed) && parsed > 0) {
           target = parsed
+          console.log('✅ Found scroll position in sessionStorage:', target)
         }
       }
     }
@@ -123,6 +137,7 @@ function BloggersContent() {
     }
 
     if (target !== null && target > 0) {
+      console.log('📍 Restoring to position:', target, 'blogger ID:', savedBloggerId)
       try {
         // Try by element ID first
         if (savedBloggerId) {
@@ -130,12 +145,20 @@ function BloggersContent() {
           if (element) {
             const rect = element.getBoundingClientRect()
             const elementTop = rect.top + window.scrollY
+            console.log('📍 Scrolling to element:', savedBloggerId, 'at position:', elementTop - 20)
             window.scrollTo(0, elementTop - 20)
             return
+          } else {
+            console.log('⚠️ Element not found:', `blogger-${savedBloggerId}`)
           }
         }
+        console.log('📍 Scrolling to position:', target)
         window.scrollTo(0, target)
-      } catch {}
+      } catch (err) {
+        console.error('❌ Error restoring scroll:', err)
+      }
+    } else {
+      console.log('⚠️ No scroll position found to restore')
     }
   }, [])
 
@@ -242,6 +265,7 @@ function BloggersContent() {
     }
 
     // Restore immediately
+    console.log('🔄 Restoring scroll after data load...')
     restore()
 
     // Use MutationObserver to restore when DOM changes
@@ -250,6 +274,7 @@ function BloggersContent() {
       if (target && target > 0) {
         const current = window.scrollY || document.documentElement.scrollTop || 0
         if (Math.abs(current - target) > 10) {
+          console.log('🔄 DOM changed, restoring scroll from', current, 'to', target)
           restore()
         }
       }
@@ -531,10 +556,20 @@ function BloggersContent() {
                   try {
                     const pos = window.scrollY || document.documentElement.scrollTop || 0
                     
-                    // Save in global variable (most reliable for client-side navigation)
+                    console.log('💾 Saving scroll position:', pos)
+                    
+                    // Save in multiple places for maximum reliability
                     ;(window as any).__bloggersScrollPos = pos
                     sessionStorage.setItem('bloggers-scroll-pos', String(pos))
                     localStorage.setItem('bloggers-scroll-pos', String(pos))
+                    
+                    // Save in history state
+                    const currentState = window.history.state || {}
+                    window.history.replaceState(
+                      { ...currentState, scrollY: pos, savedAt: Date.now() },
+                      '',
+                      window.location.href
+                    )
                     
                     // Find nearest blogger card above current position
                     const cards = document.querySelectorAll('[id^="blogger-"]')
@@ -549,25 +584,13 @@ function BloggersContent() {
                       }
                     }
                     
-                    // Save scroll position in current page URL before navigation
-                    const currentPath = window.location.pathname
-                    const currentSearch = window.location.search
-                    let newUrl = currentPath
-                    if (currentSearch) {
-                      newUrl += currentSearch
-                    }
-                    newUrl += `#scroll-${pos}`
-                    if (savedBloggerId) {
-                      const separator = currentSearch ? '&' : '?'
-                      newUrl = newUrl.replace('#', `${separator}blogger-id=${savedBloggerId}#`)
-                    }
-                    
-                    // Update URL without navigation (preserves scroll position in history)
-                    window.history.replaceState({ ...window.history.state, scrollY: pos }, '', newUrl)
+                    console.log('💾 Saved blogger ID:', savedBloggerId)
                     
                     // Navigate to blogger page
                     router.push(`/bloggers/${blogger.id}`)
-                  } catch {}
+                  } catch (err) {
+                    console.error('❌ Error saving scroll position:', err)
+                  }
                 }}
                 className="cursor-pointer"
               >
