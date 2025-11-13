@@ -70,13 +70,12 @@ function BloggersContent() {
 
   const searchParams = useSearchParams()
 
-  // Restore scroll position - with persistent monitoring
+  // Restore scroll position - with aggressive monitoring and scroll event interception
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return
 
-    let restored = false
-    let attempts = 0
-    const maxAttempts = 50 // Try for 5 seconds (50 * 100ms)
+    let lastKnownScroll = 0
+    let isRestoring = false
 
     const restoreScroll = () => {
       // Try sessionStorage first, then localStorage
@@ -88,9 +87,10 @@ function BloggersContent() {
       
       const current = window.scrollY || document.documentElement.scrollTop || 0
       if (Math.abs(current - target) < 10) {
-        restored = true
         return true // Already at target
       }
+      
+      isRestoring = true
       
       // Try by element ID first
       const savedBloggerId = sessionStorage.getItem('bloggers-scroll-blogger-id') || localStorage.getItem('bloggers-scroll-blogger-id')
@@ -100,38 +100,53 @@ function BloggersContent() {
           const rect = element.getBoundingClientRect()
           const elementTop = rect.top + window.scrollY
           window.scrollTo({ top: elementTop - 20, behavior: 'auto' })
-          restored = true
+          setTimeout(() => { isRestoring = false }, 100)
           return true
         }
       }
       
       // Fallback to position
       window.scrollTo({ top: target, behavior: 'auto' })
+      setTimeout(() => { isRestoring = false }, 100)
       return true
     }
 
-    // Restore immediately
-    if (restoreScroll()) {
-      restored = true
-    }
-    
-    // Persistent monitoring - keep trying until restored or max attempts reached
-    const monitorInterval = setInterval(() => {
-      if (restored) {
-        clearInterval(monitorInterval)
-        return
+    // Intercept scroll events to prevent Next.js from resetting scroll
+    const handleScroll = () => {
+      if (isRestoring) return
+      
+      const current = window.scrollY || document.documentElement.scrollTop || 0
+      
+      // If scroll suddenly jumps to 0 (Next.js reset), restore immediately
+      if (lastKnownScroll > 100 && current < 50) {
+        const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
+        if (saved) {
+          const target = parseInt(saved, 10)
+          if (!isNaN(target) && target > 0) {
+            window.scrollTo({ top: target, behavior: 'auto' })
+          }
+        }
       }
       
+      lastKnownScroll = current
+    }
+    
+    window.addEventListener('scroll', handleScroll, { passive: true })
+
+    // Restore immediately
+    restoreScroll()
+    
+    // Persistent monitoring - keep trying for 10 seconds
+    let attempts = 0
+    const maxAttempts = 100 // 10 seconds (100 * 100ms)
+    const monitorInterval = setInterval(() => {
       attempts++
       if (attempts >= maxAttempts) {
         clearInterval(monitorInterval)
         return
       }
       
-      if (restoreScroll()) {
-        restored = true
-        clearInterval(monitorInterval)
-      }
+      restoreScroll()
     }, 100)
     
     // Also restore after delays
@@ -142,6 +157,8 @@ function BloggersContent() {
       setTimeout(() => restoreScroll(), 500),
       setTimeout(() => restoreScroll(), 1000),
       setTimeout(() => restoreScroll(), 2000),
+      setTimeout(() => restoreScroll(), 3000),
+      setTimeout(() => restoreScroll(), 5000),
     ]
     
     // Also restore when page becomes visible (user navigated back)
@@ -161,6 +178,7 @@ function BloggersContent() {
     return () => {
       clearInterval(monitorInterval)
       timeouts.forEach(clearTimeout)
+      window.removeEventListener('scroll', handleScroll)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('focus', handleFocus)
     }
