@@ -1,6 +1,6 @@
 'use client'
 import { Suspense } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   SlidersHorizontal, 
@@ -70,6 +70,21 @@ function BloggersContent() {
 
   const searchParams = useSearchParams()
 
+  // Restore scroll immediately on mount (before render)
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const saved = sessionStorage.getItem('bloggers-scroll-pos')
+    if (!saved) return
+
+    const target = parseInt(saved, 10)
+    if (isNaN(target) || target <= 0) return
+
+    try {
+      window.scrollTo(0, target)
+    } catch {}
+  }, [])
+
   // Save scroll position on every scroll
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -85,11 +100,13 @@ function BloggersContent() {
     return () => window.removeEventListener('scroll', saveScroll)
   }, [])
 
-  // Restore scroll position - simple approach
+  // Restore scroll position when component mounts or data loads
   useEffect(() => {
-    if (typeof window === 'undefined' || isLoading) return
+    if (typeof window === 'undefined') return
 
     const restore = () => {
+      if (isLoading) return
+      
       try {
         const saved = sessionStorage.getItem('bloggers-scroll-pos')
         if (!saved) return
@@ -102,7 +119,9 @@ function BloggersContent() {
         if (savedBloggerId) {
           const element = document.getElementById(`blogger-${savedBloggerId}`)
           if (element) {
-            element.scrollIntoView({ behavior: 'auto', block: 'start' })
+            const rect = element.getBoundingClientRect()
+            const elementTop = rect.top + window.scrollY
+            window.scrollTo({ top: elementTop - 20, behavior: 'auto' })
             return
           }
         }
@@ -112,20 +131,58 @@ function BloggersContent() {
       } catch {}
     }
 
-    // Try multiple times
-    restore()
-    const t1 = setTimeout(restore, 100)
-    const t2 = setTimeout(restore, 300)
-    const t3 = setTimeout(restore, 500)
-    const t4 = setTimeout(restore, 1000)
+    // Restore when data is loaded
+    if (!isLoading) {
+      // Multiple attempts with increasing delays
+      restore()
+      const timeouts = [
+        setTimeout(restore, 50),
+        setTimeout(restore, 150),
+        setTimeout(restore, 300),
+        setTimeout(restore, 500),
+        setTimeout(restore, 800),
+        setTimeout(restore, 1200),
+      ]
 
-    return () => {
-      clearTimeout(t1)
-      clearTimeout(t2)
-      clearTimeout(t3)
-      clearTimeout(t4)
+      return () => {
+        timeouts.forEach(clearTimeout)
+      }
     }
-  }, [isLoading, searchParams])
+  }, [isLoading])
+
+  // Also restore when searchParams change (navigation back)
+  useEffect(() => {
+    if (typeof window === 'undefined' || isLoading) return
+
+    const saved = sessionStorage.getItem('bloggers-scroll-pos')
+    if (!saved) return
+
+    const target = parseInt(saved, 10)
+    if (isNaN(target) || target <= 0) return
+
+    const restore = () => {
+      try {
+        const savedBloggerId = sessionStorage.getItem('bloggers-scroll-blogger-id')
+        if (savedBloggerId) {
+          const element = document.getElementById(`blogger-${savedBloggerId}`)
+          if (element) {
+            const rect = element.getBoundingClientRect()
+            const elementTop = rect.top + window.scrollY
+            window.scrollTo({ top: elementTop - 20, behavior: 'auto' })
+            return
+          }
+        }
+        window.scrollTo({ top: target, behavior: 'auto' })
+      } catch {}
+    }
+
+    // Immediate restore on navigation
+    requestAnimationFrame(() => {
+      restore()
+      setTimeout(restore, 100)
+      setTimeout(restore, 300)
+    })
+  }, [searchParams, isLoading])
 
 
   useEffect(() => {
