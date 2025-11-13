@@ -35,7 +35,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { BloggerCategory, type BloggerFilters } from '@/types'
 import { useAuth } from '@/hooks/useAuth'
 import { getPlatformIcon } from '@/components/icons/PlatformIcons'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 
 function BloggersContent() {
   // APP VERSION: v0.2.0 - Build timestamp: 2025-11-11T12:14:00
@@ -48,6 +48,7 @@ function BloggersContent() {
 
   const { user, isAdmin } = useAuth()
   const queryClient = useQueryClient()
+  const router = useRouter()
   
   // Загружаем всех блогеров одним запросом, но с оптимизацией
   const { data, isLoading } = useQuery({
@@ -323,27 +324,18 @@ function BloggersContent() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.2 }}
             >
-              <Link 
-                href={`/bloggers/${blogger.id}`} 
-                scroll={false}
-                onMouseDown={() => {
+              <div
+                onClick={() => {
                   try {
                     const pos = window.scrollY || document.documentElement.scrollTop || 0
                     if (pos > 0) {
                       sessionStorage.setItem('bloggers-scroll-pos', String(pos))
                       localStorage.setItem('bloggers-scroll-pos', String(pos))
                     }
+                    router.push(`/bloggers/${blogger.id}`)
                   } catch {}
                 }}
-                onClick={(e) => {
-                  try {
-                    const pos = window.scrollY || document.documentElement.scrollTop || 0
-                    if (pos > 0) {
-                      sessionStorage.setItem('bloggers-scroll-pos', String(pos))
-                      localStorage.setItem('bloggers-scroll-pos', String(pos))
-                    }
-                  } catch {}
-                }}
+                className="cursor-pointer"
               >
                 <Card hover className="overflow-hidden">
                   <CardContent className="p-4">
@@ -409,7 +401,7 @@ function BloggersContent() {
                     </div>
                   </CardContent>
                 </Card>
-              </Link>
+              </div>
             </motion.div>
           ))}
         </div>
