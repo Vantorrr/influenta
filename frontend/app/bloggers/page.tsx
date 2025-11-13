@@ -105,12 +105,14 @@ function BloggersContent() {
           return true
         }
         
-        // Restore scroll (flag prevents duplicate calls from other effects)
+        // Set flag immediately to prevent duplicate restorations
+        ;(window as any).__bloggersScrollRestored = true
+        
+        // Restore scroll
         element.scrollIntoView({ behavior: 'auto', block: 'start' })
         // Also try window.scrollTo as backup
         setTimeout(() => {
           window.scrollTo({ top: targetPosition, behavior: 'auto' })
-          ;(window as any).__bloggersScrollRestored = true
         }, 0)
         return true
       }
@@ -121,12 +123,12 @@ function BloggersContent() {
     // Restore immediately
     restoreScroll()
     
-    // Keep trying until element is found (up to 5 seconds)
+    // Keep trying until element is found or flag is set (up to 3 seconds)
     let attempts = 0
-    const maxAttempts = 50 // 5 seconds (50 * 100ms)
+    const maxAttempts = 30 // 3 seconds (30 * 100ms)
     const monitorInterval = setInterval(() => {
       attempts++
-      if (attempts >= maxAttempts) {
+      if (attempts >= maxAttempts || (window as any).__bloggersScrollRestored) {
         clearInterval(monitorInterval)
         return
       }
@@ -136,35 +138,8 @@ function BloggersContent() {
       }
     }, 100)
     
-    // Also restore after delays
-    const timeouts = [
-      setTimeout(() => restoreScroll(), 50),
-      setTimeout(() => restoreScroll(), 150),
-      setTimeout(() => restoreScroll(), 300),
-      setTimeout(() => restoreScroll(), 500),
-      setTimeout(() => restoreScroll(), 1000),
-      setTimeout(() => restoreScroll(), 2000),
-    ]
-    
-    // Also restore when page becomes visible (user navigated back)
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        restoreScroll()
-      }
-    }
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    
-    // Also restore on window focus
-    const handleFocus = () => {
-      restoreScroll()
-    }
-    window.addEventListener('focus', handleFocus)
-    
     return () => {
       clearInterval(monitorInterval)
-      timeouts.forEach(clearTimeout)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('focus', handleFocus)
     }
   }, [])
 
@@ -201,28 +176,28 @@ function BloggersContent() {
           
           // Only restore if flag is not set
           if (!(window as any).__bloggersScrollRestored) {
+            // Set flag immediately to prevent duplicate restorations
+            ;(window as any).__bloggersScrollRestored = true
+            
             element.scrollIntoView({ behavior: 'auto', block: 'start' })
             // Also try window.scrollTo as backup
             setTimeout(() => {
               window.scrollTo({ top: targetPosition, behavior: 'auto' })
-              ;(window as any).__bloggersScrollRestored = true
             }, 0)
           }
         }
       } catch {}
     }
 
-    // Restore immediately
-    restore()
+    // Restore immediately (only if flag is not set)
+    if (!(window as any).__bloggersScrollRestored) {
+      restore()
+    }
 
-    // Use MutationObserver to restore when DOM changes
+    // Use MutationObserver to restore when DOM changes (only if flag is not set)
     const observer = new MutationObserver(() => {
-      const target = getTarget()
-      if (target && target > 0) {
-        const current = window.scrollY || document.documentElement.scrollTop || 0
-        if (Math.abs(current - target) > 10) {
-          restore()
-        }
+      if (!(window as any).__bloggersScrollRestored) {
+        restore()
       }
     })
 
@@ -235,59 +210,21 @@ function BloggersContent() {
       })
     }
 
-    // Also try multiple times with delays
-    const timeouts = [
-      setTimeout(restore, 50),
-      setTimeout(restore, 150),
-      setTimeout(restore, 300),
-      setTimeout(restore, 500),
-      setTimeout(restore, 800),
-      setTimeout(restore, 1200),
-    ]
-
-    // Persistent restoration using requestAnimationFrame
-    let rafId: number | null = null
+    // Keep trying until element is found or flag is set (up to 2 seconds)
     let attempts = 0
-    const persistentRestore = () => {
+    const maxAttempts = 20 // 2 seconds (20 * 100ms)
+    const monitorInterval = setInterval(() => {
       attempts++
-      const target = getTarget()
-      if (target && target > 0) {
-        const current = window.scrollY || document.documentElement.scrollTop || 0
-        if (Math.abs(current - target) > 10 && attempts < 300) {
-          restore()
-          rafId = requestAnimationFrame(persistentRestore)
-        } else {
-          rafId = null
-        }
-      } else {
-        rafId = null
+      if (attempts >= maxAttempts || (window as any).__bloggersScrollRestored) {
+        clearInterval(monitorInterval)
+        return
       }
-    }
-    rafId = requestAnimationFrame(persistentRestore)
-
-    // Also use interval as backup
-    let intervalAttempts = 0
-    const interval = setInterval(() => {
-      intervalAttempts++
-      const target = getTarget()
-      if (target && target > 0) {
-        const current = window.scrollY || document.documentElement.scrollTop || 0
-        if (Math.abs(current - target) > 10 && intervalAttempts < 100) {
-          restore()
-        } else {
-          clearInterval(interval)
-        }
-      } else {
-        clearInterval(interval)
-      }
+      
+      restore()
     }, 100)
 
     return () => {
-      timeouts.forEach(clearTimeout)
-      clearInterval(interval)
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId)
-      }
+      clearInterval(monitorInterval)
       observer.disconnect()
     }
   }, [isLoading])
@@ -326,27 +263,20 @@ function BloggersContent() {
         
         // Only restore if flag is not set
         if (!(window as any).__bloggersScrollRestored) {
+          // Set flag immediately to prevent duplicate restorations
+          ;(window as any).__bloggersScrollRestored = true
+          
           element.scrollIntoView({ behavior: 'auto', block: 'start' })
           // Also try window.scrollTo as backup
           setTimeout(() => {
             window.scrollTo({ top: targetPosition, behavior: 'auto' })
-            ;(window as any).__bloggersScrollRestored = true
           }, 0)
         }
       }
     }
 
-    // Immediate restore on navigation with multiple attempts
+    // Single restore attempt
     restore()
-    requestAnimationFrame(() => {
-      restore()
-      setTimeout(restore, 50)
-      setTimeout(restore, 150)
-      setTimeout(restore, 300)
-      setTimeout(restore, 500)
-      setTimeout(restore, 800)
-      setTimeout(restore, 1200)
-    })
   }, [searchParams, isLoading])
 
   // Handle browser back/forward navigation
@@ -367,7 +297,7 @@ function BloggersContent() {
       
       if (!savedBloggerId) return
       
-      // Multiple attempts to find and scroll to element
+      // Single attempt to find and scroll to element
       const restore = () => {
         if ((window as any).__bloggersScrollRestored) return
         
@@ -377,19 +307,19 @@ function BloggersContent() {
           const elementTop = rect.top + window.scrollY
           const targetPosition = elementTop - 20
           
+          // Set flag immediately to prevent duplicate restorations
+          ;(window as any).__bloggersScrollRestored = true
+          
           element.scrollIntoView({ behavior: 'auto', block: 'start' })
           // Also try window.scrollTo as backup
           setTimeout(() => {
             window.scrollTo({ top: targetPosition, behavior: 'auto' })
-            ;(window as any).__bloggersScrollRestored = true
           }, 0)
         }
       }
       
-      // Try multiple times to ensure restoration
-      setTimeout(restore, 50)
-      setTimeout(restore, 150)
-      setTimeout(restore, 300)
+      // Single attempt after short delay
+      setTimeout(restore, 100)
     }
 
     window.addEventListener('popstate', handlePopState)
