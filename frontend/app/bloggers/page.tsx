@@ -78,12 +78,36 @@ function BloggersContent() {
     let isRestoring = false
 
     const restoreScroll = () => {
-      // Try sessionStorage first, then localStorage
-      const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
-      if (!saved) return false
+      let target: number | null = null
+      let savedBloggerId: string | null = null
       
-      const target = parseInt(saved, 10)
-      if (isNaN(target) || target <= 0) return false
+      // Try URL query parameter first (most reliable for back navigation)
+      const urlParams = new URLSearchParams(window.location.search)
+      const scrollParam = urlParams.get('scroll')
+      if (scrollParam) {
+        const parsed = parseInt(scrollParam, 10)
+        if (!isNaN(parsed) && parsed > 0) {
+          target = parsed
+        }
+      }
+      savedBloggerId = urlParams.get('blogger-id')
+      
+      // Fallback to storage
+      if (!target) {
+        const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
+        if (saved) {
+          const parsed = parseInt(saved, 10)
+          if (!isNaN(parsed) && parsed > 0) {
+            target = parsed
+          }
+        }
+      }
+      
+      if (!savedBloggerId) {
+        savedBloggerId = sessionStorage.getItem('bloggers-scroll-blogger-id') || localStorage.getItem('bloggers-scroll-blogger-id')
+      }
+      
+      if (!target || target <= 0) return false
       
       const current = window.scrollY || document.documentElement.scrollTop || 0
       if (Math.abs(current - target) < 10) {
@@ -93,7 +117,6 @@ function BloggersContent() {
       isRestoring = true
       
       // Try by element ID first
-      const savedBloggerId = sessionStorage.getItem('bloggers-scroll-blogger-id') || localStorage.getItem('bloggers-scroll-blogger-id')
       if (savedBloggerId) {
         const element = document.getElementById(`blogger-${savedBloggerId}`)
         if (element) {
@@ -119,12 +142,30 @@ function BloggersContent() {
       
       // If scroll suddenly jumps to 0 (Next.js reset), restore immediately
       if (lastKnownScroll > 100 && current < 50) {
-        const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
-        if (saved) {
-          const target = parseInt(saved, 10)
-          if (!isNaN(target) && target > 0) {
-            window.scrollTo({ top: target, behavior: 'auto' })
+        // Try URL first, then storage
+        const urlParams = new URLSearchParams(window.location.search)
+        const scrollParam = urlParams.get('scroll')
+        let target: number | null = null
+        
+        if (scrollParam) {
+          const parsed = parseInt(scrollParam, 10)
+          if (!isNaN(parsed) && parsed > 0) {
+            target = parsed
           }
+        }
+        
+        if (!target) {
+          const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
+          if (saved) {
+            const parsed = parseInt(saved, 10)
+            if (!isNaN(parsed) && parsed > 0) {
+              target = parsed
+            }
+          }
+        }
+        
+        if (target) {
+          window.scrollTo({ top: target, behavior: 'auto' })
         }
       }
       
@@ -224,6 +265,17 @@ function BloggersContent() {
     if (typeof window === 'undefined' || isLoading) return
 
     const getTarget = (): number | null => {
+      // Try URL query parameter first
+      const urlParams = new URLSearchParams(window.location.search)
+      const scrollParam = urlParams.get('scroll')
+      if (scrollParam) {
+        const parsed = parseInt(scrollParam, 10)
+        if (!isNaN(parsed) && parsed > 0) {
+          return parsed
+        }
+      }
+      
+      // Fallback to storage
       const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
       if (!saved) return null
       
@@ -234,7 +286,8 @@ function BloggersContent() {
     }
     
     const getSavedBloggerId = (): string | null => {
-      return sessionStorage.getItem('bloggers-scroll-blogger-id') || localStorage.getItem('bloggers-scroll-blogger-id')
+      const urlParams = new URLSearchParams(window.location.search)
+      return urlParams.get('blogger-id') || sessionStorage.getItem('bloggers-scroll-blogger-id') || localStorage.getItem('bloggers-scroll-blogger-id')
     }
 
     const restore = () => {
@@ -347,17 +400,36 @@ function BloggersContent() {
     if (typeof window === 'undefined' || isLoading) return
 
     const restore = () => {
-      const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
-      if (!saved) return
+      // Try URL query parameter first
+      const urlParams = new URLSearchParams(window.location.search)
+      const scrollParam = urlParams.get('scroll')
+      let target: number | null = null
       
-      const target = parseInt(saved, 10)
-      if (isNaN(target) || target <= 0) return
+      if (scrollParam) {
+        const parsed = parseInt(scrollParam, 10)
+        if (!isNaN(parsed) && parsed > 0) {
+          target = parsed
+        }
+      }
+      
+      // Fallback to storage
+      if (!target) {
+        const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
+        if (saved) {
+          const parsed = parseInt(saved, 10)
+          if (!isNaN(parsed) && parsed > 0) {
+            target = parsed
+          }
+        }
+      }
+      
+      if (!target || target <= 0) return
       
       const current = window.scrollY || document.documentElement.scrollTop || 0
       if (Math.abs(current - target) < 10) return // Already at target
       
       // Try by element ID first
-      const savedBloggerId = sessionStorage.getItem('bloggers-scroll-blogger-id') || localStorage.getItem('bloggers-scroll-blogger-id')
+      const savedBloggerId = urlParams.get('blogger-id') || sessionStorage.getItem('bloggers-scroll-blogger-id') || localStorage.getItem('bloggers-scroll-blogger-id')
       if (savedBloggerId) {
         const element = document.getElementById(`blogger-${savedBloggerId}`)
         if (element) {
@@ -389,22 +461,39 @@ function BloggersContent() {
     if (typeof window === 'undefined') return
 
     const handlePopState = () => {
-      // Restore scroll position from storage when navigating back
-      const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
-      if (!saved) return
+      // Restore scroll position from URL or storage when navigating back
+      const urlParams = new URLSearchParams(window.location.search)
+      const scrollParam = urlParams.get('scroll')
+      let target: number | null = null
       
-      const target = parseInt(saved, 10)
-      if (isNaN(target) || target <= 0) return
+      if (scrollParam) {
+        const parsed = parseInt(scrollParam, 10)
+        if (!isNaN(parsed) && parsed > 0) {
+          target = parsed
+        }
+      }
+      
+      if (!target) {
+        const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
+        if (saved) {
+          const parsed = parseInt(saved, 10)
+          if (!isNaN(parsed) && parsed > 0) {
+            target = parsed
+          }
+        }
+      }
+      
+      if (!target) return
       
       // Multiple attempts to ensure restoration
       setTimeout(() => {
-        window.scrollTo({ top: target, behavior: 'auto' })
+        window.scrollTo({ top: target!, behavior: 'auto' })
       }, 0)
       setTimeout(() => {
-        window.scrollTo({ top: target, behavior: 'auto' })
+        window.scrollTo({ top: target!, behavior: 'auto' })
       }, 100)
       setTimeout(() => {
-        window.scrollTo({ top: target, behavior: 'auto' })
+        window.scrollTo({ top: target!, behavior: 'auto' })
       }, 300)
     }
 
@@ -538,22 +627,35 @@ function BloggersContent() {
                   try {
                     const pos = window.scrollY || document.documentElement.scrollTop || 0
                     
-                    // Save scroll position in both sessionStorage and localStorage
+                    // Save scroll position in storage
                     sessionStorage.setItem('bloggers-scroll-pos', String(pos))
                     localStorage.setItem('bloggers-scroll-pos', String(pos))
                     
-                    // Find nearest blogger card above current position for precise restoration
+                    // Find nearest blogger card above current position
                     const cards = document.querySelectorAll('[id^="blogger-"]')
+                    let savedBloggerId = ''
                     for (let i = cards.length - 1; i >= 0; i--) {
                       const card = cards[i] as HTMLElement
                       const cardTop = card.getBoundingClientRect().top + window.scrollY
                       if (cardTop <= pos + 50) {
-                        const bloggerId = card.id.replace('blogger-', '')
-                        sessionStorage.setItem('bloggers-scroll-blogger-id', bloggerId)
-                        localStorage.setItem('bloggers-scroll-blogger-id', bloggerId)
+                        savedBloggerId = card.id.replace('blogger-', '')
+                        sessionStorage.setItem('bloggers-scroll-blogger-id', savedBloggerId)
+                        localStorage.setItem('bloggers-scroll-blogger-id', savedBloggerId)
                         break
                       }
                     }
+                    
+                    // Save scroll position in current URL before navigation (preserved in browser history)
+                    const currentUrl = new URL(window.location.href)
+                    currentUrl.searchParams.set('scroll', String(pos))
+                    if (savedBloggerId) {
+                      currentUrl.searchParams.set('blogger-id', savedBloggerId)
+                    }
+                    window.history.replaceState(
+                      { ...window.history.state, scrollY: pos },
+                      '',
+                      currentUrl.toString()
+                    )
                     
                     // Navigate to blogger page
                     router.push(`/bloggers/${blogger.id}`)
