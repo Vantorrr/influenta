@@ -148,27 +148,32 @@ function BloggersContent() {
     }
   }, [])
 
-  // Restore scroll position when data loads
+  // Aggressive scroll restoration with MutationObserver
   useEffect(() => {
     if (typeof window === 'undefined' || isLoading) return
 
+    const getTarget = (): number | null => {
+      // Try global variable first
+      if ((window as any).__bloggersScrollPos) {
+        return (window as any).__bloggersScrollPos
+      }
+      const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
+      if (saved) {
+        const parsed = parseInt(saved, 10)
+        if (!isNaN(parsed) && parsed > 0) {
+          return parsed
+        }
+      }
+      return null
+    }
+
     const restore = () => {
       try {
-        // Try global variable first
-        let target: number | null = null
-        if ((window as any).__bloggersScrollPos) {
-          target = (window as any).__bloggersScrollPos
-        } else {
-          const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
-          if (saved) {
-            const parsed = parseInt(saved, 10)
-            if (!isNaN(parsed) && parsed > 0) {
-              target = parsed
-            }
-          }
-        }
-
+        const target = getTarget()
         if (!target || target <= 0) return
+
+        const current = window.scrollY || document.documentElement.scrollTop || 0
+        if (Math.abs(current - target) < 5) return // Already at target
 
         // Try by element ID first
         const savedBloggerId = sessionStorage.getItem('bloggers-scroll-blogger-id')
@@ -187,8 +192,30 @@ function BloggersContent() {
       } catch {}
     }
 
-    // Multiple attempts with increasing delays
+    // Restore immediately
     restore()
+
+    // Use MutationObserver to restore when DOM changes
+    const observer = new MutationObserver(() => {
+      const target = getTarget()
+      if (target && target > 0) {
+        const current = window.scrollY || document.documentElement.scrollTop || 0
+        if (Math.abs(current - target) > 10) {
+          restore()
+        }
+      }
+    })
+
+    // Observe the container
+    const container = document.querySelector('.container')
+    if (container) {
+      observer.observe(container, {
+        childList: true,
+        subtree: true,
+      })
+    }
+
+    // Also try multiple times with delays
     const timeouts = [
       setTimeout(restore, 50),
       setTimeout(restore, 150),
@@ -198,8 +225,50 @@ function BloggersContent() {
       setTimeout(restore, 1200),
     ]
 
+    // Persistent restoration using requestAnimationFrame
+    let rafId: number | null = null
+    let attempts = 0
+    const persistentRestore = () => {
+      attempts++
+      const target = getTarget()
+      if (target && target > 0) {
+        const current = window.scrollY || document.documentElement.scrollTop || 0
+        if (Math.abs(current - target) > 10 && attempts < 300) {
+          restore()
+          rafId = requestAnimationFrame(persistentRestore)
+        } else {
+          rafId = null
+        }
+      } else {
+        rafId = null
+      }
+    }
+    rafId = requestAnimationFrame(persistentRestore)
+
+    // Also use interval as backup
+    let intervalAttempts = 0
+    const interval = setInterval(() => {
+      intervalAttempts++
+      const target = getTarget()
+      if (target && target > 0) {
+        const current = window.scrollY || document.documentElement.scrollTop || 0
+        if (Math.abs(current - target) > 10 && intervalAttempts < 100) {
+          restore()
+        } else {
+          clearInterval(interval)
+        }
+      } else {
+        clearInterval(interval)
+      }
+    }, 100)
+
     return () => {
       timeouts.forEach(clearTimeout)
+      clearInterval(interval)
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId)
+      }
+      observer.disconnect()
     }
   }, [isLoading])
 
