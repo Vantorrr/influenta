@@ -73,7 +73,7 @@ function BloggersContent() {
       if (saved) {
         const pos = parseInt(saved, 10)
         if (!isNaN(pos) && pos > 0) {
-          (window as any).__bloggersScrollPos = pos
+          ;(window as any).__bloggersScrollPos = pos
         }
       }
     }
@@ -113,14 +113,14 @@ function BloggersContent() {
 
     // Initialize global scroll position storage
     if (!(window as any).__bloggersScrollPos) {
-      (window as any).__bloggersScrollPos = 0
+      ;(window as any).__bloggersScrollPos = 0
     }
 
     const saveScroll = () => {
       try {
         const pos = window.scrollY || document.documentElement.scrollTop || 0
         // Save in multiple places for reliability
-        (window as any).__bloggersScrollPos = pos
+        ;(window as any).__bloggersScrollPos = pos
         sessionStorage.setItem('bloggers-scroll-pos', String(pos))
         localStorage.setItem('bloggers-scroll-pos', String(pos))
       } catch {}
@@ -377,7 +377,7 @@ function BloggersContent() {
                     const pos = window.scrollY || document.documentElement.scrollTop || 0
                     
                     // Save in global variable (most reliable for client-side navigation)
-                    (window as any).__bloggersScrollPos = pos
+                    ;(window as any).__bloggersScrollPos = pos
                     sessionStorage.setItem('bloggers-scroll-pos', String(pos))
                     localStorage.setItem('bloggers-scroll-pos', String(pos))
                     
