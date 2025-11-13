@@ -74,40 +74,50 @@ function BloggersContent() {
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return
 
+    // Global flag to prevent multiple restorations
+    if (!(window as any).__bloggersScrollRestored) {
+      ;(window as any).__bloggersScrollRestored = false
+    }
+
     const restoreScroll = () => {
-      console.log('🔄 Attempting to restore scroll...')
+      // Check if already restored
+      if ((window as any).__bloggersScrollRestored) {
+        return true
+      }
       
       // Get saved blogger ID from URL or storage
       const urlParams = new URLSearchParams(window.location.search)
       let savedBloggerId = urlParams.get('blogger-id')
-      console.log('📍 Blogger ID from URL:', savedBloggerId)
       
       if (!savedBloggerId) {
         savedBloggerId = sessionStorage.getItem('bloggers-scroll-blogger-id') || localStorage.getItem('bloggers-scroll-blogger-id')
-        console.log('📍 Blogger ID from storage:', savedBloggerId)
       }
       
       if (!savedBloggerId) {
-        console.warn('⚠️ No saved blogger ID found!')
         return false
       }
       
       // Find the element and scroll to it
       const element = document.getElementById(`blogger-${savedBloggerId}`)
-      console.log('🔍 Looking for element:', `blogger-${savedBloggerId}`, 'Found:', !!element)
       
       if (element) {
         const rect = element.getBoundingClientRect()
         const elementTop = rect.top + window.scrollY
-        console.log('📍 Scrolling to element at position:', elementTop - 20)
+        
+        // Check if already at correct position (within 50px)
+        const currentScroll = window.scrollY || document.documentElement.scrollTop || 0
+        if (Math.abs(currentScroll - (elementTop - 20)) < 50) {
+          ;(window as any).__bloggersScrollRestored = true
+          return true
+        }
+        
         element.scrollIntoView({ behavior: 'auto', block: 'start' })
         // Also try window.scrollTo as backup
         setTimeout(() => {
           window.scrollTo({ top: elementTop - 20, behavior: 'auto' })
+          ;(window as any).__bloggersScrollRestored = true
         }, 0)
         return true
-      } else {
-        console.warn('⚠️ Element not found!')
       }
       
       return false
@@ -170,6 +180,11 @@ function BloggersContent() {
 
     const restore = () => {
       try {
+        // Check if already restored
+        if ((window as any).__bloggersScrollRestored) {
+          return
+        }
+        
         // Get saved blogger ID from URL or storage
         const urlParams = new URLSearchParams(window.location.search)
         let savedBloggerId = urlParams.get('blogger-id')
@@ -183,12 +198,21 @@ function BloggersContent() {
         // Find the element and scroll to it
         const element = document.getElementById(`blogger-${savedBloggerId}`)
         if (element) {
-          element.scrollIntoView({ behavior: 'auto', block: 'start' })
-          // Also try window.scrollTo as backup
           const rect = element.getBoundingClientRect()
           const elementTop = rect.top + window.scrollY
+          
+          // Check if already at correct position
+          const currentScroll = window.scrollY || document.documentElement.scrollTop || 0
+          if (Math.abs(currentScroll - (elementTop - 20)) < 50) {
+            ;(window as any).__bloggersScrollRestored = true
+            return
+          }
+          
+          element.scrollIntoView({ behavior: 'auto', block: 'start' })
+          // Also try window.scrollTo as backup
           setTimeout(() => {
             window.scrollTo({ top: elementTop - 20, behavior: 'auto' })
+            ;(window as any).__bloggersScrollRestored = true
           }, 0)
         }
       } catch {}
@@ -279,6 +303,11 @@ function BloggersContent() {
     if (typeof window === 'undefined' || isLoading) return
 
     const restore = () => {
+      // Check if already restored
+      if ((window as any).__bloggersScrollRestored) {
+        return
+      }
+      
       // Get saved blogger ID from URL or storage
       const urlParams = new URLSearchParams(window.location.search)
       let savedBloggerId = urlParams.get('blogger-id')
@@ -292,12 +321,21 @@ function BloggersContent() {
       // Find the element and scroll to it
       const element = document.getElementById(`blogger-${savedBloggerId}`)
       if (element) {
-        element.scrollIntoView({ behavior: 'auto', block: 'start' })
-        // Also try window.scrollTo as backup
         const rect = element.getBoundingClientRect()
         const elementTop = rect.top + window.scrollY
+        
+        // Check if already at correct position
+        const currentScroll = window.scrollY || document.documentElement.scrollTop || 0
+        if (Math.abs(currentScroll - (elementTop - 20)) < 50) {
+          ;(window as any).__bloggersScrollRestored = true
+          return
+        }
+        
+        element.scrollIntoView({ behavior: 'auto', block: 'start' })
+        // Also try window.scrollTo as backup
         setTimeout(() => {
           window.scrollTo({ top: elementTop - 20, behavior: 'auto' })
+          ;(window as any).__bloggersScrollRestored = true
         }, 0)
       }
     }
@@ -320,6 +358,9 @@ function BloggersContent() {
     if (typeof window === 'undefined') return
 
     const handlePopState = () => {
+      // Reset flag when navigating back
+      ;(window as any).__bloggersScrollRestored = false
+      
       // Restore scroll position by finding the saved blogger element
       const urlParams = new URLSearchParams(window.location.search)
       let savedBloggerId = urlParams.get('blogger-id')
@@ -330,23 +371,25 @@ function BloggersContent() {
       
       if (!savedBloggerId) return
       
-      // Multiple attempts to find and scroll to element
+      // Single attempt to find and scroll to element
       const restore = () => {
+        if ((window as any).__bloggersScrollRestored) return
+        
         const element = document.getElementById(`blogger-${savedBloggerId}`)
         if (element) {
-          element.scrollIntoView({ behavior: 'auto', block: 'start' })
-          // Also try window.scrollTo as backup
           const rect = element.getBoundingClientRect()
           const elementTop = rect.top + window.scrollY
+          
+          element.scrollIntoView({ behavior: 'auto', block: 'start' })
+          // Also try window.scrollTo as backup
           setTimeout(() => {
             window.scrollTo({ top: elementTop - 20, behavior: 'auto' })
+            ;(window as any).__bloggersScrollRestored = true
           }, 0)
         }
       }
       
-      setTimeout(restore, 0)
       setTimeout(restore, 100)
-      setTimeout(restore, 300)
     }
 
     window.addEventListener('popstate', handlePopState)
@@ -477,6 +520,9 @@ function BloggersContent() {
                 onClick={(e) => {
                   e.preventDefault()
                   try {
+                    // Reset restoration flag for next time
+                    ;(window as any).__bloggersScrollRestored = false
+                    
                     // Find the first visible blogger card in viewport (top of screen)
                     const cards = document.querySelectorAll('[id^="blogger-"]')
                     let firstVisibleId = ''
@@ -488,7 +534,6 @@ function BloggersContent() {
                       // Check if card is visible in viewport (at least partially)
                       if (rect.top >= 0 && rect.top < window.innerHeight) {
                         firstVisibleId = card.id.replace('blogger-', '')
-                        console.log('💾 Saving visible blogger ID:', firstVisibleId)
                         break
                       }
                     }
@@ -502,7 +547,6 @@ function BloggersContent() {
                         // Card is partially visible (top is above viewport but bottom is in viewport)
                         if (rect.top < 0 && rect.bottom > 0) {
                           firstVisibleId = card.id.replace('blogger-', '')
-                          console.log('💾 Saving partially visible blogger ID:', firstVisibleId)
                           break
                         }
                       }
@@ -525,14 +569,12 @@ function BloggersContent() {
                       }
                       
                       firstVisibleId = closestId
-                      console.log('💾 Saving closest blogger ID:', firstVisibleId)
                     }
                     
                     // Save the first visible blogger ID
                     if (firstVisibleId) {
                       sessionStorage.setItem('bloggers-scroll-blogger-id', firstVisibleId)
                       localStorage.setItem('bloggers-scroll-blogger-id', firstVisibleId)
-                      console.log('✅ Saved to storage:', firstVisibleId)
                       
                       // Also save in URL for browser history
                       const currentUrl = new URL(window.location.href)
@@ -542,9 +584,6 @@ function BloggersContent() {
                         '',
                         currentUrl.toString()
                       )
-                      console.log('✅ Saved to URL:', currentUrl.toString())
-                    } else {
-                      console.warn('⚠️ No visible blogger found!')
                     }
                     
                     // Navigate to blogger page
