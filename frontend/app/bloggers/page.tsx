@@ -67,10 +67,15 @@ function BloggersContent() {
       window.history.scrollRestoration = 'manual'
     }
 
-    // Initialize history state if not present
-    if (typeof window !== 'undefined' && !window.history.state) {
-      const pos = window.scrollY || document.documentElement.scrollTop || 0
-      window.history.replaceState({ scrollY: pos }, '', window.location.href)
+    // Initialize global scroll position from storage
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
+      if (saved) {
+        const pos = parseInt(saved, 10)
+        if (!isNaN(pos) && pos > 0) {
+          (window as any).__bloggersScrollPos = pos
+        }
+      }
     }
   }, [])
 
@@ -80,10 +85,10 @@ function BloggersContent() {
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return
 
-    // Try history state first
+    // Try global variable first (most reliable for client-side navigation)
     let target: number | null = null
-    if (window.history.state?.scrollY !== undefined) {
-      target = window.history.state.scrollY
+    if ((window as any).__bloggersScrollPos) {
+      target = (window as any).__bloggersScrollPos
     } else {
       // Fallback to sessionStorage
       const saved = sessionStorage.getItem('bloggers-scroll-pos')
@@ -102,51 +107,44 @@ function BloggersContent() {
     }
   }, [])
 
-  // Save scroll position on every scroll and in history state
+  // Save scroll position - use global window object (persists across client-side navigation)
   useEffect(() => {
     if (typeof window === 'undefined') return
+
+    // Initialize global scroll position storage
+    if (!(window as any).__bloggersScrollPos) {
+      (window as any).__bloggersScrollPos = 0
+    }
 
     const saveScroll = () => {
       try {
         const pos = window.scrollY || document.documentElement.scrollTop || 0
+        // Save in multiple places for reliability
+        (window as any).__bloggersScrollPos = pos
         sessionStorage.setItem('bloggers-scroll-pos', String(pos))
-        // Also save in history state
-        if (window.history.state) {
-          window.history.replaceState(
-            { ...window.history.state, scrollY: pos },
-            '',
-            window.location.href
-          )
-        }
+        localStorage.setItem('bloggers-scroll-pos', String(pos))
       } catch {}
     }
 
-    window.addEventListener('scroll', saveScroll, { passive: true })
-    
-    // Restore from history state on popstate (back/forward)
-    const handlePopState = (e: PopStateEvent) => {
-      if (e.state?.scrollY !== undefined) {
-        setTimeout(() => {
-          window.scrollTo(0, e.state.scrollY)
-        }, 0)
-      } else {
-        // Fallback to sessionStorage
-        const saved = sessionStorage.getItem('bloggers-scroll-pos')
-        if (saved) {
-          const target = parseInt(saved, 10)
-          if (!isNaN(target) && target > 0) {
-            setTimeout(() => {
-              window.scrollTo(0, target)
-            }, 0)
-          }
-        }
-      }
+    // Save on scroll (throttled)
+    let scrollTimeout: NodeJS.Timeout
+    const handleScroll = () => {
+      clearTimeout(scrollTimeout)
+      scrollTimeout = setTimeout(saveScroll, 100)
     }
-    window.addEventListener('popstate', handlePopState)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    
+    // Save before navigation
+    const handleBeforeUnload = () => {
+      saveScroll()
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
 
     return () => {
-      window.removeEventListener('scroll', saveScroll)
-      window.removeEventListener('popstate', handlePopState)
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      clearTimeout(scrollTimeout)
+      saveScroll() // Final save
     }
   }, [])
 
@@ -156,12 +154,12 @@ function BloggersContent() {
 
     const restore = () => {
       try {
-        // Try history state first
+        // Try global variable first
         let target: number | null = null
-        if (window.history.state?.scrollY !== undefined) {
-          target = window.history.state.scrollY
+        if ((window as any).__bloggersScrollPos) {
+          target = (window as any).__bloggersScrollPos
         } else {
-          const saved = sessionStorage.getItem('bloggers-scroll-pos')
+          const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
           if (saved) {
             const parsed = parseInt(saved, 10)
             if (!isNaN(parsed) && parsed > 0) {
@@ -211,12 +209,12 @@ function BloggersContent() {
 
     const restore = () => {
       try {
-        // Try history state first
+        // Try global variable first
         let target: number | null = null
-        if (window.history.state?.scrollY !== undefined) {
-          target = window.history.state.scrollY
+        if ((window as any).__bloggersScrollPos) {
+          target = (window as any).__bloggersScrollPos
         } else {
-          const saved = sessionStorage.getItem('bloggers-scroll-pos')
+          const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
           if (saved) {
             const parsed = parseInt(saved, 10)
             if (!isNaN(parsed) && parsed > 0) {
@@ -249,6 +247,7 @@ function BloggersContent() {
       setTimeout(restore, 100)
       setTimeout(restore, 300)
       setTimeout(restore, 500)
+      setTimeout(restore, 800)
     })
   }, [searchParams, isLoading])
 
@@ -376,14 +375,11 @@ function BloggersContent() {
                   e.preventDefault()
                   try {
                     const pos = window.scrollY || document.documentElement.scrollTop || 0
-                    sessionStorage.setItem('bloggers-scroll-pos', String(pos))
                     
-                    // Save in history state before navigation
-                    window.history.replaceState(
-                      { ...window.history.state, scrollY: pos },
-                      '',
-                      window.location.href
-                    )
+                    // Save in global variable (most reliable for client-side navigation)
+                    (window as any).__bloggersScrollPos = pos
+                    sessionStorage.setItem('bloggers-scroll-pos', String(pos))
+                    localStorage.setItem('bloggers-scroll-pos', String(pos))
                     
                     // Find nearest blogger card above current position
                     const cards = document.querySelectorAll('[id^="blogger-"]')
