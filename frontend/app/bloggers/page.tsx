@@ -35,6 +35,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { BloggerCategory, type BloggerFilters } from '@/types'
 import { useAuth } from '@/hooks/useAuth'
 import { getPlatformIcon } from '@/components/icons/PlatformIcons'
+import { useSearchParams } from 'next/navigation'
 
 export default function BloggersPage() {
   // APP VERSION: v0.2.0 - Build timestamp: 2025-11-11T12:14:00
@@ -61,30 +62,25 @@ export default function BloggersPage() {
     analyticsApi.track('bloggers_list_view')
   }, [])
 
-  // Robust scroll position save/restore via localStorage flag + retries
+  const searchParams = useSearchParams()
+
+  // Restore scroll position only when explicitly requested via query (?restore=1)
   useEffect(() => {
-    const posKey = 'bloggers-scroll-pos'
-    const flagKey = 'bloggers-scroll-restore'
     try {
-      const shouldRestore = localStorage.getItem(flagKey)
-      const saved = localStorage.getItem(posKey)
-      if (shouldRestore && saved) {
-        let attempts = 0
-        const maxAttempts = 30
-        const interval = setInterval(() => {
-          attempts += 1
-          try {
-            window.scrollTo(0, parseInt(saved || '0', 10))
-          } catch {}
-          if (attempts >= maxAttempts) {
-            clearInterval(interval)
-            try { localStorage.removeItem(flagKey) } catch {}
-          }
-        }, 50)
-        return () => clearInterval(interval)
-      }
+      const shouldRestore = searchParams?.get('restore') === '1'
+      if (!shouldRestore) return
+      const saved = localStorage.getItem('bloggers-scroll-pos') || sessionStorage.getItem('bloggers-scroll-position')
+      if (!saved) return
+      let attempts = 0
+      const maxAttempts = 30
+      const interval = setInterval(() => {
+        attempts += 1
+        try { window.scrollTo(0, parseInt(saved || '0', 10)) } catch {}
+        if (attempts >= maxAttempts) clearInterval(interval)
+      }, 50)
+      return () => clearInterval(interval)
     } catch {}
-  }, [])
+  }, [searchParams])
 
   useEffect(() => {
     const key = 'bloggers-scroll-position'
