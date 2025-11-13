@@ -85,12 +85,30 @@ function BloggersContent() {
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return
 
-    // Try global variable first (most reliable for client-side navigation)
+    // Try URL hash first (most reliable for back navigation)
     let target: number | null = null
-    if ((window as any).__bloggersScrollPos) {
+    let savedBloggerId: string | null = null
+    
+    const hash = window.location.hash
+    if (hash && hash.startsWith('#scroll-')) {
+      const hashValue = hash.replace('#scroll-', '')
+      const parsed = parseInt(hashValue, 10)
+      if (!isNaN(parsed) && parsed > 0) {
+        target = parsed
+      }
+    }
+    
+    // Try query parameter for blogger ID
+    const urlParams = new URLSearchParams(window.location.search)
+    savedBloggerId = urlParams.get('blogger-id')
+
+    // Fallback to global variable
+    if (!target && (window as any).__bloggersScrollPos) {
       target = (window as any).__bloggersScrollPos
-    } else {
-      // Fallback to sessionStorage
+    }
+    
+    // Fallback to sessionStorage
+    if (!target) {
       const saved = sessionStorage.getItem('bloggers-scroll-pos')
       if (saved) {
         const parsed = parseInt(saved, 10)
@@ -99,9 +117,23 @@ function BloggersContent() {
         }
       }
     }
+    
+    if (!savedBloggerId) {
+      savedBloggerId = sessionStorage.getItem('bloggers-scroll-blogger-id')
+    }
 
     if (target !== null && target > 0) {
       try {
+        // Try by element ID first
+        if (savedBloggerId) {
+          const element = document.getElementById(`blogger-${savedBloggerId}`)
+          if (element) {
+            const rect = element.getBoundingClientRect()
+            const elementTop = rect.top + window.scrollY
+            window.scrollTo(0, elementTop - 20)
+            return
+          }
+        }
         window.scrollTo(0, target)
       } catch {}
     }
@@ -153,10 +185,22 @@ function BloggersContent() {
     if (typeof window === 'undefined' || isLoading) return
 
     const getTarget = (): number | null => {
-      // Try global variable first
+      // Try URL hash first (most reliable for back navigation)
+      const hash = window.location.hash
+      if (hash && hash.startsWith('#scroll-')) {
+        const hashValue = hash.replace('#scroll-', '')
+        const parsed = parseInt(hashValue, 10)
+        if (!isNaN(parsed) && parsed > 0) {
+          return parsed
+        }
+      }
+      
+      // Try global variable
       if ((window as any).__bloggersScrollPos) {
         return (window as any).__bloggersScrollPos
       }
+      
+      // Fallback to storage
       const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
       if (saved) {
         const parsed = parseInt(saved, 10)
@@ -165,6 +209,11 @@ function BloggersContent() {
         }
       }
       return null
+    }
+    
+    const getSavedBloggerId = (): string | null => {
+      const urlParams = new URLSearchParams(window.location.search)
+      return urlParams.get('blogger-id') || sessionStorage.getItem('bloggers-scroll-blogger-id')
     }
 
     const restore = () => {
@@ -176,7 +225,7 @@ function BloggersContent() {
         if (Math.abs(current - target) < 5) return // Already at target
 
         // Try by element ID first
-        const savedBloggerId = sessionStorage.getItem('bloggers-scroll-blogger-id')
+        const savedBloggerId = getSavedBloggerId()
         if (savedBloggerId) {
           const element = document.getElementById(`blogger-${savedBloggerId}`)
           if (element) {
@@ -278,11 +327,24 @@ function BloggersContent() {
 
     const restore = () => {
       try {
-        // Try global variable first
+        // Try URL hash first
         let target: number | null = null
-        if ((window as any).__bloggersScrollPos) {
+        const hash = window.location.hash
+        if (hash && hash.startsWith('#scroll-')) {
+          const hashValue = hash.replace('#scroll-', '')
+          const parsed = parseInt(hashValue, 10)
+          if (!isNaN(parsed) && parsed > 0) {
+            target = parsed
+          }
+        }
+        
+        // Fallback to global variable
+        if (!target && (window as any).__bloggersScrollPos) {
           target = (window as any).__bloggersScrollPos
-        } else {
+        }
+        
+        // Fallback to storage
+        if (!target) {
           const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
           if (saved) {
             const parsed = parseInt(saved, 10)
@@ -295,7 +357,8 @@ function BloggersContent() {
         if (!target || target <= 0) return
 
         // Try by element ID first
-        const savedBloggerId = sessionStorage.getItem('bloggers-scroll-blogger-id')
+        const urlParams = new URLSearchParams(window.location.search)
+        const savedBloggerId = urlParams.get('blogger-id') || sessionStorage.getItem('bloggers-scroll-blogger-id')
         if (savedBloggerId) {
           const element = document.getElementById(`blogger-${savedBloggerId}`)
           if (element) {
@@ -320,6 +383,29 @@ function BloggersContent() {
     })
   }, [searchParams, isLoading])
 
+  // Handle browser back/forward navigation
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const handlePopState = () => {
+      // Restore scroll position from URL hash when navigating back
+      const hash = window.location.hash
+      if (hash && hash.startsWith('#scroll-')) {
+        const hashValue = hash.replace('#scroll-', '')
+        const parsed = parseInt(hashValue, 10)
+        if (!isNaN(parsed) && parsed > 0) {
+          setTimeout(() => {
+            window.scrollTo({ top: parsed, behavior: 'auto' })
+          }, 0)
+        }
+      }
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [])
 
   useEffect(() => {
     const handler = () => {
@@ -452,16 +538,34 @@ function BloggersContent() {
                     
                     // Find nearest blogger card above current position
                     const cards = document.querySelectorAll('[id^="blogger-"]')
+                    let savedBloggerId = ''
                     for (let i = cards.length - 1; i >= 0; i--) {
                       const card = cards[i] as HTMLElement
                       const cardTop = card.getBoundingClientRect().top + window.scrollY
                       if (cardTop <= pos + 50) {
-                        const bloggerId = card.id.replace('blogger-', '')
-                        sessionStorage.setItem('bloggers-scroll-blogger-id', bloggerId)
+                        savedBloggerId = card.id.replace('blogger-', '')
+                        sessionStorage.setItem('bloggers-scroll-blogger-id', savedBloggerId)
                         break
                       }
                     }
                     
+                    // Save scroll position in current page URL before navigation
+                    const currentPath = window.location.pathname
+                    const currentSearch = window.location.search
+                    let newUrl = currentPath
+                    if (currentSearch) {
+                      newUrl += currentSearch
+                    }
+                    newUrl += `#scroll-${pos}`
+                    if (savedBloggerId) {
+                      const separator = currentSearch ? '&' : '?'
+                      newUrl = newUrl.replace('#', `${separator}blogger-id=${savedBloggerId}#`)
+                    }
+                    
+                    // Update URL without navigation (preserves scroll position in history)
+                    window.history.replaceState({ ...window.history.state, scrollY: pos }, '', newUrl)
+                    
+                    // Navigate to blogger page
                     router.push(`/bloggers/${blogger.id}`)
                   } catch {}
                 }}
