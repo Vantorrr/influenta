@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Edit, Save, X, User, Mail, AtSign, FileText, Phone, Globe, Users2, Shield, CheckCircle, AlertCircle, Clock, Camera, Upload } from 'lucide-react'
-import { Layout } from '@/components/layout/navigation'
+import { Layout } from '@/components/layout/Layout'
 import { RubIcon } from '@/components/ui/ruble-icon'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'

@@ -15,7 +15,7 @@ import {
   Shield,
   ArrowRight
 } from 'lucide-react'
-import { Layout } from '@/components/layout/navigation'
+import { Layout } from '@/components/layout/Layout'
 import { RubIcon } from '@/components/ui/ruble-icon'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'

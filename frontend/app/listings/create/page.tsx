@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { RubIcon } from '@/components/ui/ruble-icon'
 import Link from 'next/link'
-import { Layout } from '@/components/layout/navigation'
+import { Layout } from '@/components/layout/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
