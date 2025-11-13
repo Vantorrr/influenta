@@ -64,67 +64,160 @@ function BloggersContent() {
 
   const searchParams = useSearchParams()
 
-  // Restore scroll position when explicitly requested via query (?restore=1)
-  // or when a localStorage flag was set on leaving the list
+  // Save scroll position continuously while scrolling
   useEffect(() => {
+    const saveScroll = () => {
+      try {
+        const pos = window.scrollY || document.documentElement.scrollTop || 0
+        sessionStorage.setItem('bloggers-scroll-pos', String(pos))
+        localStorage.setItem('bloggers-scroll-pos', String(pos))
+      } catch {}
+    }
+
+    let scrollTimeout: NodeJS.Timeout
+    const handleScroll = () => {
+      clearTimeout(scrollTimeout)
+      scrollTimeout = setTimeout(saveScroll, 150)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    
+    // Also save on page unload
+    const handleBeforeUnload = () => {
+      saveScroll()
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    
+    // Save on visibility change (when leaving tab)
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        saveScroll()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      clearTimeout(scrollTimeout)
+      // Final save on unmount
+      saveScroll()
+    }
+  }, [])
+
+  // Restore scroll position on mount and pageshow (back/forward navigation)
+  useEffect(() => {
+    const restoreScroll = () => {
+      try {
+        const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
+        if (!saved) {
+          console.log('📍 No saved scroll position found')
+          return
+        }
+        const target = parseInt(saved, 10)
+        if (isNaN(target) || target <= 0) {
+          console.log('📍 Invalid scroll position:', saved)
+          return
+        }
+
+        // Check if content is loaded (bloggers list exists)
+        const hasContent = bloggers.length > 0 || !isLoading
+        if (!hasContent) {
+          console.log('📍 Content not loaded yet, will retry')
+          return
+        }
+
+        console.log('📍 Restoring scroll to:', target)
+
+        let attemptCount = 0
+        const maxAttempts = 30
+        const attemptRestore = () => {
+          attemptCount++
+          try {
+            const current = window.scrollY || document.documentElement.scrollTop || 0
+            window.scrollTo({ top: target, behavior: 'instant' })
+            const newPos = window.scrollY || document.documentElement.scrollTop || 0
+            const diff = Math.abs(newPos - target)
+            
+            if (diff > 10 && attemptCount < maxAttempts) {
+              requestAnimationFrame(attemptRestore)
+            } else {
+              console.log(`✅ Scroll restored to ${newPos} (target: ${target}, attempts: ${attemptCount})`)
+            }
+          } catch (e) {
+            console.error('❌ Scroll restore error:', e)
+          }
+        }
+
+        // Multiple attempts with delays
+        requestAnimationFrame(attemptRestore)
+        setTimeout(() => requestAnimationFrame(attemptRestore), 100)
+        setTimeout(() => requestAnimationFrame(attemptRestore), 300)
+        setTimeout(() => requestAnimationFrame(attemptRestore), 500)
+        setTimeout(() => requestAnimationFrame(attemptRestore), 800)
+        setTimeout(() => requestAnimationFrame(attemptRestore), 1200)
+        setTimeout(() => requestAnimationFrame(attemptRestore), 2000)
+      } catch (e) {
+        console.error('❌ Restore scroll error:', e)
+      }
+    }
+
+    // Restore on mount (after a delay to ensure content is loaded)
+    setTimeout(restoreScroll, 100)
+    setTimeout(restoreScroll, 500)
+    setTimeout(restoreScroll, 1000)
+
+    // Restore on pageshow (back/forward navigation)
+    const handlePageshow = (e: PageTransitionEvent) => {
+      console.log('📄 pageshow event:', { persisted: e.persisted })
+      setTimeout(restoreScroll, 50)
+      setTimeout(restoreScroll, 300)
+      setTimeout(restoreScroll, 800)
+    }
+    window.addEventListener('pageshow', handlePageshow)
+
+    // Also restore on visibility change (when tab becomes visible)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('👁️ Tab became visible, restoring scroll')
+        setTimeout(restoreScroll, 100)
+        setTimeout(restoreScroll, 500)
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('pageshow', handlePageshow)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [bloggers.length, isLoading])
+
+  // Also restore when restore query param is present
+  useEffect(() => {
+    if (searchParams?.get('restore') !== '1') return
     try {
-      const hasQueryRestore = searchParams?.get('restore') === '1'
-      const hasLocalFlag = (() => {
-        try { return localStorage.getItem('bloggers-scroll-restore') === '1' } catch { return false }
-      })()
-      if (!hasQueryRestore && !hasLocalFlag) return
-
-      const saved = (() => {
-        try {
-          return localStorage.getItem('bloggers-scroll-pos') || sessionStorage.getItem('bloggers-scroll-position')
-        } catch { return null }
-      })()
+      const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
       if (!saved) return
+      const target = parseInt(saved, 10)
+      if (isNaN(target) || target <= 0) return
 
-      const target = parseInt(saved || '0', 10)
       let attempts = 0
-      const maxAttempts = 80 // up to ~4s
+      const maxAttempts = 120
       const interval = setInterval(() => {
-        attempts += 1
+        attempts++
         try {
           window.scrollTo(0, target)
-          // stop early if reached (within small epsilon)
-          if (Math.abs((window.scrollY || 0) - target) < 2) {
+          const current = window.scrollY || document.documentElement.scrollTop || 0
+          if (Math.abs(current - target) < 5) {
             clearInterval(interval)
           }
         } catch {}
         if (attempts >= maxAttempts) clearInterval(interval)
       }, 50)
-
-      // clear flags after we start restoring so it happens only once
-      try {
-        localStorage.removeItem('bloggers-scroll-restore')
-        // keep position for a short while in case of rehydration, then clear
-        setTimeout(() => {
-          try { localStorage.removeItem('bloggers-scroll-pos') } catch {}
-        }, 5000)
-      } catch {}
-
       return () => clearInterval(interval)
     } catch {}
   }, [searchParams])
-
-  useEffect(() => {
-    const key = 'bloggers-scroll-position'
-    const attemptRestore = () => {
-      try {
-        const saved = sessionStorage.getItem(key)
-        if (saved) {
-          window.scrollTo(0, parseInt(saved || '0', 10))
-        }
-      } catch {}
-    }
-    // restore on mount and once again after content paints
-    setTimeout(attemptRestore, 50)
-    setTimeout(attemptRestore, 250)
-    try { window.addEventListener('pageshow', attemptRestore) } catch {}
-    return () => { try { window.removeEventListener('pageshow', attemptRestore) } catch {} }
-  }, [])
 
   useEffect(() => {
     const handler = () => {
@@ -245,9 +338,13 @@ function BloggersContent() {
             >
               <Link href={`/bloggers/${blogger.id}`} scroll={false} onClick={() => {
                 try {
-                  localStorage.setItem('bloggers-scroll-pos', String(window.scrollY || 0))
-                  localStorage.setItem('bloggers-scroll-restore', '1')
-                } catch {}
+                  const pos = window.scrollY || document.documentElement.scrollTop || 0
+                  sessionStorage.setItem('bloggers-scroll-pos', String(pos))
+                  localStorage.setItem('bloggers-scroll-pos', String(pos))
+                  console.log('💾 Saved scroll position:', pos)
+                } catch (e) {
+                  console.error('Failed to save scroll:', e)
+                }
               }}>
                 <Card hover className="overflow-hidden">
                   <CardContent className="p-4">
