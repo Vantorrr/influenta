@@ -39,11 +39,12 @@ export class BloggersService {
     }
 
     // Фильтр по тематикам (хотя бы одна из выбранных)
-    if (categories && categories.length > 0) {
+    if (categories && (categories as any).length > 0) {
       // у нас categories в users храним как строку через запятую
-      const orConditions = categories.map((c, i) => `user.categories ILIKE :cat_${i}`).join(' OR ')
+      const cats: string[] = Array.isArray(categories) ? (categories as unknown as string[]) : []
+      const orConditions = cats.map((c: string, i: number) => `user.categories ILIKE :cat_${i}`).join(' OR ')
       const params: any = {}
-      categories.forEach((c, i) => {
+      cats.forEach((c: string, i: number) => {
         params[`cat_${i}`] = `%${c}%`
       })
       query.andWhere(`(${orConditions})`, params)
