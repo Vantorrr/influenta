@@ -94,24 +94,12 @@ function BloggersContent() {
       const element = document.getElementById(`blogger-${savedBloggerId}`)
       
       if (element) {
-        // Calculate element position relative to document
-        const rect = element.getBoundingClientRect()
-        const elementTop = rect.top + window.scrollY
-        // Use offset to show element below header/navigation (60px for header + padding)
-        const targetPosition = elementTop - 60
-        
-        // Check if already at correct position (within 100px to be more lenient)
-        const currentScroll = window.scrollY || document.documentElement.scrollTop || 0
-        if (Math.abs(currentScroll - targetPosition) < 100) {
-          ;(window as any).__bloggersScrollRestored = true
-          return true
-        }
-        
         // Set flag immediately to prevent duplicate restorations
         ;(window as any).__bloggersScrollRestored = true
         
-        // Restore scroll - scroll to element with offset to show it below header
-        window.scrollTo({ top: targetPosition, behavior: 'auto' })
+        // Scroll element to center of viewport - more visible and doesn't get hidden by header
+        element.scrollIntoView({ behavior: 'auto', block: 'center' })
+        
         return true
       }
       
@@ -245,26 +233,13 @@ function BloggersContent() {
       // Find the element and scroll to it
       const element = document.getElementById(`blogger-${savedBloggerId}`)
       if (element) {
-        // Calculate element position relative to document
-        const rect = element.getBoundingClientRect()
-        const elementTop = rect.top + window.scrollY
-        // Use offset to show element below header/navigation (60px for header + padding)
-        const targetPosition = elementTop - 60
-        
-        // Check if already at correct position (within 100px)
-        const currentScroll = window.scrollY || document.documentElement.scrollTop || 0
-        if (Math.abs(currentScroll - targetPosition) < 100) {
-          ;(window as any).__bloggersScrollRestored = true
-          return
-        }
-        
         // Only restore if flag is not set
         if (!(window as any).__bloggersScrollRestored) {
           // Set flag immediately to prevent duplicate restorations
           ;(window as any).__bloggersScrollRestored = true
           
-          // Restore scroll with offset
-          window.scrollTo({ top: targetPosition, behavior: 'auto' })
+          // Scroll element to center of viewport
+          element.scrollIntoView({ behavior: 'auto', block: 'center' })
         }
       }
     }
@@ -297,15 +272,11 @@ function BloggersContent() {
         
         const element = document.getElementById(`blogger-${savedBloggerId}`)
         if (element) {
-          const elementOffsetTop = element.offsetTop
-          // Use offset to show element below header/navigation (80px for header + padding)
-        const targetPosition = elementOffsetTop - 80
-          
           // Set flag immediately to prevent duplicate restorations
           ;(window as any).__bloggersScrollRestored = true
           
-          // Restore scroll with offset
-          window.scrollTo({ top: targetPosition, behavior: 'auto' })
+          // Scroll element to center of viewport
+          element.scrollIntoView({ behavior: 'auto', block: 'center' })
         }
       }
       
