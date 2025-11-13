@@ -117,6 +117,18 @@ function BloggersContent() {
     const target = parseInt(saved, 10)
     if (isNaN(target) || target <= 0) return
 
+    // Check if position is fresh (saved within last 5 minutes)
+    const savedTime = parseInt(
+      sessionStorage.getItem('bloggers-scroll-time') || 
+      localStorage.getItem('bloggers-scroll-time') || 
+      '0',
+      10
+    )
+    if (savedTime > 0 && Date.now() - savedTime > 5 * 60 * 1000) {
+      // Position is too old, don't restore
+      return
+    }
+
     scrollRestoredRef.current = false
 
     const restore = () => {
@@ -185,7 +197,7 @@ function BloggersContent() {
         restoreIntervalRef.current = null
       }
     }
-  }, [])
+  }, [searchParams])
 
   // Trigger restoration when data loads
   useEffect(() => {
@@ -346,14 +358,21 @@ function BloggersContent() {
               transition={{ duration: 0.2 }}
             >
               <div
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault()
                   try {
                     const pos = window.scrollY || document.documentElement.scrollTop || 0
                     if (pos > 0) {
+                      // Save with timestamp to ensure it's fresh
                       sessionStorage.setItem('bloggers-scroll-pos', String(pos))
+                      sessionStorage.setItem('bloggers-scroll-time', String(Date.now()))
                       localStorage.setItem('bloggers-scroll-pos', String(pos))
+                      localStorage.setItem('bloggers-scroll-time', String(Date.now()))
                     }
-                    router.push(`/bloggers/${blogger.id}`)
+                    // Small delay to ensure storage is written
+                    setTimeout(() => {
+                      router.push(`/bloggers/${blogger.id}`)
+                    }, 10)
                   } catch {}
                 }}
                 className="cursor-pointer"
