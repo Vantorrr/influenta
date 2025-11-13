@@ -61,19 +61,40 @@ export default function BloggersPage() {
     analyticsApi.track('bloggers_list_view')
   }, [])
 
-  // Safely restore scroll position after returning from a blogger profile
+  // Robust scroll position save/restore
   useEffect(() => {
+    const key = 'bloggers-scroll-position'
+    const save = () => {
+      try { sessionStorage.setItem(key, String(window.scrollY || 0)) } catch {}
+    }
+    const onVisibility = () => { if (document.hidden) save() }
     try {
-      const saved = sessionStorage.getItem('bloggers-scroll-position')
-      if (saved) {
-        setTimeout(() => {
-          try {
-            window.scrollTo(0, parseInt(saved || '0', 10))
-            sessionStorage.removeItem('bloggers-scroll-position')
-          } catch {}
-        }, 50)
-      }
+      window.addEventListener('scroll', save, { passive: true })
+      document.addEventListener('visibilitychange', onVisibility)
     } catch {}
+    return () => {
+      try {
+        window.removeEventListener('scroll', save as any)
+        document.removeEventListener('visibilitychange', onVisibility)
+      } catch {}
+    }
+  }, [])
+
+  useEffect(() => {
+    const key = 'bloggers-scroll-position'
+    const attemptRestore = () => {
+      try {
+        const saved = sessionStorage.getItem(key)
+        if (saved) {
+          window.scrollTo(0, parseInt(saved || '0', 10))
+        }
+      } catch {}
+    }
+    // restore on mount and once again after content paints
+    setTimeout(attemptRestore, 50)
+    setTimeout(attemptRestore, 250)
+    try { window.addEventListener('pageshow', attemptRestore) } catch {}
+    return () => { try { window.removeEventListener('pageshow', attemptRestore) } catch {} }
   }, [])
 
   useEffect(() => {
