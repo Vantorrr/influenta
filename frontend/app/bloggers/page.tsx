@@ -73,17 +73,6 @@ export default function BloggersPage() {
     }
   }, [queryClient])
 
-  // Restore scroll position when returning from a blogger profile
-  useEffect(() => {
-    const saved = sessionStorage.getItem('bloggers-scroll-position')
-    if (saved && !isLoading && (data?.data?.length || bloggers.length)) {
-      setTimeout(() => {
-        window.scrollTo(0, parseInt(saved || '0', 10))
-        sessionStorage.removeItem('bloggers-scroll-position')
-      }, 50)
-    }
-  }, [isLoading, data?.data?.length, bloggers.length])
-
   const categories = Object.values(BloggerCategory)
 
   const toggleCategory = (category: BloggerCategory) => {
@@ -189,11 +178,7 @@ export default function BloggersPage() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.2 }}
             >
-              <Link href={`/bloggers/${blogger.id}`} scroll={false} onClick={() => {
-                try {
-                  sessionStorage.setItem('bloggers-scroll-position', String(window.scrollY || 0))
-                } catch {}
-              }}>
+              <Link href={`/bloggers/${blogger.id}`}>
                 <Card hover className="overflow-hidden">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
