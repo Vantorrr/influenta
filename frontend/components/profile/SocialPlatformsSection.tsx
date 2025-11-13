@@ -378,6 +378,18 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
       </div>
 
       <div>
+        <label className="label">Ссылка на профиль</label>
+        <Input
+          value={formData.url || ''}
+          onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+          placeholder="https://instagram.com/username или telegram.me/username"
+        />
+        <p className="text-xs text-telegram-textSecondary mt-1">
+          Опционально. Укажите прямую ссылку на ваш профиль.
+        </p>
+      </div>
+
+      <div>
         <label className="label">Количество подписчиков</label>
         <Input
           type="text"

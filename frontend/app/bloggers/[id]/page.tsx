@@ -262,6 +262,14 @@ export default function BloggerDetailsPage() {
             ))}
           </div>
 
+          {/* О себе */}
+          {blogger.bio && (
+            <div className="pt-4 border-t border-telegram-border">
+              <h4 className="font-medium text-sm text-telegram-textSecondary mb-2">О себе</h4>
+              <p className="text-telegram-text">{blogger.bio}</p>
+            </div>
+          )}
+
           {/* Кнопка для рекламодателей */}
           {user?.role === 'advertiser' && (
             <div className="mt-6 space-y-3">

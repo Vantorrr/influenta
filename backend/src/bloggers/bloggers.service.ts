@@ -16,7 +16,8 @@ export class BloggersService {
   ) {}
 
   async search(searchDto: BloggerSearchDto & { minSubscribers?: number; maxSubscribers?: number; minPrice?: number; maxPrice?: number }, paginationDto: PaginationDto) {
-    const { search, categories, verifiedOnly, minSubscribers, maxSubscribers, minPrice, maxPrice } = searchDto;
+    const { search, categories, verifiedOnly, minSubscribers, maxSubscribers, minPrice, maxPrice } = searchDto as any;
+    const platform = (searchDto as any)?.platform as string | undefined;
     const { page = 1, limit = 20 } = paginationDto;
 
     const query = this.usersRepository
@@ -68,7 +69,18 @@ export class BloggersService {
       query.andWhere('COALESCE(user.pricePerPost, 0) <= :maxPrice', { maxPrice })
     }
 
+    // Фильтр по платформе
+    if (platform) {
+      query.andWhere(`
+        EXISTS (
+          SELECT 1 FROM social_platforms sp
+          WHERE sp."userId" = user.id AND sp.platform = :platform
+        )
+      `, { platform })
+    }
+
     const [data, total] = await query
+      .orderBy('user.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
