@@ -60,6 +60,11 @@ function BloggersContent() {
 
   useEffect(() => {
     analyticsApi.track('bloggers_list_view')
+    
+    // Disable Next.js automatic scroll restoration
+    if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual'
+    }
   }, [])
 
   const searchParams = useSearchParams()
@@ -103,18 +108,33 @@ function BloggersContent() {
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return
 
-    const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
-    if (!saved) return
-    
-    const target = parseInt(saved, 10)
-    if (isNaN(target) || target <= 0) return
+    const restore = () => {
+      const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
+      if (!saved) return
+      
+      const target = parseInt(saved, 10)
+      if (isNaN(target) || target <= 0) return
 
-    // Restore immediately
-    try {
-      window.scrollTo(0, target)
-      document.documentElement.scrollTop = target
-      document.body.scrollTop = target
-    } catch {}
+      try {
+        window.scrollTo(0, target)
+        document.documentElement.scrollTop = target
+        document.body.scrollTop = target
+      } catch {}
+    }
+
+    restore()
+
+    // Also restore on pageshow (back/forward navigation)
+    const handlePageshow = () => {
+      setTimeout(restore, 0)
+      setTimeout(restore, 50)
+      setTimeout(restore, 100)
+    }
+    window.addEventListener('pageshow', handlePageshow)
+
+    return () => {
+      window.removeEventListener('pageshow', handlePageshow)
+    }
   }, [])
 
   // Also restore after data loads with multiple attempts
@@ -135,20 +155,19 @@ function BloggersContent() {
       } catch {}
     }
 
-    // Try multiple times
-    restore()
-    const t1 = setTimeout(restore, 50)
-    const t2 = setTimeout(restore, 150)
-    const t3 = setTimeout(restore, 300)
-    const t4 = setTimeout(restore, 500)
-    const t5 = setTimeout(restore, 1000)
+    // Try many times with various delays
+    const timeouts: NodeJS.Timeout[] = []
+    for (let i = 0; i <= 20; i++) {
+      timeouts.push(setTimeout(restore, i * 100))
+    }
 
-    // Persistent interval to keep restoring
+    // Persistent interval to keep restoring for up to 15 seconds
     let attempts = 0
+    const maxAttempts = 150
     const interval = setInterval(() => {
       attempts++
       const current = window.scrollY || document.documentElement.scrollTop || 0
-      if (Math.abs(current - target) > 5 && attempts < 100) {
+      if (Math.abs(current - target) > 5 && attempts < maxAttempts) {
         restore()
       } else {
         clearInterval(interval)
@@ -156,11 +175,7 @@ function BloggersContent() {
     }, 100)
 
     return () => {
-      clearTimeout(t1)
-      clearTimeout(t2)
-      clearTimeout(t3)
-      clearTimeout(t4)
-      clearTimeout(t5)
+      timeouts.forEach(clearTimeout)
       clearInterval(interval)
     }
   }, [isLoading])
