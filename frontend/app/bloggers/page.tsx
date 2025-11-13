@@ -1,6 +1,6 @@
 'use client'
 import { Suspense } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   SlidersHorizontal, 
@@ -99,7 +99,25 @@ function BloggersContent() {
     }
   }, [])
 
-  // Restore scroll position when component mounts or data loads
+  // Restore scroll position synchronously before render
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
+    if (!saved) return
+    
+    const target = parseInt(saved, 10)
+    if (isNaN(target) || target <= 0) return
+
+    // Restore immediately
+    try {
+      window.scrollTo(0, target)
+      document.documentElement.scrollTop = target
+      document.body.scrollTop = target
+    } catch {}
+  }, [])
+
+  // Also restore after data loads with multiple attempts
   useEffect(() => {
     if (typeof window === 'undefined' || isLoading) return
 
@@ -113,28 +131,29 @@ function BloggersContent() {
       try {
         window.scrollTo(0, target)
         document.documentElement.scrollTop = target
+        document.body.scrollTop = target
       } catch {}
     }
 
-    // Try multiple times with increasing delays
+    // Try multiple times
     restore()
-    const t1 = setTimeout(restore, 100)
-    const t2 = setTimeout(restore, 300)
-    const t3 = setTimeout(restore, 600)
-    const t4 = setTimeout(restore, 1000)
-    const t5 = setTimeout(restore, 2000)
+    const t1 = setTimeout(restore, 50)
+    const t2 = setTimeout(restore, 150)
+    const t3 = setTimeout(restore, 300)
+    const t4 = setTimeout(restore, 500)
+    const t5 = setTimeout(restore, 1000)
 
-    // Also use interval to keep restoring if page resets scroll
+    // Persistent interval to keep restoring
     let attempts = 0
     const interval = setInterval(() => {
       attempts++
       const current = window.scrollY || document.documentElement.scrollTop || 0
-      if (Math.abs(current - target) > 10 && attempts < 50) {
+      if (Math.abs(current - target) > 5 && attempts < 100) {
         restore()
       } else {
         clearInterval(interval)
       }
-    }, 200)
+    }, 100)
 
     return () => {
       clearTimeout(t1)
@@ -289,13 +308,28 @@ function BloggersContent() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.2 }}
             >
-              <Link href={`/bloggers/${blogger.id}`} scroll={false} onClick={() => {
-                try {
-                  const pos = window.scrollY || document.documentElement.scrollTop || 0
-                  sessionStorage.setItem('bloggers-scroll-pos', String(pos))
-                  localStorage.setItem('bloggers-scroll-pos', String(pos))
-                } catch {}
-              }}>
+              <Link 
+                href={`/bloggers/${blogger.id}`} 
+                scroll={false}
+                onMouseDown={() => {
+                  try {
+                    const pos = window.scrollY || document.documentElement.scrollTop || 0
+                    if (pos > 0) {
+                      sessionStorage.setItem('bloggers-scroll-pos', String(pos))
+                      localStorage.setItem('bloggers-scroll-pos', String(pos))
+                    }
+                  } catch {}
+                }}
+                onClick={(e) => {
+                  try {
+                    const pos = window.scrollY || document.documentElement.scrollTop || 0
+                    if (pos > 0) {
+                      sessionStorage.setItem('bloggers-scroll-pos', String(pos))
+                      localStorage.setItem('bloggers-scroll-pos', String(pos))
+                    }
+                  } catch {}
+                }}
+              >
                 <Card hover className="overflow-hidden">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
