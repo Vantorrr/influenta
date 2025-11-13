@@ -74,17 +74,10 @@ function BloggersContent() {
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return
 
-    // Global flag to prevent multiple restorations
-    if (!(window as any).__bloggersScrollRestored) {
-      ;(window as any).__bloggersScrollRestored = false
-    }
+    // Reset flag on mount to allow restoration
+    ;(window as any).__bloggersScrollRestored = false
 
     const restoreScroll = () => {
-      // Check if already restored
-      if ((window as any).__bloggersScrollRestored) {
-        return true
-      }
-      
       // Get saved blogger ID from URL or storage
       const urlParams = new URLSearchParams(window.location.search)
       let savedBloggerId = urlParams.get('blogger-id')
@@ -103,18 +96,20 @@ function BloggersContent() {
       if (element) {
         const rect = element.getBoundingClientRect()
         const elementTop = rect.top + window.scrollY
+        const targetPosition = elementTop - 20
         
-        // Check if already at correct position (within 50px)
+        // Check if already at correct position (within 100px to be more lenient)
         const currentScroll = window.scrollY || document.documentElement.scrollTop || 0
-        if (Math.abs(currentScroll - (elementTop - 20)) < 50) {
+        if (Math.abs(currentScroll - targetPosition) < 100) {
           ;(window as any).__bloggersScrollRestored = true
           return true
         }
         
+        // Restore scroll (flag prevents duplicate calls from other effects)
         element.scrollIntoView({ behavior: 'auto', block: 'start' })
         // Also try window.scrollTo as backup
         setTimeout(() => {
-          window.scrollTo({ top: elementTop - 20, behavior: 'auto' })
+          window.scrollTo({ top: targetPosition, behavior: 'auto' })
           ;(window as any).__bloggersScrollRestored = true
         }, 0)
         return true
@@ -180,11 +175,6 @@ function BloggersContent() {
 
     const restore = () => {
       try {
-        // Check if already restored
-        if ((window as any).__bloggersScrollRestored) {
-          return
-        }
-        
         // Get saved blogger ID from URL or storage
         const urlParams = new URLSearchParams(window.location.search)
         let savedBloggerId = urlParams.get('blogger-id')
@@ -200,20 +190,24 @@ function BloggersContent() {
         if (element) {
           const rect = element.getBoundingClientRect()
           const elementTop = rect.top + window.scrollY
+          const targetPosition = elementTop - 20
           
-          // Check if already at correct position
+          // Check if already at correct position (within 100px)
           const currentScroll = window.scrollY || document.documentElement.scrollTop || 0
-          if (Math.abs(currentScroll - (elementTop - 20)) < 50) {
+          if (Math.abs(currentScroll - targetPosition) < 100) {
             ;(window as any).__bloggersScrollRestored = true
             return
           }
           
-          element.scrollIntoView({ behavior: 'auto', block: 'start' })
-          // Also try window.scrollTo as backup
-          setTimeout(() => {
-            window.scrollTo({ top: elementTop - 20, behavior: 'auto' })
-            ;(window as any).__bloggersScrollRestored = true
-          }, 0)
+          // Only restore if flag is not set
+          if (!(window as any).__bloggersScrollRestored) {
+            element.scrollIntoView({ behavior: 'auto', block: 'start' })
+            // Also try window.scrollTo as backup
+            setTimeout(() => {
+              window.scrollTo({ top: targetPosition, behavior: 'auto' })
+              ;(window as any).__bloggersScrollRestored = true
+            }, 0)
+          }
         }
       } catch {}
     }
@@ -302,12 +296,10 @@ function BloggersContent() {
   useEffect(() => {
     if (typeof window === 'undefined' || isLoading) return
 
+    // Reset flag when searchParams change (navigation back)
+    ;(window as any).__bloggersScrollRestored = false
+
     const restore = () => {
-      // Check if already restored
-      if ((window as any).__bloggersScrollRestored) {
-        return
-      }
-      
       // Get saved blogger ID from URL or storage
       const urlParams = new URLSearchParams(window.location.search)
       let savedBloggerId = urlParams.get('blogger-id')
@@ -323,20 +315,24 @@ function BloggersContent() {
       if (element) {
         const rect = element.getBoundingClientRect()
         const elementTop = rect.top + window.scrollY
+        const targetPosition = elementTop - 20
         
-        // Check if already at correct position
+        // Check if already at correct position (within 100px)
         const currentScroll = window.scrollY || document.documentElement.scrollTop || 0
-        if (Math.abs(currentScroll - (elementTop - 20)) < 50) {
+        if (Math.abs(currentScroll - targetPosition) < 100) {
           ;(window as any).__bloggersScrollRestored = true
           return
         }
         
-        element.scrollIntoView({ behavior: 'auto', block: 'start' })
-        // Also try window.scrollTo as backup
-        setTimeout(() => {
-          window.scrollTo({ top: elementTop - 20, behavior: 'auto' })
-          ;(window as any).__bloggersScrollRestored = true
-        }, 0)
+        // Only restore if flag is not set
+        if (!(window as any).__bloggersScrollRestored) {
+          element.scrollIntoView({ behavior: 'auto', block: 'start' })
+          // Also try window.scrollTo as backup
+          setTimeout(() => {
+            window.scrollTo({ top: targetPosition, behavior: 'auto' })
+            ;(window as any).__bloggersScrollRestored = true
+          }, 0)
+        }
       }
     }
 
@@ -358,7 +354,7 @@ function BloggersContent() {
     if (typeof window === 'undefined') return
 
     const handlePopState = () => {
-      // Reset flag when navigating back
+      // Reset flag when navigating back to allow restoration
       ;(window as any).__bloggersScrollRestored = false
       
       // Restore scroll position by finding the saved blogger element
@@ -371,7 +367,7 @@ function BloggersContent() {
       
       if (!savedBloggerId) return
       
-      // Single attempt to find and scroll to element
+      // Multiple attempts to find and scroll to element
       const restore = () => {
         if ((window as any).__bloggersScrollRestored) return
         
@@ -379,17 +375,21 @@ function BloggersContent() {
         if (element) {
           const rect = element.getBoundingClientRect()
           const elementTop = rect.top + window.scrollY
+          const targetPosition = elementTop - 20
           
           element.scrollIntoView({ behavior: 'auto', block: 'start' })
           // Also try window.scrollTo as backup
           setTimeout(() => {
-            window.scrollTo({ top: elementTop - 20, behavior: 'auto' })
+            window.scrollTo({ top: targetPosition, behavior: 'auto' })
             ;(window as any).__bloggersScrollRestored = true
           }, 0)
         }
       }
       
-      setTimeout(restore, 100)
+      // Try multiple times to ensure restoration
+      setTimeout(restore, 50)
+      setTimeout(restore, 150)
+      setTimeout(restore, 300)
     }
 
     window.addEventListener('popstate', handlePopState)
