@@ -1,6 +1,6 @@
 'use client'
 import { Suspense } from 'react'
-import { useEffect, useLayoutEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   SlidersHorizontal, 
@@ -49,8 +49,6 @@ function BloggersContent() {
   const { user, isAdmin } = useAuth()
   const queryClient = useQueryClient()
   const router = useRouter()
-  const scrollRestoredRef = useRef(false)
-  const restoreIntervalRef = useRef<NodeJS.Timeout | null>(null)
   
   // Загружаем всех блогеров одним запросом, но с оптимизацией
   const { data, isLoading } = useQuery({
@@ -72,188 +70,63 @@ function BloggersContent() {
 
   const searchParams = useSearchParams()
 
-  // Save scroll position continuously while scrolling
+  // Save scroll position on every scroll
   useEffect(() => {
     if (typeof window === 'undefined') return
 
     const saveScroll = () => {
       try {
         const pos = window.scrollY || document.documentElement.scrollTop || 0
-        if (pos > 0) {
-          sessionStorage.setItem('bloggers-scroll-pos', String(pos))
-          localStorage.setItem('bloggers-scroll-pos', String(pos))
-        }
+        sessionStorage.setItem('bloggers-scroll-pos', String(pos))
       } catch {}
     }
 
-    let scrollTimeout: NodeJS.Timeout
-    const handleScroll = () => {
-      clearTimeout(scrollTimeout)
-      scrollTimeout = setTimeout(saveScroll, 100)
-    }
-
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    
-    const handleBeforeUnload = () => {
-      saveScroll()
-    }
-    window.addEventListener('beforeunload', handleBeforeUnload)
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll)
-      window.removeEventListener('beforeunload', handleBeforeUnload)
-      clearTimeout(scrollTimeout)
-      saveScroll()
-    }
+    window.addEventListener('scroll', saveScroll, { passive: true })
+    return () => window.removeEventListener('scroll', saveScroll)
   }, [])
 
-  // Restore scroll position - aggressive approach
-  useLayoutEffect(() => {
-    if (typeof window === 'undefined') return
-
-    const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
-    if (!saved) return
-    
-    const target = parseInt(saved, 10)
-    if (isNaN(target) || target <= 0) return
-
-    // Check if position is fresh (saved within last 5 minutes)
-    const savedTime = parseInt(
-      sessionStorage.getItem('bloggers-scroll-time') || 
-      localStorage.getItem('bloggers-scroll-time') || 
-      '0',
-      10
-    )
-    if (savedTime > 0 && Date.now() - savedTime > 5 * 60 * 1000) {
-      // Position is too old, don't restore
-      return
-    }
-
-    scrollRestoredRef.current = false
+  // Restore scroll position - simple approach
+  useEffect(() => {
+    if (typeof window === 'undefined' || isLoading) return
 
     const restore = () => {
       try {
-        // Try to restore by blogger ID first (more reliable)
-        const savedBloggerId = sessionStorage.getItem('bloggers-scroll-blogger-id') || localStorage.getItem('bloggers-scroll-blogger-id')
+        const saved = sessionStorage.getItem('bloggers-scroll-pos')
+        if (!saved) return
+        
+        const target = parseInt(saved, 10)
+        if (isNaN(target) || target <= 0) return
+
+        // Try by element ID first
+        const savedBloggerId = sessionStorage.getItem('bloggers-scroll-blogger-id')
         if (savedBloggerId) {
           const element = document.getElementById(`blogger-${savedBloggerId}`)
           if (element) {
-            element.scrollIntoView({ behavior: 'instant', block: 'start' })
-            const current = window.scrollY || document.documentElement.scrollTop || 0
-            if (Math.abs(current - target) < 50) {
-              scrollRestoredRef.current = true
-              return
-            }
+            element.scrollIntoView({ behavior: 'auto', block: 'start' })
+            return
           }
         }
         
-        // Fallback to absolute position
-        window.scrollTo(0, target)
-        document.documentElement.scrollTop = target
-        document.body.scrollTop = target
-        const current = window.scrollY || document.documentElement.scrollTop || 0
-        if (Math.abs(current - target) < 5) {
-          scrollRestoredRef.current = true
-        }
+        // Fallback to position
+        window.scrollTo({ top: target, behavior: 'auto' })
       } catch {}
     }
 
-    // Restore immediately
+    // Try multiple times
     restore()
-
-    // Track user scroll to stop restoration
-    let userScrolled = false
-    const handleUserScroll = () => {
-      userScrolled = true
-      if (restoreIntervalRef.current) {
-        clearInterval(restoreIntervalRef.current)
-        restoreIntervalRef.current = null
-      }
-    }
-    window.addEventListener('scroll', handleUserScroll, { once: true, passive: true })
-
-    // Aggressive interval restoration
-    if (restoreIntervalRef.current) clearInterval(restoreIntervalRef.current)
-    let attempts = 0
-    restoreIntervalRef.current = setInterval(() => {
-      attempts++
-      if (userScrolled || scrollRestoredRef.current || attempts > 200) {
-        if (restoreIntervalRef.current) {
-          clearInterval(restoreIntervalRef.current)
-          restoreIntervalRef.current = null
-        }
-        return
-      }
-      const current = window.scrollY || document.documentElement.scrollTop || 0
-      if (Math.abs(current - target) > 5) {
-        restore()
-      } else {
-        scrollRestoredRef.current = true
-        if (restoreIntervalRef.current) {
-          clearInterval(restoreIntervalRef.current)
-          restoreIntervalRef.current = null
-        }
-      }
-    }, 50)
-
-    // Also restore on pageshow
-    const handlePageshow = () => {
-      scrollRestoredRef.current = false
-      userScrolled = false
-      restore()
-    }
-    window.addEventListener('pageshow', handlePageshow)
+    const t1 = setTimeout(restore, 100)
+    const t2 = setTimeout(restore, 300)
+    const t3 = setTimeout(restore, 500)
+    const t4 = setTimeout(restore, 1000)
 
     return () => {
-      window.removeEventListener('scroll', handleUserScroll)
-      window.removeEventListener('pageshow', handlePageshow)
-      if (restoreIntervalRef.current) {
-        clearInterval(restoreIntervalRef.current)
-        restoreIntervalRef.current = null
-      }
+      clearTimeout(t1)
+      clearTimeout(t2)
+      clearTimeout(t3)
+      clearTimeout(t4)
     }
-  }, [searchParams])
+  }, [isLoading, searchParams])
 
-  // Trigger restoration when data loads
-  useEffect(() => {
-    if (typeof window === 'undefined' || isLoading) return
-    if (scrollRestoredRef.current) return
-
-    const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
-    if (!saved) return
-    
-    const target = parseInt(saved, 10)
-    if (isNaN(target) || target <= 0) return
-
-    // Reset restoration flag to trigger interval again
-    scrollRestoredRef.current = false
-  }, [isLoading])
-
-  // Also restore when restore query param is present
-  useEffect(() => {
-    if (searchParams?.get('restore') !== '1') return
-    try {
-      const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
-      if (!saved) return
-      const target = parseInt(saved, 10)
-      if (isNaN(target) || target <= 0) return
-
-      let attempts = 0
-      const maxAttempts = 120
-      const interval = setInterval(() => {
-        attempts++
-        try {
-          window.scrollTo(0, target)
-          const current = window.scrollY || document.documentElement.scrollTop || 0
-          if (Math.abs(current - target) < 5) {
-            clearInterval(interval)
-          }
-        } catch {}
-        if (attempts >= maxAttempts) clearInterval(interval)
-      }, 50)
-      return () => clearInterval(interval)
-    } catch {}
-  }, [searchParams])
 
   useEffect(() => {
     const handler = () => {
@@ -377,26 +250,20 @@ function BloggersContent() {
                 onClick={(e) => {
                   e.preventDefault()
                   try {
-                    // Save both position and visible blogger ID
                     const pos = window.scrollY || document.documentElement.scrollTop || 0
-                    if (pos > 0) {
-                      sessionStorage.setItem('bloggers-scroll-pos', String(pos))
-                      sessionStorage.setItem('bloggers-scroll-time', String(Date.now()))
-                      // Find first visible blogger above current position
-                      const cards = document.querySelectorAll('[id^="blogger-"]')
-                      for (let i = cards.length - 1; i >= 0; i--) {
-                        const card = cards[i] as HTMLElement
-                        const cardTop = card.getBoundingClientRect().top + window.scrollY
-                        if (cardTop <= pos + 100) {
-                          const bloggerId = card.id.replace('blogger-', '')
-                          sessionStorage.setItem('bloggers-scroll-blogger-id', bloggerId)
-                          break
-                        }
+                    sessionStorage.setItem('bloggers-scroll-pos', String(pos))
+                    // Find nearest blogger card above current position
+                    const cards = document.querySelectorAll('[id^="blogger-"]')
+                    for (let i = cards.length - 1; i >= 0; i--) {
+                      const card = cards[i] as HTMLElement
+                      const cardTop = card.getBoundingClientRect().top + window.scrollY
+                      if (cardTop <= pos + 50) {
+                        const bloggerId = card.id.replace('blogger-', '')
+                        sessionStorage.setItem('bloggers-scroll-blogger-id', bloggerId)
+                        break
                       }
                     }
-                    setTimeout(() => {
-                      router.push(`/bloggers/${blogger.id}`)
-                    }, 10)
+                    router.push(`/bloggers/${blogger.id}`)
                   } catch {}
                 }}
                 className="cursor-pointer"
