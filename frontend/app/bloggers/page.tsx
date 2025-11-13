@@ -66,6 +66,12 @@ function BloggersContent() {
     if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual'
     }
+
+    // Initialize history state if not present
+    if (typeof window !== 'undefined' && !window.history.state) {
+      const pos = window.scrollY || document.documentElement.scrollTop || 0
+      window.history.replaceState({ scrollY: pos }, '', window.location.href)
+    }
   }, [])
 
   const searchParams = useSearchParams()
@@ -74,18 +80,29 @@ function BloggersContent() {
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return
 
-    const saved = sessionStorage.getItem('bloggers-scroll-pos')
-    if (!saved) return
+    // Try history state first
+    let target: number | null = null
+    if (window.history.state?.scrollY !== undefined) {
+      target = window.history.state.scrollY
+    } else {
+      // Fallback to sessionStorage
+      const saved = sessionStorage.getItem('bloggers-scroll-pos')
+      if (saved) {
+        const parsed = parseInt(saved, 10)
+        if (!isNaN(parsed) && parsed > 0) {
+          target = parsed
+        }
+      }
+    }
 
-    const target = parseInt(saved, 10)
-    if (isNaN(target) || target <= 0) return
-
-    try {
-      window.scrollTo(0, target)
-    } catch {}
+    if (target !== null && target > 0) {
+      try {
+        window.scrollTo(0, target)
+      } catch {}
+    }
   }, [])
 
-  // Save scroll position on every scroll
+  // Save scroll position on every scroll and in history state
   useEffect(() => {
     if (typeof window === 'undefined') return
 
@@ -93,26 +110,67 @@ function BloggersContent() {
       try {
         const pos = window.scrollY || document.documentElement.scrollTop || 0
         sessionStorage.setItem('bloggers-scroll-pos', String(pos))
+        // Also save in history state
+        if (window.history.state) {
+          window.history.replaceState(
+            { ...window.history.state, scrollY: pos },
+            '',
+            window.location.href
+          )
+        }
       } catch {}
     }
 
     window.addEventListener('scroll', saveScroll, { passive: true })
-    return () => window.removeEventListener('scroll', saveScroll)
+    
+    // Restore from history state on popstate (back/forward)
+    const handlePopState = (e: PopStateEvent) => {
+      if (e.state?.scrollY !== undefined) {
+        setTimeout(() => {
+          window.scrollTo(0, e.state.scrollY)
+        }, 0)
+      } else {
+        // Fallback to sessionStorage
+        const saved = sessionStorage.getItem('bloggers-scroll-pos')
+        if (saved) {
+          const target = parseInt(saved, 10)
+          if (!isNaN(target) && target > 0) {
+            setTimeout(() => {
+              window.scrollTo(0, target)
+            }, 0)
+          }
+        }
+      }
+    }
+    window.addEventListener('popstate', handlePopState)
+
+    return () => {
+      window.removeEventListener('scroll', saveScroll)
+      window.removeEventListener('popstate', handlePopState)
+    }
   }, [])
 
-  // Restore scroll position when component mounts or data loads
+  // Restore scroll position when data loads
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined' || isLoading) return
 
     const restore = () => {
-      if (isLoading) return
-      
       try {
-        const saved = sessionStorage.getItem('bloggers-scroll-pos')
-        if (!saved) return
-        
-        const target = parseInt(saved, 10)
-        if (isNaN(target) || target <= 0) return
+        // Try history state first
+        let target: number | null = null
+        if (window.history.state?.scrollY !== undefined) {
+          target = window.history.state.scrollY
+        } else {
+          const saved = sessionStorage.getItem('bloggers-scroll-pos')
+          if (saved) {
+            const parsed = parseInt(saved, 10)
+            if (!isNaN(parsed) && parsed > 0) {
+              target = parsed
+            }
+          }
+        }
+
+        if (!target || target <= 0) return
 
         // Try by element ID first
         const savedBloggerId = sessionStorage.getItem('bloggers-scroll-blogger-id')
@@ -131,22 +189,19 @@ function BloggersContent() {
       } catch {}
     }
 
-    // Restore when data is loaded
-    if (!isLoading) {
-      // Multiple attempts with increasing delays
-      restore()
-      const timeouts = [
-        setTimeout(restore, 50),
-        setTimeout(restore, 150),
-        setTimeout(restore, 300),
-        setTimeout(restore, 500),
-        setTimeout(restore, 800),
-        setTimeout(restore, 1200),
-      ]
+    // Multiple attempts with increasing delays
+    restore()
+    const timeouts = [
+      setTimeout(restore, 50),
+      setTimeout(restore, 150),
+      setTimeout(restore, 300),
+      setTimeout(restore, 500),
+      setTimeout(restore, 800),
+      setTimeout(restore, 1200),
+    ]
 
-      return () => {
-        timeouts.forEach(clearTimeout)
-      }
+    return () => {
+      timeouts.forEach(clearTimeout)
     }
   }, [isLoading])
 
@@ -154,14 +209,25 @@ function BloggersContent() {
   useEffect(() => {
     if (typeof window === 'undefined' || isLoading) return
 
-    const saved = sessionStorage.getItem('bloggers-scroll-pos')
-    if (!saved) return
-
-    const target = parseInt(saved, 10)
-    if (isNaN(target) || target <= 0) return
-
     const restore = () => {
       try {
+        // Try history state first
+        let target: number | null = null
+        if (window.history.state?.scrollY !== undefined) {
+          target = window.history.state.scrollY
+        } else {
+          const saved = sessionStorage.getItem('bloggers-scroll-pos')
+          if (saved) {
+            const parsed = parseInt(saved, 10)
+            if (!isNaN(parsed) && parsed > 0) {
+              target = parsed
+            }
+          }
+        }
+
+        if (!target || target <= 0) return
+
+        // Try by element ID first
         const savedBloggerId = sessionStorage.getItem('bloggers-scroll-blogger-id')
         if (savedBloggerId) {
           const element = document.getElementById(`blogger-${savedBloggerId}`)
@@ -172,6 +238,7 @@ function BloggersContent() {
             return
           }
         }
+        
         window.scrollTo({ top: target, behavior: 'auto' })
       } catch {}
     }
@@ -181,6 +248,7 @@ function BloggersContent() {
       restore()
       setTimeout(restore, 100)
       setTimeout(restore, 300)
+      setTimeout(restore, 500)
     })
   }, [searchParams, isLoading])
 
@@ -309,6 +377,14 @@ function BloggersContent() {
                   try {
                     const pos = window.scrollY || document.documentElement.scrollTop || 0
                     sessionStorage.setItem('bloggers-scroll-pos', String(pos))
+                    
+                    // Save in history state before navigation
+                    window.history.replaceState(
+                      { ...window.history.state, scrollY: pos },
+                      '',
+                      window.location.href
+                    )
+                    
                     // Find nearest blogger card above current position
                     const cards = document.querySelectorAll('[id^="blogger-"]')
                     for (let i = cards.length - 1; i >= 0; i--) {
@@ -320,6 +396,7 @@ function BloggersContent() {
                         break
                       }
                     }
+                    
                     router.push(`/bloggers/${blogger.id}`)
                   } catch {}
                 }}
