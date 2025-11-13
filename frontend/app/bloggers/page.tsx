@@ -111,87 +111,73 @@ function BloggersContent() {
     const restoreScroll = () => {
       try {
         const saved = sessionStorage.getItem('bloggers-scroll-pos') || localStorage.getItem('bloggers-scroll-pos')
-        if (!saved) {
-          console.log('📍 No saved scroll position found')
-          return
-        }
+        if (!saved) return
         const target = parseInt(saved, 10)
-        if (isNaN(target) || target <= 0) {
-          console.log('📍 Invalid scroll position:', saved)
-          return
-        }
+        if (isNaN(target) || target <= 0) return
 
-        // Check if content is loaded (bloggers list exists)
-        const hasContent = bloggers.length > 0 || !isLoading
-        if (!hasContent) {
-          console.log('📍 Content not loaded yet, will retry')
-          return
-        }
-
-        console.log('📍 Restoring scroll to:', target)
+        // Check if content is loaded
+        if (isLoading) return
 
         let attemptCount = 0
         const maxAttempts = 30
         const attemptRestore = () => {
           attemptCount++
           try {
-            const current = window.scrollY || document.documentElement.scrollTop || 0
+            if (typeof window === 'undefined') return
             window.scrollTo({ top: target, behavior: 'instant' })
             const newPos = window.scrollY || document.documentElement.scrollTop || 0
             const diff = Math.abs(newPos - target)
             
             if (diff > 10 && attemptCount < maxAttempts) {
               requestAnimationFrame(attemptRestore)
-            } else {
-              console.log(`✅ Scroll restored to ${newPos} (target: ${target}, attempts: ${attemptCount})`)
             }
           } catch (e) {
-            console.error('❌ Scroll restore error:', e)
+            // Silent fail
           }
         }
 
         // Multiple attempts with delays
-        requestAnimationFrame(attemptRestore)
-        setTimeout(() => requestAnimationFrame(attemptRestore), 100)
-        setTimeout(() => requestAnimationFrame(attemptRestore), 300)
-        setTimeout(() => requestAnimationFrame(attemptRestore), 500)
-        setTimeout(() => requestAnimationFrame(attemptRestore), 800)
-        setTimeout(() => requestAnimationFrame(attemptRestore), 1200)
-        setTimeout(() => requestAnimationFrame(attemptRestore), 2000)
+        if (typeof window !== 'undefined') {
+          requestAnimationFrame(attemptRestore)
+          setTimeout(() => requestAnimationFrame(attemptRestore), 100)
+          setTimeout(() => requestAnimationFrame(attemptRestore), 300)
+          setTimeout(() => requestAnimationFrame(attemptRestore), 500)
+          setTimeout(() => requestAnimationFrame(attemptRestore), 800)
+        }
       } catch (e) {
-        console.error('❌ Restore scroll error:', e)
+        // Silent fail
       }
     }
 
     // Restore on mount (after a delay to ensure content is loaded)
-    setTimeout(restoreScroll, 100)
-    setTimeout(restoreScroll, 500)
-    setTimeout(restoreScroll, 1000)
+    if (typeof window !== 'undefined') {
+      setTimeout(restoreScroll, 100)
+      setTimeout(restoreScroll, 500)
+      setTimeout(restoreScroll, 1000)
 
-    // Restore on pageshow (back/forward navigation)
-    const handlePageshow = (e: PageTransitionEvent) => {
-      console.log('📄 pageshow event:', { persisted: e.persisted })
-      setTimeout(restoreScroll, 50)
-      setTimeout(restoreScroll, 300)
-      setTimeout(restoreScroll, 800)
-    }
-    window.addEventListener('pageshow', handlePageshow)
+      // Restore on pageshow (back/forward navigation)
+      const handlePageshow = (e: PageTransitionEvent) => {
+        setTimeout(restoreScroll, 50)
+        setTimeout(restoreScroll, 300)
+        setTimeout(restoreScroll, 800)
+      }
+      window.addEventListener('pageshow', handlePageshow)
 
-    // Also restore on visibility change (when tab becomes visible)
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        console.log('👁️ Tab became visible, restoring scroll')
-        setTimeout(restoreScroll, 100)
-        setTimeout(restoreScroll, 500)
+      // Also restore on visibility change (when tab becomes visible)
+      const handleVisibilityChange = () => {
+        if (!document.hidden) {
+          setTimeout(restoreScroll, 100)
+          setTimeout(restoreScroll, 500)
+        }
+      }
+      document.addEventListener('visibilitychange', handleVisibilityChange)
+
+      return () => {
+        window.removeEventListener('pageshow', handlePageshow)
+        document.removeEventListener('visibilitychange', handleVisibilityChange)
       }
     }
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    return () => {
-      window.removeEventListener('pageshow', handlePageshow)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [bloggers.length, isLoading])
+  }, [isLoading])
 
   // Also restore when restore query param is present
   useEffect(() => {
@@ -341,10 +327,7 @@ function BloggersContent() {
                   const pos = window.scrollY || document.documentElement.scrollTop || 0
                   sessionStorage.setItem('bloggers-scroll-pos', String(pos))
                   localStorage.setItem('bloggers-scroll-pos', String(pos))
-                  console.log('💾 Saved scroll position:', pos)
-                } catch (e) {
-                  console.error('Failed to save scroll:', e)
-                }
+                } catch {}
               }}>
                 <Card hover className="overflow-hidden">
                   <CardContent className="p-4">
