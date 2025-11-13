@@ -133,6 +133,21 @@ function BloggersContent() {
 
     const restore = () => {
       try {
+        // Try to restore by blogger ID first (more reliable)
+        const savedBloggerId = sessionStorage.getItem('bloggers-scroll-blogger-id') || localStorage.getItem('bloggers-scroll-blogger-id')
+        if (savedBloggerId) {
+          const element = document.getElementById(`blogger-${savedBloggerId}`)
+          if (element) {
+            element.scrollIntoView({ behavior: 'instant', block: 'start' })
+            const current = window.scrollY || document.documentElement.scrollTop || 0
+            if (Math.abs(current - target) < 50) {
+              scrollRestoredRef.current = true
+              return
+            }
+          }
+        }
+        
+        // Fallback to absolute position
         window.scrollTo(0, target)
         document.documentElement.scrollTop = target
         document.body.scrollTop = target
@@ -353,6 +368,7 @@ function BloggersContent() {
           {bloggers.map((blogger, index) => (
             <motion.div
               key={blogger.id}
+              id={`blogger-${blogger.id}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.2 }}
@@ -361,15 +377,23 @@ function BloggersContent() {
                 onClick={(e) => {
                   e.preventDefault()
                   try {
+                    // Save both position and visible blogger ID
                     const pos = window.scrollY || document.documentElement.scrollTop || 0
                     if (pos > 0) {
-                      // Save with timestamp to ensure it's fresh
                       sessionStorage.setItem('bloggers-scroll-pos', String(pos))
                       sessionStorage.setItem('bloggers-scroll-time', String(Date.now()))
-                      localStorage.setItem('bloggers-scroll-pos', String(pos))
-                      localStorage.setItem('bloggers-scroll-time', String(Date.now()))
+                      // Find first visible blogger above current position
+                      const cards = document.querySelectorAll('[id^="blogger-"]')
+                      for (let i = cards.length - 1; i >= 0; i--) {
+                        const card = cards[i] as HTMLElement
+                        const cardTop = card.getBoundingClientRect().top + window.scrollY
+                        if (cardTop <= pos + 100) {
+                          const bloggerId = card.id.replace('blogger-', '')
+                          sessionStorage.setItem('bloggers-scroll-blogger-id', bloggerId)
+                          break
+                        }
+                      }
                     }
-                    // Small delay to ensure storage is written
                     setTimeout(() => {
                       router.push(`/bloggers/${blogger.id}`)
                     }, 10)
