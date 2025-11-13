@@ -64,20 +64,47 @@ function BloggersContent() {
 
   const searchParams = useSearchParams()
 
-  // Restore scroll position only when explicitly requested via query (?restore=1)
+  // Restore scroll position when explicitly requested via query (?restore=1)
+  // or when a localStorage flag was set on leaving the list
   useEffect(() => {
     try {
-      const shouldRestore = searchParams?.get('restore') === '1'
-      if (!shouldRestore) return
-      const saved = localStorage.getItem('bloggers-scroll-pos') || sessionStorage.getItem('bloggers-scroll-position')
+      const hasQueryRestore = searchParams?.get('restore') === '1'
+      const hasLocalFlag = (() => {
+        try { return localStorage.getItem('bloggers-scroll-restore') === '1' } catch { return false }
+      })()
+      if (!hasQueryRestore && !hasLocalFlag) return
+
+      const saved = (() => {
+        try {
+          return localStorage.getItem('bloggers-scroll-pos') || sessionStorage.getItem('bloggers-scroll-position')
+        } catch { return null }
+      })()
       if (!saved) return
+
+      const target = parseInt(saved || '0', 10)
       let attempts = 0
-      const maxAttempts = 30
+      const maxAttempts = 80 // up to ~4s
       const interval = setInterval(() => {
         attempts += 1
-        try { window.scrollTo(0, parseInt(saved || '0', 10)) } catch {}
+        try {
+          window.scrollTo(0, target)
+          // stop early if reached (within small epsilon)
+          if (Math.abs((window.scrollY || 0) - target) < 2) {
+            clearInterval(interval)
+          }
+        } catch {}
         if (attempts >= maxAttempts) clearInterval(interval)
       }, 50)
+
+      // clear flags after we start restoring so it happens only once
+      try {
+        localStorage.removeItem('bloggers-scroll-restore')
+        // keep position for a short while in case of rehydration, then clear
+        setTimeout(() => {
+          try { localStorage.removeItem('bloggers-scroll-pos') } catch {}
+        }, 5000)
+      } catch {}
+
       return () => clearInterval(interval)
     } catch {}
   }, [searchParams])
