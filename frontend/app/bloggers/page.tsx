@@ -94,9 +94,11 @@ function BloggersContent() {
       const element = document.getElementById(`blogger-${savedBloggerId}`)
       
       if (element) {
+        // Calculate element position relative to document
         const rect = element.getBoundingClientRect()
         const elementTop = rect.top + window.scrollY
-        const targetPosition = elementTop - 20
+        // Use offset to show element below header/navigation (60px for header + padding)
+        const targetPosition = elementTop - 60
         
         // Check if already at correct position (within 100px to be more lenient)
         const currentScroll = window.scrollY || document.documentElement.scrollTop || 0
@@ -108,12 +110,8 @@ function BloggersContent() {
         // Set flag immediately to prevent duplicate restorations
         ;(window as any).__bloggersScrollRestored = true
         
-        // Restore scroll
-        element.scrollIntoView({ behavior: 'auto', block: 'start' })
-        // Also try window.scrollTo as backup
-        setTimeout(() => {
-          window.scrollTo({ top: targetPosition, behavior: 'auto' })
-        }, 0)
+        // Restore scroll - scroll to element with offset to show it below header
+        window.scrollTo({ top: targetPosition, behavior: 'auto' })
         return true
       }
       
@@ -163,9 +161,9 @@ function BloggersContent() {
         // Find the element and scroll to it
         const element = document.getElementById(`blogger-${savedBloggerId}`)
         if (element) {
-          const rect = element.getBoundingClientRect()
-          const elementTop = rect.top + window.scrollY
-          const targetPosition = elementTop - 20
+          const elementOffsetTop = element.offsetTop
+          // Use offset to show element below header/navigation (80px for header + padding)
+        const targetPosition = elementOffsetTop - 80
           
           // Check if already at correct position (within 100px)
           const currentScroll = window.scrollY || document.documentElement.scrollTop || 0
@@ -179,11 +177,8 @@ function BloggersContent() {
             // Set flag immediately to prevent duplicate restorations
             ;(window as any).__bloggersScrollRestored = true
             
-            element.scrollIntoView({ behavior: 'auto', block: 'start' })
-            // Also try window.scrollTo as backup
-            setTimeout(() => {
-              window.scrollTo({ top: targetPosition, behavior: 'auto' })
-            }, 0)
+            // Restore scroll with offset
+            window.scrollTo({ top: targetPosition, behavior: 'auto' })
           }
         }
       } catch {}
@@ -250,9 +245,11 @@ function BloggersContent() {
       // Find the element and scroll to it
       const element = document.getElementById(`blogger-${savedBloggerId}`)
       if (element) {
+        // Calculate element position relative to document
         const rect = element.getBoundingClientRect()
         const elementTop = rect.top + window.scrollY
-        const targetPosition = elementTop - 20
+        // Use offset to show element below header/navigation (60px for header + padding)
+        const targetPosition = elementTop - 60
         
         // Check if already at correct position (within 100px)
         const currentScroll = window.scrollY || document.documentElement.scrollTop || 0
@@ -266,11 +263,8 @@ function BloggersContent() {
           // Set flag immediately to prevent duplicate restorations
           ;(window as any).__bloggersScrollRestored = true
           
-          element.scrollIntoView({ behavior: 'auto', block: 'start' })
-          // Also try window.scrollTo as backup
-          setTimeout(() => {
-            window.scrollTo({ top: targetPosition, behavior: 'auto' })
-          }, 0)
+          // Restore scroll with offset
+          window.scrollTo({ top: targetPosition, behavior: 'auto' })
         }
       }
     }
@@ -303,18 +297,15 @@ function BloggersContent() {
         
         const element = document.getElementById(`blogger-${savedBloggerId}`)
         if (element) {
-          const rect = element.getBoundingClientRect()
-          const elementTop = rect.top + window.scrollY
-          const targetPosition = elementTop - 20
+          const elementOffsetTop = element.offsetTop
+          // Use offset to show element below header/navigation (80px for header + padding)
+        const targetPosition = elementOffsetTop - 80
           
           // Set flag immediately to prevent duplicate restorations
           ;(window as any).__bloggersScrollRestored = true
           
-          element.scrollIntoView({ behavior: 'auto', block: 'start' })
-          // Also try window.scrollTo as backup
-          setTimeout(() => {
-            window.scrollTo({ top: targetPosition, behavior: 'auto' })
-          }, 0)
+          // Restore scroll with offset
+          window.scrollTo({ top: targetPosition, behavior: 'auto' })
         }
       }
       
