@@ -63,6 +63,19 @@ function AdminBloggersPageContent() {
     active: bloggers.filter(b => (b.subscribersCount || 0) > 0).length,
   }
 
+  // Скроллим к последнему открытому блогеру в админке
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const lastId = sessionStorage.getItem('__admin_bloggers_last_id')
+    if (!lastId) return
+    const el = document.getElementById(`blogger-${lastId}`)
+    if (el) {
+      setTimeout(() => {
+        el.scrollIntoView({ block: 'center' })
+      }, 50)
+    }
+  }, [])
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-telegram-bg flex items-center justify-center">
@@ -164,15 +177,11 @@ function AdminBloggersPageContent() {
               scroll={false}
               onClick={() => {
                 if (typeof window === 'undefined') return
-                const key = `__scroll__${pathname}`
-                const scrollY =
-                  window.scrollY || document.documentElement.scrollTop || 0
-                if (scrollY > 0) {
-                  sessionStorage.setItem(
-                    key,
-                    JSON.stringify({ x: window.scrollX, y: scrollY }),
-                  )
-                }
+                // Запоминаем последнего открытого блогера в админке
+                sessionStorage.setItem(
+                  '__admin_bloggers_last_id',
+                  String(blogger.id),
+                )
               }}
             >
             <Card hover className="cursor-pointer">

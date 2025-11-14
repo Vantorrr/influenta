@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Search, ChevronRight } from 'lucide-react'
@@ -29,6 +29,19 @@ function BloggersPageContent() {
 
   // Подключаем хук восстановления скролла
   useScrollRestoration()
+
+  // Дополнительно скроллим к последнему открытому блогеру (надёжно для мини‑аппа)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const lastId = sessionStorage.getItem('__bloggers_last_id')
+    if (!lastId) return
+    const el = document.getElementById(`blogger-${lastId}`)
+    if (el) {
+      setTimeout(() => {
+        el.scrollIntoView({ block: 'center' })
+      }, 50)
+    }
+  }, [])
 
   // Load bloggers using React Query
   const { data, isLoading } = useQuery({
@@ -79,15 +92,11 @@ function BloggersPageContent() {
                 scroll={false}
                 onClick={() => {
                   if (typeof window === 'undefined') return
-                  const key = `__scroll__${pathname}`
-                  const scrollY =
-                    window.scrollY || document.documentElement.scrollTop || 0
-                  if (scrollY > 0) {
-                    sessionStorage.setItem(
-                      key,
-                      JSON.stringify({ x: window.scrollX, y: scrollY }),
-                    )
-                  }
+                  // Запоминаем последнего открытого блогера
+                  sessionStorage.setItem(
+                    '__bloggers_last_id',
+                    String(blogger.id),
+                  )
                 }}
               >
                 <Card hover className="overflow-hidden">
