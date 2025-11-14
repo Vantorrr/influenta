@@ -3,26 +3,28 @@
 import { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Search, ChevronRight } from 'lucide-react'
+import { Search, ChevronRight, SlidersHorizontal, X } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Avatar } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { motion } from 'framer-motion'
-import { getCategoryLabel } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { motion, AnimatePresence } from 'framer-motion'
+import { cn, getCategoryLabel } from '@/lib/utils'
 import { VerificationTooltip } from '@/components/VerificationTooltip'
-import { bloggersApi } from '@/lib/api'
+import { bloggersApi, analyticsApi } from '@/lib/api'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/useAuth'
+import { BloggerCategory, type BloggerFilters } from '@/types'
 import { useScrollRestoration } from '@/hooks/useScrollRestoration'
 import { Layout } from '@/components/layout/Layout'
 
 function BloggersPageContent() {
   const [search, setSearch] = useState('')
-  const [filters, setFilters] = useState({
+  const [showFilters, setShowFilters] = useState(false)
+  const [filters, setFilters] = useState<BloggerFilters>({
     categories: [],
     verifiedOnly: false,
-    platform: undefined as string | undefined
   })
   const { user } = useAuth()
   const pathname = usePathname()
@@ -42,6 +44,35 @@ function BloggersPageContent() {
       }, 50)
     }
   }, [])
+
+  useEffect(() => {
+    analyticsApi.track('bloggers_list_view')
+  }, [])
+
+  const categories = Object.values(BloggerCategory)
+
+  const toggleCategory = (category: BloggerCategory) => {
+    setFilters(prev => ({
+      ...prev,
+      categories: prev.categories?.includes(category)
+        ? prev.categories.filter(c => c !== category)
+        : [...(prev.categories || []), category],
+    }))
+  }
+
+  const clearFilters = () => {
+    setFilters({
+      categories: [],
+      verifiedOnly: false,
+    })
+  }
+
+  const activeFiltersCount =
+    (filters.categories?.length || 0) +
+    (filters.verifiedOnly ? 1 : 0) +
+    (filters.minSubscribers ? 1 : 0) +
+    (filters.minPrice || filters.maxPrice ? 1 : 0) +
+    (filters.platform ? 1 : 0)
 
   // Load bloggers using React Query
   const { data, isLoading } = useQuery({
@@ -64,11 +95,59 @@ function BloggersPageContent() {
             type="search"
             placeholder="Поиск блогеров..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={e => setSearch(e.target.value)}
             icon={<Search className="w-4 h-4" />}
             className="flex-1"
           />
+          <Button
+            variant="secondary"
+            onClick={() => setShowFilters(true)}
+            className="relative"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            {activeFiltersCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-telegram-primary text-white text-xs rounded-full flex items-center justify-center">
+                {activeFiltersCount}
+              </span>
+            )}
+          </Button>
         </div>
+
+        {/* Active Filters */}
+        {activeFiltersCount > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {filters.categories?.map(category => (
+              <Badge key={category} variant="primary">
+                {getCategoryLabel(category)}
+                <button
+                  onClick={() => toggleCategory(category)}
+                  className="ml-1"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            ))}
+            {filters.verifiedOnly && (
+              <Badge variant="primary">
+                Только верифицированные
+                <button
+                  onClick={() =>
+                    setFilters(prev => ({ ...prev, verifiedOnly: false }))
+                  }
+                  className="ml-1"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            )}
+            <button
+              onClick={clearFilters}
+              className="text-sm text-telegram-primary"
+            >
+              Сбросить все
+            </button>
+          </div>
+        )}
 
         {/* Results Count */}
         <div className="flex items-center justify-between">
@@ -152,6 +231,201 @@ function BloggersPageContent() {
           ))}
         </div>
       </div>
+
+      {/* Filters Modal */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50"
+            onClick={() => setShowFilters(false)}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30 }}
+              className="absolute bottom-0 left-0 right-0 bg-telegram-bgSecondary rounded-t-2xl p-6 max-h-[80vh] overflow-y-auto"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold">Фильтры</h3>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="p-2 hover:bg-telegram-bg rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Categories */}
+              <div className="mb-6">
+                <h4 className="font-medium mb-3">Категории</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {categories.map(category => (
+                    <button
+                      key={category}
+                      onClick={() => toggleCategory(category)}
+                      className={cn(
+                        'p-3 rounded-lg border-2 text-sm transition-all',
+                        filters.categories?.includes(category)
+                          ? 'border-telegram-primary bg-telegram-primary/20'
+                          : 'border-gray-600 hover:border-gray-500',
+                      )}
+                    >
+                      {getCategoryLabel(category)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Social Platforms */}
+              <div className="mb-6">
+                <h4 className="font-medium mb-3">Социальные сети</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: 'telegram', label: 'Telegram' },
+                    { value: 'instagram', label: 'Instagram' },
+                    { value: 'youtube', label: 'YouTube' },
+                    { value: 'tiktok', label: 'TikTok' },
+                    { value: 'vk', label: 'VKontakte' },
+                    { value: 'other', label: 'Другие' },
+                  ].map(platform => (
+                    <button
+                      key={platform.value}
+                      onClick={() => {
+                        setFilters(prev => ({
+                          ...prev,
+                          platform:
+                            prev.platform === platform.value
+                              ? undefined
+                              : platform.value,
+                        }))
+                      }}
+                      className={cn(
+                        'p-3 rounded-lg border-2 text-sm transition-all',
+                        filters.platform === platform.value
+                          ? 'border-telegram-primary bg-telegram-primary/20'
+                          : 'border-gray-600 hover:border-gray-500',
+                      )}
+                    >
+                      {platform.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Subscribers Range */}
+              <div className="mb-6">
+                <h4 className="font-medium mb-3">Количество подписчиков</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    type="number"
+                    placeholder="От"
+                    value={filters.minSubscribers || ''}
+                    onChange={e =>
+                      setFilters(prev => ({
+                        ...prev,
+                        minSubscribers: e.target.value
+                          ? parseInt(e.target.value)
+                          : undefined,
+                      }))
+                    }
+                  />
+                  <Input
+                    type="number"
+                    placeholder="До"
+                    value={filters.maxSubscribers || ''}
+                    onChange={e =>
+                      setFilters(prev => ({
+                        ...prev,
+                        maxSubscribers: e.target.value
+                          ? parseInt(e.target.value)
+                          : undefined,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Price Range */}
+              <div className="mb-6">
+                <h4 className="font-medium mb-3">Цена за пост (₽)</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    type="number"
+                    placeholder="От"
+                    value={filters.minPrice || ''}
+                    onChange={e =>
+                      setFilters(prev => ({
+                        ...prev,
+                        minPrice: e.target.value
+                          ? parseInt(e.target.value)
+                          : undefined,
+                      }))
+                    }
+                  />
+                  <Input
+                    type="number"
+                    placeholder="До"
+                    value={filters.maxPrice || ''}
+                    onChange={e =>
+                      setFilters(prev => ({
+                        ...prev,
+                        maxPrice: e.target.value
+                          ? parseInt(e.target.value)
+                          : undefined,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Other Filters */}
+              <div className="mb-6">
+                <h4 className="font-medium mb-3">Дополнительно</h4>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!filters.verifiedOnly}
+                    onChange={e =>
+                      setFilters(prev => ({
+                        ...prev,
+                        verifiedOnly: e.target.checked,
+                      }))
+                    }
+                    className="w-4 h-4 rounded border-gray-600 text-telegram-primary focus:ring-telegram-primary"
+                  />
+                  <span>Только верифицированные</span>
+                </label>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  onClick={() => {
+                    clearFilters()
+                    setShowFilters(false)
+                  }}
+                >
+                  Сбросить
+                </Button>
+                <Button
+                  variant="primary"
+                  fullWidth
+                  onClick={() => setShowFilters(false)}
+                >
+                  Применить
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Layout>
   )
 }
