@@ -42,8 +42,6 @@ function BloggersPageContent() {
     ;(window as any).__bloggersScrollRestored = false
   }, [])
 
-  const searchParams = useSearchParams()
-
   // Save scroll position on navigation away
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -209,18 +207,20 @@ function BloggersPageContent() {
                           {blogger.bio}
                         </p>
                         
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {blogger.categories.slice(0, 3).map(category => (
-                            <Badge key={category} variant="default">
-                              {getCategoryLabel(category)}
-                            </Badge>
-                          ))}
-                          {blogger.categories.length > 3 && (
-                            <Badge variant="default">
-                              +{blogger.categories.length - 3}
-                            </Badge>
-                          )}
-                        </div>
+                        {blogger.categories && blogger.categories.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {blogger.categories.slice(0, 3).map(category => (
+                              <Badge key={category} variant="default">
+                                {getCategoryLabel(category)}
+                              </Badge>
+                            ))}
+                            {blogger.categories.length > 3 && (
+                              <Badge variant="default">
+                                +{blogger.categories.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>
