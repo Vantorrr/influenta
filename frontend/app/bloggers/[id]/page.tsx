@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Users, Eye, Shield, Ban, CheckCircle, Trash2, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Users, Eye, Shield, Ban, CheckCircle, Trash2, MessageSquare, Send } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
@@ -221,6 +221,19 @@ export default function BloggerDetailsPage() {
               >
                 <Trash2 className="w-4 h-4 mr-1" /> Удалить
               </Button>
+              {(blogger.user?.username || blogger.user?.telegramUsername) && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    const username = (blogger.user?.username || blogger.user?.telegramUsername || '').replace('@', '')
+                    window.open(`https://t.me/${username}`, '_blank')
+                  }}
+                >
+                  <Send className="w-4 h-4 mr-1" /> Telegram
+                </Button>
+              )}
             </div>
           )}
         {isAdmin && showUnverifyInline && (
