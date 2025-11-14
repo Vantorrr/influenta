@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useLayoutEffect, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
@@ -13,6 +13,7 @@ import { VerificationTooltip } from '@/components/VerificationTooltip'
 import { bloggersApi } from '@/lib/api'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/useAuth'
+import { useScrollRestoration } from '@/hooks/useScrollRestoration'
 import { Layout } from '@/components/layout/Layout'
 
 function BloggersPageContent() {
@@ -25,6 +26,9 @@ function BloggersPageContent() {
   const router = useRouter()
   const { user } = useAuth()
 
+  // Подключаем хук восстановления скролла
+  useScrollRestoration()
+
   // Load bloggers using React Query
   const { data, isLoading } = useQuery({
     queryKey: ['bloggers', filters, search],
@@ -35,153 +39,6 @@ function BloggersPageContent() {
   })
 
   const bloggers = data?.data || []
-
-  // Disable Next.js automatic scroll restoration
-  useLayoutEffect(() => {
-    if (typeof window === 'undefined') return
-    
-    // Disable browser and Next.js scroll restoration
-    if ('scrollRestoration' in window.history) {
-      window.history.scrollRestoration = 'manual'
-    }
-    
-    // Reset flag on mount
-    ;(window as any).__bloggersScrollRestored = false
-  }, [])
-
-  // Save scroll position before navigation
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    
-    const saveScroll = () => {
-      const scrollPosition = window.scrollY || document.documentElement.scrollTop || 0
-      if (scrollPosition > 0) {
-        console.log('💾 Saving scroll position:', scrollPosition)
-        sessionStorage.setItem('bloggers-exact-scroll', scrollPosition.toString())
-      }
-    }
-    
-    // Save on before unload
-    window.addEventListener('beforeunload', saveScroll)
-    
-    return () => {
-      window.removeEventListener('beforeunload', saveScroll)
-    }
-  }, [])
-
-  // Restore scroll position - aggressive approach
-  useLayoutEffect(() => {
-    if (typeof window === 'undefined' || isLoading) return
-
-    const exactScrollPos = sessionStorage.getItem('bloggers-exact-scroll')
-    if (!exactScrollPos) return
-
-    const scrollPos = parseInt(exactScrollPos, 10)
-    if (isNaN(scrollPos) || scrollPos < 0) return
-
-    // Check if already restored
-    if ((window as any).__bloggersScrollRestored) return
-
-    console.log('📜 Attempting to restore scroll:', scrollPos)
-
-    const restoreScroll = () => {
-      // Check if content is rendered
-      const bloggerCards = document.querySelectorAll('[id^="blogger-"]')
-      const hasContent = bloggerCards.length > 0 || bloggers.length > 0
-      
-      if (!hasContent) {
-        console.log('⏳ Content not ready yet, bloggers:', bloggers.length, 'cards:', bloggerCards.length)
-        return false
-      }
-
-      // Restore scroll position
-      console.log('✅ Restoring scroll to:', scrollPos)
-      ;(window as any).__bloggersScrollRestored = true
-      
-      // Use multiple methods to ensure scroll happens
-      window.scrollTo(0, scrollPos)
-      document.documentElement.scrollTop = scrollPos
-      document.body.scrollTop = scrollPos
-      
-      // Also use requestAnimationFrame for next frame
-      requestAnimationFrame(() => {
-        window.scrollTo(0, scrollPos)
-        document.documentElement.scrollTop = scrollPos
-      })
-      
-      // Remove from storage after successful restore
-      setTimeout(() => {
-        sessionStorage.removeItem('bloggers-exact-scroll')
-      }, 1000)
-      
-      return true
-    }
-
-    // Try immediately
-    if (restoreScroll()) return
-
-    // Retry with delays
-    const timeouts: NodeJS.Timeout[] = []
-    
-    // Try after a short delay
-    timeouts.push(setTimeout(() => {
-      if (restoreScroll()) {
-        timeouts.forEach(clearTimeout)
-      }
-    }, 50))
-
-    // Try after content might be rendered
-    timeouts.push(setTimeout(() => {
-      if (restoreScroll()) {
-        timeouts.forEach(clearTimeout)
-      }
-    }, 150))
-
-    // Try after React Query finishes
-    timeouts.push(setTimeout(() => {
-      if (restoreScroll()) {
-        timeouts.forEach(clearTimeout)
-      }
-    }, 300))
-
-    // Final attempt
-    timeouts.push(setTimeout(() => {
-      restoreScroll()
-      timeouts.forEach(clearTimeout)
-    }, 500))
-
-    return () => {
-      timeouts.forEach(clearTimeout)
-    }
-  }, [isLoading, bloggers.length])
-
-  // Also restore on popstate (back button)
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-
-    const handlePopState = () => {
-      // Reset flag when navigating back
-      ;(window as any).__bloggersScrollRestored = false
-      
-      // Small delay to let page render
-      setTimeout(() => {
-        const exactScrollPos = sessionStorage.getItem('bloggers-exact-scroll')
-        if (exactScrollPos) {
-          const scrollPos = parseInt(exactScrollPos, 10)
-          if (!isNaN(scrollPos) && scrollPos >= 0) {
-            console.log('🔙 Restoring scroll on back navigation:', scrollPos)
-            requestAnimationFrame(() => {
-              window.scrollTo(0, scrollPos)
-              document.documentElement.scrollTop = scrollPos
-            })
-          }
-        }
-      }, 100)
-    }
-
-    window.addEventListener('popstate', handlePopState)
-    return () => window.removeEventListener('popstate', handlePopState)
-  }, [])
 
 
   return (
@@ -220,12 +77,7 @@ function BloggersPageContent() {
                 onClick={(e) => {
                   e.preventDefault()
                   
-                  // Save exact scroll position only
-                  const scrollPosition = window.scrollY || document.documentElement.scrollTop || 0
-                  console.log('💾 Saving scroll position:', scrollPosition)
-                  sessionStorage.setItem('bloggers-exact-scroll', scrollPosition.toString())
-                  
-                  // Navigate to blogger page
+                  // Navigate to blogger page with scroll={false} to prevent scroll reset
                   router.push(`/bloggers/${blogger.id}`)
                 }}
                 className="cursor-pointer"

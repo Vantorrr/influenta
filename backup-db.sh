@@ -21,3 +21,4 @@ gzip "$BACKUP_FILE"
 echo "✅ Backup created: ${BACKUP_FILE}.gz"
 echo "📦 Size: $(du -h ${BACKUP_FILE}.gz | cut -f1)"
 
+

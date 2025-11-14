@@ -15,6 +15,13 @@ const queryClient = new QueryClient({
 })
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  // Отключаем автоматический скролл Next.js
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual'
+    }
+  }, [])
+
   useEffect(() => {
     // Инициализация Telegram WebApp
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
