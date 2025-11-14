@@ -97,9 +97,33 @@ function BloggersContent() {
         // Set flag immediately to prevent duplicate restorations
         ;(window as any).__bloggersScrollRestored = true
         
-        // Scroll element to center of viewport - more visible and doesn't get hidden by header
-        element.scrollIntoView({ behavior: 'auto', block: 'center' })
+        // Try to restore exact scroll position first
+        const savedScrollPos = sessionStorage.getItem('bloggers-scroll-position') || 
+                               localStorage.getItem('bloggers-scroll-position') ||
+                               searchParams.get('scroll-pos')
         
+        if (savedScrollPos) {
+          const scrollPos = parseInt(savedScrollPos, 10)
+          if (!isNaN(scrollPos) && scrollPos >= 0) {
+            // Use multiple attempts to ensure scroll position is restored after DOM is ready
+            const restoreScroll = () => {
+              window.scrollTo({ top: scrollPos, behavior: 'auto' })
+            }
+            
+            // Try immediately
+            requestAnimationFrame(restoreScroll)
+            
+            // Try again after a short delay in case DOM is still loading
+            setTimeout(() => {
+              requestAnimationFrame(restoreScroll)
+            }, 100)
+            
+            return true
+          }
+        }
+        
+        // Fallback: scroll element to center if no saved position
+        element.scrollIntoView({ behavior: 'auto', block: 'center' })
         return true
       }
       
@@ -238,7 +262,31 @@ function BloggersContent() {
           // Set flag immediately to prevent duplicate restorations
           ;(window as any).__bloggersScrollRestored = true
           
-          // Scroll element to center of viewport
+            // Try to restore exact scroll position first
+            const savedScrollPos = sessionStorage.getItem('bloggers-scroll-position') || 
+                                   localStorage.getItem('bloggers-scroll-position')
+            
+            if (savedScrollPos) {
+              const scrollPos = parseInt(savedScrollPos, 10)
+              if (!isNaN(scrollPos) && scrollPos >= 0) {
+                // Use multiple attempts to ensure scroll position is restored after DOM is ready
+                const restoreScroll = () => {
+                  window.scrollTo({ top: scrollPos, behavior: 'auto' })
+                }
+                
+                // Try immediately
+                requestAnimationFrame(restoreScroll)
+                
+                // Try again after a short delay in case DOM is still loading
+                setTimeout(() => {
+                  requestAnimationFrame(restoreScroll)
+                }, 100)
+                
+                return
+              }
+            }
+          
+          // Fallback: scroll element to center if no saved position
           element.scrollIntoView({ behavior: 'auto', block: 'center' })
         }
       }
@@ -270,6 +318,34 @@ function BloggersContent() {
       const restore = () => {
         if ((window as any).__bloggersScrollRestored) return
         
+        // Try to restore exact scroll position first
+        const savedScrollPos = sessionStorage.getItem('bloggers-scroll-position') || 
+                               localStorage.getItem('bloggers-scroll-position') ||
+                               urlParams.get('scroll-pos')
+        
+        if (savedScrollPos) {
+          const scrollPos = parseInt(savedScrollPos, 10)
+          if (!isNaN(scrollPos) && scrollPos >= 0) {
+            ;(window as any).__bloggersScrollRestored = true
+            
+            // Use multiple attempts to ensure scroll position is restored after DOM is ready
+            const restoreScroll = () => {
+              window.scrollTo({ top: scrollPos, behavior: 'auto' })
+            }
+            
+            // Try immediately
+            requestAnimationFrame(restoreScroll)
+            
+            // Try again after a short delay in case DOM is still loading
+            setTimeout(() => {
+              requestAnimationFrame(restoreScroll)
+            }, 100)
+            
+            return
+          }
+        }
+        
+        // Fallback: find element and scroll to center
         const element = document.getElementById(`blogger-${savedBloggerId}`)
         if (element) {
           // Set flag immediately to prevent duplicate restorations
@@ -463,16 +539,21 @@ function BloggersContent() {
                       firstVisibleId = closestId
                     }
                     
-                    // Save the first visible blogger ID
+                    // Save the first visible blogger ID and exact scroll position
                     if (firstVisibleId) {
+                      const scrollPosition = window.scrollY || document.documentElement.scrollTop || 0
+                      
                       sessionStorage.setItem('bloggers-scroll-blogger-id', firstVisibleId)
+                      sessionStorage.setItem('bloggers-scroll-position', scrollPosition.toString())
                       localStorage.setItem('bloggers-scroll-blogger-id', firstVisibleId)
+                      localStorage.setItem('bloggers-scroll-position', scrollPosition.toString())
                       
                       // Also save in URL for browser history
                       const currentUrl = new URL(window.location.href)
                       currentUrl.searchParams.set('blogger-id', firstVisibleId)
+                      currentUrl.searchParams.set('scroll-pos', scrollPosition.toString())
                       window.history.replaceState(
-                        { ...window.history.state, scrollBloggerId: firstVisibleId },
+                        { ...window.history.state, scrollBloggerId: firstVisibleId, scrollPosition },
                         '',
                         currentUrl.toString()
                       )
