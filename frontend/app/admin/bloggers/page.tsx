@@ -152,7 +152,8 @@ export default function AdminBloggersPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
           >
-            <Card hover className="cursor-pointer" onClick={() => { if (typeof window !== 'undefined') window.location.href = `/bloggers/${blogger.id}` }}>
+            <Link href={`/bloggers/${blogger.id}`} scroll={false}>
+            <Card hover className="cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4 min-w-0">
                   <Avatar
@@ -222,6 +223,7 @@ export default function AdminBloggersPage() {
                 </div>
               </CardContent>
             </Card>
+            </Link>
           </motion.div>
         ))}
       </div>
