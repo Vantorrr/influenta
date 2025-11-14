@@ -194,7 +194,7 @@ function BloggersPageContent() {
                           <div>
                             <h3 className="font-semibold flex items-center gap-1">
                               {blogger.user?.firstName} {blogger.user?.lastName}
-                              {blogger.isVerified && <VerificationTooltip />}
+                              {blogger.user?.isVerified && <VerificationTooltip />}
                             </h3>
                             <p className="text-sm text-telegram-textSecondary">
                               {blogger.categories && blogger.categories.length > 0 
