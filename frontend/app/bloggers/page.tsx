@@ -1,850 +1,454 @@
 'use client'
-import { Suspense } from 'react'
-import { useEffect, useLayoutEffect, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  SlidersHorizontal, 
-  Search as SearchIcon, 
-  Users, 
-  Eye, 
-  Star,
-  ChevronRight,
-  X,
-  CheckCircle,
-  Send
-} from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { Layout } from '@/components/layout/Layout'
-import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Avatar } from '@/components/ui/avatar'
-import { VerificationTooltip } from '@/components/VerificationTooltip'
-import { 
-  formatNumber, 
-  formatPrice, 
-  getCategoryLabel,
-  cn,
-  formatNumberInput,
-  parseNumberInput
-} from '@/lib/utils'
-import { bloggersApi, analyticsApi, socialPlatformsApi } from '@/lib/api'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { BloggerCategory, type BloggerFilters } from '@/types'
-import { useAuth } from '@/hooks/useAuth'
-import { getPlatformIcon } from '@/components/icons/PlatformIcons'
-import { useSearchParams, useRouter } from 'next/navigation'
 
-function BloggersContent() {
-  // APP VERSION: v0.2.0 - Build timestamp: 2025-11-11T12:14:00
-  const [search, setSearch] = useState('')
-  const [showFilters, setShowFilters] = useState(false)
-  const [filters, setFilters] = useState<BloggerFilters>({
-    categories: [],
-    verifiedOnly: false,
-  })
+import { useState, useEffect, useLayoutEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { Search, Users, Star, MessageCircle, Filter } from 'lucide-react'
+import { Card, CardContent, CardHeader } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Avatar } from '@/components/ui/Avatar'
+import PlatformsList from '@/components/ui/PlatformsList'
+import Loading from '@/app/(protected)/loading'
+import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
+import PlatformFilters from '@/components/PlatformFilters'
+import { cn, formatNumber } from '@/lib/utils'
+import VerificationTooltip from '@/components/ui/VerificationTooltip'
+import { Badge } from '@/components/ui/Badge'
 
-  const { user, isAdmin } = useAuth()
-  const queryClient = useQueryClient()
-  const router = useRouter()
-  
-  // Загружаем всех блогеров одним запросом, но с оптимизацией
-  const { data, isLoading } = useQuery({
-    queryKey: ['bloggers', filters, search],
-    queryFn: () => bloggersApi.search({ ...filters, search }, 1, 500),
-    staleTime: 5 * 60 * 1000, // Кеш на 5 минут
-    gcTime: 10 * 60 * 1000, // Держим в памяти 10 минут
-    enabled: !!user,
-  })
-
-  useEffect(() => {
-    analyticsApi.track('bloggers_list_view')
-    
-    // Disable Next.js automatic scroll restoration
-    if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
-      window.history.scrollRestoration = 'manual'
+interface Blogger {
+  id: string
+  user?: {
+    id: string
+    firstName?: string
+    lastName?: string
+    username: string
+    photoUrl?: string
+    isVerified?: boolean
+    location?: string
+    verificationDate?: string
+  }
+  averageER?: number
+  totalFollowers: number
+  categories: string[]
+  platforms: {
+    platform: string
+    username: string
+    profileUrl?: string
+    followersCount?: number
+    isActive: boolean
+    postFormats?: string[]
+    pricePerPost?: number | null
+    pricePerStory?: number | null
+    pricePerReel?: number | null
+    audienceGender?: { male: number; female: number } | null
+    audienceAge?: { [key: string]: number } | null
+    audienceLocation?: { [key: string]: number } | null
+    metrics?: {
+      followersCount?: number
+      totalPosts?: number
+      averageLikes?: number
+      averageComments?: number
+      engagementRate?: number
     }
+    lastUpdated?: string
+    subscribersCount?: number
+    postsCount?: number
+  }[]
+  bio?: string
+  totalPosts?: number
+}
+
+function BloggersPageContent() {
+  const [bloggers, setBloggers] = useState<Blogger[]>([])
+  const [filteredBloggers, setFilteredBloggers] = useState<Blogger[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('')
+  const router = useRouter()
+
+  // Get unique categories from all bloggers
+  const getCategories = () => {
+    const categories = new Set<string>()
+    bloggers.forEach(blogger => {
+      blogger.categories?.forEach(cat => categories.add(cat))
+    })
+    return Array.from(categories)
+  }
+
+  // Initialize flags on mount
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return
+    ;(window as any).__bloggersScrollRestored = false
   }, [])
 
   const searchParams = useSearchParams()
 
-  // Restore scroll position by finding the saved blogger element
-  useLayoutEffect(() => {
+  // Save scroll position on navigation away
+  useEffect(() => {
     if (typeof window === 'undefined') return
-
-    // Reset flag on mount to allow restoration
-    ;(window as any).__bloggersScrollRestored = false
-
-    const restoreScroll = () => {
-      // Get saved blogger ID from URL or storage
-      const urlParams = new URLSearchParams(window.location.search)
-      let savedBloggerId = urlParams.get('blogger-id')
-      
-      if (!savedBloggerId) {
-        savedBloggerId = sessionStorage.getItem('bloggers-scroll-blogger-id') || localStorage.getItem('bloggers-scroll-blogger-id')
-      }
-      
-      if (!savedBloggerId) {
-        return false
-      }
-      
-      // Find the element and scroll to it
-      const element = document.getElementById(`blogger-${savedBloggerId}`)
-      
-      if (element) {
-        // Set flag immediately to prevent duplicate restorations
-        ;(window as any).__bloggersScrollRestored = true
-        
-        // Try to restore exact scroll position first
-        const savedScrollPos = sessionStorage.getItem('bloggers-scroll-position') || 
-                               localStorage.getItem('bloggers-scroll-position') ||
-                               searchParams.get('scroll-pos')
-        
-        if (savedScrollPos) {
-          const scrollPos = parseInt(savedScrollPos, 10)
-          if (!isNaN(scrollPos) && scrollPos >= 0) {
-            // Use multiple attempts to ensure scroll position is restored after DOM is ready
-            const restoreScroll = () => {
-              window.scrollTo({ top: scrollPos, behavior: 'auto' })
-            }
-            
-            // Try immediately
-            requestAnimationFrame(restoreScroll)
-            
-            // Try again after a short delay in case DOM is still loading
-            setTimeout(() => {
-              requestAnimationFrame(restoreScroll)
-            }, 100)
-            
-            return true
-          }
-        }
-        
-        // Fallback: scroll element to center if no saved position
-        element.scrollIntoView({ behavior: 'auto', block: 'center' })
-        return true
-      }
-      
-      return false
-    }
-
-    // Restore immediately
-    restoreScroll()
     
-    // Keep trying until element is found or flag is set (up to 3 seconds)
-    let attempts = 0
-    const maxAttempts = 30 // 3 seconds (30 * 100ms)
-    const monitorInterval = setInterval(() => {
-      attempts++
-      if (attempts >= maxAttempts || (window as any).__bloggersScrollRestored) {
-        clearInterval(monitorInterval)
-        return
-      }
-      
-      if (restoreScroll()) {
-        clearInterval(monitorInterval)
-      }
-    }, 100)
+    const handleBeforeUnload = () => {
+      const scrollPosition = window.scrollY || document.documentElement.scrollTop || 0
+      console.log('🚪 Saving scroll position on unload:', scrollPosition)
+      sessionStorage.setItem('bloggers-exact-scroll', scrollPosition.toString())
+    }
+    
+    // Save on page unload
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    
+    // Save on route change
+    const originalPushState = window.history.pushState
+    const originalReplaceState = window.history.replaceState
+    
+    window.history.pushState = function(...args) {
+      handleBeforeUnload()
+      return originalPushState.apply(window.history, args)
+    }
+    
+    window.history.replaceState = function(...args) {
+      handleBeforeUnload()
+      return originalReplaceState.apply(window.history, args)
+    }
     
     return () => {
-      clearInterval(monitorInterval)
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.history.pushState = originalPushState
+      window.history.replaceState = originalReplaceState
     }
   }, [])
 
-
-  // Aggressive scroll restoration with MutationObserver
+  // Simple scroll restoration - only restore exact position
   useEffect(() => {
-    if (typeof window === 'undefined' || isLoading) return
+    if (typeof window === 'undefined' || isLoading || bloggers.length === 0) return
 
-    const restore = () => {
-      try {
-        // Get saved blogger ID from URL or storage
-        const urlParams = new URLSearchParams(window.location.search)
-        let savedBloggerId = urlParams.get('blogger-id')
+    // Check if we already restored
+    if ((window as any).__bloggersScrollRestored) return
+
+    const exactScrollPos = sessionStorage.getItem('bloggers-exact-scroll')
+    if (exactScrollPos) {
+      const scrollPos = parseInt(exactScrollPos, 10)
+      if (!isNaN(scrollPos) && scrollPos >= 0) {
+        console.log('📜 Restoring exact scroll:', scrollPos, 'bloggers count:', bloggers.length)
         
-        if (!savedBloggerId) {
-          savedBloggerId = sessionStorage.getItem('bloggers-scroll-blogger-id') || localStorage.getItem('bloggers-scroll-blogger-id')
+        // Check if bloggers are actually rendered in DOM
+        const checkAndRestore = () => {
+          const bloggerCards = document.querySelectorAll('[id^="blogger-"]')
+          console.log('🔍 Found blogger cards in DOM:', bloggerCards.length)
+          
+          // Only restore if we have blogger cards in DOM
+          if (bloggerCards.length === 0) {
+            console.log('⏳ No blogger cards yet, will try again...')
+            return false
+          }
+          
+          console.log('✅ Blogger cards found, restoring scroll to:', scrollPos)
+          ;(window as any).__bloggersScrollRestored = true
+          sessionStorage.removeItem('bloggers-exact-scroll')
+          window.scrollTo({ top: scrollPos, behavior: 'auto' })
+          
+          return true
         }
         
-        if (!savedBloggerId) return
+        // Try immediately
+        if (checkAndRestore()) return
         
-        // Find the element and scroll to it
-        const element = document.getElementById(`blogger-${savedBloggerId}`)
-        if (element) {
-          const elementOffsetTop = element.offsetTop
-          // Use offset to show element below header/navigation (80px for header + padding)
-        const targetPosition = elementOffsetTop - 80
-          
-          // Check if already at correct position (within 100px)
-          const currentScroll = window.scrollY || document.documentElement.scrollTop || 0
-          if (Math.abs(currentScroll - targetPosition) < 100) {
-            ;(window as any).__bloggersScrollRestored = true
+        // Keep trying until elements are rendered (up to 3 seconds)
+        let attempts = 0
+        const maxAttempts = 30
+        const interval = setInterval(() => {
+          attempts++
+          if (attempts >= maxAttempts) {
+            console.log('⚠️ Max attempts reached, giving up')
+            clearInterval(interval)
             return
           }
           
-          // Only restore if flag is not set
-          if (!(window as any).__bloggersScrollRestored) {
-            // Set flag immediately to prevent duplicate restorations
-            ;(window as any).__bloggersScrollRestored = true
-            
-            // Restore scroll with offset
-            window.scrollTo({ top: targetPosition, behavior: 'auto' })
+          if (checkAndRestore()) {
+            clearInterval(interval)
           }
-        }
-      } catch {}
-    }
-
-    // Restore immediately (only if flag is not set)
-    if (!(window as any).__bloggersScrollRestored) {
-      restore()
-    }
-
-    // Use MutationObserver to restore when DOM changes (only if flag is not set)
-    const observer = new MutationObserver(() => {
-      if (!(window as any).__bloggersScrollRestored) {
-        restore()
+        }, 100)
       }
-    })
+    }
+  }, [isLoading, bloggers])
 
-    // Observe the container
-    const container = document.querySelector('.container')
-    if (container) {
-      observer.observe(container, {
-        childList: true,
-        subtree: true,
+  useEffect(() => {
+    async function fetchBloggers() {
+      try {
+        setIsLoading(true)
+        const token = localStorage.getItem('token')
+        
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bloggers/search`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch bloggers')
+        }
+        
+        const data = await response.json()
+        setBloggers(data)
+        setFilteredBloggers(data)
+      } catch (error) {
+        console.error('Error fetching bloggers:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchBloggers()
+  }, [])
+
+  useEffect(() => {
+    let filtered = bloggers
+
+    if (search) {
+      filtered = filtered.filter(blogger => {
+        const searchLower = search.toLowerCase()
+        const name = `${blogger.user?.firstName || ''} ${blogger.user?.lastName || ''}`.toLowerCase()
+        const username = blogger.user?.username?.toLowerCase() || ''
+        const categories = blogger.categories?.join(' ').toLowerCase() || ''
+        
+        return name.includes(searchLower) || username.includes(searchLower) || categories.includes(searchLower)
       })
     }
 
-    // Keep trying until element is found or flag is set (up to 2 seconds)
-    let attempts = 0
-    const maxAttempts = 20 // 2 seconds (20 * 100ms)
-    const monitorInterval = setInterval(() => {
-      attempts++
-      if (attempts >= maxAttempts || (window as any).__bloggersScrollRestored) {
-        clearInterval(monitorInterval)
-        return
-      }
-      
-      restore()
-    }, 100)
-
-    return () => {
-      clearInterval(monitorInterval)
-      observer.disconnect()
-    }
-  }, [isLoading])
-
-  // Also restore when searchParams change (navigation back)
-  useEffect(() => {
-    if (typeof window === 'undefined' || isLoading) return
-
-    // Reset flag when searchParams change (navigation back)
-    ;(window as any).__bloggersScrollRestored = false
-
-    const restore = () => {
-      // Get saved blogger ID from URL or storage
-      const urlParams = new URLSearchParams(window.location.search)
-      let savedBloggerId = urlParams.get('blogger-id')
-      
-      if (!savedBloggerId) {
-        savedBloggerId = sessionStorage.getItem('bloggers-scroll-blogger-id') || localStorage.getItem('bloggers-scroll-blogger-id')
-      }
-      
-      if (!savedBloggerId) return
-      
-      // Find the element and scroll to it
-      const element = document.getElementById(`blogger-${savedBloggerId}`)
-      if (element) {
-        // Only restore if flag is not set
-        if (!(window as any).__bloggersScrollRestored) {
-          // Set flag immediately to prevent duplicate restorations
-          ;(window as any).__bloggersScrollRestored = true
-          
-            // Try to restore exact scroll position first
-            const savedScrollPos = sessionStorage.getItem('bloggers-scroll-position') || 
-                                   localStorage.getItem('bloggers-scroll-position')
-            
-            if (savedScrollPos) {
-              const scrollPos = parseInt(savedScrollPos, 10)
-              if (!isNaN(scrollPos) && scrollPos >= 0) {
-                // Use multiple attempts to ensure scroll position is restored after DOM is ready
-                const restoreScroll = () => {
-                  window.scrollTo({ top: scrollPos, behavior: 'auto' })
-                }
-                
-                // Try immediately
-                requestAnimationFrame(restoreScroll)
-                
-                // Try again after a short delay in case DOM is still loading
-                setTimeout(() => {
-                  requestAnimationFrame(restoreScroll)
-                }, 100)
-                
-                return
-              }
-            }
-          
-          // Fallback: scroll element to center if no saved position
-          element.scrollIntoView({ behavior: 'auto', block: 'center' })
-        }
-      }
+    if (selectedPlatform) {
+      filtered = filtered.filter(blogger => 
+        blogger.platforms.some(p => 
+          p.platform.toLowerCase() === selectedPlatform.toLowerCase() && p.isActive
+        )
+      )
     }
 
-    // Single restore attempt
-    restore()
-  }, [searchParams, isLoading])
+    setFilteredBloggers(filtered)
+  }, [search, selectedPlatform, bloggers])
 
-  // Handle browser back/forward navigation
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-
-    const handlePopState = () => {
-      // Reset flag when navigating back to allow restoration
-      ;(window as any).__bloggersScrollRestored = false
-      
-      // Restore scroll position by finding the saved blogger element
-      const urlParams = new URLSearchParams(window.location.search)
-      let savedBloggerId = urlParams.get('blogger-id')
-      
-      if (!savedBloggerId) {
-        savedBloggerId = sessionStorage.getItem('bloggers-scroll-blogger-id') || localStorage.getItem('bloggers-scroll-blogger-id')
-      }
-      
-      if (!savedBloggerId) return
-      
-      // Single attempt to find and scroll to element
-      const restore = () => {
-        if ((window as any).__bloggersScrollRestored) return
-        
-        // Try to restore exact scroll position first
-        const savedScrollPos = sessionStorage.getItem('bloggers-scroll-position') || 
-                               localStorage.getItem('bloggers-scroll-position') ||
-                               urlParams.get('scroll-pos')
-        
-        if (savedScrollPos) {
-          const scrollPos = parseInt(savedScrollPos, 10)
-          if (!isNaN(scrollPos) && scrollPos >= 0) {
-            ;(window as any).__bloggersScrollRestored = true
-            
-            // Use multiple attempts to ensure scroll position is restored after DOM is ready
-            const restoreScroll = () => {
-              window.scrollTo({ top: scrollPos, behavior: 'auto' })
-            }
-            
-            // Try immediately
-            requestAnimationFrame(restoreScroll)
-            
-            // Try again after a short delay in case DOM is still loading
-            setTimeout(() => {
-              requestAnimationFrame(restoreScroll)
-            }, 100)
-            
-            return
-          }
-        }
-        
-        // Fallback: find element and scroll to center
-        const element = document.getElementById(`blogger-${savedBloggerId}`)
-        if (element) {
-          // Set flag immediately to prevent duplicate restorations
-          ;(window as any).__bloggersScrollRestored = true
-          
-          // Scroll element to center of viewport
-          element.scrollIntoView({ behavior: 'auto', block: 'center' })
-        }
-      }
-      
-      // Single attempt after short delay
-      setTimeout(restore, 100)
+  const getCategoryLabel = (category: string) => {
+    const categoryMap: { [key: string]: string } = {
+      'fashion': '👗 Мода',
+      'beauty': '💄 Красота', 
+      'travel': '✈️ Путешествия',
+      'lifestyle': '🏡 Лайфстайл',
+      'food': '🍴 Еда',
+      'fitness': '💪 Фитнес',
+      'tech': '💻 Технологии',
+      'gaming': '🎮 Игры',
+      'music': '🎵 Музыка',
+      'art': '🎨 Искусство',
+      'business': '💼 Бизнес',
+      'education': '📚 Образование',
+      'entertainment': '🎬 Развлечения',
+      'sports': '⚽ Спорт',
+      'health': '🏥 Здоровье',
+      'parenting': '👶 Родительство',
+      'finance': '💰 Финансы',
+      'automotive': '🚗 Авто',
+      'photography': '📸 Фото',
+      'comedy': '😄 Юмор',
+      'dance': '💃 Танцы',
+      'pets': '🐾 Питомцы',
+      'nature': '🌿 Природа',
+      'science': '🔬 Наука',
+      'news': '📰 Новости',
+      'politics': '🏛️ Политика',
+      'diy': '🔨 DIY',
+      'books': '📖 Книги',
+      'movies': '🎬 Кино',
+      'anime': '🌸 Аниме',
+      'gardening': '🌱 Садоводство',
+      'astrology': '🔮 Астрология',
+      'history': '📜 История',
+      'languages': '🗣️ Языки',
+      'meditation': '🧘 Медитация',
+      'interior': '🏠 Интерьер',
+      'wedding': '👰 Свадьбы',
+      'marketing': '📈 Маркетинг',
+      'writing': '✍️ Писательство',
+      'philosophy': '🤔 Философия',
+      'vegan': '🥬 Веганство',
+      'mental_health': '🧠 Ментальное здоровье',
+      'productivity': '📊 Продуктивность',
+      'motivation': '🎯 Мотивация',
+      'charity': '❤️ Благотворительность',
+      'environment': '🌍 Экология',
+      'handmade': '🎨 Хендмейд',
+      'collectibles': '🏺 Коллекционирование',
+      'architecture': '🏛️ Архитектура',
+      'wine': '🍷 Вино',
+      'real_estate': '🏘️ Недвижимость',
+      'agriculture': '🌾 Сельское хозяйство'
     }
-
-    window.addEventListener('popstate', handlePopState)
-    return () => {
-      window.removeEventListener('popstate', handlePopState)
-    }
-  }, [])
-
-  useEffect(() => {
-    const handler = () => {
-      try {
-        queryClient.invalidateQueries({ queryKey: ['bloggers'] })
-      } catch {}
-    }
-    window.addEventListener('user-verified' as any, handler as any)
-    return () => {
-      window.removeEventListener('user-verified' as any, handler as any)
-    }
-  }, [queryClient])
-
-  const categories = Object.values(BloggerCategory)
-
-  const toggleCategory = (category: BloggerCategory) => {
-    setFilters(prev => ({
-      ...prev,
-      categories: prev.categories?.includes(category)
-        ? prev.categories.filter(c => c !== category)
-        : [...(prev.categories || []), category]
-    }))
+    
+    return categoryMap[category] || category
   }
 
-  const clearFilters = () => {
-    setFilters({
-      categories: [],
-      verifiedOnly: false,
-    })
+  if (isLoading) {
+    return <Loading />
   }
-
-  const activeFiltersCount = 
-    (filters.categories?.length || 0) + 
-    (filters.verifiedOnly ? 1 : 0) +
-    (filters.minSubscribers ? 1 : 0) +
-    (filters.minPrice || filters.maxPrice ? 1 : 0) +
-    (filters.platform ? 1 : 0)
-
-  // Используем данные из React Query (они кешируются автоматически)
-  const bloggers = data?.data || []
 
   return (
-    <Layout>
-      <div className="container py-4 space-y-4">
-        {/* Search Bar */}
-        <div className="flex gap-2">
-          <Input
-            type="search"
-            placeholder="Поиск блогеров..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            icon={<SearchIcon className="w-4 h-4" />}
-            className="flex-1"
-          />
-          <Button
-            variant="secondary"
-            onClick={() => setShowFilters(true)}
-            className="relative"
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-            {activeFiltersCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-telegram-primary text-white text-xs rounded-full flex items-center justify-center">
-                {activeFiltersCount}
-              </span>
-            )}
-          </Button>
-        </div>
-
-        {/* Active Filters */}
-        {activeFiltersCount > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {filters.categories?.map(category => (
-              <Badge key={category} variant="primary">
-                {getCategoryLabel(category)}
-                <button
-                  onClick={() => toggleCategory(category)}
-                  className="ml-1"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </Badge>
-            ))}
-            {filters.verifiedOnly && (
-              <Badge variant="primary">
-                Только верифицированные
-                <button
-                  onClick={() => setFilters(prev => ({ ...prev, verifiedOnly: false }))}
-                  className="ml-1"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </Badge>
-            )}
-            <button
-              onClick={clearFilters}
-              className="text-sm text-telegram-primary"
-            >
-              Сбросить все
-            </button>
-          </div>
-        )}
-
-        {/* Results Count */}
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-telegram-textSecondary">
-            Найдено блогеров: {data?.total || bloggers.length}
-          </p>
-        </div>
-
-        {/* Bloggers List */}
-        <div className="space-y-3">
-          {bloggers.map((blogger, index) => (
-            <motion.div
-              key={blogger.id}
-              id={`blogger-${blogger.id}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div
-                onClick={(e) => {
-                  e.preventDefault()
-                  try {
-                    // Reset restoration flag for next time
-                    ;(window as any).__bloggersScrollRestored = false
-                    
-                    // Find the first visible blogger card in viewport (top of screen)
-                    const cards = document.querySelectorAll('[id^="blogger-"]')
-                    let firstVisibleId = ''
-                    
-                    for (let i = 0; i < cards.length; i++) {
-                      const card = cards[i] as HTMLElement
-                      const rect = card.getBoundingClientRect()
-                      
-                      // Check if card is visible in viewport (at least partially)
-                      if (rect.top >= 0 && rect.top < window.innerHeight) {
-                        firstVisibleId = card.id.replace('blogger-', '')
-                        break
-                      }
-                    }
-                    
-                    // If no card is visible at top, find the first card that's partially visible
-                    if (!firstVisibleId) {
-                      for (let i = 0; i < cards.length; i++) {
-                        const card = cards[i] as HTMLElement
-                        const rect = card.getBoundingClientRect()
-                        
-                        // Card is partially visible (top is above viewport but bottom is in viewport)
-                        if (rect.top < 0 && rect.bottom > 0) {
-                          firstVisibleId = card.id.replace('blogger-', '')
-                          break
-                        }
-                      }
-                    }
-                    
-                    // Fallback: find the card closest to top of viewport
-                    if (!firstVisibleId) {
-                      let closestId = ''
-                      let closestDistance = Infinity
-                      
-                      for (let i = 0; i < cards.length; i++) {
-                        const card = cards[i] as HTMLElement
-                        const rect = card.getBoundingClientRect()
-                        const distance = Math.abs(rect.top)
-                        
-                        if (distance < closestDistance) {
-                          closestDistance = distance
-                          closestId = card.id.replace('blogger-', '')
-                        }
-                      }
-                      
-                      firstVisibleId = closestId
-                    }
-                    
-                    // Save the first visible blogger ID and exact scroll position
-                    if (firstVisibleId) {
-                      const scrollPosition = window.scrollY || document.documentElement.scrollTop || 0
-                      
-                      sessionStorage.setItem('bloggers-scroll-blogger-id', firstVisibleId)
-                      sessionStorage.setItem('bloggers-scroll-position', scrollPosition.toString())
-                      localStorage.setItem('bloggers-scroll-blogger-id', firstVisibleId)
-                      localStorage.setItem('bloggers-scroll-position', scrollPosition.toString())
-                      
-                      // Also save in URL for browser history
-                      const currentUrl = new URL(window.location.href)
-                      currentUrl.searchParams.set('blogger-id', firstVisibleId)
-                      currentUrl.searchParams.set('scroll-pos', scrollPosition.toString())
-                      window.history.replaceState(
-                        { ...window.history.state, scrollBloggerId: firstVisibleId, scrollPosition },
-                        '',
-                        currentUrl.toString()
-                      )
-                    }
-                    
-                    // Navigate to blogger page
-                    router.push(`/bloggers/${blogger.id}`)
-                  } catch (err) {
-                    console.error('❌ Error saving scroll position:', err)
-                  }
-                }}
-                className="cursor-pointer"
-              >
-                <Card hover className="overflow-hidden">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      <Avatar
-                        src={blogger.user?.photoUrl}
-                        firstName={blogger.user?.firstName || ''}
-                        lastName={blogger.user?.lastName || ''}
-                        size="lg"
-                      />
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <div>
-                            <h3 className="font-semibold flex items-center gap-1">
-                              {blogger.user?.firstName} {blogger.user?.lastName}
-                              {blogger.isVerified && <VerificationTooltip />}
-                            </h3>
-                            <p className="text-sm text-telegram-textSecondary">
-                              {blogger.categories && blogger.categories.length > 0 
-                                ? getCategoryLabel(blogger.categories[0])
-                                : 'Блогер'}
-                            </p>
-                          </div>
-                          <ChevronRight className="w-5 h-5 text-telegram-textSecondary flex-shrink-0" />
-                        </div>
-                        
-                        <p className="text-sm text-telegram-textSecondary mb-3 line-clamp-2">
-                          {blogger.bio}
-                        </p>
-                        
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {blogger.categories.slice(0, 3).map(category => (
-                            <Badge key={category} variant="default">
-                              {getCategoryLabel(category)}
-                            </Badge>
-                          ))}
-                          {blogger.categories.length > 3 && (
-                            <Badge variant="default">
-                              +{blogger.categories.length - 3}
-                            </Badge>
-                          )}
-                        </div>
-                        
-                        {isAdmin && (blogger.user?.username || blogger.user?.telegramUsername) && (
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              const username = (blogger.user?.username || blogger.user?.telegramUsername || '').replace('@', '')
-                              window.open(`https://t.me/${username}`, '_blank')
-                            }}
-                            className="mt-2"
-                          >
-                            <Send className="w-3 h-3 mr-1" />
-                            Telegram
-                          </Button>
-                        )}
-
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-6">
+        <Users className="w-7 h-7 text-blue-600" />
+        <h1 className="text-2xl font-bold">Блогеры</h1>
+        <span className="text-gray-500 text-sm">({filteredBloggers.length})</span>
       </div>
 
-      {/* Filters Modal */}
-      <AnimatePresence>
-        {showFilters && (
+      {/* Search and Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Input
+                type="search"
+                placeholder="Поиск по имени, никнейму или категории..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <PlatformFilters
+                  selectedPlatform={selectedPlatform}
+                  onPlatformChange={setSelectedPlatform}
+                />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Empty State */}
+      {filteredBloggers.length === 0 && (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">Блогеры не найдены</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Bloggers List */}
+      <div className="space-y-3">
+        {filteredBloggers.map((blogger, index) => (
           <motion.div
+            key={blogger.id}
+            id={`blogger-${blogger.id}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50"
-            onClick={() => setShowFilters(false)}
+            transition={{ duration: 0.2 }}
           >
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 30 }}
-              className="absolute bottom-0 left-0 right-0 bg-telegram-bgSecondary rounded-t-2xl p-6 max-h-[80vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
+            <div
+              onClick={(e) => {
+                e.preventDefault()
+                
+                // Save exact scroll position only
+                const scrollPosition = window.scrollY || document.documentElement.scrollTop || 0
+                console.log('💾 Saving scroll position:', scrollPosition)
+                sessionStorage.setItem('bloggers-exact-scroll', scrollPosition.toString())
+                
+                // Navigate to blogger page
+                router.push(`/bloggers/${blogger.id}`)
+              }}
+              className="cursor-pointer"
             >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold">Фильтры</h3>
-                <button
-                  onClick={() => setShowFilters(false)}
-                  className="p-2 hover:bg-telegram-bg rounded-lg transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+              <Card hover className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-4">
+                    <Avatar
+                      src={blogger.user?.photoUrl}
+                      firstName={blogger.user?.firstName || ''}
+                      lastName={blogger.user?.lastName || ''}
+                      size="lg"
+                    />
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-gray-900">
+                              {blogger.user?.firstName} {blogger.user?.lastName}
+                            </h3>
+                            {blogger.user?.isVerified && (
+                              <VerificationTooltip date={blogger.user.verificationDate}>
+                                <Badge variant="primary" size="sm" className="gap-1">
+                                  ✓
+                                </Badge>
+                              </VerificationTooltip>
+                            )}
+                          </div>
+                          {blogger.user?.username && (
+                            <p className="text-sm text-gray-500">@{blogger.user.username}</p>
+                          )}
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {blogger.categories?.slice(0, 3).map((category) => (
+                              <span
+                                key={category}
+                                className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full"
+                              >
+                                {getCategoryLabel(category)}
+                              </span>
+                            ))}
+                            {blogger.categories?.length > 3 && (
+                              <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">
+                                +{blogger.categories.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        </div>
 
-              {/* Categories */}
-              <div className="mb-6">
-                <h4 className="font-medium mb-3">Категории</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {categories.map(category => (
-                    <button
-                      key={category}
-                      onClick={() => toggleCategory(category)}
-                      className={cn(
-                        'p-3 rounded-lg border-2 text-sm transition-all',
-                        filters.categories?.includes(category)
-                          ? 'border-telegram-primary bg-telegram-primary/20'
-                          : 'border-gray-600 hover:border-gray-500'
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-gray-900">
+                            {formatNumber(blogger.totalFollowers)}
+                          </div>
+                          <p className="text-sm text-gray-500">подписчиков</p>
+                          {blogger.averageER && blogger.averageER > 0 && (
+                            <div className="mt-1">
+                              <span className="text-sm font-medium text-green-600">
+                                ER: {blogger.averageER.toFixed(1)}%
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-3">
+                        <PlatformsList
+                          platforms={blogger.platforms}
+                          size="sm"
+                          showFollowers
+                          showPrices
+                        />
+                      </div>
+
+                      {blogger.bio && (
+                        <p className="text-sm text-gray-600 mt-3 line-clamp-2">
+                          {blogger.bio}
+                        </p>
                       )}
-                    >
-                      {getCategoryLabel(category)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Social Platforms */}
-              <div className="mb-6">
-                <h4 className="font-medium mb-3">Социальные сети</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { value: 'telegram', label: 'Telegram' },
-                    { value: 'instagram', label: 'Instagram' },
-                    { value: 'youtube', label: 'YouTube' },
-                    { value: 'tiktok', label: 'TikTok' },
-                    { value: 'vk', label: 'VKontakte' },
-                    { value: 'other', label: 'Другие' },
-                  ].map(platform => (
-                    <button
-                      key={platform.value}
-                      onClick={() => {
-                        setFilters(prev => ({
-                          ...prev,
-                          platform: prev.platform === platform.value ? undefined : platform.value
-                        }))
-                      }}
-                      className={cn(
-                        'p-3 rounded-lg border-2 text-sm transition-all',
-                        filters.platform === platform.value
-                          ? 'border-telegram-primary bg-telegram-primary/20'
-                          : 'border-gray-600 hover:border-gray-500'
-                      )}
-                    >
-                      {platform.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Subscribers Range */}
-              <div className="mb-6">
-                <h4 className="font-medium mb-3">Количество подписчиков</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="От"
-                    value={formatNumberInput(filters.minSubscribers)}
-                    onChange={(e) => setFilters(prev => ({
-                      ...prev,
-                      minSubscribers: parseNumberInput(e.target.value) || undefined
-                    }))}
-                  />
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="До"
-                    value={formatNumberInput(filters.maxSubscribers)}
-                    onChange={(e) => setFilters(prev => ({
-                      ...prev,
-                      maxSubscribers: parseNumberInput(e.target.value) || undefined
-                    }))}
-                  />
-                </div>
-              </div>
-
-              {/* Price Range */}
-              <div className="mb-6">
-                <h4 className="font-medium mb-3">Цена за пост (₽)</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="От"
-                    value={formatNumberInput(filters.minPrice)}
-                    onChange={(e) => setFilters(prev => ({
-                      ...prev,
-                      minPrice: parseNumberInput(e.target.value) || undefined
-                    }))}
-                  />
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="До"
-                    value={formatNumberInput(filters.maxPrice)}
-                    onChange={(e) => setFilters(prev => ({
-                      ...prev,
-                      maxPrice: parseNumberInput(e.target.value) || undefined
-                    }))}
-                  />
-                </div>
-              </div>
-
-              {/* Other Filters */}
-              <div className="mb-6">
-                <h4 className="font-medium mb-3">Дополнительно</h4>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={filters.verifiedOnly}
-                    onChange={(e) => setFilters(prev => ({
-                      ...prev,
-                      verifiedOnly: e.target.checked
-                    }))}
-                    className="w-4 h-4 rounded border-gray-600 text-telegram-primary focus:ring-telegram-primary"
-                  />
-                  <span>Только верифицированные</span>
-                </label>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-3">
-                <Button
-                  variant="secondary"
-                  fullWidth
-                  onClick={() => {
-                    clearFilters()
-                    setShowFilters(false)
-                  }}
-                >
-                  Сбросить
-                </Button>
-                <Button
-                  variant="primary"
-                  fullWidth
-                  onClick={() => setShowFilters(false)}
-                >
-                  Применить
-                </Button>
-              </div>
-            </motion.div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </motion.div>
-        )}
-      </AnimatePresence>
-    </Layout>
+        ))}
+      </div>
+    </div>
   )
 }
 
 export default function BloggersPage() {
   return (
-    <Suspense fallback={null}>
-      <BloggersContent />
+    <Suspense fallback={<Loading />}>
+      <BloggersPageContent />
     </Suspense>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
