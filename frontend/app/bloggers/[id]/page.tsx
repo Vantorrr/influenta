@@ -110,7 +110,7 @@ export default function BloggerDetailsPage() {
   if (error || !data) {
     return (
       <div className="min-h-screen bg-telegram-bg p-4">
-        <button onClick={() => router.push('/bloggers?restore=1')} className="flex items-center gap-2 text-telegram-primary mb-4">
+        <button onClick={() => router.back()} className="flex items-center gap-2 text-telegram-primary mb-4 hover:opacity-80 transition-opacity">
           <ArrowLeft className="w-4 h-4" /> Назад
         </button>
         <Card>
@@ -134,7 +134,7 @@ export default function BloggerDetailsPage() {
 
   return (
     <div className="min-h-screen bg-telegram-bg p-4 space-y-4">
-      <button onClick={() => router.push('/bloggers?restore=1')} className="flex items-center gap-2 text-telegram-primary">
+      <button onClick={() => router.back()} className="flex items-center gap-2 text-telegram-primary hover:opacity-80 transition-opacity">
         <ArrowLeft className="w-4 h-4" /> Назад
       </button>
 
