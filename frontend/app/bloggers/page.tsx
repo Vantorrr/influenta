@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, Suspense } from 'react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Search, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -23,7 +23,6 @@ function BloggersPageContent() {
     verifiedOnly: false,
     platform: undefined as string | undefined
   })
-  const router = useRouter()
   const { user } = useAuth()
 
   // Подключаем хук восстановления скролла
@@ -73,15 +72,7 @@ function BloggersPageContent() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.2 }}
             >
-              <div
-                onClick={(e) => {
-                  e.preventDefault()
-                  
-                  // Navigate to blogger page with scroll={false} to prevent scroll reset
-                  router.push(`/bloggers/${blogger.id}`)
-                }}
-                className="cursor-pointer"
-              >
+              <Link href={`/bloggers/${blogger.id}`} scroll={false}>
                 <Card hover className="overflow-hidden">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
@@ -130,7 +121,7 @@ function BloggersPageContent() {
                     </div>
                   </CardContent>
                 </Card>
-              </div>
+              </Link>
             </motion.div>
           ))}
         </div>
@@ -141,7 +132,16 @@ function BloggersPageContent() {
 
 export default function BloggersPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={
+      <Layout>
+        <div className="container py-4 flex items-center justify-center min-h-[50vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-telegram-primary mx-auto mb-4"></div>
+            <p className="text-telegram-textSecondary">Загрузка блогеров...</p>
+          </div>
+        </div>
+      </Layout>
+    }>
       <BloggersPageContent />
     </Suspense>
   )
