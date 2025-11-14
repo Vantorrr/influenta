@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { 
   Search as SearchIcon, 
   SlidersHorizontal,
@@ -28,6 +29,7 @@ function AdminBloggersPageContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
+  const pathname = usePathname()
   
   // Восстановление позиции скролла
   useScrollRestoration()
@@ -157,7 +159,22 @@ function AdminBloggersPageContent() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
           >
-            <Link href={`/bloggers/${blogger.id}`} scroll={false}>
+            <Link
+              href={`/bloggers/${blogger.id}`}
+              scroll={false}
+              onClick={() => {
+                if (typeof window === 'undefined') return
+                const key = `__scroll__${pathname}`
+                const scrollY =
+                  window.scrollY || document.documentElement.scrollTop || 0
+                if (scrollY > 0) {
+                  sessionStorage.setItem(
+                    key,
+                    JSON.stringify({ x: window.scrollX, y: scrollY }),
+                  )
+                }
+              }}
+            >
             <Card hover className="cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4 min-w-0">

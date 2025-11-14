@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Search, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -24,6 +25,7 @@ function BloggersPageContent() {
     platform: undefined as string | undefined
   })
   const { user } = useAuth()
+  const pathname = usePathname()
 
   // Подключаем хук восстановления скролла
   useScrollRestoration()
@@ -72,7 +74,22 @@ function BloggersPageContent() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.2 }}
             >
-              <Link href={`/bloggers/${blogger.id}`} scroll={false}>
+              <Link
+                href={`/bloggers/${blogger.id}`}
+                scroll={false}
+                onClick={() => {
+                  if (typeof window === 'undefined') return
+                  const key = `__scroll__${pathname}`
+                  const scrollY =
+                    window.scrollY || document.documentElement.scrollTop || 0
+                  if (scrollY > 0) {
+                    sessionStorage.setItem(
+                      key,
+                      JSON.stringify({ x: window.scrollX, y: scrollY }),
+                    )
+                  }
+                }}
+              >
                 <Card hover className="overflow-hidden">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
