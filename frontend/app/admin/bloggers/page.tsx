@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 import { 
   Search as SearchIcon, 
   SlidersHorizontal,
@@ -19,6 +20,7 @@ import { formatNumber, formatPrice, getCategoryLabel } from '@/lib/utils'
 import { BloggerCategory } from '@/types'
 import { bloggersApi } from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
+import { useScrollRestoration } from '@/hooks/useScrollRestoration'
 
 export default function AdminBloggersPage() {
   const [search, setSearch] = useState('')
@@ -26,6 +28,9 @@ export default function AdminBloggersPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
+  
+  // Восстановление позиции скролла
+  useScrollRestoration()
 
   useEffect(() => {
     if (!user) return
