@@ -109,6 +109,7 @@ export const bloggersApi = {
     if (typeof filters?.maxSubscribers === 'number') params.maxSubscribers = filters.maxSubscribers
     if (typeof filters?.minPrice === 'number') params.minPrice = filters.minPrice
     if (typeof filters?.maxPrice === 'number') params.maxPrice = filters.maxPrice
+    if (filters?.platform) params.platform = filters.platform
 
     const response = await api.get('/bloggers/search', { params })
     return response.data

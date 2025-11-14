@@ -18,6 +18,10 @@ export class BloggerSearchQueryDto {
   categories?: (BloggerCategory | string)[];
 
   @IsOptional()
+  @IsString()
+  platform?: string;
+
+  @IsOptional()
   @IsBoolean()
   @Transform(({ value }) => value === 'true' || value === true)
   verifiedOnly?: boolean;
