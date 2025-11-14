@@ -36,99 +36,152 @@ function BloggersPageContent() {
 
   const bloggers = data?.data || []
 
-  // Initialize flags on mount
+  // Disable Next.js automatic scroll restoration
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return
+    
+    // Disable browser and Next.js scroll restoration
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual'
+    }
+    
+    // Reset flag on mount
     ;(window as any).__bloggersScrollRestored = false
   }, [])
 
-  // Save scroll position on navigation away
+  // Save scroll position before navigation
   useEffect(() => {
     if (typeof window === 'undefined') return
     
-    const handleBeforeUnload = () => {
+    const saveScroll = () => {
       const scrollPosition = window.scrollY || document.documentElement.scrollTop || 0
-      console.log('🚪 Saving scroll position on unload:', scrollPosition)
-      sessionStorage.setItem('bloggers-exact-scroll', scrollPosition.toString())
+      if (scrollPosition > 0) {
+        console.log('💾 Saving scroll position:', scrollPosition)
+        sessionStorage.setItem('bloggers-exact-scroll', scrollPosition.toString())
+      }
     }
     
-    // Save on page unload
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    
-    // Save on route change
-    const originalPushState = window.history.pushState
-    const originalReplaceState = window.history.replaceState
-    
-    window.history.pushState = function(...args) {
-      handleBeforeUnload()
-      return originalPushState.apply(window.history, args)
-    }
-    
-    window.history.replaceState = function(...args) {
-      handleBeforeUnload()
-      return originalReplaceState.apply(window.history, args)
-    }
+    // Save on before unload
+    window.addEventListener('beforeunload', saveScroll)
     
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload)
-      window.history.pushState = originalPushState
-      window.history.replaceState = originalReplaceState
+      window.removeEventListener('beforeunload', saveScroll)
     }
   }, [])
 
-  // Simple scroll restoration - only restore exact position
-  useEffect(() => {
-    if (typeof window === 'undefined' || isLoading || bloggers.length === 0) return
-
-    // Check if we already restored
-    if ((window as any).__bloggersScrollRestored) return
+  // Restore scroll position - aggressive approach
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined' || isLoading) return
 
     const exactScrollPos = sessionStorage.getItem('bloggers-exact-scroll')
-    if (exactScrollPos) {
-      const scrollPos = parseInt(exactScrollPos, 10)
-      if (!isNaN(scrollPos) && scrollPos >= 0) {
-        console.log('📜 Restoring exact scroll:', scrollPos, 'bloggers count:', bloggers.length)
-        
-        // Check if bloggers are actually rendered in DOM
-        const checkAndRestore = () => {
-          const bloggerCards = document.querySelectorAll('[id^="blogger-"]')
-          console.log('🔍 Found blogger cards in DOM:', bloggerCards.length)
-          
-          // Only restore if we have blogger cards in DOM
-          if (bloggerCards.length === 0) {
-            console.log('⏳ No blogger cards yet, will try again...')
-            return false
-          }
-          
-          console.log('✅ Blogger cards found, restoring scroll to:', scrollPos)
-          ;(window as any).__bloggersScrollRestored = true
-          sessionStorage.removeItem('bloggers-exact-scroll')
-          window.scrollTo({ top: scrollPos, behavior: 'auto' })
-          
-          return true
-        }
-        
-        // Try immediately
-        if (checkAndRestore()) return
-        
-        // Keep trying until elements are rendered (up to 3 seconds)
-        let attempts = 0
-        const maxAttempts = 30
-        const interval = setInterval(() => {
-          attempts++
-          if (attempts >= maxAttempts) {
-            console.log('⚠️ Max attempts reached, giving up')
-            clearInterval(interval)
-            return
-          }
-          
-          if (checkAndRestore()) {
-            clearInterval(interval)
-          }
-        }, 100)
+    if (!exactScrollPos) return
+
+    const scrollPos = parseInt(exactScrollPos, 10)
+    if (isNaN(scrollPos) || scrollPos < 0) return
+
+    // Check if already restored
+    if ((window as any).__bloggersScrollRestored) return
+
+    console.log('📜 Attempting to restore scroll:', scrollPos)
+
+    const restoreScroll = () => {
+      // Check if content is rendered
+      const bloggerCards = document.querySelectorAll('[id^="blogger-"]')
+      const hasContent = bloggerCards.length > 0 || bloggers.length > 0
+      
+      if (!hasContent) {
+        console.log('⏳ Content not ready yet, bloggers:', bloggers.length, 'cards:', bloggerCards.length)
+        return false
       }
+
+      // Restore scroll position
+      console.log('✅ Restoring scroll to:', scrollPos)
+      ;(window as any).__bloggersScrollRestored = true
+      
+      // Use multiple methods to ensure scroll happens
+      window.scrollTo(0, scrollPos)
+      document.documentElement.scrollTop = scrollPos
+      document.body.scrollTop = scrollPos
+      
+      // Also use requestAnimationFrame for next frame
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollPos)
+        document.documentElement.scrollTop = scrollPos
+      })
+      
+      // Remove from storage after successful restore
+      setTimeout(() => {
+        sessionStorage.removeItem('bloggers-exact-scroll')
+      }, 1000)
+      
+      return true
     }
-  }, [isLoading, bloggers])
+
+    // Try immediately
+    if (restoreScroll()) return
+
+    // Retry with delays
+    const timeouts: NodeJS.Timeout[] = []
+    
+    // Try after a short delay
+    timeouts.push(setTimeout(() => {
+      if (restoreScroll()) {
+        timeouts.forEach(clearTimeout)
+      }
+    }, 50))
+
+    // Try after content might be rendered
+    timeouts.push(setTimeout(() => {
+      if (restoreScroll()) {
+        timeouts.forEach(clearTimeout)
+      }
+    }, 150))
+
+    // Try after React Query finishes
+    timeouts.push(setTimeout(() => {
+      if (restoreScroll()) {
+        timeouts.forEach(clearTimeout)
+      }
+    }, 300))
+
+    // Final attempt
+    timeouts.push(setTimeout(() => {
+      restoreScroll()
+      timeouts.forEach(clearTimeout)
+    }, 500))
+
+    return () => {
+      timeouts.forEach(clearTimeout)
+    }
+  }, [isLoading, bloggers.length])
+
+  // Also restore on popstate (back button)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const handlePopState = () => {
+      // Reset flag when navigating back
+      ;(window as any).__bloggersScrollRestored = false
+      
+      // Small delay to let page render
+      setTimeout(() => {
+        const exactScrollPos = sessionStorage.getItem('bloggers-exact-scroll')
+        if (exactScrollPos) {
+          const scrollPos = parseInt(exactScrollPos, 10)
+          if (!isNaN(scrollPos) && scrollPos >= 0) {
+            console.log('🔙 Restoring scroll on back navigation:', scrollPos)
+            requestAnimationFrame(() => {
+              window.scrollTo(0, scrollPos)
+              document.documentElement.scrollTop = scrollPos
+            })
+          }
+        }
+      }, 100)
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
 
 
   return (
