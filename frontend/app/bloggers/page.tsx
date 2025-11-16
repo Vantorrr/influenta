@@ -32,6 +32,44 @@ function BloggersPageContent() {
   // Подключаем хук восстановления скролла
   useScrollRestoration()
 
+  // Восстановление сохранённых фильтров и поиска
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const raw = sessionStorage.getItem('__bloggers_filters_v1')
+      if (!raw) return
+      const saved = JSON.parse(raw) as {
+        search?: string
+        filters?: BloggerFilters
+      }
+      if (typeof saved.search === 'string') {
+        setSearch(saved.search)
+      }
+      if (saved.filters) {
+        setFilters(prev => ({
+          ...prev,
+          ...saved.filters,
+          categories: saved.filters.categories ?? prev.categories ?? [],
+        }))
+      }
+    } catch {
+      // ignore parse errors
+    }
+  }, [])
+
+  // Сохраняем фильтры и поиск при изменении
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      sessionStorage.setItem(
+        '__bloggers_filters_v1',
+        JSON.stringify({ search, filters }),
+      )
+    } catch {
+      // ignore quota errors
+    }
+  }, [search, filters])
+
   // Дополнительно скроллим к последнему открытому блогеру (надёжно для мини‑аппа)
   useEffect(() => {
     if (typeof window === 'undefined') return
