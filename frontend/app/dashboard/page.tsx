@@ -308,13 +308,29 @@ export default function DashboardPage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {currentStats.map((stat, index) => {
-            const clickable = (userRole === 'blogger' && stat.title === 'Активные отклики') || (userRole === 'advertiser' && stat.title === 'Отклики')
-            const handleClick = async () => { 
+            const clickable =
+              (userRole === 'blogger' && stat.title === 'Активные отклики') ||
+              (userRole === 'advertiser' &&
+                (stat.title === 'Отклики' || stat.title === 'Активные кампании'))
+
+            const handleClick = async () => {
               if (!clickable) return
+
               if (userRole === 'blogger') {
+                // Блогер: переходим в сообщения с откликами
                 router.push('/messages')
-              } else {
-                // For advertiser: go to first listing with responses
+                return
+              }
+
+              // Рекламодатель
+              if (stat.title === 'Активные кампании') {
+                // Открываем список своих объявлений
+                router.push('/listings')
+                return
+              }
+
+              if (stat.title === 'Отклики') {
+                // Переходим к объявлению с откликами, если есть, иначе к списку
                 if (stats?.firstListingWithResponses) {
                   router.push(`/listings/${stats.firstListingWithResponses}`)
                 } else {
@@ -322,33 +338,43 @@ export default function DashboardPage() {
                 }
               }
             }
+
             return (
-            <motion.div
-              key={stat.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="h-full"
-              onClick={handleClick}
-            >
-              <Card className={`h-full ${clickable ? 'cursor-pointer hover:bg-telegram-bgSecondary' : ''}`}>
-                <CardContent className="p-4 h-full flex flex-col">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${stat.color} flex items-center justify-center`}>
-                      <stat.icon className="w-5 h-5 text-white" />
+              <motion.div
+                key={stat.title}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="h-full"
+                onClick={handleClick}
+              >
+                <Card
+                  className={`h-full ${
+                    clickable ? 'cursor-pointer hover:bg-telegram-bgSecondary' : ''
+                  }`}
+                >
+                  <CardContent className="p-4 h-full flex flex-col">
+                    <div className="flex items-start justify-between mb-4">
+                      <div
+                        className={`w-10 h-10 rounded-lg bg-gradient-to-br ${stat.color} flex items-center justify-center`}
+                      >
+                        <stat.icon className="w-5 h-5 text-white" />
+                      </div>
                     </div>
-                  </div>
-                  <div className="space-y-1 mt-auto">
-                    <p className="text-2xl font-bold">{stat.value}</p>
-                    <p className="text-sm text-telegram-textSecondary">{stat.title}</p>
-                    {(stat as any).subtitle && (
-                      <p className="text-xs text-telegram-textSecondary/70">{(stat as any).subtitle}</p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )})}
+                    <div className="space-y-1 mt-auto">
+                      <p className="text-2xl font-bold">{stat.value}</p>
+                      <p className="text-sm text-telegram-textSecondary">{stat.title}</p>
+                      {(stat as any).subtitle && (
+                        <p className="text-xs text-telegram-textSecondary/70">
+                          {(stat as any).subtitle}
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )
+          })}
         </div>
 
         {/* Quick Actions */}
