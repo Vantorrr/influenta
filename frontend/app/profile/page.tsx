@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
 import { useAuth } from '@/hooks/useAuth'
 import { useEffect, useRef } from 'react'
-import { authApi } from '@/lib/api'
+import { authApi, analyticsApi } from '@/lib/api'
 import { UserRole, BloggerCategory } from '@/types'
 import { VerificationModal } from '@/components/VerificationModal'
 import { SocialPlatformsSection } from '@/components/profile/SocialPlatformsSection'
@@ -765,3 +765,4 @@ export default function ProfilePage() {
       />
     </Layout>
   )
+}
