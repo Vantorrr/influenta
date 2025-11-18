@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Users, Eye, Shield, Ban, CheckCircle, Trash2, MessageSquare, Send } from 'lucide-react'
+import { ArrowLeft, Users, Eye, Shield, Ban, CheckCircle, Trash2, MessageSquare } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
-import { bloggersApi, socialPlatformsApi } from '@/lib/api'
+import { bloggersApi, socialPlatformsApi, analyticsApi } from '@/lib/api'
 import { formatNumber, getCategoryLabel } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
@@ -52,6 +52,17 @@ export default function BloggerDetailsPage() {
     if (!user || !params?.id) return
     ;(async () => { await loadBlogger(params.id!) })()
   }, [user, params?.id])
+
+  // Трекинг просмотра профиля другим пользователем
+  useEffect(() => {
+    if (!user || !data) return
+    const targetUserId = (data?.user?.id || data?.userId || data?.id) as string | undefined
+    if (!targetUserId) return
+    if (user.id === targetUserId) return
+    try {
+      analyticsApi.track('profile_view', { targetUserId })
+    } catch {}
+  }, [user?.id, data?.user?.id, data?.userId, data?.id])
 
   // Фолбэк: автообновление при возврате/фокусе мини‑приложения
   useEffect(() => {
@@ -110,7 +121,7 @@ export default function BloggerDetailsPage() {
   if (error || !data) {
     return (
       <div className="min-h-screen bg-telegram-bg p-4">
-        <button onClick={() => router.back()} className="flex items-center gap-2 text-telegram-primary mb-4 hover:opacity-80 transition-opacity">
+        <button onClick={() => router.push('/bloggers?restore=1')} className="flex items-center gap-2 text-telegram-primary mb-4">
           <ArrowLeft className="w-4 h-4" /> Назад
         </button>
         <Card>
@@ -134,7 +145,7 @@ export default function BloggerDetailsPage() {
 
   return (
     <div className="min-h-screen bg-telegram-bg p-4 space-y-4">
-      <button onClick={() => router.back()} className="flex items-center gap-2 text-telegram-primary hover:opacity-80 transition-opacity">
+      <button onClick={() => router.push('/bloggers?restore=1')} className="flex items-center gap-2 text-telegram-primary">
         <ArrowLeft className="w-4 h-4" /> Назад
       </button>
 
@@ -221,19 +232,6 @@ export default function BloggerDetailsPage() {
               >
                 <Trash2 className="w-4 h-4 mr-1" /> Удалить
               </Button>
-              {(blogger.user?.username || blogger.user?.telegramUsername) && (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    const username = (blogger.user?.username || blogger.user?.telegramUsername || '').replace('@', '')
-                    window.open(`https://t.me/${username}`, '_blank')
-                  }}
-                >
-                  <Send className="w-4 h-4 mr-1" /> Telegram
-                </Button>
-              )}
             </div>
           )}
         {isAdmin && showUnverifyInline && (

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
 import { useAuth } from '@/hooks/useAuth'
 import { useEffect, useRef } from 'react'
-import { authApi, analyticsApi } from '@/lib/api'
+import { authApi } from '@/lib/api'
 import { UserRole, BloggerCategory } from '@/types'
 import { VerificationModal } from '@/components/VerificationModal'
 import { SocialPlatformsSection } from '@/components/profile/SocialPlatformsSection'
@@ -18,11 +18,6 @@ import { Badge } from '@/components/ui/badge'
 
 export default function ProfilePage() {
   const { user, isLoading } = useAuth()
-  useEffect(() => {
-    if (user?.id) {
-      try { analyticsApi.track('profile_view', { targetUserId: user.id }) } catch {}
-    }
-  }, [user?.id])
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
@@ -770,4 +765,3 @@ export default function ProfilePage() {
       />
     </Layout>
   )
-}
