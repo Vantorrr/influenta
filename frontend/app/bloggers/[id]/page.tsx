@@ -199,7 +199,7 @@ export default function BloggerDetailsPage() {
                         return
                       }
                       // Оптимистичное обновление UI
-                      setData(prev => prev ? { ...prev, isVerified: true } : prev)
+                      setData((prev: any) => (prev ? { ...prev, isVerified: true } : prev))
                       try { (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.('success') } catch {}
                       try { window.dispatchEvent(new CustomEvent('user-verified', { detail: { userId: uid } })) } catch {}
                       try { router.refresh() } catch {}

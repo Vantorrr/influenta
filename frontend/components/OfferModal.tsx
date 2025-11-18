@@ -1,4 +1,4 @@
-'use client'
+ 'use client'
 
 import { useState } from 'react'
 import { X, Send, Calendar, FileText, Camera, MessageSquare } from 'lucide-react'
@@ -145,14 +145,20 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
                       type="text"
                       inputMode="numeric"
                       placeholder="10.000"
-                      value={proposedBudget ? proposedBudget.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
+                      value={
+                        proposedBudget
+                          ? proposedBudget.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+                          : ''
+                      }
                       onChange={(e) => {
                         const cleaned = e.target.value.replace(/\D/g, '')
                         setProposedBudget(cleaned)
                       }}
                       className="w-full pr-12"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-telegram-textSecondary">₽</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-telegram-textSecondary">
+                      ₽
+                    </span>
                   </div>
                   <p className="text-xs text-telegram-textSecondary mt-1">Минимальная сумма: 100₽</p>
                 </div>
@@ -193,7 +199,9 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
                     min={new Date().toISOString().split('T')[0]}
                     className="w-full"
                   />
-                  <p className="text-xs text-telegram-textSecondary mt-1">Когда должен быть опубликован контент</p>
+                  <p className="text-xs text-telegram-textSecondary mt-1">
+                    Когда должен быть опубликован контент
+                  </p>
                 </div>
 
                 {/* Описание проекта */}
@@ -211,7 +219,9 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
                     rows={3}
                     className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg resize-none focus:outline-none focus:ring-2 focus:ring-telegram-primary"
                   />
-                  <p className="text-xs text-telegram-textSecondary mt-1">Детали помогут блогеру лучше понять задачу</p>
+                  <p className="text-xs text-telegram-textSecondary mt-1">
+                    Детали помогут блогеру лучше понять задачу
+                  </p>
                 </div>
 
                 {/* Сообщение */}
@@ -229,13 +239,13 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
                     rows={4}
                     className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg resize-none focus:outline-none focus:ring-2 focus:ring-telegram-primary"
                   />
-                  <p className="text-xs text-telegram-textSecondary mt-1">Необязательное поле, но персональное обращение повышает шансы на ответ</p>
+                  <p className="text-xs text-telegram-textSecondary mt-1">
+                    Необязательное поле, но персональное обращение повышает шансы на ответ
+                  </p>
                 </div>
 
                 {error && (
-                  <div className="p-3 bg-red-500/10 text-red-500 rounded-lg text-sm">
-                    {error}
-                  </div>
+                  <div className="p-3 bg-red-500/10 text-red-500 rounded-lg text-sm">{error}</div>
                 )}
               </div>
             </div>
@@ -255,7 +265,9 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
                 disabled={isSubmitting || !proposedBudget}
                 className="w-full"
               >
-                {isSubmitting ? 'Отправка...' : (
+                {isSubmitting ? (
+                  'Отправка...'
+                ) : (
                   <>
                     <Send className="w-4 h-4 mr-2" />
                     Отправить
@@ -269,10 +281,3 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
     </AnimatePresence>
   )
 }
-
-
-
-
-
-
-
