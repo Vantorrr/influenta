@@ -1,9 +1,8 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { 
   Search as SearchIcon, 
   SlidersHorizontal,
@@ -23,15 +22,14 @@ import { bloggersApi } from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
 import { useScrollRestoration } from '@/hooks/useScrollRestoration'
 
-function AdminBloggersPageContent() {
+export default function AdminBloggersPage() {
   const [search, setSearch] = useState('')
   const [bloggers, setBloggers] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
-  const pathname = usePathname()
-  
-  // Восстановление позиции скролла
+
+  // Восстановление скролла на списке админских блогеров
   useScrollRestoration()
 
   useEffect(() => {
@@ -62,19 +60,6 @@ function AdminBloggersPageContent() {
     verified: bloggers.filter(b => !!b.isVerified).length,
     active: bloggers.filter(b => (b.subscribersCount || 0) > 0).length,
   }
-
-  // Скроллим к последнему открытому блогеру в админке
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const lastId = sessionStorage.getItem('__admin_bloggers_last_id')
-    if (!lastId) return
-    const el = document.getElementById(`blogger-${lastId}`)
-    if (el) {
-      setTimeout(() => {
-        el.scrollIntoView({ block: 'center' })
-      }, 50)
-    }
-  }, [])
 
   if (isLoading) {
     return (
@@ -172,20 +157,9 @@ function AdminBloggersPageContent() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
           >
-            <Link
-              href={`/bloggers/${blogger.id}`}
-              scroll={false}
-              onClick={() => {
-                if (typeof window === 'undefined') return
-                // Запоминаем последнего открытого блогера в админке
-                sessionStorage.setItem(
-                  '__admin_bloggers_last_id',
-                  String(blogger.id),
-                )
-              }}
-            >
-            <Card hover className="cursor-pointer">
-              <CardContent className="p-6">
+            <Link href={`/bloggers/${blogger.id}`} scroll={false}>
+              <Card hover className="cursor-pointer">
+                <CardContent className="p-6">
                 <div className="flex items-start gap-4 min-w-0">
                   <Avatar
                     firstName={blogger.user?.firstName || ''}
@@ -252,28 +226,13 @@ function AdminBloggersPageContent() {
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
             </Link>
           </motion.div>
         ))}
       </div>
     </div>
-  )
-}
-
-export default function AdminBloggersPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-telegram-bg flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-telegram-primary mx-auto mb-4"></div>
-          <p className="text-telegram-textSecondary">Загрузка блогеров...</p>
-        </div>
-      </div>
-    }>
-      <AdminBloggersPageContent />
-    </Suspense>
   )
 }
 

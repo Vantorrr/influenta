@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Users, Eye, Shield, Ban, CheckCircle, Trash2, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Users, Eye, Shield, Ban, CheckCircle, Trash2, MessageSquare, Send } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
@@ -121,7 +121,10 @@ export default function BloggerDetailsPage() {
   if (error || !data) {
     return (
       <div className="min-h-screen bg-telegram-bg p-4">
-        <button onClick={() => router.push('/bloggers?restore=1')} className="flex items-center gap-2 text-telegram-primary mb-4">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-telegram-primary mb-4 hover:opacity-80 transition-opacity"
+        >
           <ArrowLeft className="w-4 h-4" /> Назад
         </button>
         <Card>
@@ -145,7 +148,10 @@ export default function BloggerDetailsPage() {
 
   return (
     <div className="min-h-screen bg-telegram-bg p-4 space-y-4">
-      <button onClick={() => router.push('/bloggers?restore=1')} className="flex items-center gap-2 text-telegram-primary">
+      <button
+        onClick={() => router.back()}
+        className="flex items-center gap-2 text-telegram-primary hover:opacity-80 transition-opacity"
+      >
         <ArrowLeft className="w-4 h-4" /> Назад
       </button>
 
@@ -226,12 +232,40 @@ export default function BloggerDetailsPage() {
                 size="sm"
                 onClick={async () => {
                   if (!confirm('Удалить пользователя (деактивация)?')) return
-                  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${blogger.user?.id || blogger.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` } })
+                  await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${blogger.user?.id || blogger.id}`,
+                    {
+                      method: 'DELETE',
+                      headers: { Authorization: `Bearer ${localStorage.getItem('influenta_token')}` },
+                    },
+                  )
                   router.back()
                 }}
               >
                 <Trash2 className="w-4 h-4 mr-1" /> Удалить
               </Button>
+              {(blogger.user?.username || blogger.user?.telegramUsername) && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    if (typeof window === 'undefined') return
+                    const username = (
+                      blogger.user?.username ||
+                      (blogger.user as any)?.telegramUsername ||
+                      ''
+                    )
+                      .toString()
+                      .replace('@', '')
+                      .trim()
+                    if (!username) return
+                    const url = `https://t.me/${username}`
+                    window.open(url, '_blank')
+                  }}
+                >
+                  <Send className="w-4 h-4 mr-1" /> Telegram
+                </Button>
+              )}
             </div>
           )}
         {isAdmin && showUnverifyInline && (
