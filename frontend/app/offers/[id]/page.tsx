@@ -126,11 +126,11 @@ export default function OfferDetailsPage() {
                     </div>
                   )}
                 </div>
-                {!isForBlogger && bloggerUser && (
+                {!isForBlogger && bloggerUser?.id && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => router.push(`/bloggers/${offer.blogger?.user?.id || offer.blogger?.id}`)}
+                    onClick={() => router.push(`/bloggers/${bloggerUser.id}`)}
                     className="px-0 text-telegram-primary"
                   >
                     Открыть профиль блогера

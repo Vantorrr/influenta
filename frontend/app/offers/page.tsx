@@ -102,11 +102,14 @@ export default function OffersPage() {
                           ? `От: ${offer.advertiser?.user?.firstName} ${offer.advertiser?.user?.lastName || ''}`
                           : `Блогеру: ${offer.blogger?.user?.firstName} ${offer.blogger?.user?.lastName || ''}`}
                       </p>
-                      {user?.role === 'advertiser' && (
+                      {user?.role === 'advertiser' && offer.blogger?.user?.id && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => router.push(`/bloggers/${offer.blogger?.user?.id || offer.blogger?.id}`)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            router.push(`/bloggers/${offer.blogger!.user!.id}`)
+                          }}
                           className="px-0 text-telegram-primary"
                         >
                           Открыть профиль блогера
