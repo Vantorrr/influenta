@@ -1,12 +1,30 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, Component, ReactNode } from 'react'
 import { ArrowLeft, Send } from 'lucide-react'
-import { Avatar } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { formatTime } from '@/lib/utils'
 import { messagesApi } from '@/lib/api'
 import { chatService } from '@/lib/chat.service'
+
+// Error Boundary для отлова ошибок рендера
+class ErrorBoundary extends Component<{ children: ReactNode; onError: () => void }, { hasError: boolean }> {
+  constructor(props: any) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  componentDidCatch(error: any, info: any) {
+    console.error('ChatWindow error:', error, info)
+    this.props.onError()
+  }
+  render() {
+    if (this.state.hasError) {
+      return null
+    }
+    return this.props.children
+  }
+}
 
 interface Message {
   id: string
@@ -25,21 +43,24 @@ interface ChatWindowProps {
 export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
-  const [isTyping, setIsTyping] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLTextAreaElement>(null)
-  const typingTimer = useRef<any>(null)
 
   // Безопасное получение данных
-  const responseId = chat?.responseId || ''
-  const otherUser = chat?.otherUser || {}
-  const otherFirstName = String(otherUser.firstName || 'Пользователь')
-  const otherLastName = String(otherUser.lastName || '')
-  const otherPhotoUrl = otherUser.photoUrl || undefined
-  const listingTitle = String(chat?.listingTitle || 'Объявление')
-  const chatStatus = chat?.status
+  let responseId = ''
+  let otherFirstName = 'Пользователь'
+  let otherLastName = ''
+  let listingTitle = 'Объявление'
+  
+  try {
+    responseId = chat?.responseId ? String(chat.responseId) : ''
+    otherFirstName = chat?.otherUser?.firstName ? String(chat.otherUser.firstName) : 'Пользователь'
+    otherLastName = chat?.otherUser?.lastName ? String(chat.otherUser.lastName) : ''
+    listingTitle = chat?.listingTitle ? String(chat.listingTitle) : 'Объявление'
+  } catch (e) {
+    console.error('Error parsing chat data:', e)
+  }
 
   useEffect(() => {
     if (!responseId) {
@@ -61,38 +82,44 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
 
         // Безопасно достаём массив
         let items: any[] = []
-        if (Array.isArray(res)) {
-          items = res
-        } else if (res && Array.isArray((res as any).data)) {
-          items = (res as any).data
+        try {
+          if (Array.isArray(res)) {
+            items = res
+          } else if (res && typeof res === 'object') {
+            if (Array.isArray((res as any).data)) {
+              items = (res as any).data
+            } else if (Array.isArray((res as any).items)) {
+              items = (res as any).items
+            }
+          }
+        } catch (e) {
+          console.error('Error extracting items:', e)
+          items = []
         }
 
         const parsed: Message[] = []
-        for (const m of items) {
-          if (!m || !m.id) continue
-          parsed.push({
-            id: String(m.id),
-            // Бэкенд возвращает text, фронт ожидает content
-            content: String(m.text || m.content || ''),
-            // Бэкенд возвращает userId, фронт ожидает senderId
-            senderId: String(m.userId || m.senderId || ''),
-            createdAt: new Date(m.createdAt || Date.now()),
-            isRead: Boolean(m.isRead),
-          })
+        for (let i = 0; i < items.length; i++) {
+          try {
+            const m = items[i]
+            if (!m) continue
+            parsed.push({
+              id: String(m.id || `msg-${i}`),
+              content: String(m.text || m.content || ''),
+              senderId: String(m.userId || m.senderId || ''),
+              createdAt: new Date(m.createdAt || Date.now()),
+              isRead: Boolean(m.isRead),
+            })
+          } catch (e) {
+            console.error('Error parsing message:', e)
+          }
         }
 
         setMessages(parsed.reverse())
         setLoading(false)
-
-        // Отмечаем как прочитанные
-        for (const m of parsed) {
-          if (!m.isRead && m.senderId !== currentUserId) {
-            messagesApi.markAsRead(m.id).catch(() => {})
-          }
-        }
       } catch (e) {
+        console.error('Error loading messages:', e)
         if (isMounted) {
-          setError('Ошибка загрузки')
+          setError('Ошибка загрузки сообщений')
           setLoading(false)
         }
       }
@@ -100,47 +127,16 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
 
     loadMessages()
 
-    // Socket
-    try {
-      chatService.joinChat(responseId)
-    } catch {}
-
-    const onNewMessage = (data: any) => {
-      if (!data || data.responseId !== responseId) return
-      const msg: Message = {
-        id: String(data.id || Date.now()),
-        content: String(data.text || data.content || ''),
-        senderId: String(data.userId || data.senderId || ''),
-        createdAt: new Date(data.createdAt || Date.now()),
-        isRead: Boolean(data.isRead),
-      }
-      setMessages(prev => [...prev, msg])
-      if (msg.senderId !== currentUserId) {
-        messagesApi.markAsRead(msg.id).catch(() => {})
-      }
-    }
-
-    const onTypingEvent = (data: any) => {
-      if (!data || data.responseId !== responseId || data.userId === currentUserId) return
-      setIsTyping(true)
-      clearTimeout(typingTimer.current)
-      typingTimer.current = setTimeout(() => setIsTyping(false), 1500)
-    }
-
-    chatService.on('message', onNewMessage)
-    chatService.on('typing', onTypingEvent)
-
     return () => {
       isMounted = false
-      try { chatService.leaveChat(responseId) } catch {}
-      chatService.off('message', onNewMessage)
-      chatService.off('typing', onTypingEvent)
     }
-  }, [responseId, currentUserId])
+  }, [responseId])
 
   // Автоскролл
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    try {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    } catch (e) {}
   }, [messages])
 
   const sendMessage = async () => {
@@ -160,17 +156,9 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
         isRead: Boolean(m.isRead),
       }
       setMessages(prev => [...prev, newMsg])
-      try { chatService.stopTyping(responseId) } catch {}
     } catch (e: any) {
-      alert('Не удалось отправить сообщение')
+      console.error('Send error:', e)
       setMessage(text)
-    }
-  }
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(e.target.value)
-    if (responseId) {
-      try { chatService.startTyping(responseId) } catch {}
     }
   }
 
@@ -181,12 +169,20 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
     }
   }
 
+  const formatTime = (date: Date) => {
+    try {
+      return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+    } catch {
+      return ''
+    }
+  }
+
   // Показ ошибки
   if (error) {
     return (
-      <div className="flex flex-col flex-1 h-full items-center justify-center p-4">
-        <p className="text-red-500 mb-4">{error}</p>
-        <button onClick={onBack} className="text-blue-500 underline">
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '100%', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+        <p style={{ color: 'red', marginBottom: 16 }}>{error}</p>
+        <button onClick={onBack} style={{ color: 'blue', textDecoration: 'underline' }}>
           Назад
         </button>
       </div>
@@ -194,96 +190,97 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
   }
 
   return (
-    <div className="flex flex-col flex-1 h-full">
-      {/* Заголовок */}
-      <div className="flex items-center gap-3 p-4 border-b border-gray-700/50 bg-telegram-bgSecondary">
-        <button onClick={onBack} className="md:hidden p-2 rounded-lg hover:bg-telegram-bg">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        
-        <Avatar
-          firstName={otherFirstName}
-          lastName={otherLastName}
-          src={otherPhotoUrl}
-          size="sm"
-        />
-        
-        <div className="flex-1">
-          <h3 className="font-medium flex items-center gap-2">
-            {otherFirstName} {otherLastName}
-            {chatStatus === 'accepted' && (
-              <Badge variant="success" className="text-xs">Сотрудничество</Badge>
-            )}
-          </h3>
-          <p className="text-xs text-telegram-textSecondary">{listingTitle}</p>
+    <ErrorBoundary onError={() => setError('Произошла ошибка')}>
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '100%' }}>
+        {/* Заголовок */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 16, borderBottom: '1px solid #333', background: '#1e1e1e' }}>
+          <button onClick={onBack} style={{ padding: 8, borderRadius: 8, background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}>
+            <ArrowLeft size={20} />
+          </button>
+          
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#3390ec', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 14 }}>
+            {otherFirstName.charAt(0)}
+          </div>
+          
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 500, color: 'white' }}>{otherFirstName} {otherLastName}</div>
+            <div style={{ fontSize: 12, color: '#888' }}>{listingTitle}</div>
+          </div>
         </div>
-      </div>
 
-      {/* Сообщения */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {loading && (
-          <div className="text-center text-telegram-textSecondary">Загрузка...</div>
-        )}
-        
-        {!loading && messages.length === 0 && (
-          <div className="text-center text-telegram-textSecondary">Нет сообщений</div>
-        )}
+        {/* Сообщения */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+          {loading && (
+            <div style={{ textAlign: 'center', color: '#888' }}>Загрузка...</div>
+          )}
+          
+          {!loading && messages.length === 0 && (
+            <div style={{ textAlign: 'center', color: '#888' }}>Нет сообщений</div>
+          )}
 
-        {messages.map((msg, idx) => {
-          const isOwn = msg.senderId === currentUserId
-          return (
-            <div key={`${msg.id}-${idx}`} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[75%] rounded-2xl px-4 py-2 ${
-                isOwn ? 'bg-telegram-primary text-white' : 'bg-telegram-bgSecondary'
-              }`}>
-                <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                <div className="flex items-center justify-end gap-1 mt-1">
-                  <span className="text-xs opacity-70">{formatTime(msg.createdAt)}</span>
-                  {isOwn && (
-                    <span className="text-xs opacity-70">{msg.isRead ? '✓✓' : '✓'}</span>
-                  )}
+          {messages.map((msg, idx) => {
+            const isOwn = msg.senderId === currentUserId
+            return (
+              <div key={`${msg.id}-${idx}`} style={{ display: 'flex', justifyContent: isOwn ? 'flex-end' : 'flex-start', marginBottom: 8 }}>
+                <div style={{ 
+                  maxWidth: '75%', 
+                  borderRadius: 16, 
+                  padding: '8px 16px',
+                  background: isOwn ? '#3390ec' : '#2a2a2a',
+                  color: 'white'
+                }}>
+                  <p style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{msg.content}</p>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4, marginTop: 4 }}>
+                    <span style={{ fontSize: 11, opacity: 0.7 }}>{formatTime(msg.createdAt)}</span>
+                    {isOwn && (
+                      <span style={{ fontSize: 11, opacity: 0.7 }}>{msg.isRead ? '✓✓' : '✓'}</span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )
-        })}
+            )
+          })}
 
-        {isTyping && (
-          <div className="flex justify-start">
-            <div className="bg-telegram-bgSecondary rounded-2xl px-4 py-2">
-              <span className="text-telegram-textSecondary">печатает...</span>
-            </div>
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Ввод */}
+        <div style={{ padding: 16, borderTop: '1px solid #333', background: '#1e1e1e' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Сообщение..."
+              style={{ 
+                flex: 1, 
+                background: '#2a2a2a', 
+                border: '1px solid #444', 
+                borderRadius: 12, 
+                padding: '8px 16px', 
+                resize: 'none',
+                color: 'white',
+                outline: 'none'
+              }}
+              rows={1}
+            />
+            <button
+              onClick={sendMessage}
+              disabled={!message.trim()}
+              style={{ 
+                padding: 12, 
+                borderRadius: 12, 
+                border: 'none',
+                cursor: message.trim() ? 'pointer' : 'not-allowed',
+                background: message.trim() ? '#3390ec' : '#444',
+                color: message.trim() ? 'white' : '#888'
+              }}
+            >
+              <Send size={20} />
+            </button>
           </div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Ввод */}
-      <div className="p-4 border-t border-gray-700/50 bg-telegram-bgSecondary">
-        <div className="flex items-end gap-2">
-          <textarea
-            ref={inputRef}
-            value={message}
-            onChange={handleInputChange}
-            onKeyPress={handleKeyPress}
-            placeholder="Сообщение..."
-            className="flex-1 bg-telegram-bg border border-gray-600 rounded-xl px-4 py-2 resize-none focus:outline-none focus:border-telegram-primary"
-            rows={1}
-          />
-          <button
-            onClick={sendMessage}
-            disabled={!message.trim()}
-            className={`p-3 rounded-xl ${
-              message.trim()
-                ? 'bg-telegram-primary text-white'
-                : 'bg-gray-600 text-gray-400'
-            }`}
-          >
-            <Send className="w-5 h-5" />
-          </button>
         </div>
       </div>
-    </div>
+    </ErrorBoundary>
   )
 }
