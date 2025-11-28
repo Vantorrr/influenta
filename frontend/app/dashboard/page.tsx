@@ -271,11 +271,11 @@ export default function DashboardPage() {
                 {userRole === 'admin'
                   ? 'Добро пожаловать в панель управления! Управляйте платформой и следите за метриками.'
                   : userRole === 'blogger'
-                    ? stats?.activeResponses > 0
-                      ? `У вас ${stats.activeResponses} ${stats.activeResponses === 1 ? 'новое предложение' : 'новых предложений'}`
+                    ? (stats?.activeResponses || 0) > 0
+                      ? `У вас ${stats?.activeResponses} ${stats?.activeResponses === 1 ? 'новое предложение' : 'новых предложений'}`
                       : 'Новых предложений пока нет'
-                    : stats?.totalResponses > 0
-                      ? `Получено откликов: ${stats.totalResponses}`
+                    : (stats?.totalResponses || 0) > 0
+                      ? `Получено откликов: ${stats?.totalResponses}`
                       : 'Откликов пока нет'}
               </motion.p>
             

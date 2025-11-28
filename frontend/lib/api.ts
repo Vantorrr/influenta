@@ -293,14 +293,23 @@ export const messagesApi = {
 }
 
 // Stats API
+export interface DashboardStats {
+  profileViews: number
+  profileViewsChange?: number
+  activeResponses?: number
+  activeResponsesChange?: number
+  activeCampaigns?: number
+  activeCampaignsChange?: number
+  totalResponses?: number
+  totalResponsesChange?: number
+  firstListingWithResponses?: string | null
+  recentActivity: any[]
+  totalSpent?: number
+  roi?: number
+}
+
 export const statsApi = {
-  async getDashboard(): Promise<ApiResponse<{
-    totalBloggers: number
-    totalAdvertisers: number
-    activeListings: number
-    totalResponses: number
-    recentActivity: any[]
-  }>> {
+  async getDashboard(): Promise<DashboardStats> {
     const response = await api.get('/stats/dashboard')
     return response.data
   },
