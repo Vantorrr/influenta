@@ -112,20 +112,12 @@ function MessagesPageContent() {
           }
         })
         
-        // Сортируем по дате последнего сообщения (сначала новые)
+        // Сортируем по дате
         normalized.sort((a, b) => b.lastMessage.createdAt.getTime() - a.lastMessage.createdAt.getTime())
 
-        // Убираем дубликаты чатов (оставляем один чат на одного пользователя - самый свежий)
-        const uniqueChats: Chat[] = []
-        const seenUsers = new Set()
-        
-        for (const chat of normalized) {
-          if (!seenUsers.has(chat.otherUser.id)) {
-            uniqueChats.push(chat)
-            seenUsers.add(chat.otherUser.id)
-          }
-        }
-        
+        // Убираем только полные дубли (по ID отклика)
+        // Если с одним пользователем несколько РАЗНЫХ диалогов (по разным объявлениям), показываем все
+        const uniqueChats = Array.from(new Map(normalized.map(item => [item.responseId, item])).values())
         setChats(uniqueChats)
       } catch {
         setChats([])
