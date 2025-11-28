@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { motion } from 'framer-motion'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { 
   Search as SearchIcon, 
   SlidersHorizontal, 
@@ -10,7 +10,8 @@ import {
   Shield, 
   Eye, 
   MessageCircle, 
-  Star 
+  Star,
+  ArrowLeft 
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -26,6 +27,7 @@ import { FilterModal } from '@/components/bloggers/FilterModal'
 
 // Компонент с контентом страницы (внутри Suspense)
 function BloggersPageContent() {
+  const router = useRouter()
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<BloggerFilters>({})
   const [bloggers, setBloggers] = useState<any[]>([])
@@ -75,10 +77,13 @@ function BloggersPageContent() {
         const data = await bloggersApi.search(query, 1, 500)
         const items = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : [])
         
-        // Сортировка: сначала верифицированные, потом по подписчикам
+        // Сортировка: сначала верифицированные, потом по дате регистрации (новые сверху)
         const sorted = [...items].sort((a: any, b: any) => {
           if (a.isVerified !== b.isVerified) return a.isVerified ? -1 : 1
-          return (b.subscribersCount || 0) - (a.subscribersCount || 0)
+          // Fallback to ID if createdAt missing to ensure consistent order
+          const dateA = new Date(a.user?.createdAt || a.createdAt || 0).getTime()
+          const dateB = new Date(b.user?.createdAt || b.createdAt || 0).getTime()
+          return dateB - dateA
         })
         setBloggers(sorted)
       } catch (e: any) {
@@ -124,7 +129,15 @@ function BloggersPageContent() {
     <div className="space-y-6 pb-20">
       {/* Header & Search */}
       <div className="sticky top-0 z-10 bg-telegram-bg/95 backdrop-blur-md py-4 space-y-4 border-b border-white/5 -mx-4 px-4 md:mx-0 md:px-0">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.back()}
+            className="h-8 w-8 -ml-2 text-telegram-textSecondary hover:text-white"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
           <div>
             <h1 className="text-2xl font-bold text-white">Блогеры</h1>
             <p className="text-sm text-telegram-textSecondary">
