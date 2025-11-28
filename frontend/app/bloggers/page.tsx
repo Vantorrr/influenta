@@ -123,14 +123,6 @@ function BloggersPageContent() {
       {/* Header & Search */}
       <div className="sticky top-0 z-40 bg-telegram-bg/95 backdrop-blur-md py-4 space-y-4 border-b border-white/5 -mx-4 px-4 md:mx-0 md:px-0">
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.back()}
-            className="h-8 w-8 -ml-2 p-0 text-telegram-textSecondary hover:text-white"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
           <div>
             <h1 className="text-2xl font-bold text-white">Блогеры</h1>
             <p className="text-sm text-telegram-textSecondary">
