@@ -47,7 +47,8 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
     const load = async () => {
       try {
         const res = await messagesApi.getByResponse(chat.responseId, 1, 200)
-        const raw = (res as any)?.data || res?.data || []
+        // Handle both paginated response { data: [...] } and direct array response [...]
+        const raw = (res as any)?.data || (Array.isArray(res) ? res : [])
         const items = Array.isArray(raw) ? raw : []
         
         if (!isMounted) return
@@ -77,6 +78,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
     // Слушатель новых сообщений
     const onNewMessage = (data: any) => {
       if (data?.responseId !== chat.responseId) return
+      
       const incoming: Message = {
         id: data.id,
         content: data.content,
@@ -84,7 +86,12 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
         createdAt: new Date(data.createdAt || Date.now()),
         isRead: data.isRead ?? (data.senderId === currentUserId),
       }
-      setMessages(prev => [...prev, incoming])
+
+      setMessages(prev => {
+        if (prev.some(m => m.id === incoming.id)) return prev
+        return [...prev, incoming]
+      })
+
       if (incoming.senderId !== currentUserId && !incoming.isRead) {
         try { messagesApi.markAsRead(incoming.id) } catch {}
       }
@@ -127,7 +134,10 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
         createdAt: new Date(m.createdAt || Date.now()),
         isRead: !!m.isRead,
       }
-      setMessages(prev => [...prev, newMessage])
+      setMessages(prev => {
+        if (prev.some(msg => msg.id === newMessage.id)) return prev
+        return [...prev, newMessage]
+      })
       try { chatService.stopTyping(chat.responseId) } catch {}
     } catch (e: any) {
       console.error('❌ Message send error:', e)
