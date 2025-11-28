@@ -59,7 +59,11 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
           createdAt: new Date(m.createdAt),
           isRead: !!m.isRead,
         }))
-        setMessages(normalized.reverse())
+        
+        // Deduplicate messages by ID to prevent key collisions
+        const uniqueMessages = Array.from(new Map(normalized.map((m: any) => [m.id, m])).values())
+        
+        setMessages((uniqueMessages as Message[]).reverse())
         // Отметим как прочитанные входящие
         for (const m of normalized) {
           if (!m.isRead && m.senderId !== currentUserId) {
