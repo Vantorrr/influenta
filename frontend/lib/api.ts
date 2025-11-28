@@ -182,20 +182,6 @@ export const listingsApi = {
     })
     return response.data
   },
-  async create(data: Partial<Listing>): Promise<ApiResponse<Listing>> {
-    const response = await api.post('/listings', data)
-    return response.data
-  },
-
-  async update(id: string, data: Partial<Listing>): Promise<ApiResponse<Listing>> {
-    const response = await api.patch(`/listings/${id}`, data)
-    return response.data
-  },
-
-  async delete(id: string): Promise<ApiResponse<void>> {
-    const response = await api.delete(`/listings/${id}`)
-    return response.data
-  },
 
   async updateStatus(id: string, status: string): Promise<ApiResponse<Listing>> {
     const response = await api.patch(`/listings/${id}/status`, { status })
