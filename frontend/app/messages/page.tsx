@@ -70,6 +70,23 @@ function MessagesPageContent() {
   const [chats, setChats] = useState<Chat[]>([])
   const currentUserId = user?.id || ''
 
+  const ensureArray = (value: any): any[] => {
+    if (Array.isArray(value)) return value
+    if (Array.isArray(value?.items)) return value.items
+    if (Array.isArray(value?.data)) return value.data
+    return []
+  }
+
+  const normalizeContent = (value: any): string => {
+    if (typeof value === 'string') return value
+    if (value == null) return ''
+    try {
+      return JSON.stringify(value)
+    } catch {
+      return String(value)
+    }
+  }
+
   // Загрузка реального списка чатов
   useEffect(() => {
     if (!user) return
@@ -77,7 +94,7 @@ function MessagesPageContent() {
       try {
         const res = await messagesApi.getChatList()
         const rawRows = (res as any)?.data ?? res
-        const rows = Array.isArray(rawRows) ? rawRows : []
+        const rows = ensureArray(rawRows)
         const normalized: Chat[] = rows.map((row: any) => {
           // Определяем, кто я: блогер (автор отклика) или рекламодатель (владелец объявления)
           const iAmBlogger = user.role === 'blogger'
@@ -99,7 +116,7 @@ function MessagesPageContent() {
               role: iAmBlogger ? 'advertiser' : 'blogger',
             },
             lastMessage: lastMessageData ? {
-              content: typeof lastMessageData.content === 'object' ? JSON.stringify(lastMessageData.content) : String(lastMessageData.content || ''),
+              content: normalizeContent(lastMessageData.content),
               createdAt: lastMessageData.createdAt ? new Date(lastMessageData.createdAt) : new Date(),
               isRead: !!lastMessageData.isRead,
               senderId: lastMessageData.senderId,
@@ -127,7 +144,7 @@ function MessagesPageContent() {
       try {
         const res = await messagesApi.getByResponse(selectedChat.responseId, 1, 50)
         const rawItems = (res as any)?.data ?? res
-        const items = Array.isArray(rawItems) ? rawItems : []
+        const items = ensureArray(rawItems)
         for (const m of items) {
           if (!m.isRead && m.senderId !== currentUserId) {
             try { await messagesApi.markAsRead(m.id) } catch {}

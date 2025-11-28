@@ -39,6 +39,23 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const typingTimer = useRef<any>(null)
 
+  const ensureArray = (value: any): any[] => {
+    if (Array.isArray(value)) return value
+    if (Array.isArray(value?.items)) return value.items
+    if (Array.isArray(value?.data)) return value.data
+    return []
+  }
+
+  const normalizeContent = (value: any): string => {
+    if (typeof value === 'string') return value
+    if (value == null) return ''
+    try {
+      return JSON.stringify(value)
+    } catch {
+      return String(value)
+    }
+  }
+
   // Загрузка реальных сообщений и подключение к комнате
   useEffect(() => {
     let isMounted = true
@@ -46,11 +63,11 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
       try {
         const res = await messagesApi.getByResponse(chat.responseId, 1, 200)
         const raw = (res as any)?.data ?? res
-        const items = Array.isArray(raw) ? raw : []
+        const items = ensureArray(raw)
         if (!isMounted) return
         const normalized = items.map((m: any) => ({
           id: m.id || Math.random().toString(), // Safety fix: ensure ID exists
-          content: typeof m.content === 'object' ? JSON.stringify(m.content) : String(m.content || ''), // Safety fix: ensure string
+          content: normalizeContent(m.content), // Safety fix: ensure string
           senderId: m.senderId,
           createdAt: new Date(m.createdAt),
           isRead: !!m.isRead,
@@ -116,10 +133,11 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
       console.log('📤 Sending message:', { responseId: chat.responseId, content })
       const res = await messagesApi.send(chat.responseId, content)
       console.log('✅ Message sent:', res)
-      const m = (res as any)?.data ?? res ?? {}
+      const payload = (res as any)?.data ?? res ?? {}
+      const m = payload?.message ?? payload
       const newMessage: Message = {
         id: m.id || Date.now().toString(),
-        content: typeof m.content === 'object' ? JSON.stringify(m.content) : String(m.content || content),
+        content: normalizeContent(m.content ?? content),
         senderId: m.senderId || currentUserId,
         createdAt: new Date(m.createdAt || Date.now()),
         isRead: !!m.isRead,
@@ -251,7 +269,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
                     }`}
                   >
                     <p className="whitespace-pre-wrap break-words leading-relaxed text-[15px]">
-                      {typeof msg.content === 'object' ? JSON.stringify(msg.content) : String(msg.content || '')}
+                      {normalizeContent(msg.content)}
                     </p>
                     
                   </div>
