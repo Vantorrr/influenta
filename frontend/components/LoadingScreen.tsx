@@ -9,248 +9,183 @@ export function LoadingScreen() {
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
-    // Анимация прогресса
-    const progressInterval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(progressInterval)
-          return 100
-        }
-        return prev + 5
-      })
-    }, 50)
+    // Плавная и неравномерная анимация прогресса для реалистичности
+    const steps = [10, 25, 45, 60, 80, 90, 100]
+    let currentStep = 0
 
-    // Минимальное время показа загрузочного экрана
+    const interval = setInterval(() => {
+      if (currentStep >= steps.length) {
+        clearInterval(interval)
+        return
+      }
+      
+      const target = steps[currentStep]
+      setProgress(prev => {
+        const diff = target - prev
+        // Если мы близко к цели шага, переходим к следующему
+        if (diff <= 1) {
+          currentStep++
+          return target
+        }
+        // Иначе плавно приближаемся
+        return prev + Math.ceil(diff * 0.1)
+      })
+    }, 100)
+
+    // Гарантированное время показа
     const timer = setTimeout(() => {
       setIsLoading(false)
-    }, 2000)
+    }, 2500)
 
     return () => {
       clearTimeout(timer)
-      clearInterval(progressInterval)
+      clearInterval(interval)
     }
   }, [])
-
-  const particles = Array.from({ length: 20 }, (_, i) => ({
-    id: i,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    size: Math.random() * 4 + 2,
-    delay: Math.random() * 2,
-  }))
 
   return (
     <AnimatePresence>
       {isLoading && (
         <motion.div
           initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.8 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-telegram-bg overflow-hidden"
+          exit={{ opacity: 0, filter: 'blur(10px)', scale: 1.1 }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#0F1115] overflow-hidden"
         >
-          {/* Анимированные частицы на фоне */}
-          <div className="absolute inset-0">
-            {particles.map((particle) => (
-              <motion.div
-                key={particle.id}
-                className="absolute rounded-full bg-telegram-accent opacity-20"
-                style={{
-                  left: `${particle.x}%`,
-                  top: `${particle.y}%`,
-                  width: particle.size,
-                  height: particle.size,
-                }}
-                animate={{
-                  y: [-20, -100],
-                  opacity: [0.2, 0],
-                }}
-                transition={{
-                  duration: 3,
-                  delay: particle.delay,
-                  repeat: Infinity,
-                  ease: "easeOut",
-                }}
-              />
-            ))}
+          {/* Фоновые эффекты (Aurora Borealis) */}
+          <div className="absolute inset-0 w-full h-full opacity-40">
+            <motion.div 
+              animate={{ 
+                rotate: [0, 360],
+                scale: [1, 1.2, 1],
+                x: [0, 50, 0],
+                y: [0, 30, 0]
+              }}
+              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+              className="absolute -top-[20%] -left-[20%] w-[70%] h-[70%] rounded-full bg-blue-600/20 blur-[120px]" 
+            />
+            <motion.div 
+              animate={{ 
+                rotate: [0, -360],
+                scale: [1, 1.3, 1],
+                x: [0, -30, 0], 
+                y: [0, 50, 0]
+              }}
+              transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+              className="absolute top-[20%] -right-[20%] w-[60%] h-[60%] rounded-full bg-purple-600/20 blur-[120px]" 
+            />
+            <motion.div 
+              animate={{ 
+                scale: [1, 1.5, 1],
+                opacity: [0.1, 0.2, 0.1]
+              }}
+              transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute bottom-[10%] left-[20%] w-[50%] h-[50%] rounded-full bg-amber-500/10 blur-[100px]" 
+            />
           </div>
 
-          <div className="text-center relative">
-            {/* Внешние кольца */}
-            <div className="absolute inset-0 flex items-center justify-center">
+          <div className="relative z-10 flex flex-col items-center">
+            {/* Логотип с эффектом свечения и пульсации */}
+            <div className="relative mb-8">
+              {/* Внешнее кольцо */}
               <motion.div
-                animate={{ rotate: 360, scale: [1, 1.1, 1] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                className="absolute w-40 h-40 rounded-full border border-telegram-primary/20"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 1, delay: 0.2 }}
+                className="absolute inset-0 -m-4 rounded-full bg-gradient-to-tr from-blue-500/20 to-purple-500/20 blur-xl"
               />
+              
               <motion.div
-                animate={{ rotate: -360, scale: [1, 1.2, 1] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
-                className="absolute w-48 h-48 rounded-full border border-telegram-accent/10"
-              />
-            </div>
-
-            {/* Логотип с анимацией */}
-            <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ duration: 0.8, type: "spring", stiffness: 260, damping: 20 }}
-              className="mb-8"
-            >
-              <div className="relative">
-                <motion.div
-                  animate={{ scale: [1, 1.05, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="relative mx-auto flex items-center justify-center"
-                >
+                initial={{ scale: 0.8, opacity: 0, rotateX: 90 }}
+                animate={{ scale: 1, opacity: 1, rotateX: 0 }}
+                transition={{ duration: 1.2, type: "spring", bounce: 0.4 }}
+                className="relative"
+              >
+                <div className="relative w-28 h-28 rounded-3xl overflow-hidden shadow-[0_0_40px_-10px_rgba(59,130,246,0.5)] border border-white/10">
                   <Image
                     src="/logo.jpg"
                     alt="Influenta"
-                    width={96}
-                    height={96}
-                    className="rounded-2xl"
+                    fill
+                    className="object-cover"
+                    priority
                   />
-                </motion.div>
-              </div>
-            </motion.div>
+                  {/* Блик на логотипе */}
+                  <motion.div
+                    animate={{ x: ['-100%', '200%'] }}
+                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
+                    className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12"
+                  />
+                </div>
+              </motion.div>
+            </div>
 
-            {/* Название с эффектом печатания */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="mb-2"
-            >
-              <motion.h1
-                className="text-4xl font-bold bg-gradient-to-r from-telegram-primary via-telegram-accent to-telegram-primary bg-clip-text text-transparent"
-                animate={{
-                  backgroundPosition: ["0%", "100%", "0%"],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "linear",
-                }}
-                style={{
-                  backgroundSize: "200% 100%",
-                }}
+            {/* Типографика */}
+            <div className="text-center space-y-2">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.8 }}
+                className="relative"
               >
-                Influenta
-              </motion.h1>
-            </motion.div>
-
-            {/* Подзаголовок с анимацией появления по словам */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
-              className="mb-12"
-            >
-              {["Платформа", "для", "блогеров", "и", "рекламодателей"].map((word, index) => (
-                <motion.span
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 1 + index * 0.1 }}
-                  className="text-telegram-textSecondary inline-block mr-1"
+                <h1 className="text-5xl font-bold tracking-tight text-white mb-1">
+                  Influenta
+                </h1>
+                {/* Градиентный текст поверх (маска) */}
+                <motion.h1
+                  className="absolute top-0 left-0 w-full text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 bg-[length:200%_auto]"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0, 1, 0], backgroundPosition: ['0%', '200%'] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                 >
-                  {word}
-                </motion.span>
-              ))}
-            </motion.div>
+                  Influenta
+                </motion.h1>
+              </motion.div>
 
-            {/* Прогресс-бар */}
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 1.5 }}
-              className="w-64 mx-auto"
-            >
-              <div className="relative h-1 bg-telegram-bgSecondary rounded-full overflow-hidden">
-                <motion.div
-                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-telegram-primary to-telegram-accent rounded-full"
-                  style={{ width: `${progress}%` }}
-                  transition={{ duration: 0.3 }}
-                />
-                <motion.div
-                  className="absolute inset-y-0 bg-white/20 rounded-full"
-                  animate={{
-                    x: ["-100%", "200%"],
-                  }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    ease: "linear",
-                  }}
-                  style={{ width: "50%" }}
-                />
-              </div>
-              
-              {/* Процент загрузки */}
-              <motion.p
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 1.8 }}
-                className="text-xs text-telegram-textSecondary mt-2"
+                transition={{ delay: 0.8, duration: 0.8 }}
+                className="flex items-center justify-center gap-2 text-sm font-medium text-gray-400 uppercase tracking-widest"
               >
-                {progress}%
-              </motion.p>
-            </motion.div>
+                <span>Connect</span>
+                <span className="w-1 h-1 rounded-full bg-blue-500" />
+                <span>Create</span>
+                <span className="w-1 h-1 rounded-full bg-purple-500" />
+                <span>Grow</span>
+              </motion.div>
+            </div>
 
-            {/* Индикатор загрузки с пульсацией */}
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 2 }}
-              className="flex items-center justify-center gap-3 mt-8"
+            {/* Прогресс бар High-Tech */}
+            <motion.div 
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: 200 }}
+              transition={{ delay: 1, duration: 0.5 }}
+              className="mt-12 relative h-1 bg-white/5 rounded-full overflow-hidden"
             >
-              {[0, 1, 2].map((i) => (
-                <motion.div
-                  key={i}
-                  className="relative"
-                >
-                  <motion.div
-                    animate={{
-                      scale: [1, 1.5, 1],
-                      opacity: [1, 0.5, 1],
-                    }}
-                    transition={{
-                      duration: 1.5,
-                      repeat: Infinity,
-                      delay: i * 0.2,
-                    }}
-                    className="absolute inset-0 w-4 h-4 rounded-full bg-telegram-primary/30"
-                  />
-                  <motion.div
-                    animate={{
-                      y: [0, -12, 0],
-                    }}
-                    transition={{
-                      duration: 0.8,
-                      repeat: Infinity,
-                      delay: i * 0.2,
-                    }}
-                    className="relative w-4 h-4 rounded-full bg-gradient-to-br from-telegram-primary to-telegram-accent"
-                  />
-                </motion.div>
-              ))}
+              <motion.div 
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-purple-500"
+                style={{ width: `${progress}%` }}
+                transition={{ type: "spring", stiffness: 50 }}
+              />
+              {/* Светящаяся точка в конце полосы */}
+              <motion.div
+                className="absolute top-1/2 -mt-1.5 h-3 w-3 bg-white rounded-full shadow-[0_0_10px_white]"
+                style={{ left: `${progress}%` }}
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1, repeat: Infinity }}
+              />
             </motion.div>
+            
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-2 text-[10px] text-gray-600 font-mono"
+            >
+              LOADING_MODULES... {progress}%
+            </motion.p>
           </div>
         </motion.div>
       )}
     </AnimatePresence>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
