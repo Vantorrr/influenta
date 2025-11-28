@@ -17,6 +17,7 @@ import {
   ExternalLink
 } from 'lucide-react'
 import { Layout } from '@/components/layout/Layout'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatNumber } from '@/lib/utils'
@@ -55,6 +56,12 @@ export default function DashboardPage() {
   })
   const [activeIdx, setActiveIdx] = useState<number | null>(null)
 
+  // Colors for chart
+  const colorBySeries: Record<string, { dot: string }> = {
+    'Просмотры': { dot: 'bg-blue-500' },
+    'Отклики': { dot: 'bg-purple-500' },
+  }
+  
   useEffect(() => {
     const pendingDeepLink = localStorage.getItem('pendingDeepLink')
     if (pendingDeepLink) {
@@ -250,62 +257,94 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* 4. Chart (Always Visible Placeholder) */}
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="rounded-2xl bg-[#1C1E20] border border-white/5 p-4 relative overflow-hidden"
-        >
-          {/* Blurred background blob */}
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl" />
-          
-          <div className="flex items-center justify-between mb-4 relative z-10">
-            <h3 className="text-sm font-medium text-white/90 flex items-center gap-2">
-              <Activity className="w-4 h-4 text-blue-400" />
-              Активность
-            </h3>
+        {/* 4. Chart (Returned to Original Style with Mock Data Support) */}
+        <Card className="bg-[#1C1E20] border-white/5">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm font-medium text-white">
+              {userRole === 'blogger' ? 'Динамика: просмотры и отклики (7 дней)' : 'Динамика откликов (7 дней)'}
+            </CardTitle>
             {isFakeData && (
               <span className="text-[10px] text-white/30 px-2 py-0.5 rounded-full bg-white/5">Демо данные</span>
             )}
-          </div>
-          
-          <div className="flex items-end gap-1 h-32 relative z-10">
-            {chartData.labels.map((label: string, idx: number) => {
-              // Calculate height based on max value
-              const max = Math.max(...chartData.series.flatMap((s: any) => s.data), 1)
-              const sumAtIdx = chartData.series.reduce((acc: number, s: any) => acc + (s.data[idx] || 0), 0)
-              const h = Math.round((sumAtIdx / max) * 100)
-              const isSelected = activeIdx === idx
-              
-              return (
-                <div 
-                  key={idx} 
-                  className="flex-1 flex flex-col items-center gap-1 cursor-pointer group"
-                  onClick={() => !isFakeData && setActiveIdx(prev => prev === idx ? null : idx)}
-                >
-                  <div className="relative w-full h-full flex items-end rounded-sm overflow-hidden bg-white/[0.02] group-hover:bg-white/[0.05] transition-colors">
-                    <motion.div
-                      initial={{ height: 0 }}
-                      animate={{ height: `${Math.max(h, 5)}%` }}
-                      transition={{ type: "spring", bounce: 0, duration: 0.8, delay: idx * 0.05 }}
-                      className={`w-full ${isSelected ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-gradient-to-t from-blue-500/40 to-cyan-400/40 group-hover:from-blue-500/60 group-hover:to-cyan-400/60'} transition-all rounded-t-sm`}
-                    />
-                  </div>
+          </CardHeader>
+          <CardContent>
+            {chartData?.labels?.length ? (
+              <div className="space-y-4">
+                {/* Итоги за 7 дней */}
+                <div className="flex flex-wrap gap-2 text-xs">
+                  {chartData.series.map(s => {
+                    const total = (s.data || []).reduce((a, b) => a + (b || 0), 0)
+                    return (
+                      <div key={s.name} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/5">
+                        <span className={`inline-block w-2 h-2 rounded-full ${colorBySeries[s.name]?.dot || 'bg-blue-500'}`} />
+                        <span className="text-white/60">{s.name}:</span>
+                        <span className="font-semibold text-white">{formatNumber(total)}</span>
+                      </div>
+                    )
+                  })}
                 </div>
-              )
-            })}
-          </div>
-          
-          {activeIdx !== null && !isFakeData && (
-             <div className="mt-3 pt-3 border-t border-white/5 flex justify-between text-xs text-white/60">
-               <span>{chartData.labels[activeIdx]}</span>
-               <span className="text-white font-medium">
-                 {chartData.series.reduce((acc: any, s: any) => acc + (s.data[activeIdx] || 0), 0)} событий
-               </span>
-             </div>
-          )}
-        </motion.div>
+
+                {/* Столбцы по дням */}
+                <div className="grid grid-cols-7 gap-2 items-end h-40">
+                  {(() => {
+                    const max = Math.max(
+                      ...chartData.series.flatMap(s => s.data),
+                      1
+                    )
+                    return chartData.labels.map((label, idx) => {
+                      const sumAtIdx = chartData.series.reduce((acc, s) => acc + (s.data[idx] || 0), 0)
+                      const h = Math.round((sumAtIdx / max) * 100)
+                      return (
+                        <div 
+                          key={label} 
+                          className="flex flex-col items-center gap-1 cursor-pointer group"
+                          onMouseEnter={() => setActiveIdx(idx)}
+                          onMouseLeave={() => setActiveIdx(null)}
+                          onClick={() => !isFakeData && setActiveIdx(prev => prev === idx ? null : idx)}
+                        >
+                          <div className="text-[10px] font-semibold text-white/80 h-4 transition-opacity">
+                            {sumAtIdx > 0 ? sumAtIdx : ''}
+                          </div>
+                          <div className="w-full bg-white/5 rounded-md overflow-hidden h-32 flex items-end border border-white/5 group-hover:border-white/10 transition-colors">
+                            <motion.div
+                              initial={{ height: 0 }}
+                              animate={{ height: `${Math.max(h, 5)}%` }}
+                              className="w-full bg-gradient-to-t from-blue-600 to-cyan-500 rounded-sm opacity-80 group-hover:opacity-100 transition-opacity"
+                            />
+                          </div>
+                          <span className="text-[9px] text-white/40 font-medium">{label.slice(5)}</span>
+                        </div>
+                      )
+                    })
+                  })()}
+                </div>
+                
+                {/* Детализация по активному дню */}
+                {typeof activeIdx === 'number' && activeIdx >= 0 && !isFakeData && (
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="text-xs font-medium mb-2 text-white/80">Детали за {chartData.labels[activeIdx]}</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                      {chartData.series.map(s => (
+                        <div key={s.name} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className={`inline-block w-2 h-2 rounded-full ${colorBySeries[s.name]?.dot || 'bg-blue-500'}`} />
+                            <span className="text-white/60">{s.name}</span>
+                          </div>
+                          <span className="font-semibold text-white">{formatNumber(s.data[activeIdx] || 0)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="h-48 flex flex-col items-center justify-center text-white/30 gap-2">
+                <Activity className="w-8 h-8 opacity-50" />
+                <p className="text-sm">Нет данных за неделю</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* 5. Minimal Support Link */}
         <div className="flex justify-center pt-2 pb-6">
