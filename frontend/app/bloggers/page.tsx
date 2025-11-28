@@ -176,13 +176,14 @@ function BloggersPageContent() {
             <Link
               href={`/bloggers/${blogger.id}`}
               scroll={false}
+              className="block touch-manipulation"
               onClick={() => {
                 if (typeof window === 'undefined') return
                 sessionStorage.setItem('__bloggers_last_id', String(blogger.id))
               }}
             >
-              <Card className="group relative overflow-hidden border-white/5 bg-[#1C1E20]">
-                {/* Subtle highlight on hover */}
+              <Card className="group relative overflow-hidden border-white/5 bg-[#1C1E20] active:scale-[0.98] transition-transform duration-100">
+                {/* Subtle highlight on hover (desktop only) */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent opacity-0 md:group-hover:opacity-100 transition-opacity pointer-events-none" />
                 
                 <CardContent className="p-4">
