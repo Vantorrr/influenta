@@ -55,12 +55,6 @@ export default function DashboardPage() {
   })
   const [activeIdx, setActiveIdx] = useState<number | null>(null)
 
-  // Colors for chart
-  const colorBySeries: Record<string, { dot: string }> = {
-    'Просмотры': { dot: 'bg-blue-500' },
-    'Отклики': { dot: 'bg-purple-500' },
-  }
-  
   useEffect(() => {
     const pendingDeepLink = localStorage.getItem('pendingDeepLink')
     if (pendingDeepLink) {
@@ -75,14 +69,16 @@ export default function DashboardPage() {
 
   const userRole = isAdmin ? 'admin' : (user?.role || 'blogger')
 
+  // Stats Data with Colors
   const bloggerStats = [
     {
       title: 'Просмотры',
       value: stats?.profileViews ? formatNumber(stats.profileViews) : '0',
       change: stats?.profileViewsChange,
       icon: Eye,
-      color: 'text-blue-400',
-      bg: 'bg-blue-500/10',
+      color: 'text-cyan-400',
+      bg: 'bg-cyan-500/10',
+      border: 'border-cyan-500/20'
     },
     {
       title: 'Отклики',
@@ -91,6 +87,7 @@ export default function DashboardPage() {
       icon: MessageSquare,
       color: 'text-purple-400',
       bg: 'bg-purple-500/10',
+      border: 'border-purple-500/20',
       action: () => router.push('/messages')
     },
   ]
@@ -103,6 +100,7 @@ export default function DashboardPage() {
       icon: Briefcase,
       color: 'text-blue-400',
       bg: 'bg-blue-500/10',
+      border: 'border-blue-500/20'
     },
     {
       title: 'Отклики',
@@ -111,33 +109,50 @@ export default function DashboardPage() {
       icon: MessageSquare,
       color: 'text-purple-400',
       bg: 'bg-purple-500/10',
+      border: 'border-purple-500/20',
       action: () => router.push('/listings')
     },
   ]
 
   const currentStats = userRole === 'blogger' ? bloggerStats : advertiserStats
 
+  // Mock data for empty chart to look pretty
+  const chartData = (series?.labels?.length && series.series.some(s => s.data.some(v => v > 0))) 
+    ? series 
+    : {
+        labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+        series: [{ name: 'Активность', data: [5, 8, 12, 15, 10, 18, 25] }] // Fake data for visuals
+      }
+  
+  const isFakeData = !series?.labels?.length
+
   return (
     <Layout>
-      <div className="container py-4 space-y-4">
-        {/* 1. Compact Status Card */}
+      {/* Ambient Background Glow */}
+      <div className="fixed top-0 left-0 right-0 h-[500px] bg-gradient-to-b from-blue-900/20 to-transparent pointer-events-none z-0" />
+      
+      <div className="container py-4 space-y-4 relative z-10">
+        {/* 1. Status Card with Glassmorphism */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-2xl border border-white/10 shadow-xl bg-[#1C1E20]"
+          className="relative overflow-hidden rounded-2xl border border-white/10 shadow-2xl backdrop-blur-md bg-[#1C1E20]/80"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-transparent to-purple-500/5 opacity-50" />
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-transparent to-purple-600/10 opacity-50" />
+          {/* Top glow line */}
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
+          
           <div className="relative z-10 p-4 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 overflow-hidden">
-              <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/5 shrink-0 text-white/80">
-                {userRole === 'admin' ? <Shield className="w-5 h-5" /> : userRole === 'blogger' ? <BloggerIcon /> : <AdvertiserIcon />}
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center border border-white/10 shrink-0 text-white shadow-inner">
+                {userRole === 'admin' ? <Shield className="w-5 h-5 text-blue-400" /> : userRole === 'blogger' ? <BloggerIcon /> : <AdvertiserIcon />}
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-base font-bold text-white truncate">
+                  <h2 className="text-base font-bold text-white truncate tracking-tight">
                     {user?.firstName || 'Гость'}
                   </h2>
-                  {isAdmin && <Badge variant="primary" className="text-[9px] h-4 px-1">ADMIN</Badge>}
+                  {isAdmin && <Badge variant="primary" className="text-[9px] h-4 px-1 bg-blue-500/20 text-blue-300 border border-blue-500/30">ADMIN</Badge>}
                 </div>
                 <p className="text-xs text-white/50 truncate">
                   {userRole === 'admin' ? 'Система в норме' : 
@@ -150,7 +165,7 @@ export default function DashboardPage() {
                 variant="secondary"
                 size="sm"
                 onClick={() => router.push('/admin/dashboard')}
-                className="h-8 text-xs px-3 bg-white/5 hover:bg-white/10 border-white/10"
+                className="h-8 text-xs px-3 bg-white/5 hover:bg-white/10 border-white/10 shadow-lg"
               >
                 Админка
               </Button>
@@ -158,7 +173,7 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* 2. Stats Grid (Compact & Sexy) */}
+        {/* 2. Stats Grid (Neon Style) */}
         <div className="grid grid-cols-2 gap-3">
           {currentStats.map((stat, i) => (
             <motion.div
@@ -169,17 +184,20 @@ export default function DashboardPage() {
               onClick={stat.action}
               className={`relative overflow-hidden rounded-2xl bg-[#1C1E20] border border-white/5 p-4 flex flex-col justify-between h-28 ${stat.action ? 'cursor-pointer active:scale-95 transition-transform' : ''}`}
             >
-              <div className="flex justify-between items-start">
-                <div className={`p-2 rounded-lg ${stat.bg} ${stat.color}`}>
+              {/* Subtle gradient background specific to stat */}
+              <div className={`absolute inset-0 opacity-10 bg-gradient-to-br from-transparent to-${stat.color.split('-')[1]}-500/20`} />
+              
+              <div className="flex justify-between items-start relative z-10">
+                <div className={`p-2 rounded-lg ${stat.bg} ${stat.color} border ${stat.border}`}>
                   <stat.icon className="w-4 h-4" />
                 </div>
                 {stat.change && (
-                  <span className={`text-xs font-medium ${Number(stat.change) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  <span className={`text-xs font-bold ${Number(stat.change) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                     {Number(stat.change) > 0 ? '+' : ''}{stat.change}%
                   </span>
                 )}
               </div>
-              <div>
+              <div className="relative z-10">
                 <p className="text-2xl font-bold text-white tracking-tight">{stat.value}</p>
                 <p className="text-xs text-white/50 font-medium">{stat.title}</p>
               </div>
@@ -187,25 +205,25 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* 3. Quick Actions (Horizontal Grid) */}
+        {/* 3. Quick Actions (Glowing Buttons) */}
         <div className="grid grid-cols-2 gap-3">
           {userRole === 'blogger' ? (
             <>
               <Button 
                 variant="secondary" 
                 onClick={() => router.push('/offers')}
-                className="h-12 bg-[#1C1E20] hover:bg-white/5 border border-white/5 justify-start px-4 text-sm font-medium gap-3"
+                className="h-12 bg-[#1C1E20] hover:bg-white/5 border border-white/5 justify-start px-4 text-sm font-medium gap-3 shadow-lg"
               >
-                <Search className="w-4 h-4 text-blue-400" />
-                Найти заказы
+                <Search className="w-4 h-4 text-cyan-400" />
+                <span className="text-white/90">Найти заказы</span>
               </Button>
               <Button 
                 variant="secondary" 
                 onClick={() => router.push('/profile')}
-                className="h-12 bg-[#1C1E20] hover:bg-white/5 border border-white/5 justify-start px-4 text-sm font-medium gap-3"
+                className="h-12 bg-[#1C1E20] hover:bg-white/5 border border-white/5 justify-start px-4 text-sm font-medium gap-3 shadow-lg"
               >
                 <User className="w-4 h-4 text-purple-400" />
-                Профиль
+                <span className="text-white/90">Профиль</span>
               </Button>
             </>
           ) : (
@@ -213,85 +231,84 @@ export default function DashboardPage() {
               <Button 
                 variant="primary" 
                 onClick={() => router.push('/listings/create')}
-                className="h-12 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 border-0 justify-start px-4 text-sm font-bold gap-3 shadow-lg shadow-blue-500/20"
+                className="h-12 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 border-0 justify-start px-4 text-sm font-bold gap-3 shadow-[0_0_20px_rgba(59,130,246,0.3)] relative overflow-hidden group"
               >
+                {/* Shine effect */}
+                <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 skew-x-12" />
                 <PlusCircle className="w-4 h-4 text-white" />
-                Создать
+                <span className="text-white">Создать</span>
               </Button>
               <Button 
                 variant="secondary" 
                 onClick={() => router.push('/bloggers')}
-                className="h-12 bg-[#1C1E20] hover:bg-white/5 border border-white/5 justify-start px-4 text-sm font-medium gap-3"
+                className="h-12 bg-[#1C1E20] hover:bg-white/5 border border-white/5 justify-start px-4 text-sm font-medium gap-3 shadow-lg"
               >
                 <Users className="w-4 h-4 text-purple-400" />
-                Найти блогеров
+                <span className="text-white/90">Найти блогеров</span>
               </Button>
             </>
           )}
         </div>
 
-        {/* 4. Chart (Minimalist) */}
-        {series?.labels?.length ? (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="rounded-2xl bg-[#1C1E20] border border-white/5 p-4"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-white/90">Активность</h3>
-              <div className="flex gap-2">
-                {series.series.map(s => {
-                  const total = (s.data || []).reduce((a, b) => a + (b || 0), 0)
-                  return (
-                    <div key={s.name} className="flex items-center gap-1.5 text-[10px] bg-white/5 px-2 py-1 rounded-full">
-                      <div className={`w-1.5 h-1.5 rounded-full ${colorBySeries[s.name]?.dot || 'bg-gray-500'}`} />
-                      <span className="text-white/60">{s.name}</span>
-                      <span className="text-white font-medium">{formatNumber(total)}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-            
-            <div className="flex items-end gap-1 h-32">
-              {(() => {
-                const max = Math.max(...series.series.flatMap(s => s.data), 1)
-                return series.labels.map((label, idx) => {
-                  const sumAtIdx = series.series.reduce((acc, s) => acc + (s.data[idx] || 0), 0)
-                  const h = Math.round((sumAtIdx / max) * 100)
-                  const isSelected = activeIdx === idx
-                  return (
-                    <div 
-                      key={label} 
-                      className="flex-1 flex flex-col items-center gap-1 cursor-pointer group"
-                      onClick={() => setActiveIdx(prev => prev === idx ? null : idx)}
-                    >
-                      <div className="relative w-full h-full flex items-end rounded-sm overflow-hidden bg-white/[0.02] group-hover:bg-white/[0.05] transition-colors">
-                        <motion.div
-                          initial={{ height: 0 }}
-                          animate={{ height: `${Math.max(h, 5)}%` }}
-                          className={`w-full ${isSelected ? 'bg-blue-500' : 'bg-white/20 group-hover:bg-white/30'} transition-colors rounded-t-sm`}
-                        />
-                      </div>
-                    </div>
-                  )
-                })
-              })()}
-            </div>
-            {activeIdx !== null && (
-               <div className="mt-3 pt-3 border-t border-white/5 flex justify-between text-xs text-white/60">
-                 <span>{series.labels[activeIdx]}</span>
-                 <span className="text-white font-medium">
-                   {series.series.reduce((acc, s) => acc + (s.data[activeIdx] || 0), 0)} событий
-                 </span>
-               </div>
+        {/* 4. Chart (Always Visible Placeholder) */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="rounded-2xl bg-[#1C1E20] border border-white/5 p-4 relative overflow-hidden"
+        >
+          {/* Blurred background blob */}
+          <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl" />
+          
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <h3 className="text-sm font-medium text-white/90 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-blue-400" />
+              Активность
+            </h3>
+            {isFakeData && (
+              <span className="text-[10px] text-white/30 px-2 py-0.5 rounded-full bg-white/5">Демо данные</span>
             )}
-          </motion.div>
-        ) : null}
+          </div>
+          
+          <div className="flex items-end gap-1 h-32 relative z-10">
+            {chartData.labels.map((label: string, idx: number) => {
+              // Calculate height based on max value
+              const max = Math.max(...chartData.series.flatMap((s: any) => s.data), 1)
+              const sumAtIdx = chartData.series.reduce((acc: number, s: any) => acc + (s.data[idx] || 0), 0)
+              const h = Math.round((sumAtIdx / max) * 100)
+              const isSelected = activeIdx === idx
+              
+              return (
+                <div 
+                  key={idx} 
+                  className="flex-1 flex flex-col items-center gap-1 cursor-pointer group"
+                  onClick={() => !isFakeData && setActiveIdx(prev => prev === idx ? null : idx)}
+                >
+                  <div className="relative w-full h-full flex items-end rounded-sm overflow-hidden bg-white/[0.02] group-hover:bg-white/[0.05] transition-colors">
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: `${Math.max(h, 5)}%` }}
+                      transition={{ type: "spring", bounce: 0, duration: 0.8, delay: idx * 0.05 }}
+                      className={`w-full ${isSelected ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-gradient-to-t from-blue-500/40 to-cyan-400/40 group-hover:from-blue-500/60 group-hover:to-cyan-400/60'} transition-all rounded-t-sm`}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          
+          {activeIdx !== null && !isFakeData && (
+             <div className="mt-3 pt-3 border-t border-white/5 flex justify-between text-xs text-white/60">
+               <span>{chartData.labels[activeIdx]}</span>
+               <span className="text-white font-medium">
+                 {chartData.series.reduce((acc: any, s: any) => acc + (s.data[activeIdx] || 0), 0)} событий
+               </span>
+             </div>
+          )}
+        </motion.div>
 
         {/* 5. Minimal Support Link */}
-        <div className="flex justify-center pt-2">
+        <div className="flex justify-center pt-2 pb-6">
           <a
             href="https://t.me/polina_khristya"
             target="_blank"
