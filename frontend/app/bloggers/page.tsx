@@ -181,9 +181,9 @@ function BloggersPageContent() {
                 sessionStorage.setItem('__bloggers_last_id', String(blogger.id))
               }}
             >
-              <Card hover className="group relative overflow-hidden border-white/5 bg-[#1C1E20]">
+              <Card className="group relative overflow-hidden border-white/5 bg-[#1C1E20]">
                 {/* Subtle highlight on hover */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent opacity-0 md:group-hover:opacity-100 transition-opacity pointer-events-none" />
                 
                 <CardContent className="p-4">
                   <div className="flex items-start gap-4">
