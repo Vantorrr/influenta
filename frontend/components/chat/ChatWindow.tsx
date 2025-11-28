@@ -53,11 +53,11 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
         
         if (!isMounted) return
         const normalized = items.map((m: any) => ({
-          id: m.id,
-          content: typeof m.content === 'object' ? JSON.stringify(m.content) : String(m.content || ''),
-          senderId: m.senderId,
-          createdAt: new Date(m.createdAt),
-          isRead: !!m.isRead,
+          id: m?.id || String(Math.random()),
+          content: typeof m?.content === 'object' ? JSON.stringify(m.content) : String(m?.content || ''),
+          senderId: m?.senderId,
+          createdAt: new Date(m?.createdAt || Date.now()),
+          isRead: !!m?.isRead,
         }))
         
         // Deduplicate messages by ID to prevent key collisions
@@ -84,11 +84,11 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
       if (data?.responseId !== chat.responseId) return
       
       const incoming: Message = {
-        id: data.id,
-        content: typeof data.content === 'object' ? JSON.stringify(data.content) : String(data.content || ''),
-        senderId: data.senderId,
-        createdAt: new Date(data.createdAt || Date.now()),
-        isRead: data.isRead ?? (data.senderId === currentUserId),
+        id: data?.id || String(Math.random()),
+        content: typeof data?.content === 'object' ? JSON.stringify(data.content) : String(data?.content || ''),
+        senderId: data?.senderId,
+        createdAt: new Date(data?.createdAt || Date.now()),
+        isRead: data?.isRead ?? (data?.senderId === currentUserId),
       }
 
       setMessages(prev => {

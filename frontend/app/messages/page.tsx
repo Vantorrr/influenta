@@ -103,7 +103,7 @@ function MessagesPageContent() {
               senderId: row.lastMessage.senderId,
             } : {
               content: 'Нет сообщений',
-              createdAt: new Date(),
+              createdAt: new Date(0), // Old date to sort last
               isRead: true,
               senderId: '',
             },
@@ -111,8 +111,11 @@ function MessagesPageContent() {
             status: 'active',
           }
         })
-        // Убираем дубликаты чатов (оставляем один чат на одного пользователя)
-        // Если с одним пользователем несколько чатов (по разным объявлениям), показываем последний
+        
+        // Сортируем по дате последнего сообщения (сначала новые)
+        normalized.sort((a, b) => b.lastMessage.createdAt.getTime() - a.lastMessage.createdAt.getTime())
+
+        // Убираем дубликаты чатов (оставляем один чат на одного пользователя - самый свежий)
         const uniqueChats = Array.from(new Map(normalized.map(item => [item.otherUser.id, item])).values())
         setChats(uniqueChats)
       } catch {
