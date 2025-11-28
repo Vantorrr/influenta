@@ -197,7 +197,7 @@ function MessagesPageContent() {
 
   return (
     <Layout>
-      <div className="h-[calc(100vh-4rem)] flex -mb-16">
+      <div className="h-[calc(100vh-4rem)] flex">
         {/* Список чатов */}
         <div className={`${selectedChat ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-96 border-r border-gray-700/50`}>
           {/* Поиск */}

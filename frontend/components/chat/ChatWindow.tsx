@@ -545,10 +545,11 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
 
         {/* Поле ввода - Premium стиль */}
         <div style={{ 
-          padding: '12px 16px 16px',
-          background: 'rgba(30, 30, 46, 0.95)',
+          padding: '12px 16px 32px', // Увеличил отступ снизу до 32px
+          background: 'rgba(30, 30, 46, 0.98)', // Чуть менее прозрачный
           backdropFilter: 'blur(10px)',
-          borderTop: '1px solid rgba(255,255,255,0.05)'
+          borderTop: '1px solid rgba(255,255,255,0.05)',
+          boxShadow: '0 -4px 20px rgba(0,0,0,0.2)' // Тень вверх для разделения
         }}>
           <div style={{ 
             display: 'flex', 
