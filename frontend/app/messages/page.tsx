@@ -265,12 +265,3 @@ function MessagesPageContent() {
     </Layout>
   )
 }
-
-
-
-
-
-
-
-
-
