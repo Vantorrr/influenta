@@ -102,6 +102,7 @@ export class BloggersService {
         username: user.username || '',
         photoUrl: user.photoUrl,
         isVerified: user.isVerified,
+        createdAt: user.createdAt,
       },
       bio: user.bio || '',
       categories: user.categories ? user.categories.split(',').filter(Boolean) : [],
@@ -110,6 +111,7 @@ export class BloggersService {
       pricePerPost: user.pricePerPost || 0,
       pricePerStory: user.pricePerStory || 0,
       isVerified: user.isVerified,
+      createdAt: user.createdAt,
     }));
 
     return {
@@ -142,6 +144,7 @@ export class BloggersService {
         username: user.username || '',
         photoUrl: user.photoUrl,
         isVerified: user.isVerified,
+        createdAt: user.createdAt,
       },
       bio: user.bio || '',
       categories: user.categories ? user.categories.split(',').filter(Boolean) : [],
