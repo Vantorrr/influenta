@@ -48,8 +48,8 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
         const items = (res as any)?.data || res?.data || []
         if (!isMounted) return
         const normalized = items.map((m: any) => ({
-          id: m.id,
-          content: m.content,
+          id: m.id || Math.random().toString(), // Safety fix: ensure ID exists
+          content: typeof m.content === 'object' ? JSON.stringify(m.content) : String(m.content || ''), // Safety fix: ensure string
           senderId: m.senderId,
           createdAt: new Date(m.createdAt),
           isRead: !!m.isRead,
@@ -74,8 +74,8 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
     const onNewMessage = (data: any) => {
       if (data?.responseId !== chat.responseId) return
       const incoming: Message = {
-        id: data.id,
-        content: data.content,
+        id: data.id || Date.now().toString(),
+        content: typeof data.content === 'object' ? JSON.stringify(data.content) : String(data.content || ''),
         senderId: data.senderId,
         createdAt: new Date(data.createdAt || Date.now()),
         isRead: data.isRead ?? (data.senderId === currentUserId),
@@ -118,7 +118,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
       const m = (res as any)?.data || res
       const newMessage: Message = {
         id: m.id || Date.now().toString(),
-        content: m.content || content,
+        content: typeof m.content === 'object' ? JSON.stringify(m.content) : String(m.content || content),
         senderId: m.senderId || currentUserId,
         createdAt: new Date(m.createdAt || Date.now()),
         isRead: !!m.isRead,
@@ -155,10 +155,10 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
       // Прочитано - две синие галочки
       return (
         <div className="flex -space-x-1">
-          <svg className="w-4 h-4 text-telegram-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
-          <svg className="w-4 h-4 text-telegram-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
         </div>
@@ -166,7 +166,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
     } else {
       // Отправлено - одна серая галочка
       return (
-        <svg className="w-4 h-4 text-telegram-textSecondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg className="w-4 h-4 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="20 6 9 17 4 12"/>
         </svg>
       )
@@ -174,13 +174,13 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
   }
 
   return (
-    <div className="flex flex-col flex-1 h-full">
+    <div className="flex flex-col flex-1 h-full bg-[#0E1621]">
       {/* Заголовок чата */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-700/50 bg-telegram-bgSecondary">
+      <div className="flex items-center justify-between p-4 border-b border-[#0f1721] bg-[#1c2c3e]/90 backdrop-blur-md shadow-sm z-10">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="md:hidden p-2 hover:bg-telegram-bg rounded-lg transition-colors"
+            className="md:hidden p-2 hover:bg-[#2b3949] rounded-lg transition-colors text-gray-300"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -193,15 +193,15 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
           />
           
           <div onClick={() => { if (chat.otherUser?.role === 'blogger' && chat.otherUser?.id) { window.location.href = `/bloggers/${chat.otherUser.id}` } }} className={chat.otherUser?.role === 'blogger' && chat.otherUser?.id ? 'cursor-pointer hover:opacity-80 hover:underline' : ''}>
-            <h3 className="font-medium flex items-center gap-2">
+            <h3 className="font-medium flex items-center gap-2 text-white">
               {chat.otherUser.firstName} {chat.otherUser.lastName}
               {chat.status === 'accepted' && (
-                <Badge variant="success" className="text-xs">
+                <Badge variant="success" className="text-xs bg-green-500/20 text-green-400 border border-green-500/30">
                   Сотрудничество
                 </Badge>
               )}
             </h3>
-            <p className="text-xs text-telegram-textSecondary">
+            <p className="text-xs text-gray-400">
               {chat.listingTitle}
             </p>
           </div>
@@ -210,7 +210,8 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
       </div>
 
       {/* Сообщения */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#0E1621] relative">
+        <div className="absolute inset-0 bg-[url('/bg-pattern.png')] opacity-5 pointer-events-none" />
         <AnimatePresence initial={false}>
           {messages.map((msg, index) => {
             const isOwn = msg.senderId === currentUserId
@@ -220,15 +221,15 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
             
             return (
               <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className={`flex gap-3 ${isOwn ? 'justify-end' : 'justify-start'}`}
+                key={`${msg.id}-${index}`}
+                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.2 }}
+                className={`flex gap-3 relative z-10 ${isOwn ? 'justify-end' : 'justify-start'}`}
               >
                 {!isOwn && (
-                  <div className="w-8 h-8">
+                  <div className="w-8 h-8 flex-shrink-0">
                     {showAvatar && (
                       <Avatar
                         firstName={chat.otherUser.firstName}
@@ -240,20 +241,22 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
                   </div>
                 )}
                 
-                <div className={`max-w-[70%] ${isOwn ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
+                <div className={`max-w-[75%] ${isOwn ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
                   <div
-                    className={`rounded-2xl px-4 py-2 ${
+                    className={`rounded-2xl px-4 py-2.5 shadow-sm ${
                       isOwn
-                        ? 'bg-telegram-primary text-white'
-                        : 'bg-telegram-bgSecondary'
+                        ? 'bg-gradient-to-br from-[#2AABEE] to-[#229ED9] text-white rounded-tr-sm'
+                        : 'bg-[#18222d] border border-[#2b3949] text-white rounded-tl-sm'
                     }`}
                   >
-                    <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                    <p className="whitespace-pre-wrap break-words leading-relaxed text-[15px]">
+                      {typeof msg.content === 'object' ? JSON.stringify(msg.content) : String(msg.content || '')}
+                    </p>
                     
                   </div>
                   
-                  <div className="flex items-center gap-2 px-2">
-                    <span className="text-xs text-telegram-textSecondary">
+                  <div className="flex items-center gap-1.5 px-1 opacity-70">
+                    <span className="text-[11px] text-gray-400 font-medium">
                       {formatTime(msg.createdAt)}
                     </span>
                     {isOwn && getMessageStatus(msg)}
@@ -271,7 +274,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 relative z-10"
             >
               <Avatar
                 firstName={chat.otherUser.firstName}
@@ -279,22 +282,22 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
                 src={chat.otherUser.photoUrl}
                 size="sm"
               />
-              <div className="bg-telegram-bgSecondary rounded-2xl px-4 py-2">
-                <div className="flex gap-1">
+              <div className="bg-[#18222d] border border-[#2b3949] rounded-2xl rounded-tl-sm px-4 py-2.5">
+                <div className="flex gap-1.5 items-center h-5">
                   <motion.div
-                    animate={{ opacity: [0.4, 1, 0.4] }}
+                    animate={{ opacity: [0.4, 1, 0.4], scale: [0.8, 1, 0.8] }}
                     transition={{ duration: 1.5, repeat: Infinity }}
-                    className="w-2 h-2 bg-telegram-textSecondary rounded-full"
+                    className="w-1.5 h-1.5 bg-[#2AABEE] rounded-full"
                   />
                   <motion.div
-                    animate={{ opacity: [0.4, 1, 0.4] }}
+                    animate={{ opacity: [0.4, 1, 0.4], scale: [0.8, 1, 0.8] }}
                     transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
-                    className="w-2 h-2 bg-telegram-textSecondary rounded-full"
+                    className="w-1.5 h-1.5 bg-[#2AABEE] rounded-full"
                   />
                   <motion.div
-                    animate={{ opacity: [0.4, 1, 0.4] }}
+                    animate={{ opacity: [0.4, 1, 0.4], scale: [0.8, 1, 0.8] }}
                     transition={{ duration: 1.5, repeat: Infinity, delay: 0.4 }}
-                    className="w-2 h-2 bg-telegram-textSecondary rounded-full"
+                    className="w-1.5 h-1.5 bg-[#2AABEE] rounded-full"
                   />
                 </div>
               </div>
@@ -306,27 +309,30 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
       </div>
 
       {/* Форма ввода */}
-      <div className="p-4 pb-2 border-t border-gray-700/50 bg-telegram-bgSecondary">
-        <div className="flex items-end gap-2">
-          <textarea
-            ref={inputRef}
-            value={message}
-            onChange={handleInputChange}
-            onKeyPress={handleKeyPress}
-            placeholder="Напишите сообщение..."
-            className="flex-1 bg-telegram-bg border border-gray-600 rounded-lg px-4 py-2 resize-none text-telegram-text placeholder-telegram-textSecondary focus:border-telegram-primary focus:outline-none transition-colors"
-            rows={1}
-          />
+      <div className="p-4 pb-4 border-t border-[#0f1721] bg-[#1c2c3e]/90 backdrop-blur-md shadow-[0_-4px_20px_rgba(0,0,0,0.2)] z-10">
+        <div className="flex items-end gap-3 max-w-4xl mx-auto">
+          <div className="flex-1 bg-[#0f1721] rounded-2xl border border-[#2b3949] focus-within:border-[#2AABEE]/50 transition-colors relative">
+            <textarea
+              ref={inputRef}
+              value={message}
+              onChange={handleInputChange}
+              onKeyPress={handleKeyPress}
+              placeholder="Напишите сообщение..."
+              className="w-full bg-transparent border-none rounded-2xl px-4 py-3 resize-none text-white placeholder-gray-500 focus:ring-0 focus:outline-none max-h-32 min-h-[46px]"
+              rows={1}
+              style={{ overflow: 'hidden' }}
+            />
+          </div>
           
           <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={sendMessage}
             disabled={!message.trim()}
-            className={`p-2 rounded-lg transition-all ${
+            className={`p-3 rounded-full shadow-lg transition-all flex-shrink-0 ${
               message.trim()
-                ? 'bg-telegram-primary text-white hover:bg-telegram-secondary'
-                : 'bg-telegram-bgSecondary text-telegram-textSecondary cursor-not-allowed'
+                ? 'bg-gradient-to-r from-[#2AABEE] to-[#229ED9] text-white shadow-[#2AABEE]/20'
+                : 'bg-[#18222d] text-gray-500 border border-[#2b3949] cursor-not-allowed'
             }`}
           >
             <Send className="w-5 h-5" />
@@ -336,21 +342,3 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
     </div>
   )
 }
-
-// Helper function
-function formatTime(date: Date): string {
-  const now = new Date()
-  const isToday = date.toDateString() === now.toDateString()
-  
-  if (isToday) {
-    return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
-  }
-  
-  return date.toLocaleDateString('ru-RU', { 
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
-
