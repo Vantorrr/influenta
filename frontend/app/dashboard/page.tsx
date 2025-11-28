@@ -305,6 +305,24 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
+        {/* Admin Quick Access */}
+        {isAdmin && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <Button
+              variant="primary"
+              onClick={() => router.push('/admin/dashboard')}
+              className="w-full h-14 text-base bg-gradient-to-r from-telegram-primary to-telegram-accent shadow-lg"
+            >
+              <Shield className="w-5 h-5 mr-3" />
+              Панель администратора
+            </Button>
+          </motion.div>
+        )}
+
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {currentStats.map((stat, index) => {
