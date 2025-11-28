@@ -1,18 +1,116 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { ArrowLeft, Calendar, MessageSquare, Shield, Save, Trash2, X, Edit, CheckCircle, XCircle, Pause } from 'lucide-react'
+import { 
+  ArrowLeft, Calendar, MessageSquare, Shield, Save, Trash2, 
+  X, Edit, CheckCircle, AlertCircle, Clock, User, 
+  ChevronRight, Target, LayoutGrid, Banknote, Send
+} from 'lucide-react'
 import { Layout } from '@/components/layout/Layout'
-import { RubIcon } from '@/components/ui/ruble-icon'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { listingsApi, responsesApi, messagesApi } from '@/lib/api'
+import { listingsApi, responsesApi } from '@/lib/api'
 import { formatDate, formatPrice, getCategoryLabel, getPostFormatLabel } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+
+// Стили (копии из ProfilePage для консистентности)
+const cardStyle = {
+  background: 'rgba(30, 30, 46, 0.6)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid rgba(255, 255, 255, 0.08)',
+  borderRadius: 24,
+  padding: 24,
+  marginBottom: 20,
+  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)'
+}
+
+const buttonPrimaryStyle = {
+  width: '100%',
+  padding: '14px',
+  background: 'linear-gradient(135deg, #3390ec, #2b7cd3)',
+  border: 'none',
+  borderRadius: 14,
+  color: 'white',
+  fontWeight: 600 as const,
+  fontSize: 15,
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 8,
+  boxShadow: '0 4px 12px rgba(51, 144, 236, 0.3)',
+  transition: 'transform 0.1s'
+}
+
+const buttonSecondaryStyle = {
+  width: '100%',
+  padding: '14px',
+  background: 'rgba(255, 255, 255, 0.08)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  borderRadius: 14,
+  color: 'white',
+  fontWeight: 600 as const,
+  fontSize: 15,
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 8,
+  transition: 'background 0.2s'
+}
+
+const buttonDangerStyle = {
+  ...buttonSecondaryStyle,
+  color: '#ef4444',
+  borderColor: 'rgba(239, 68, 68, 0.2)',
+  background: 'rgba(239, 68, 68, 0.1)',
+}
+
+const inputStyle = {
+  width: '100%',
+  padding: '12px 16px',
+  background: 'rgba(0, 0, 0, 0.2)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  borderRadius: 12,
+  color: 'white',
+  fontSize: 15,
+  outline: 'none',
+  transition: 'border-color 0.2s',
+}
+
+const labelStyle = {
+  display: 'block',
+  fontSize: 13,
+  fontWeight: 500 as const,
+  color: 'rgba(255, 255, 255, 0.5)',
+  marginBottom: 8
+}
+
+const modalOverlayStyle = {
+  position: 'fixed' as const,
+  inset: 0,
+  background: 'rgba(0,0,0,0.8)',
+  backdropFilter: 'blur(8px)',
+  zIndex: 100, // Выше меню
+  display: 'flex',
+  alignItems: 'flex-end', // Шторка снизу
+  justifyContent: 'center',
+}
+
+const modalContentStyle = {
+  background: '#1a1a2e',
+  borderTop: '1px solid rgba(255,255,255,0.1)',
+  borderLeft: '1px solid rgba(255,255,255,0.1)',
+  borderRight: '1px solid rgba(255,255,255,0.1)',
+  borderTopLeftRadius: 24,
+  borderTopRightRadius: 24,
+  padding: '24px 24px 48px 24px', // Большой паддинг снизу
+  width: '100%',
+  maxWidth: 600,
+  maxHeight: '90vh',
+  overflowY: 'auto' as const,
+  boxShadow: '0 -10px 40px rgba(0,0,0,0.5)',
+  animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+}
 
 export default function ListingDetailsPage() {
   const params = useParams() as { id?: string }
@@ -52,12 +150,12 @@ export default function ListingDetailsPage() {
           budget: String(l?.budget || ''),
           format: String(l?.format || 'post')
         })
-        // Если пришли из бота с фокусом на отклик — сразу открыть модалку
+        
         const focus = searchParams?.get('focus')
         if (focus === 'response' && user?.role === 'blogger') {
           setShowRespond(true)
         }
-        // Подгрузим мои отклики для этого объявления, чтобы показать кнопку чата
+        
         try {
           const my = await responsesApi.getMyResponses('sent', 1, 50)
           const rows = (my as any)?.data || my?.data || []
@@ -65,7 +163,6 @@ export default function ListingDetailsPage() {
           setMyResponses(mineForThis)
         } catch {}
 
-        // Если я рекламодатель и это мое объявление — подгружаем все отклики
         const myAdvertiserId = (user as any)?.advertiser?.id
         const isOwner = user?.role === 'advertiser' && (
           (myAdvertiserId && l?.advertiserId === myAdvertiserId) ||
@@ -88,7 +185,6 @@ export default function ListingDetailsPage() {
   }, [user, params?.id])
 
   const canRespond = user?.role === 'blogger' && listing?.status === 'active'
-  // canEdit только если это МОЁ объявление
   const isMyListing = user?.role === 'advertiser' && (
     listing?.advertiser?.userId === user.id ||
     listing?.advertiser?.user?.id === user.id ||
@@ -114,7 +210,8 @@ export default function ListingDetailsPage() {
       setShowRespond(false)
       setMessage('')
       setPrice('')
-      alert('Отклик отправлен. Рекламодатель получит уведомление в Telegram')
+      alert('Отклик отправлен!')
+      window.location.reload()
     } catch (e: any) {
       const msg = e?.response?.data?.message || e?.message
       setRespError(Array.isArray(msg) ? msg.join(', ') : String(msg || 'Не удалось отправить отклик'))
@@ -125,383 +222,344 @@ export default function ListingDetailsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-telegram-bg flex items-center justify-center">
-        <div className="text-telegram-textSecondary">Загрузка объявления...</div>
+      <div style={{ minHeight: '100vh', background: '#0f0f0f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: 'rgba(255,255,255,0.5)' }}>Загрузка...</div>
       </div>
     )
   }
 
   if (error || !listing) {
     return (
-      <div className="min-h-screen bg-telegram-bg p-4">
-        <button onClick={() => router.back()} className="flex items-center gap-2 text-telegram-primary mb-4">
-          <ArrowLeft className="w-4 h-4" /> Назад
-        </button>
-        <Card>
-          <CardContent className="p-6 text-center text-telegram-textSecondary">{String(error || 'Объявление не найдено')}</CardContent>
-        </Card>
-      </div>
+      <Layout>
+        <div className="container" style={{ padding: 20 }}>
+          <button onClick={() => router.back()} style={{ ...buttonSecondaryStyle, width: 'auto', padding: '8px 16px', marginBottom: 20 }}>
+            <ArrowLeft size={16} /> Назад
+          </button>
+          <div style={{ textAlign: 'center', color: 'white' }}>{String(error || 'Объявление не найдено')}</div>
+        </div>
+      </Layout>
     )
   }
 
   return (
     <Layout>
-      <div className="container py-4 space-y-4">
-        <button onClick={() => router.back()} className="flex items-center gap-2 text-telegram-primary">
-          <ArrowLeft className="w-4 h-4" /> Назад
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+      `}</style>
+      <div className="container" style={{ padding: '20px 16px 100px' }}>
+        <button 
+          onClick={() => router.back()} 
+          style={{ 
+            background: 'transparent', 
+            border: 'none', 
+            color: '#3390ec', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 6,
+            fontSize: 15,
+            fontWeight: 500,
+            marginBottom: 16,
+            cursor: 'pointer'
+          }}
+        >
+          <ArrowLeft size={20} /> 
+          Назад
         </button>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex flex-col gap-3">
-              <div className="w-full"><span className="block break-words">{listing.title}</span></div>
-              <div className="flex items-center gap-2">
-                <Badge variant="default">{getPostFormatLabel(listing.format)}</Badge>
-                {listing.advertiser?.isVerified && (
-                  <span className="inline-flex items-center gap-1 text-xs text-telegram-success">
-                    <Shield className="w-3 h-3" /> Проверенный
-                  </span>
-                )}
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-telegram-textSecondary whitespace-pre-wrap">{listing.description}</div>
-
-            <div className="flex flex-wrap gap-2">
-              {(listing.targetCategories || []).map((c: string) => (
-                <Badge key={c} variant="default">{getCategoryLabel(c)}</Badge>
-              ))}
+        <div style={cardStyle}>
+          <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: 'white', lineHeight: 1.3, flex: 1, paddingRight: 16 }}>
+              {listing.title}
+            </h1>
+            <div style={{ 
+              padding: '6px 12px', 
+              background: 'rgba(51, 144, 236, 0.15)', 
+              color: '#3390ec', 
+              borderRadius: 10, 
+              fontWeight: 600, 
+              fontSize: 13,
+              whiteSpace: 'nowrap'
+            }}>
+              {getPostFormatLabel(listing.format)}
             </div>
+          </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-              <div>
-                <p className="text-telegram-textSecondary">Бюджет</p>
-                <p className="font-medium">{formatPrice(listing.budget || 0)}</p>
-              </div>
-              {listing.deadline && (
-                <div>
-                  <p className="text-telegram-textSecondary">Дедлайн</p>
-                  <p className="font-medium flex items-center gap-1"><Calendar className="w-4 h-4" />{formatDate(listing.deadline)}</p>
-                </div>
-              )}
-              <div>
-                <p className="text-telegram-textSecondary">Откликов</p>
-                <p className="font-medium">{listing.responsesCount || 0}</p>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+            {(listing.targetCategories || []).map((c: string) => (
+              <span key={c} style={{ 
+                fontSize: 12, 
+                padding: '4px 10px', 
+                borderRadius: 8, 
+                background: 'rgba(255,255,255,0.1)', 
+                color: 'rgba(255,255,255,0.8)',
+                border: '1px solid rgba(255,255,255,0.1)'
+              }}>
+                {getCategoryLabel(c)}
+              </span>
+            ))}
+          </div>
+
+          <p style={{ fontSize: 15, lineHeight: 1.6, color: 'rgba(255,255,255,0.8)', marginBottom: 24, whiteSpace: 'pre-wrap' }}>
+            {listing.description}
+          </p>
+
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: '1fr 1fr', 
+            gap: 12, 
+            padding: 16, 
+            background: 'rgba(0,0,0,0.2)', 
+            borderRadius: 16 
+          }}>
+            <div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>Бюджет</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: '#22c55e' }}>
+                {formatPrice(listing.budget || 0)}
               </div>
             </div>
-
-            {canRespond && (
-              <div className="pt-2">
-                <Button variant="primary" onClick={() => setShowRespond(true)}>
-                  <MessageSquare className="w-4 h-4 mr-2" /> Откликнуться
-                </Button>
+            <div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>Дедлайн</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: 'white', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Calendar size={16} style={{ opacity: 0.7 }} />
+                {listing.deadline ? formatDate(listing.deadline) : '—'}
               </div>
-            )}
-            {/* Кнопка переписки для автора отклика */}
-            {user?.role === 'blogger' && myResponses.length > 0 && (
-              <div className="pt-4 border-t border-gray-700/50 mt-4">
-                <p className="text-sm text-telegram-textSecondary mb-2">Вы откликнулись на это объявление</p>
-                <Button variant="primary" fullWidth onClick={() => {
-                  const resp = myResponses[0]
-                  window.location.href = `/messages?responseId=${resp.id}`
-                }}>
-                  💬 Открыть чат по отклику
-                </Button>
-              </div>
-            )}
-            {canEdit && (
-              <>
-                {/* Управление статусом */}
-                {listing.status === 'active' && (
-                  <div className="pt-4 border-t border-gray-700/50 grid grid-cols-2 gap-3">
-                    <Button 
-                      variant="secondary"
-                      onClick={async () => {
-                        if (!confirm('Приостановить объявление?')) return
-                        try {
-                          await listingsApi.updateStatus(params.id!, 'paused')
-                          alert('Объявление приостановлено')
-                          window.location.reload()
-                        } catch (e: any) {
-                          alert(String(e?.response?.data?.message || e?.message || 'Ошибка'))
-                        }
-                      }}
-                      className="flex items-center justify-center"
-                    >
-                      Приостановить
-                    </Button>
-                    <Button 
-                      variant="secondary"
-                      onClick={async () => {
-                        if (!confirm('Завершить объявление?')) return
-                        try {
-                          await listingsApi.updateStatus(params.id!, 'completed')
-                          alert('Объявление завершено')
-                          window.location.reload()
-                        } catch (e: any) {
-                          alert(String(e?.response?.data?.message || e?.message || 'Ошибка'))
-                        }
-                      }}
-                      className="flex items-center justify-center"
-                    >
-                      Завершить
-                    </Button>
-                  </div>
-                )}
+            </div>
+          </div>
 
-                {listing.status === 'paused' && (
-                  <div className="pt-4 border-t border-gray-700/50">
-                    <Button 
-                      variant="primary"
-                      fullWidth
-                      onClick={async () => {
-                        try {
-                          await listingsApi.updateStatus(params.id!, 'active')
-                          alert('Объявление активировано')
-                          window.location.reload()
-                        } catch (e: any) {
-                          alert(String(e?.response?.data?.message || e?.message || 'Ошибка'))
-                        }
-                      }}
-                      className="flex items-center justify-center gap-2"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      Активировать снова
-                    </Button>
-                  </div>
-                )}
+          {listing.advertiser?.isVerified && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, fontSize: 13, color: '#22c55e' }}>
+              <Shield size={16} />
+              <span>Проверенный рекламодатель</span>
+            </div>
+          )}
+        </div>
 
-                {/* Редактирование и удаление */}
-                <div className="pt-4 border-t border-gray-700/50 grid grid-cols-2 gap-3">
-                  <Button 
-                    variant="secondary" 
-                    onClick={() => setShowEdit(true)}
-                    className="flex items-center justify-center"
-                  >
-                    Редактировать
-                  </Button>
-                  <Button 
-                    variant="danger" 
-                    onClick={async () => {
-                      if (!confirm('Удалить объявление?')) return
-                      try {
-                        await listingsApi.delete(params.id!)
-                        alert('Объявление удалено')
-                        router.push('/listings')
-                      } catch (e: any) {
-                        alert(String(e?.response?.data?.message || e?.message || 'Не удалось удалить'))
-                      }
-                    }}
-                    className="flex items-center justify-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Удалить
-                  </Button>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+        {canRespond && (
+          <button 
+            onClick={() => setShowRespond(true)}
+            style={buttonPrimaryStyle}
+          >
+            <MessageSquare size={18} />
+            Откликнуться
+          </button>
+        )}
 
-        {/* Список откликов для рекламодателя */}
+        {user?.role === 'blogger' && myResponses.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 8, textAlign: 'center' }}>
+              Вы уже откликнулись на это задание
+            </div>
+            <button 
+              onClick={() => {
+                const resp = myResponses[0]
+                window.location.href = `/messages?responseId=${resp.id}`
+              }}
+              style={buttonSecondaryStyle}
+            >
+              💬 Перейди к переписке
+            </button>
+          </div>
+        )}
+
+        {canEdit && (
+          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <button onClick={() => setShowEdit(true)} style={buttonSecondaryStyle}>
+                <Edit size={18} /> Редактировать
+              </button>
+              <button 
+                onClick={async () => {
+                  if (!confirm('Удалить объявление?')) return
+                  try {
+                    await listingsApi.delete(params.id!)
+                    router.push('/listings')
+                  } catch (e) { alert('Ошибка') }
+                }} 
+                style={buttonDangerStyle}
+              >
+                <Trash2 size={18} /> Удалить
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Responses List */}
         {canSeeResponses && receivedResponses.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Отклики ({receivedResponses.length})</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
+          <div style={{ marginTop: 32 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 600, color: 'white', marginBottom: 16 }}>
+              Отклики ({receivedResponses.length})
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {receivedResponses.map((r: any) => (
-                <div key={r.id} className="p-3 bg-telegram-bgSecondary rounded-xl">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="flex-1 min-w-0">
-                      <p 
-                        className="font-medium cursor-pointer text-telegram-primary hover:underline"
-                        onClick={() => window.location.href = `/bloggers/${r.blogger?.user?.id || r.blogger?.userId || r.bloggerId}`}
-                      >
-                        {r.blogger?.user?.firstName} {r.blogger?.user?.lastName}
-                      </p>
-                      <p className="text-sm text-telegram-textSecondary">
-                        @{r.blogger?.user?.username}
-                      </p>
-                      <p className="text-sm text-telegram-textSecondary mt-2">{r.message}</p>
-                      {r.proposedPrice && (
-                        <p className="text-sm font-medium mt-1">
-                          Предложенная цена: {formatPrice(r.proposedPrice)}
-                        </p>
-                      )}
+                <div key={r.id} style={{ ...cardStyle, marginBottom: 0, padding: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 12 }}>
+                    <div 
+                      style={{ fontWeight: 600, color: 'white', cursor: 'pointer' }}
+                      onClick={() => window.location.href = `/bloggers/${r.blogger?.user?.id}`}
+                    >
+                      {r.blogger?.user?.firstName} {r.blogger?.user?.lastName}
+                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 400 }}>@{r.blogger?.user?.username}</div>
                     </div>
+                    {r.proposedPrice && (
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#3390ec' }}>
+                        {formatPrice(r.proposedPrice)}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button 
-                      variant="secondary" 
-                      size="sm"
+                  
+                  <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', marginBottom: 16, background: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 12 }}>
+                    {r.message}
+                  </p>
+
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button 
                       onClick={() => { window.location.href = `/messages?responseId=${r.id}` }}
+                      style={{ ...buttonSecondaryStyle, padding: '8px', fontSize: 13 }}
                     >
                       Написать
-                    </Button>
+                    </button>
                     {r.status === 'pending' && (
                       <>
-                        <Button 
-                          variant="primary" 
-                          size="sm"
-                          disabled={respActionLoading === r.id} 
+                        <button 
                           onClick={async () => {
                             try {
                               setRespActionLoading(r.id)
                               await responsesApi.accept(r.id)
-                              setReceivedResponses(prev => prev.map(x => x.id === r.id ? { ...x, status: 'accepted', acceptedAt: new Date().toISOString() } : x))
-                            } catch (e: any) {
-                              alert(String(e?.response?.data?.message || e?.message || 'Не удалось принять'))
-                            } finally {
-                              setRespActionLoading(null)
-                            }
+                              window.location.reload()
+                            } catch(e) { alert('Ошибка') }
                           }}
+                          style={{ ...buttonPrimaryStyle, flex: 1, padding: '8px', fontSize: 13 }}
                         >
                           Принять
-                        </Button>
-                        <Button 
-                          variant="danger" 
-                          size="sm"
-                          disabled={respActionLoading === r.id} 
+                        </button>
+                        <button 
                           onClick={async () => {
-                            const reason = prompt('Причина отказа:') || 'Недостаточно данных'
                             try {
-                              setRespActionLoading(r.id)
-                              await responsesApi.reject(r.id, reason)
-                              setReceivedResponses(prev => prev.map(x => x.id === r.id ? { ...x, status: 'rejected', rejectionReason: reason, rejectedAt: new Date().toISOString() } : x))
-                            } catch (e: any) {
-                              alert(String(e?.response?.data?.message || e?.message || 'Не удалось отклонить'))
-                            } finally {
-                              setRespActionLoading(null)
-                            }
+                              await responsesApi.reject(r.id, 'Отказ')
+                              window.location.reload()
+                            } catch(e) { alert('Ошибка') }
                           }}
+                          style={{ ...buttonDangerStyle, padding: '8px', fontSize: 13 }}
                         >
-                          Отклонить
-                        </Button>
+                          <X size={16} />
+                        </button>
                       </>
-                    )}
-                    {r.status === 'accepted' && (
-                      <Badge variant="success" className="text-xs">
-                        ✓ Принят
-                      </Badge>
-                    )}
-                    {r.status === 'rejected' && (
-                      <Badge variant="danger" className="text-xs">
-                        ✗ Отклонен
-                      </Badge>
                     )}
                   </div>
                 </div>
               ))}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Respond modal */}
-        {showRespond && (
-          <div className="fixed inset-0 z-50 bg-black/50 flex items-end md:items-center justify-center" onClick={() => setShowRespond(false)}>
-            <div className="bg-telegram-bgSecondary w-full md:max-w-lg rounded-t-2xl md:rounded-2xl p-6" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-lg font-semibold mb-4">Отправить отклик</h3>
-              <div className="space-y-3">
-                <div>
-                  <label className="label">Сообщение</label>
-                  <textarea className="input min-h-[100px] resize-none" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Коротко опишите предложение" />
-                </div>
-                <div>
-                  <label className="label">Предложенная цена (₽)</label>
-                  <Input 
-                    type="number" 
-                    value={price} 
-                    onChange={(e) => setPrice(e.target.value)} 
-                    placeholder="Например: 10000"
-                    min="100"
-                    step="100"
-                    className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                  <p className="text-xs text-telegram-textSecondary mt-1">Введите желаемую сумму за размещение</p>
-                </div>
-                {respError && <div className="text-telegram-danger text-sm">{respError}</div>}
-                <div className="flex gap-3 pt-1">
-                  <Button variant="secondary" fullWidth onClick={() => setShowRespond(false)}>Отмена</Button>
-                  <Button variant="primary" fullWidth onClick={handleSendResponse} disabled={respLoading}>
-                    <RubIcon className="text-base mr-2" /> {respLoading ? 'Отправка...' : 'Отправить'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Edit modal */}
-        {showEdit && (
-          <div className="fixed inset-0 z-50 bg-black/50 flex items-end md:items-center justify-center" onClick={() => setShowEdit(false)}>
-            <div className="bg-telegram-bgSecondary w-full md:max-w-2xl rounded-t-2xl md:rounded-2xl p-6" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Редактирование объявления</h3>
-                <button className="p-2 hover:bg-telegram-bg rounded-lg" onClick={() => setShowEdit(false)}><X className="w-4 h-4" /></button>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <label className="label">Заголовок</label>
-                  <Input value={editData.title} onChange={(e) => setEditData(s => ({ ...s, title: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="label">Описание</label>
-                  <textarea className="input min-h-[120px] resize-none" value={editData.description} onChange={(e) => setEditData(s => ({ ...s, description: e.target.value }))} />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="label">Бюджет (₽)</label>
-                    <Input type="number" value={editData.budget} onChange={(e) => setEditData(s => ({ ...s, budget: e.target.value }))} />
-                  </div>
-                  <div>
-                    <label className="label">Формат</label>
-                    <select className="input" value={editData.format} onChange={(e) => setEditData(s => ({ ...s, format: e.target.value }))}>
-                      <option value="post">Пост</option>
-                      <option value="story">Сторис</option>
-                      <option value="live">Эфир/Reels</option>
-                    </select>
-                  </div>
-                </div>
-                {editError && <div className="text-telegram-danger text-sm">{editError}</div>}
-                <div className="flex gap-3 pt-1">
-                  <Button variant="secondary" fullWidth onClick={() => setShowEdit(false)}>Отмена</Button>
-                  <Button variant="primary" fullWidth onClick={async () => {
-                    setEditError(null)
-                    setEditLoading(true)
-                    try {
-                      const payload: any = {
-                        title: editData.title || undefined,
-                        description: editData.description || undefined,
-                        budget: editData.budget ? parseFloat(editData.budget) : undefined,
-                        format: editData.format || undefined,
-                      }
-                      console.log('Updating listing:', params.id, payload)
-                      await listingsApi.update(params.id!, payload)
-                      alert('Сохранено')
-                      setShowEdit(false)
-                      router.refresh()
-                    } catch (e: any) {
-                      console.error('Update error:', e)
-                      const msg = e?.response?.data?.message || e?.message || 'Не удалось сохранить'
-                      setEditError(Array.isArray(msg) ? msg.join(', ') : String(msg))
-                    } finally {
-                      setEditLoading(false)
-                    }
-                  }} disabled={editLoading}>
-                    <Save className="w-4 h-4 mr-2" /> {editLoading ? 'Сохранение...' : 'Сохранить'}
-                  </Button>
-                </div>
-              </div>
             </div>
           </div>
         )}
       </div>
+
+      {/* Respond Modal */}
+      {showRespond && (
+        <div style={modalOverlayStyle} onClick={() => setShowRespond(false)}>
+          <div style={modalContentStyle} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <h3 style={{ fontSize: 20, fontWeight: 700, color: 'white' }}>Откликнуться</h3>
+              <button onClick={() => setShowRespond(false)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: 32, height: 32, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={labelStyle}>Сопроводительное письмо</label>
+              <textarea 
+                style={{ ...inputStyle, minHeight: 120, resize: 'none' }} 
+                value={message} 
+                onChange={e => setMessage(e.target.value)} 
+                placeholder="Напишите, почему вы подходите для этого задания..." 
+              />
+            </div>
+
+            <div style={{ marginBottom: 32 }}>
+              <label style={labelStyle}>Предложенная цена (₽)</label>
+              <div style={{ position: 'relative' }}>
+                <input 
+                  style={{ ...inputStyle, fontSize: 18, fontWeight: 600, paddingLeft: 16 }} 
+                  type="number" 
+                  value={price} 
+                  onChange={e => setPrice(e.target.value)} 
+                  placeholder="10000" 
+                />
+                <div style={{ position: 'absolute', right: 16, top: 14, color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>RUB</div>
+              </div>
+            </div>
+
+            {respError && (
+              <div style={{ color: '#ef4444', fontSize: 14, marginBottom: 16, textAlign: 'center' }}>
+                {respError}
+              </div>
+            )}
+
+            <button 
+              onClick={handleSendResponse} 
+              disabled={respLoading}
+              style={buttonPrimaryStyle}
+            >
+              {respLoading ? 'Отправка...' : 'Отправить отклик'}
+              <Send size={18} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEdit && (
+        <div style={modalOverlayStyle} onClick={() => setShowEdit(false)}>
+          <div style={modalContentStyle} onClick={e => e.stopPropagation()}>
+            <h3 style={{ fontSize: 20, fontWeight: 700, color: 'white', marginBottom: 24 }}>Редактирование</h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <label style={labelStyle}>Заголовок</label>
+                <input style={inputStyle} value={editData.title} onChange={e => setEditData({...editData, title: e.target.value})} />
+              </div>
+              <div>
+                <label style={labelStyle}>Описание</label>
+                <textarea style={{ ...inputStyle, minHeight: 100 }} value={editData.description} onChange={e => setEditData({...editData, description: e.target.value})} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div>
+                  <label style={labelStyle}>Бюджет</label>
+                  <input type="number" style={inputStyle} value={editData.budget} onChange={e => setEditData({...editData, budget: e.target.value})} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Формат</label>
+                  <select style={inputStyle} value={editData.format} onChange={e => setEditData({...editData, format: e.target.value})}>
+                    <option value="post">Пост</option>
+                    <option value="story">Сторис</option>
+                    <option value="reels">Reels</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 24, display: 'flex', gap: 12 }}>
+              <button onClick={() => setShowEdit(false)} style={buttonSecondaryStyle}>Отмена</button>
+              <button onClick={async () => {
+                setEditLoading(true)
+                try {
+                  await listingsApi.update(params.id!, {
+                    ...editData,
+                    budget: parseFloat(editData.budget)
+                  } as any)
+                  setShowEdit(false)
+                  window.location.reload()
+                } catch(e) { alert('Ошибка') }
+                finally { setEditLoading(false) }
+              }} style={buttonPrimaryStyle}>
+                Сохранить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   )
 }
-
-
-
-
