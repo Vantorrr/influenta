@@ -135,173 +135,62 @@ export default function DashboardPage() {
   return (
     <Layout>
       <div className="container py-6 space-y-6">
-        {/* Welcome Section */}
+        {/* Compact Welcome Card */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-          className="relative overflow-hidden bg-gradient-to-br from-telegram-primary via-blue-600 to-telegram-accent rounded-3xl p-8 text-white shadow-2xl"
+          className="relative overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
         >
-          {/* Animated background particles - optimized */}
-          <div className="absolute inset-0 opacity-8 will-change-transform">
-            {[...Array(3)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-1.5 h-1.5 bg-white rounded-full will-change-transform"
-                style={{
-                  left: `${25 + i * 25}%`,
-                  top: `${35 + (i % 2) * 30}%`,
-                }}
-                animate={{
-                  y: [0, -15, 0],
-                  opacity: [0.1, 0.3, 0.1],
-                }}
-                transition={{
-                  duration: 4 + i * 0.5,
-                  repeat: Infinity,
-                  delay: i * 0.5,
-                  ease: "easeInOut",
-                }}
-              />
-            ))}
+          {/* Background with subtle gradient */}
+          <div className="absolute inset-0 bg-[#1C1E20]">
+            <div className="absolute inset-0 bg-gradient-to-r from-telegram-primary/20 via-transparent to-telegram-accent/10 opacity-50" />
           </div>
-          
-          {/* Animated gradient orbs - optimized with GPU acceleration */}
-          <div className="absolute inset-0 opacity-8 will-change-transform">
-            <motion.div
-              className="absolute top-0 right-0 w-72 h-72 bg-white rounded-full blur-3xl will-change-transform"
-              animate={{
-                scale: [1, 1.15, 1],
-                x: [0, 15, 0],
-                y: [0, -15, 0],
-              }}
-              transition={{
-                duration: 10,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-            <motion.div
-              className="absolute bottom-0 left-0 w-56 h-56 bg-white rounded-full blur-2xl will-change-transform"
-              animate={{
-                scale: [1, 1.2, 1],
-                x: [0, -10, 0],
-                y: [0, 10, 0],
-              }}
-              transition={{
-                duration: 12,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 1.5,
-              }}
-            />
-          </div>
-          
-          <div className="relative z-10 bg-black/30 backdrop-blur-sm rounded-2xl p-6">
-            <div className="flex items-center gap-4 mb-4">
-                <motion.div
-                  initial={{ rotate: -180, scale: 0 }}
-                  animate={{ rotate: 0, scale: 1 }}
-                  transition={{ 
-                    delay: 0.2, 
-                    type: "spring",
-                    stiffness: 150,
-                    damping: 20
-                  }}
-                  className="relative will-change-transform"
-                >
-                  <motion.div
-                    className="will-change-transform"
-                    animate={{
-                      y: [0, -6, 0],
-                    }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                  >
-                    {userRole === 'admin' ? <AdminIcon /> : userRole === 'blogger' ? <BloggerIcon /> : <AdvertiserIcon />}
-                  </motion.div>
-                  {/* Glow effect - optimized */}
-                  <motion.div
-                    className="absolute inset-0 bg-white rounded-full blur-xl opacity-20 will-change-transform"
-                    animate={{
-                      scale: [1, 1.15, 1],
-                      opacity: [0.1, 0.25, 0.1],
-                    }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                  />
-                </motion.div>
-                <div>
-                  <motion.h2
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.25 }}
-                    className="text-3xl font-bold mb-1 text-white"
-                    style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5), 0 0 2px rgba(0,0,0,0.8)' }}
-                  >
-                    Привет, {user?.firstName || 'ADMIN'}!
-                  </motion.h2>
-                  {isAdmin && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.35 }}
-                      className="flex items-center gap-2"
-                    >
-                      <Shield className="w-4 h-4 text-white" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }} />
-                      <span className="text-sm text-white" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Администратор платформы</span>
-                    </motion.div>
-                  )}
-                </div>
+
+          <div className="relative z-10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              {/* Role Icon */}
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-telegram-primary/20 to-telegram-accent/20 flex items-center justify-center border border-white/5 shrink-0">
+                {userRole === 'admin' ? (
+                  <Shield className="w-6 h-6 text-telegram-primary" />
+                ) : userRole === 'blogger' ? (
+                  <BloggerIcon />
+                ) : (
+                  <AdvertiserIcon />
+                )}
               </div>
               
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="text-white mb-6 text-lg leading-relaxed"
-                style={{ textShadow: '0 1px 6px rgba(0,0,0,0.5), 0 0 2px rgba(0,0,0,0.7)' }}
-              >
-                {userRole === 'admin'
-                  ? 'Добро пожаловать в панель управления! Управляйте платформой и следите за метриками.'
-                  : userRole === 'blogger'
-                    ? (stats?.activeResponses || 0) > 0
-                      ? `У вас ${stats?.activeResponses} ${stats?.activeResponses === 1 ? 'новое предложение' : 'новых предложений'}`
-                      : 'Новых предложений пока нет'
-                    : (stats?.totalResponses || 0) > 0
-                      ? `Получено откликов: ${stats?.totalResponses}`
-                      : 'Откликов пока нет'}
-              </motion.p>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.35 }}
+              <div>
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  Привет, {user?.firstName || 'Гость'}! 👋
+                  {isAdmin && <Badge variant="primary" className="text-[10px] h-5 px-1.5">ADMIN</Badge>}
+                </h2>
+                <p className="text-xs text-telegram-textSecondary mt-0.5">
+                  {userRole === 'admin'
+                    ? 'Система работает штатно'
+                    : userRole === 'blogger'
+                      ? (stats?.activeResponses || 0) > 0
+                        ? `${stats?.activeResponses} новых предложений`
+                        : 'Новых предложений пока нет'
+                      : (stats?.totalResponses || 0) > 0
+                        ? `Получено откликов: ${stats?.totalResponses}`
+                        : 'Откликов пока нет'}
+                </p>
+              </div>
+            </div>
+
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => router.push(
+                userRole === 'admin' ? '/admin/dashboard' :
+                userRole === 'blogger' ? '/offers' : '/listings'
+              )}
+              className="shrink-0 text-xs font-medium h-9 bg-white/5 hover:bg-white/10 border-white/10"
             >
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Button
-                  variant="secondary"
-                  className="bg-white text-telegram-primary hover:bg-white/95 font-semibold shadow-xl text-base px-6 py-3 rounded-xl"
-                  onClick={() => router.push(
-                    userRole === 'admin' ? '/admin/dashboard' :
-                    userRole === 'blogger' ? '/offers' : '/listings'
-                  )}
-                >
-                  {userRole === 'admin' ? 'Открыть админ-панель' :
-                   userRole === 'blogger' ? 'Посмотреть предложения' : 'Мои объявления'}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </motion.div>
-            </motion.div>
+              {userRole === 'admin' ? 'Админ-панель' :
+               userRole === 'blogger' ? 'Мои заказы' : 'Мои объявления'}
+              <ArrowRight className="w-3 h-3 ml-1.5" />
+            </Button>
           </div>
         </motion.div>
 
