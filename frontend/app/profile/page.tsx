@@ -1,14 +1,15 @@
 'use client'
 
-import { useState } from 'react'
-import { Edit, Save, X, User, Mail, AtSign, FileText, Phone, Globe, Users2, Shield, CheckCircle, AlertCircle, Clock, Camera, Upload } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { 
+  Edit, Save, X, User, Mail, AtSign, FileText, Phone, Globe, 
+  Users2, Shield, CheckCircle, AlertCircle, Clock, Camera, Upload,
+  ChevronRight, Star, Zap, LayoutGrid, BarChart3, Settings
+} from 'lucide-react'
 import { Layout } from '@/components/layout/Layout'
 import { RubIcon } from '@/components/ui/ruble-icon'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
 import { useAuth } from '@/hooks/useAuth'
-import { useEffect, useRef } from 'react'
 import { authApi, analyticsApi } from '@/lib/api'
 import { UserRole, BloggerCategory } from '@/types'
 import { VerificationModal } from '@/components/VerificationModal'
@@ -32,7 +33,6 @@ export default function ProfilePage() {
     phone: '',
     website: '',
     photoUrl: '',
-    // Для блогеров
     categories: [] as string[]
   })
 
@@ -54,7 +54,7 @@ export default function ProfilePage() {
         phone: (user as any).phone || '',
         website: (user as any).website || '',
         photoUrl: user.photoUrl || '',
-              categories: normalizedCategories,
+        categories: normalizedCategories,
       })
     }
     setIsEditing(true)
@@ -65,7 +65,6 @@ export default function ProfilePage() {
     
     setIsSaving(true)
     try {
-      // Нормализуем данные для API
       const payload: any = {
         firstName: formData.firstName || undefined,
         lastName: formData.lastName || undefined,
@@ -79,22 +78,13 @@ export default function ProfilePage() {
 
       if (formData.categories && formData.categories.length > 0) payload.categories = formData.categories.join(',')
 
-      console.log('Отправляем данные:', payload)
-      const response = await authApi.updateProfile(payload)
-      console.log('Profile update response:', response)
+      await authApi.updateProfile(payload)
       try { analyticsApi.track('profile_edit_save', { targetUserId: user.id }) } catch {}
       
-      // Получаем свежие данные с сервера
       const profileResponse = await authApi.getCurrentUser()
-      console.log('Fresh profile data:', profileResponse)
-      
-      // Правильная структура ответа API
       const userData = (profileResponse as any)?.user || profileResponse
       if (userData?.id) {
-        // Обновляем localStorage с данными с сервера
         localStorage.setItem('influenta_user', JSON.stringify(userData))
-        
-        // Принудительно обновляем страницу чтобы useAuth подхватил изменения
         window.location.reload()
       }
       
@@ -124,13 +114,10 @@ export default function ProfilePage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data?.message || 'Upload failed')
 
-      // Если мы в режиме редактирования, обновляем formData
       if (isEditing) {
         setFormData(prev => ({ ...prev, photoUrl: data.url }))
       } else {
-        // Иначе сразу сохраняем
         await authApi.updateProfile({ photoUrl: data.url })
-        // Обновляем локальные данные
         const profileResponse = await authApi.getCurrentUser()
         const userData = (profileResponse as any)?.user || profileResponse
         if (userData?.id) {
@@ -157,7 +144,7 @@ export default function ProfilePage() {
       phone: '',
       website: '',
       photoUrl: '',
-            categories: []
+      categories: []
     })
   }
 
@@ -167,13 +154,11 @@ export default function ProfilePage() {
       const isSelected = currentCategories.includes(category)
       
       if (isSelected) {
-        // Убираем категорию
         return {
           ...prev,
           categories: currentCategories.filter(c => c !== category)
         }
       } else {
-        // Добавляем категорию (максимум 2)
         if (currentCategories.length >= 2) {
           alert('Можно выбрать максимум 2 категории')
           return prev
@@ -210,7 +195,6 @@ export default function ProfilePage() {
       if (response.ok) {
         alert(result.message)
         setShowVerificationModal(false)
-        // Обновляем профиль чтобы показать что заявка отправлена
         const profileResponse = await authApi.getCurrentUser()
         if ((profileResponse as any)?.user) {
           localStorage.setItem('influenta_user', JSON.stringify((profileResponse as any).user))
@@ -226,543 +210,551 @@ export default function ProfilePage() {
   }
 
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-telegram-primary mx-auto mb-4"></div>
-        <p className="text-telegram-textSecondary">Загрузка профиля...</p>
+    return (
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        minHeight: '100vh',
+        background: 'linear-gradient(180deg, #0f0f0f 0%, #1a1a2e 100%)'
+      }}>
+        <div style={{
+          width: 40,
+          height: 40,
+          border: '3px solid rgba(51, 144, 236, 0.2)',
+          borderTopColor: '#3390ec',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
-    </div>
+    )
   }
 
   if (!user) {
     return (
-      <Layout title="Профиль">
-        <div className="container py-6 max-w-4xl">
-          <div className="text-center">
-            <h2 className="text-xl">Не авторизовано</h2>
-            <p className="text-telegram-textSecondary mt-2">
-              Откройте приложение как Telegram Mini App, чтобы войти автоматически
-            </p>
-          </div>
+      <Layout>
+        <div style={{ 
+          padding: 24, 
+          textAlign: 'center', 
+          color: 'rgba(255,255,255,0.6)',
+          minHeight: '80vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
+          <h2 style={{ fontSize: 20, fontWeight: 600, color: 'white', marginBottom: 8 }}>Вход не выполнен</h2>
+          <p>Пожалуйста, войдите через Telegram</p>
         </div>
       </Layout>
     )
   }
 
-  // Временный debug
-  console.log('🔍 Profile data:', user)
-  console.log('🔍 Bio:', user.bio)
-  console.log('🔍 Role:', user.role)
-  console.log('🔍 SubscribersCount:', (user as any).subscribersCount)
-  console.log('🔍 Categories:', (user as any).categories)
+  const cardStyle = {
+    background: 'rgba(30, 30, 46, 0.6)',
+    backdropFilter: 'blur(12px)',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 20,
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)'
+  }
+
+  const labelStyle = {
+    display: 'block',
+    fontSize: 13,
+    fontWeight: 500,
+    color: 'rgba(255, 255, 255, 0.5)',
+    marginBottom: 8
+  }
+
+  const inputStyle = {
+    width: '100%',
+    padding: '12px 16px',
+    background: 'rgba(0, 0, 0, 0.2)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    color: 'white',
+    fontSize: 15,
+    outline: 'none',
+    transition: 'border-color 0.2s',
+  }
+
+  const buttonPrimaryStyle = {
+    width: '100%',
+    padding: '14px',
+    background: 'linear-gradient(135deg, #3390ec, #2b7cd3)',
+    border: 'none',
+    borderRadius: 14,
+    color: 'white',
+    fontWeight: 600,
+    fontSize: 15,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    boxShadow: '0 4px 12px rgba(51, 144, 236, 0.3)',
+    transition: 'transform 0.1s'
+  }
+
+  const buttonSecondaryStyle = {
+    width: '100%',
+    padding: '14px',
+    background: 'rgba(255, 255, 255, 0.08)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: 14,
+    color: 'white',
+    fontWeight: 600,
+    fontSize: 15,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    transition: 'background 0.2s'
+  }
 
   return (
-    <Layout title="Профиль">
-      <div className="container py-6 max-w-4xl">
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="flex flex-col gap-4">
-              <div className="flex items-start gap-4">
-                <Avatar
-                  src={user.photoUrl}
-                  firstName={user.firstName || 'Имя'}
-                  lastName={user.lastName || 'Фамилия'}
-                  size="xl"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h1 className="text-2xl font-bold truncate">
-                      {user.firstName} {user.lastName}
-                    </h1>
+    <Layout>
+      <div style={{ minHeight: '100vh', paddingBottom: 100 }}>
+        {/* Header Background */}
+        <div style={{ 
+          height: 180, 
+          background: 'linear-gradient(180deg, rgba(51, 144, 236, 0.15) 0%, rgba(0,0,0,0) 100%)',
+          marginBottom: -60,
+          position: 'relative',
+          zIndex: 0
+        }} />
+
+        <div className="container max-w-4xl px-4 relative z-10">
+          {/* Profile Card */}
+          <div style={cardStyle}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+              <div style={{ position: 'relative', marginBottom: 16 }}>
+                <div style={{ 
+                  width: 100, 
+                  height: 100, 
+                  borderRadius: '50%', 
+                  padding: 3,
+                  background: 'linear-gradient(135deg, #3390ec, #a665ff)',
+                  boxShadow: '0 8px 24px rgba(51, 144, 236, 0.3)'
+                }}>
+                  <div style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    borderRadius: '50%', 
+                    overflow: 'hidden', 
+                    background: '#1a1a2e',
+                    position: 'relative'
+                  }}>
+                    {user.photoUrl ? (
+                      <img src={user.photoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 600, color: 'white' }}>
+                        {user.firstName?.[0] || 'U'}
+                      </div>
+                    )}
                   </div>
-                  <p className="text-telegram-textSecondary mb-2">
-                    @{user.username || 'username'}
-                  </p>
-                  {user.isVerified && (
-                    <div className="inline-flex items-center gap-1.5 bg-green-500/10 text-green-500 px-3 py-1 rounded-full text-sm font-medium">
-                      <CheckCircle className="w-4 h-4" />
-                      Верифицирован
-                    </div>
-                  )}
-                  {user.bio && (
-                    <p className="text-telegram-text mt-3">
-                      {user.bio}
-                    </p>
-                  )}
                 </div>
-              </div>
-              
-              <div className="flex gap-2 pt-3 border-t border-gray-700/50">
-                {!isEditing ? (
-                  <Button
-                    variant="primary"
-                    fullWidth
-                    onClick={handleEdit}
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Редактировать профиль
-                  </Button>
-                ) : (
-                  <>
-                    <Button
-                      variant="primary"
-                      fullWidth
-                      onClick={handleSave}
-                      disabled={isSaving}
-                    >
-                      <Save className="w-4 h-4 mr-2" />
-                      {isSaving ? 'Сохранение...' : 'Сохранить'}
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      fullWidth
-                      onClick={handleCancel}
-                      disabled={isSaving}
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Отмена
-                    </Button>
-                  </>
+                {user.isVerified && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    right: 0,
+                    background: '#22c55e',
+                    borderRadius: '50%',
+                    padding: 4,
+                    border: '3px solid #1a1a2e',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                  }}>
+                    <CheckCircle size={16} color="white" strokeWidth={3} />
+                  </div>
                 )}
               </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Форма редактирования */}
-        {isEditing && (
-          <Card className="mb-6">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Редактирование профиля</h3>
-              
-              {/* Секция загрузки фото */}
-              <div className="mb-6 p-4 bg-telegram-bgSecondary rounded-lg">
-                <div className="flex items-center gap-4">
-                  <Avatar
-                    src={formData.photoUrl || user.photoUrl}
-                    firstName={formData.firstName || user.firstName || 'Имя'}
-                    lastName={formData.lastName || user.lastName || 'Фамилия'}
-                    size="lg"
-                  />
-                  <div className="flex-1">
-                    <h4 className="font-medium mb-1">Фото профиля</h4>
-                    <p className="text-sm text-telegram-textSecondary mb-3">
-                      Загрузите свою фотографию. Рекомендуемый размер 400x400 пикселей.
-                    </p>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      className="sr-only"
-                      onChange={handleAvatarChange}
-                    />
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      disabled={avatarUploading}
-                      onClick={() => fileInputRef.current?.click()}
-                      className="flex items-center gap-2"
-                    >
-                      {avatarUploading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-telegram-primary"></div>
-                          Загрузка...
-                        </>
-                      ) : (
-                        <>
-                          <Camera className="w-4 h-4" />
-                          Загрузить фото
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
+              <h1 style={{ fontSize: 24, fontWeight: 700, color: 'white', marginBottom: 4 }}>
+                {user.firstName} {user.lastName}
+              </h1>
+              <div style={{ 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                gap: 6,
+                padding: '4px 12px',
+                background: 'rgba(255,255,255,0.08)',
+                borderRadius: 20,
+                marginBottom: 16
+              }}>
+                <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>@{user.username || 'username'}</span>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Имя */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    <User className="w-4 h-4 inline mr-1" />
-                    Имя
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
-                    placeholder="Введите имя"
-                  />
-                </div>
 
-                {/* Фамилия */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    <User className="w-4 h-4 inline mr-1" />
-                    Фамилия
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
-                    placeholder="Введите фамилию"
-                  />
-                </div>
+              {user.bio && (
+                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 15, lineHeight: 1.5, maxWidth: 400, margin: '0 auto 24px' }}>
+                  {user.bio}
+                </p>
+              )}
 
-                {/* Username - только отображение */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    <AtSign className="w-4 h-4 inline mr-1" />
-                    Username (Telegram)
-                  </label>
-                  <input
-                    type="text"
-                    value={user.username ? `@${user.username}` : 'Не указан (скрыт в Telegram)'}
-                    disabled
-                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bgSecondary text-telegram-textSecondary cursor-not-allowed"
-                  />
-                  <p className="text-xs text-telegram-textSecondary mt-1">Синхронизируется с Telegram автоматически. Если у вас нет публичного @username, он не будет отображаться.</p>
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    <Mail className="w-4 h-4 inline mr-1" />
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
-                    placeholder="Введите email"
-                  />
-                </div>
-
-                {/* Роль */}
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium mb-2">
-                    <FileText className="w-4 h-4 inline mr-1" />
-                    Роль
-                  </label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
-                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
-                  >
-                    <option value={UserRole.BLOGGER}>Блогер</option>
-                    <option value={UserRole.ADVERTISER}>Рекламодатель</option>
-                  </select>
-                </div>
-
-                {/* Описание */}
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium mb-2">
-                    <FileText className="w-4 h-4 inline mr-1" />
-                    О себе
-                  </label>
-                  <textarea
-                    value={formData.bio}
-                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text resize-none"
-                    placeholder="Расскажите о себе..."
-                  />
-                </div>
-
-                {/* Телефон */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    <Phone className="w-4 h-4 inline mr-1" />
-                    Телефон
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
-                    placeholder="+7 (999) 123-45-67"
-                  />
-                </div>
-
-                {/* Сайт */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    <Globe className="w-4 h-4 inline mr-1" />
-                    Сайт/Портфолио
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.website}
-                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text"
-                    placeholder="https://example.com"
-                  />
-                </div>
-
-                {/* Дополнительные поля для блогеров */}
-                {formData.role === UserRole.BLOGGER && (
-                  <>
-                    {/* Категории для блогеров */}
-                    <div className="md:col-span-4">
-                      <label className="block text-sm font-medium mb-3">
-                        <FileText className="w-4 h-4 inline mr-1" />
-                        Категории (выберите до 2-х)
-                      </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {Object.values(BloggerCategory).map((category) => (
-                          <button
-                            key={category}
-                            type="button"
-                            onClick={() => toggleCategory(category)}
-                            className={`p-3 rounded-lg border-2 text-sm transition-all ${
-                              formData.categories?.includes(category)
-                                ? 'border-telegram-primary bg-telegram-primary/20'
-                                : 'border-gray-600 hover:border-gray-500'
-                            }`}
-                          >
-                            {getCategoryLabel(category)}
-                          </button>
-                        ))}
-                      </div>
-                      <p className="text-xs text-telegram-textSecondary mt-2">
-                        Выбрано: {formData.categories?.length || 0} из 2
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Статистика профиля */}
-        {user.role === UserRole.BLOGGER && (
-          <>
-            <Card className="mb-6">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Статистика блогера</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-telegram-primary">
-                      {(user as any).subscribersCount ? `${(user as any).subscribersCount}` : '0'}
-                    </div>
-                    <div className="text-sm text-telegram-textSecondary">Подписчики</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-telegram-accent">
-                      {(user as any).pricePerPost ? `${(user as any).pricePerPost}₽` : 'Не указано'}
-                    </div>
-                    <div className="text-sm text-telegram-textSecondary">За пост</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-telegram-secondary">
-                      {(user as any).pricePerStory ? `${(user as any).pricePerStory}₽` : 'Не указано'}
-                    </div>
-                    <div className="text-sm text-telegram-textSecondary">За сторис</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Категории блогера */}
-            {(() => {
-              const rawCats: any = (user as any).categories
-              const categories = Array.isArray(rawCats)
-                ? rawCats
-                : typeof rawCats === 'string'
-                  ? rawCats.split(',').map((c: string) => c.trim()).filter(Boolean)
-                  : []
-              
-              if (categories.length > 0) {
-                return (
-                  <Card className="mb-6">
-                    <CardContent className="p-6">
-                      <h3 className="text-lg font-semibold mb-3">Категории</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {categories.map((cat: string) => (
-                          <Badge key={cat} variant="default">
-                            {getCategoryLabel(cat)}
-                          </Badge>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              }
-              return null
-            })()}
-          </>
-        )}
-
-        {/* Социальные сети для блогеров */}
-        {user?.role === UserRole.BLOGGER && (
-          <div className="mb-6">
-            <SocialPlatformsSection />
-          </div>
-        )}
-
-        {/* Контакты */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Контакты</h3>
-            <div className="space-y-3">
-              {((user as any).phone || (user as any).website) ? (
-                <>
-                  {(user as any).phone && (
-                    <div className="flex items-center gap-3">
-                      <Phone className="w-4 h-4 text-telegram-textSecondary" />
-                      <span>{(user as any).phone}</span>
-                    </div>
-                  )}
-                  {(user as any).website && (
-                    <div className="flex items-center gap-3">
-                      <Globe className="w-4 h-4 text-telegram-textSecondary" />
-                      <a href={(user as any).website} target="_blank" rel="noopener noreferrer" 
-                         className="text-telegram-primary hover:underline">
-                        {(user as any).website}
-                      </a>
-                    </div>
-                  )}
-                </>
+              {!isEditing ? (
+                <button onClick={handleEdit} style={buttonPrimaryStyle}>
+                  <Edit size={18} />
+                  Редактировать профиль
+                </button>
               ) : (
-                <p className="text-telegram-textSecondary">Контакты не указаны</p>
+                <div style={{ display: 'flex', gap: 12, width: '100%' }}>
+                  <button onClick={handleCancel} style={{ ...buttonSecondaryStyle, flex: 1 }}>
+                    <X size={18} />
+                    Отмена
+                  </button>
+                  <button onClick={handleSave} disabled={isSaving} style={{ ...buttonPrimaryStyle, flex: 1 }}>
+                    <Save size={18} />
+                    {isSaving ? '...' : 'Сохранить'}
+                  </button>
+                </div>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Информация о профиле */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Информация</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-telegram-textSecondary">Telegram ID:</span>
-                <span className="font-mono">{user.telegramId}</span>
+          {/* Editing Form */}
+          {isEditing && (
+            <div style={cardStyle}>
+              <h3 style={{ fontSize: 18, fontWeight: 600, color: 'white', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Settings size={20} className="text-telegram-primary" />
+                Настройки профиля
+              </h3>
+              
+              {/* Avatar Upload */}
+              <div style={{ 
+                padding: 16, 
+                background: 'rgba(255,255,255,0.05)', 
+                borderRadius: 16, 
+                marginBottom: 24,
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 16 
+              }}>
+                <div style={{ width: 56, height: 56, borderRadius: '50%', overflow: 'hidden', background: '#333' }}>
+                  <img src={formData.photoUrl || user.photoUrl || ''} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 500, color: 'white', marginBottom: 4 }}>Фото профиля</div>
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 12 }}>JPG, PNG до 5MB</div>
+                  <button 
+                    onClick={() => fileInputRef.current?.click()} 
+                    disabled={avatarUploading}
+                    style={{ 
+                      padding: '8px 16px', 
+                      borderRadius: 10, 
+                      background: 'rgba(51, 144, 236, 0.15)', 
+                      color: '#3390ec', 
+                      border: 'none', 
+                      fontSize: 13, 
+                      fontWeight: 600,
+                      cursor: 'pointer' 
+                    }}
+                  >
+                    {avatarUploading ? 'Загрузка...' : 'Загрузить новое фото'}
+                  </button>
+                  <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-telegram-textSecondary">Username:</span>
-                <span>@{user.username || 'Не указан'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-telegram-textSecondary">Роль:</span>
-                <span className="capitalize">
-                  {user.role === UserRole.BLOGGER ? 'Блогер' : 
-                   user.role === UserRole.ADVERTISER ? 'Рекламодатель' : 'Не указана'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-telegram-textSecondary">Email:</span>
-                <span>{user.email || 'Не указан'}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-telegram-textSecondary">Статус:</span>
-                <div className="flex items-center gap-2">
-                  {user.isVerified ? (
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                      <span className="text-green-500 font-medium">Верифицирован</span>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  <div>
+                    <label style={labelStyle}>Имя</label>
+                    <input 
+                      style={inputStyle} 
+                      value={formData.firstName} 
+                      onChange={e => setFormData({...formData, firstName: e.target.value})} 
+                      placeholder="Иван"
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Фамилия</label>
+                    <input 
+                      style={inputStyle} 
+                      value={formData.lastName} 
+                      onChange={e => setFormData({...formData, lastName: e.target.value})} 
+                      placeholder="Иванов"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={labelStyle}>Роль</label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {[
+                      { value: UserRole.BLOGGER, label: 'Блогер', icon: User },
+                      { value: UserRole.ADVERTISER, label: 'Рекламодатель', icon: Star }
+                    ].map(role => (
+                      <button
+                        key={role.value}
+                        onClick={() => setFormData({...formData, role: role.value})}
+                        style={{
+                          flex: 1,
+                          padding: '12px',
+                          borderRadius: 12,
+                          border: formData.role === role.value ? '1px solid #3390ec' : '1px solid rgba(255,255,255,0.1)',
+                          background: formData.role === role.value ? 'rgba(51, 144, 236, 0.15)' : 'rgba(0,0,0,0.2)',
+                          color: formData.role === role.value ? '#3390ec' : 'rgba(255,255,255,0.6)',
+                          fontWeight: 500,
+                          fontSize: 14,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 8
+                        }}
+                      >
+                        <role.icon size={16} />
+                        {role.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={labelStyle}>О себе</label>
+                  <textarea 
+                    style={{ ...inputStyle, minHeight: 100, resize: 'none' }} 
+                    value={formData.bio} 
+                    onChange={e => setFormData({...formData, bio: e.target.value})} 
+                    placeholder="Расскажите о своем опыте и интересах..."
+                  />
+                </div>
+
+                <div>
+                  <label style={labelStyle}>Контакты</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ position: 'relative' }}>
+                      <Phone size={16} style={{ position: 'absolute', left: 14, top: 14, color: 'rgba(255,255,255,0.4)' }} />
+                      <input 
+                        style={{ ...inputStyle, paddingLeft: 42 }} 
+                        value={formData.phone} 
+                        onChange={e => setFormData({...formData, phone: e.target.value})} 
+                        placeholder="Телефон"
+                      />
                     </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Shield className="w-5 h-5 text-yellow-500" />
-                      <span className="text-yellow-500">Не верифицирован</span>
+                    <div style={{ position: 'relative' }}>
+                      <Globe size={16} style={{ position: 'absolute', left: 14, top: 14, color: 'rgba(255,255,255,0.4)' }} />
+                      <input 
+                        style={{ ...inputStyle, paddingLeft: 42 }} 
+                        value={formData.website} 
+                        onChange={e => setFormData({...formData, website: e.target.value})} 
+                        placeholder="Сайт / Портфолио"
+                      />
                     </div>
-                  )}
+                    <div style={{ position: 'relative' }}>
+                      <Mail size={16} style={{ position: 'absolute', left: 14, top: 14, color: 'rgba(255,255,255,0.4)' }} />
+                      <input 
+                        style={{ ...inputStyle, paddingLeft: 42 }} 
+                        value={formData.email} 
+                        onChange={e => setFormData({...formData, email: e.target.value})} 
+                        placeholder="Email"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {formData.role === UserRole.BLOGGER && (
+                  <div>
+                    <label style={labelStyle}>Категории (макс. 2)</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      {Object.values(BloggerCategory).map((cat) => {
+                        const isSelected = formData.categories?.includes(cat)
+                        return (
+                          <button
+                            key={cat}
+                            onClick={() => toggleCategory(cat)}
+                            style={{
+                              padding: '10px',
+                              borderRadius: 10,
+                              border: isSelected ? '1px solid #3390ec' : '1px solid rgba(255,255,255,0.1)',
+                              background: isSelected ? 'rgba(51, 144, 236, 0.15)' : 'rgba(0,0,0,0.2)',
+                              color: isSelected ? 'white' : 'rgba(255,255,255,0.6)',
+                              fontSize: 13,
+                              textAlign: 'center',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            {getCategoryLabel(cat)}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Stats Grid for Bloggers */}
+          {user.role === UserRole.BLOGGER && !isEditing && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 20 }}>
+              {[
+                { label: 'Подписчики', value: (user as any).subscribersCount || '0', color: '#3390ec' },
+                { label: 'За пост', value: (user as any).pricePerPost ? `${(user as any).pricePerPost}₽` : '-', color: '#22c55e' },
+                { label: 'За сторис', value: (user as any).pricePerStory ? `${(user as any).pricePerStory}₽` : '-', color: '#a665ff' }
+              ].map((stat, i) => (
+                <div key={i} style={{ 
+                  background: 'rgba(30, 30, 46, 0.6)',
+                  backdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: 20,
+                  padding: '16px 8px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: stat.color, marginBottom: 4 }}>
+                    {stat.value}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
+                    {stat.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Categories for Bloggers */}
+          {user.role === UserRole.BLOGGER && !isEditing && (
+            <div style={cardStyle}>
+              <h3 style={{ fontSize: 18, fontWeight: 600, color: 'white', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <LayoutGrid size={20} className="text-telegram-primary" />
+                Категории
+              </h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {(() => {
+                   const rawCats: any = (user as any).categories
+                   const cats = Array.isArray(rawCats) 
+                     ? rawCats 
+                     : typeof rawCats === 'string' 
+                       ? rawCats.split(',').map((c: string) => c.trim()).filter(Boolean) 
+                       : []
+                   
+                   if (cats.length === 0) return <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>Не выбраны</span>
+
+                   return cats.map((cat: string) => (
+                    <div key={cat} style={{
+                      padding: '6px 12px',
+                      background: 'rgba(255,255,255,0.1)',
+                      borderRadius: 100,
+                      fontSize: 13,
+                      color: 'white',
+                      border: '1px solid rgba(255,255,255,0.1)'
+                    }}>
+                      {getCategoryLabel(cat)}
+                    </div>
+                   ))
+                })()}
+              </div>
+            </div>
+          )}
+
+          {/* Socials for Bloggers */}
+          {user.role === UserRole.BLOGGER && !isEditing && (
+             <div style={{ marginBottom: 20 }}>
+                <SocialPlatformsSection />
+             </div>
+          )}
+
+          {/* Info Card */}
+          {!isEditing && (
+            <div style={cardStyle}>
+              <h3 style={{ fontSize: 18, fontWeight: 600, color: 'white', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <User size={20} className="text-telegram-primary" />
+                Информация
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {[
+                  { label: 'Роль', value: user.role === UserRole.BLOGGER ? 'Блогер' : 'Рекламодатель', icon: Star },
+                  { label: 'Телефон', value: (user as any).phone || 'Не указан', icon: Phone },
+                  { label: 'Email', value: user.email || 'Не указан', icon: Mail },
+                  { label: 'Сайт', value: (user as any).website || 'Не указан', icon: Globe, isLink: true },
+                ].map((item, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>
+                      <item.icon size={16} />
+                      {item.label}
+                    </div>
+                    <div style={{ color: item.isLink && item.value !== 'Не указан' ? '#3390ec' : 'white', fontSize: 14 }}>
+                      {item.value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Verification Card */}
+          {!user.isVerified && !isEditing && (
+            <div style={{
+              ...cardStyle,
+              background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.1), rgba(0,0,0,0))',
+              border: '1px solid rgba(234, 179, 8, 0.2)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <div style={{ position: 'relative', zIndex: 2 }}>
+                <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                  <div style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '50%',
+                    background: 'rgba(234, 179, 8, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#eab308'
+                  }}>
+                    <Shield size={24} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: 18, fontWeight: 700, color: 'white', marginBottom: 4 }}>
+                      {(user as any).verificationRequested ? 'Заявка на проверке' : 'Пройдите верификацию'}
+                    </h3>
+                    <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', marginBottom: 16, lineHeight: 1.5 }}>
+                      {(user as any).verificationRequested 
+                        ? 'Мы уже проверяем ваши данные. Обычно это занимает до 24 часов.' 
+                        : 'Получите синюю галочку, чтобы повысить доверие рекламодателей и получать больше заказов.'}
+                    </p>
+                    
+                    {!(user as any).verificationRequested && (
+                      <button 
+                        onClick={handleRequestVerification}
+                        style={{
+                          padding: '10px 20px',
+                          background: '#eab308',
+                          borderRadius: 12,
+                          border: 'none',
+                          color: 'black',
+                          fontWeight: 600,
+                          fontSize: 14,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 8
+                        }}
+                      >
+                        Подать заявку
+                        <ChevronRight size={16} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
 
-        {/* Блок верификации */}
-        {!user.isVerified && (
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                  (user as any).verificationRequested ? 'bg-blue-100' : 
-                  (user as any).verificationData?.rejectionReason ? 'bg-red-100' : 'bg-yellow-100'
-                }`}>
-                  {(user as any).verificationRequested ? (
-                    <Clock className="w-6 h-6 text-blue-600" />
-                  ) : (user as any).verificationData?.rejectionReason ? (
-                    <AlertCircle className="w-6 h-6 text-red-600" />
-                  ) : (
-                    <Shield className="w-6 h-6 text-yellow-600" />
-                  )}
-                </div>
-                
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold mb-2">
-                    {(user as any).verificationRequested ? 'Заявка на рассмотрении' :
-                     (user as any).verificationData?.rejectionReason ? 'Заявка отклонена' : 
-                     'Пройдите верификацию'}
-                  </h3>
-                  
-                  <p className="text-telegram-textSecondary mb-4">
-                    {(user as any).verificationRequested ? 
-                      'Администратор рассматривает вашу заявку. Обычно это занимает до 24 часов.' :
-                     (user as any).verificationData?.rejectionReason ? (
-                      <>
-                        <span className="text-red-600 font-medium">Причина отказа:</span> {(user as any).verificationData.rejectionReason}
-                      </>
-                     ) : 
-                      'Подтвердите владение аккаунтами и каналами для получения галочки верификации.'}
-                  </p>
-                  
-                  {!(user as any).verificationRequested && (
-                    <Button 
-                      variant="primary"
-                      onClick={handleRequestVerification}
-                    >
-                      <Shield className="w-4 h-4 mr-2" />
-                      {(user as any).verificationData?.rejectionReason ? 'Подать заявку заново' : 'Пройти верификацию'}
-                    </Button>
-                  )}
-                </div>
-              </div>
-              
-              {/* Преимущества верификации */}
-              <div className="mt-6 pt-6 border-t border-telegram-border">
-                <h4 className="font-medium mb-3">Преимущества верификации:</h4>
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <div className="font-medium">Доверие рекламодателей</div>
-                      <div className="text-sm text-telegram-textSecondary">Верифицированные блогеры получают больше заказов</div>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <div className="font-medium">Приоритет в поиске</div>
-                      <div className="text-sm text-telegram-textSecondary">Ваш профиль будет выше в результатах</div>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <div className="font-medium">Защита от мошенников</div>
-                      <div className="text-sm text-telegram-textSecondary">Подтверждение подлинности аккаунта</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <VerificationModal
+          isOpen={showVerificationModal}
+          onClose={() => setShowVerificationModal(false)}
+          onSubmit={handleVerificationSubmit}
+        />
       </div>
-
-      {/* Модальное окно верификации */}
-      <VerificationModal
-        isOpen={showVerificationModal}
-        onClose={() => setShowVerificationModal(false)}
-        onSubmit={handleVerificationSubmit}
-      />
     </Layout>
   )
 }
