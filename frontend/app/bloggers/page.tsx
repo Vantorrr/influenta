@@ -25,6 +25,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useScrollRestoration } from '@/hooks/useScrollRestoration'
 import { BloggerFilters } from '@/types'
 import { FilterModal } from '@/components/bloggers/FilterModal'
+import { VerificationTooltip } from '@/components/VerificationTooltip'
 
 // Компонент с контентом страницы (внутри Suspense)
 function BloggersPageContent() {
@@ -185,9 +186,7 @@ function BloggersPageContent() {
                         className="w-14 h-14 border-2 border-telegram-bg ring-2 ring-white/5"
                       />
                       {blogger.isVerified && (
-                        <div className="absolute -bottom-1 -right-1 bg-telegram-bg rounded-full p-0.5">
-                          <Shield className="w-4 h-4 text-telegram-primary fill-current" />
-                        </div>
+                        <VerificationTooltip className="absolute -bottom-1 -right-1 z-10" />
                       )}
                     </div>
 
