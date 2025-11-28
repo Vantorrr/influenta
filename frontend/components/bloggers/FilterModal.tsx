@@ -14,6 +14,13 @@ const PLATFORMS = [
   { id: 'telegram', name: 'Telegram', icon: 'TG' },
   { id: 'instagram', name: 'Instagram', icon: 'IG' },
   { id: 'youtube', name: 'YouTube', icon: 'YT' },
+  { id: 'tiktok', name: 'TikTok', icon: 'TT' },
+  { id: 'vk', name: 'VK', icon: 'VK' },
+  { id: 'twitter', name: 'Twitter', icon: 'TW' },
+  { id: 'facebook', name: 'Facebook', icon: 'FB' },
+  { id: 'twitch', name: 'Twitch', icon: 'TV' },
+  { id: 'linkedin', name: 'LinkedIn', icon: 'IN' },
+  { id: 'other', name: 'Other', icon: 'OT' },
 ]
 
 interface FilterModalProps {

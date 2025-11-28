@@ -28,11 +28,9 @@ export function useScrollRestoration() {
           // Первая попытка сразу
           requestAnimationFrame(restore)
 
-          // Повторные попытки с задержками
-          setTimeout(() => restore(), 50)
-          setTimeout(() => restore(), 150)
-          setTimeout(() => restore(), 300)
-          setTimeout(() => restore(), 500)
+          // Повторные попытки с задержками (увеличили время ожидания загрузки)
+          const intervals = [50, 150, 300, 500, 800, 1200, 2000]
+          intervals.forEach(t => setTimeout(restore, t))
 
           restoredRef.current = true
         }

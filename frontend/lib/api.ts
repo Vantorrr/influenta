@@ -103,6 +103,7 @@ export const bloggersApi = {
   ): Promise<PaginatedResponse<Blogger>> {
     const params: Record<string, any> = { page, limit }
     if (filters?.search) params.search = filters.search
+    if (filters?.platform) params.platform = filters.platform
     if (filters?.verifiedOnly) params.verifiedOnly = true
     if (filters?.categories && filters.categories.length > 0) params.categories = filters.categories.join(',')
     if (typeof filters?.minSubscribers === 'number') params.minSubscribers = filters.minSubscribers

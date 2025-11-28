@@ -96,20 +96,6 @@ function BloggersPageContent() {
     })()
   }, [search, filters])
 
-  // Восстановление скролла к последнему элементу
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const lastId = sessionStorage.getItem('__bloggers_last_id')
-    if (!lastId) return
-    // Небольшая задержка, чтобы DOM успел отрисоваться
-    setTimeout(() => {
-      const el = document.getElementById(`blogger-${lastId}`)
-      if (el) {
-        el.scrollIntoView({ block: 'center' })
-      }
-    }, 100)
-  }, [bloggers])
-
   const activeFiltersCount = Object.keys(filters).filter(k => {
     const val = filters[k as keyof BloggerFilters]
     return Array.isArray(val) ? val.length > 0 : val !== undefined
