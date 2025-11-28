@@ -10,7 +10,6 @@ import {
   Clock,
   X,
   Check,
-  CheckCheck,
   Paperclip
 } from 'lucide-react'
 import { Avatar } from '@/components/ui/avatar'
@@ -48,7 +47,9 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
     const load = async () => {
       try {
         const res = await messagesApi.getByResponse(chat.responseId, 1, 200)
-        const items = (res as any)?.data || res?.data || []
+        const raw = (res as any)?.data || res?.data || []
+        const items = Array.isArray(raw) ? raw : []
+        
         if (!isMounted) return
         const normalized = items.map((m: any) => ({
           id: m.id,
@@ -155,7 +156,10 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
     if (msg.senderId !== currentUserId) return null
     
     if (msg.isRead) {
-      return <CheckCheck className="w-3.5 h-3.5 text-blue-200" />
+      return <div className="flex -space-x-2">
+        <Check className="w-3.5 h-3.5 text-blue-200" />
+        <Check className="w-3.5 h-3.5 text-blue-200" />
+      </div>
     } else {
       return <Check className="w-3.5 h-3.5 text-blue-200/70" />
     }

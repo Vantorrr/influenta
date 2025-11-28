@@ -107,8 +107,9 @@ function MessagesPageContent() {
             status: 'active',
           }
         })
-        // Убираем дубликаты чатов (если вдруг API возвращает дубли)
-        const uniqueChats = Array.from(new Map(normalized.map(item => [item.responseId, item])).values())
+        // Убираем дубликаты чатов (оставляем один чат на одного пользователя)
+        // Если с одним пользователем несколько чатов (по разным объявлениям), показываем последний
+        const uniqueChats = Array.from(new Map(normalized.map(item => [item.otherUser.id, item])).values())
         setChats(uniqueChats)
       } catch {
         setChats([])
