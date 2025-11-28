@@ -149,12 +149,12 @@ export default function BloggerDetailsPage() {
   return (
     <div className="min-h-screen bg-telegram-bg pb-20">
       {/* Header Image / Pattern */}
-      <div className="h-48 bg-gradient-to-br from-telegram-primary/20 via-blue-900/20 to-telegram-bg relative overflow-hidden">
+      <div className="h-32 bg-gradient-to-br from-telegram-primary/20 via-blue-900/20 to-telegram-bg relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10" />
         <div className="absolute inset-0 bg-gradient-to-t from-telegram-bg to-transparent" />
         
         {/* Back Button */}
-        <div className="absolute top-4 left-4 z-10">
+        <div className="absolute top-4 left-4 z-50">
           <Button
             variant="ghost"
             size="sm"
@@ -167,7 +167,7 @@ export default function BloggerDetailsPage() {
         </div>
       </div>
 
-      <div className="container px-4 -mt-20 relative z-10 space-y-6">
+      <div className="container px-4 -mt-12 relative z-10 space-y-6">
         {/* Main Info Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -198,9 +198,11 @@ export default function BloggerDetailsPage() {
                       <h1 className="text-2xl md:text-3xl font-bold text-white truncate flex items-center gap-3">
                         {blogger.user?.firstName} {blogger.user?.lastName}
                       </h1>
-                      <p className="text-telegram-textSecondary text-lg">
-                        @{blogger.user?.username || blogger.user?.telegramUsername || 'username'}
-                      </p>
+                      {isAdmin && (
+                        <p className="text-telegram-textSecondary text-lg">
+                          @{blogger.user?.username || blogger.user?.telegramUsername || 'username'}
+                        </p>
+                      )}
                     </div>
                     {/* Price Badge */}
                     {(blogger.pricePerPost > 0 || blogger.pricePerStory > 0) && (

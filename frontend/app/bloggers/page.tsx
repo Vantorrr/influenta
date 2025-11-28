@@ -58,7 +58,7 @@ function BloggersPageContent() {
   const [bloggers, setBloggers] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const [showFilters, setShowFilters] = useState(false)
 
   useScrollRestoration()
@@ -119,7 +119,7 @@ function BloggersPageContent() {
   return (
     <div className="space-y-6 pb-20">
       {/* Header & Search */}
-      <div className="sticky top-0 z-10 bg-telegram-bg/95 backdrop-blur-md py-4 space-y-4 border-b border-white/5 -mx-4 px-4 md:mx-0 md:px-0">
+      <div className="sticky top-0 z-40 bg-telegram-bg/95 backdrop-blur-md py-4 space-y-4 border-b border-white/5 -mx-4 px-4 md:mx-0 md:px-0">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -215,9 +215,11 @@ function BloggersPageContent() {
                             </div>
                           )}
                         </div>
-                        <p className="text-sm text-telegram-textSecondary truncate">
-                          @{blogger.user?.username || blogger.user?.telegramUsername || 'username'}
-                        </p>
+                        {isAdmin && (
+                          <p className="text-sm text-telegram-textSecondary truncate">
+                            @{blogger.user?.username || blogger.user?.telegramUsername || 'username'}
+                          </p>
+                        )}
                       </div>
 
                       {/* Stats Grid */}
