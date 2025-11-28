@@ -7,12 +7,19 @@ import Image from 'next/image'
 export function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(true)
   const [progress, setProgress] = useState(0)
+  const [loadingText, setLoadingText] = useState('Запуск платформы...')
 
   useEffect(() => {
-    // Имитация загрузки
+    // Имитация загрузки с меняющимся текстом
     const interval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) return 100
+        
+        // Меняем текст в зависимости от прогресса
+        if (prev === 20) setLoadingText('Подключаем базу блогеров...')
+        if (prev === 50) setLoadingText('Загружаем статистику...')
+        if (prev === 80) setLoadingText('Почти готово...')
+        
         // Замедляемся к концу
         const add = Math.max(1, Math.floor((100 - prev) / 15))
         return prev + add
@@ -38,7 +45,7 @@ export function LoadingScreen() {
           transition={{ duration: 0.6 }}
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#080a0f] overflow-hidden"
         >
-          {/* Статичный фон с градиентом (Дешево для CPU, дорого на вид) */}
+          {/* Статичный фон с градиентом */}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-[#080a0f] to-[#080a0f]" />
           
           {/* Тонкая сетка для текстуры */}
@@ -51,7 +58,7 @@ export function LoadingScreen() {
           />
 
           <div className="relative z-10 flex flex-col items-center w-full max-w-xs">
-            {/* Логотип с "дышащим" свечением (box-shadow не лагает так, как filter) */}
+            {/* Логотип */}
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -76,7 +83,6 @@ export function LoadingScreen() {
                   className="object-cover"
                   priority
                 />
-                {/* Блик - это просто белый div с прозрачностью */}
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-50" />
               </motion.div>
             </motion.div>
@@ -96,22 +102,20 @@ export function LoadingScreen() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
-                className="flex items-center justify-center gap-3 text-[10px] font-medium text-blue-200/60 uppercase tracking-[0.3em]"
+                className="flex items-center justify-center gap-3 text-[10px] font-medium text-blue-200/60 uppercase tracking-[0.2em]"
               >
-                <span>Connect</span>
+                <span>Блогеры</span>
                 <span className="w-0.5 h-0.5 rounded-full bg-blue-500" />
-                <span>Create</span>
+                <span>Реклама</span>
                 <span className="w-0.5 h-0.5 rounded-full bg-blue-500" />
-                <span>Grow</span>
+                <span>Результат</span>
               </motion.div>
             </div>
 
-            {/* Полоса загрузки (Стильная, тонкая) */}
+            {/* Полоса загрузки */}
             <div className="w-48 relative">
-              {/* Фон полосы */}
               <div className="absolute inset-0 h-0.5 bg-white/10 rounded-full" />
               
-              {/* Активная полоса */}
               <motion.div 
                 className="absolute inset-y-0 left-0 h-0.5 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full"
                 initial={{ width: 0 }}
@@ -119,7 +123,6 @@ export function LoadingScreen() {
                 transition={{ type: "spring", stiffness: 50, damping: 20 }}
               />
               
-              {/* Светящаяся точка в конце */}
               <motion.div
                 className="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)]"
                 style={{ left: `${progress}%` }}
@@ -128,13 +131,14 @@ export function LoadingScreen() {
               />
             </div>
             
-            {/* Проценты */}
+            {/* Текст загрузки */}
             <motion.p 
-              className="mt-4 text-[10px] font-mono text-white/30"
-              animate={{ opacity: [0.3, 0.6, 0.3] }}
-              transition={{ duration: 2, repeat: Infinity }}
+              className="mt-4 text-[10px] font-medium text-white/40 h-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              key={loadingText} // Анимация при смене текста
             >
-              INITIALIZING... {Math.round(progress)}%
+              {loadingText}
             </motion.p>
           </div>
         </motion.div>
