@@ -70,39 +70,20 @@ function MessagesPageContent() {
   const [chats, setChats] = useState<Chat[]>([])
   const currentUserId = user?.id || ''
 
-  const ensureArray = (value: any): any[] => {
-    if (Array.isArray(value)) return value
-    if (Array.isArray(value?.items)) return value.items
-    if (Array.isArray(value?.data)) return value.data
-    return []
-  }
-
-  const normalizeContent = (value: any): string => {
-    if (typeof value === 'string') return value
-    if (value == null) return ''
-    try {
-      return JSON.stringify(value)
-    } catch {
-      return String(value)
-    }
-  }
-
   // Загрузка реального списка чатов
   useEffect(() => {
     if (!user) return
     ;(async () => {
       try {
         const res = await messagesApi.getChatList()
-        const rawRows = (res as any)?.data ?? res
-        const rows = ensureArray(rawRows)
-        const normalized: Chat[] = rows.map((row: any) => {
+        const rows = (res as any)?.data || res
+        const normalized: Chat[] = (rows || []).map((row: any) => {
           // Определяем, кто я: блогер (автор отклика) или рекламодатель (владелец объявления)
           const iAmBlogger = user.role === 'blogger'
           const otherUserData = iAmBlogger
             ? row.response?.listing?.advertiser?.user // Я блогер → собеседник рекламодатель
             : row.response?.blogger?.user // Я рекламодатель → собеседник блогер
           
-          const lastMessageData = row.lastMessage || null
           return {
             id: row.responseId,
             responseId: row.responseId,
@@ -115,11 +96,11 @@ function MessagesPageContent() {
               photoUrl: otherUserData?.photoUrl,
               role: iAmBlogger ? 'advertiser' : 'blogger',
             },
-            lastMessage: lastMessageData ? {
-              content: normalizeContent(lastMessageData.content),
-              createdAt: lastMessageData.createdAt ? new Date(lastMessageData.createdAt) : new Date(),
-              isRead: !!lastMessageData.isRead,
-              senderId: lastMessageData.senderId,
+            lastMessage: row.lastMessage ? {
+              content: row.lastMessage.content,
+              createdAt: new Date(row.lastMessage.createdAt),
+              isRead: !!row.lastMessage.isRead,
+              senderId: row.lastMessage.senderId,
             } : {
               content: 'Нет сообщений',
               createdAt: new Date(),
@@ -143,8 +124,7 @@ function MessagesPageContent() {
       if (!selectedChat) return
       try {
         const res = await messagesApi.getByResponse(selectedChat.responseId, 1, 50)
-        const rawItems = (res as any)?.data ?? res
-        const items = ensureArray(rawItems)
+        const items = (res as any)?.data || res?.data || []
         for (const m of items) {
           if (!m.isRead && m.senderId !== currentUserId) {
             try { await messagesApi.markAsRead(m.id) } catch {}
@@ -285,12 +265,3 @@ function MessagesPageContent() {
     </Layout>
   )
 }
-
-
-
-
-
-
-
-
-
