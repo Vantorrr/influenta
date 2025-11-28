@@ -97,7 +97,7 @@ function MessagesPageContent() {
               role: iAmBlogger ? 'advertiser' : 'blogger',
             },
             lastMessage: row.lastMessage ? {
-              content: typeof row.lastMessage.content === 'object' ? JSON.stringify(row.lastMessage.content) : String(row.lastMessage.content || ''),
+              content: row.lastMessage.content,
               createdAt: new Date(row.lastMessage.createdAt),
               isRead: !!row.lastMessage.isRead,
               senderId: row.lastMessage.senderId,
@@ -265,3 +265,12 @@ function MessagesPageContent() {
     </Layout>
   )
 }
+
+
+
+
+
+
+
+
+
