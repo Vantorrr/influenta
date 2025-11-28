@@ -137,63 +137,39 @@ export default function ListingsPage() {
                   transition={{ delay: i * 0.05 }}
                 >
                   <Link href={`/listings/${listing.id}`} className="block touch-manipulation active:scale-[0.99] transition-transform">
-                    <Card className="bg-[#1C1E20] border-white/5 p-4 relative overflow-hidden hover:border-white/10 transition-colors">
-                      {/* Neon Glow line based on format or budget */}
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 to-purple-500 opacity-50" />
+                    <Card className="bg-[#1C1E20] border-white/5 p-5 hover:border-white/10 transition-colors shadow-sm">
+                      <div className="flex justify-between items-start mb-3">
+                        <h3 className="text-lg font-bold text-white leading-snug flex-1 pr-4">
+                          {listing.title}
+                        </h3>
+                        <Badge variant="default" className="bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold hover:bg-blue-500/20 shrink-0">
+                          {listing.budget > 0 ? formatPrice(listing.budget) : 'Договорная'}
+                        </Badge>
+                      </div>
                       
-                      <div className="flex justify-between items-start gap-3 pl-3">
-                        <div className="space-y-2 flex-1 min-w-0">
-                          {/* Tags */}
-                          <div className="flex flex-wrap gap-1.5">
-                            {listing.targetCategories?.slice(0, 2).map(cat => (
-                              <Badge key={cat} variant="default" className="bg-white/5 hover:bg-white/10 text-[10px] text-white/70 border-white/5 font-normal">
-                                {getCategoryLabel(cat)}
-                              </Badge>
-                            ))}
-                            {listing.format && (
-                              <Badge variant="default" className="bg-blue-500/10 text-blue-400 border-blue-500/20 text-[10px]">
-                                {getPostFormatLabel(listing.format)}
-                              </Badge>
-                            )}
-                          </div>
+                      <p className="text-sm text-white/60 line-clamp-2 mb-4 leading-relaxed">
+                        {listing.description}
+                      </p>
 
-                          <h3 className="font-bold text-white text-lg leading-tight truncate pr-2">
-                            {listing.title}
-                          </h3>
-                          
-                          <p className="text-sm text-white/50 line-clamp-2 leading-snug">
-                            {listing.description}
-                          </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {listing.targetCategories?.slice(0, 3).map(cat => (
+                          <Badge key={cat} variant="default" className="bg-[#2A2A2A] text-white/70 border border-white/5 font-normal text-xs hover:bg-[#333]">
+                            {getCategoryLabel(cat)}
+                          </Badge>
+                        ))}
+                        
+                        {listing.requirements?.minSubscribers && (
+                           <Badge variant="default" className="bg-[#2A2A2A] text-white/70 border border-white/5 font-normal text-xs hover:bg-[#333]">
+                             от {listing.requirements.minSubscribers / 1000}k подп.
+                           </Badge>
+                        )}
 
-                          <div className="flex items-center gap-4 pt-1 text-xs text-white/40">
-                            {listing.deadline && (
-                              <div className="flex items-center gap-1.5">
-                                <Clock className="w-3.5 h-3.5" />
-                                <span>до {new Date(listing.deadline).toLocaleDateString('ru-RU')}</span>
-                              </div>
-                            )}
-                            <div className="flex items-center gap-1.5">
-                              <Target className="w-3.5 h-3.5" />
-                              <span>
-                                {listing.requirements?.minSubscribers 
-                                  ? `от ${listing.requirements.minSubscribers / 1000}k подп.` 
-                                  : 'Любая аудитория'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Price & Action */}
-                        <div className="flex flex-col items-end justify-between self-stretch gap-2">
-                          <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg text-right">
-                            <span className="block text-[10px] text-blue-300 uppercase tracking-wider font-bold">Бюджет</span>
-                            <span className="text-sm font-bold text-white">
-                              {listing.budget > 0 ? formatPrice(listing.budget) : 'Договорная'}
-                            </span>
-                          </div>
-                          
-                          <ChevronRight className="w-5 h-5 text-white/20" />
-                        </div>
+                        {listing.deadline && (
+                          <span className="text-xs text-white/40 ml-auto flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(listing.deadline).toLocaleDateString('ru-RU')}
+                          </span>
+                        )}
                       </div>
                     </Card>
                   </Link>
