@@ -174,60 +174,59 @@ export default function BloggerDetailsPage() {
           animate={{ opacity: 1, y: 0 }}
         >
           <Card className="border-white/5 bg-[#1C1E20]/95 backdrop-blur shadow-xl overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row gap-6 items-start">
+            <CardContent className="p-5">
+              <div className="flex gap-5 items-start">
                 {/* Avatar */}
-                <div className="relative">
+                <div className="relative shrink-0">
                   <Avatar
                     src={blogger.user?.photoUrl}
                     firstName={blogger.user?.firstName || ''}
                     lastName={blogger.user?.lastName || ''}
-                    className="w-24 h-24 md:w-32 md:h-32 border-4 border-[#1C1E20] ring-4 ring-white/5 shadow-2xl"
+                    className="w-20 h-20 md:w-32 md:h-32 border-4 border-[#1C1E20] ring-4 ring-white/5 shadow-2xl"
                   />
                   {blogger.isVerified && (
-                    <div className="absolute -bottom-2 -right-2 z-10">
-                      <VerificationTooltip className="scale-110" />
+                    <div className="absolute -bottom-1 -right-1 z-10">
+                      <VerificationTooltip className="scale-90 md:scale-110" />
                     </div>
                   )}
                 </div>
 
                 {/* Info */}
-                <div className="flex-1 min-w-0 pt-2 space-y-3">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                      <h1 className="text-2xl md:text-3xl font-bold text-white truncate flex items-center gap-3">
-                        {blogger.user?.firstName} {blogger.user?.lastName}
-                      </h1>
-                      {isAdmin && (
-                        <p className="text-telegram-textSecondary text-lg">
-                          @{blogger.user?.username || blogger.user?.telegramUsername || 'username'}
-                        </p>
-                      )}
-                    </div>
-                    {/* Price Badge */}
-                    {(blogger.pricePerPost > 0 || blogger.pricePerStory > 0) && (
-                      <div className="flex flex-col items-end">
-                        {blogger.pricePerPost > 0 && (
-                          <div className="bg-telegram-accent/10 border border-telegram-accent/20 px-4 py-2 rounded-xl">
-                            <p className="text-xs text-telegram-accent/80 uppercase font-bold tracking-wider">Пост</p>
-                            <p className="text-xl font-bold text-telegram-accent">{formatPrice(blogger.pricePerPost)}</p>
-                          </div>
-                        )}
-                      </div>
+                <div className="flex-1 min-w-0 pt-1 space-y-2.5">
+                  <div>
+                    <h1 className="text-xl md:text-3xl font-bold text-white truncate leading-tight">
+                      {blogger.user?.firstName} {blogger.user?.lastName}
+                    </h1>
+                    {isAdmin && (
+                      <p className="text-telegram-textSecondary text-sm md:text-lg">
+                        @{blogger.user?.username || blogger.user?.telegramUsername || 'username'}
+                      </p>
                     )}
                   </div>
 
                   {/* Categories */}
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     {(blogger.categories || []).map((c: string) => (
                       <span 
                         key={c} 
-                        className="text-xs font-medium uppercase tracking-wider px-3 py-1 rounded-lg bg-white/5 text-telegram-textSecondary border border-white/5"
+                        className="text-[10px] md:text-xs font-medium uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/5 text-telegram-textSecondary border border-white/5"
                       >
                         {getCategoryLabel(c)}
                       </span>
                     ))}
                   </div>
+
+                  {/* Price Badge - Compact & Aligned */}
+                  {(blogger.pricePerPost > 0 || blogger.pricePerStory > 0) && (
+                    <div className="flex flex-wrap gap-2 pt-0.5">
+                      {blogger.pricePerPost > 0 && (
+                        <div className="inline-flex items-baseline gap-1.5 bg-telegram-accent/10 border border-telegram-accent/20 px-2.5 py-1 rounded-lg">
+                          <span className="text-[10px] text-telegram-accent/80 uppercase font-bold tracking-wider">Пост</span>
+                          <span className="text-sm md:text-base font-bold text-telegram-accent">{formatPrice(blogger.pricePerPost)}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
