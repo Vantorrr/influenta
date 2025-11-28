@@ -1,19 +1,26 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { 
   Search as SearchIcon, 
   MessageSquare,
   CheckCircle,
+  Clock,
   X,
+  Send,
+  Paperclip,
+  Image as ImageIcon,
+  MoreVertical
 } from 'lucide-react'
+import Link from 'next/link'
 import { Layout } from '@/components/layout/Layout'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { getRelativeTime } from '@/lib/utils'
+import { formatDate, getRelativeTime } from '@/lib/utils'
 import { ChatWindow } from '@/components/chat/ChatWindow'
 import { messagesApi } from '@/lib/api'
 import { useSearchParams } from 'next/navigation'
@@ -45,11 +52,8 @@ export default function MessagesPage() {
   return (
     <Suspense fallback={
       <Layout>
-        <div className="container h-[calc(100vh-8rem)] flex items-center justify-center text-white/40">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-            <p>Загрузка сообщений...</p>
-          </div>
+        <div className="container h-[calc(100vh-8rem)] flex items-center justify-center text-telegram-textSecondary">
+          Загрузка сообщений...
         </div>
       </Layout>
     }>
@@ -73,7 +77,7 @@ function MessagesPageContent() {
       try {
         const res = await messagesApi.getChatList()
         const rows = (res as any)?.data || res
-        const normalized: Chat[] = (Array.isArray(rows) ? rows : []).map((row: any) => {
+        const normalized: Chat[] = (rows || []).map((row: any) => {
           // Определяем, кто я: блогер (автор отклика) или рекламодатель (владелец объявления)
           const iAmBlogger = user.role === 'blogger'
           const otherUserData = iAmBlogger
@@ -85,21 +89,21 @@ function MessagesPageContent() {
             responseId: row.responseId,
             listingTitle: row.response?.listing?.title || 'Объявление',
             otherUser: {
-              id: String(otherUserData?.id || ''),
-              firstName: String(otherUserData?.firstName || 'Пользователь'),
-              lastName: String(otherUserData?.lastName || ''),
-              username: String(otherUserData?.username || ''),
-              photoUrl: otherUserData?.photoUrl ? String(otherUserData.photoUrl) : undefined,
+              id: otherUserData?.id,
+              firstName: otherUserData?.firstName || 'Пользователь',
+              lastName: otherUserData?.lastName || '',
+              username: otherUserData?.username || '',
+              photoUrl: otherUserData?.photoUrl,
               role: iAmBlogger ? 'advertiser' : 'blogger',
             },
             lastMessage: row.lastMessage ? {
-              content: typeof row.lastMessage.content === 'object' ? JSON.stringify(row.lastMessage.content) : String(row.lastMessage.content || ''),
+              content: row.lastMessage.content,
               createdAt: new Date(row.lastMessage.createdAt),
               isRead: !!row.lastMessage.isRead,
-              senderId: String(row.lastMessage.senderId || ''),
+              senderId: row.lastMessage.senderId,
             } : {
               content: 'Нет сообщений',
-              createdAt: new Date(0),
+              createdAt: new Date(),
               isRead: true,
               senderId: '',
             },
@@ -107,10 +111,6 @@ function MessagesPageContent() {
             status: 'active',
           }
         })
-        
-        // Сортируем по дате (новые сверху)
-        normalized.sort((a, b) => b.lastMessage.createdAt.getTime() - a.lastMessage.createdAt.getTime())
-        
         setChats(normalized)
       } catch {
         setChats([])
@@ -157,89 +157,81 @@ function MessagesPageContent() {
 
   return (
     <Layout>
-      <div className="h-[calc(100vh-4rem)] flex bg-[#101112]">
+      <div className="h-[calc(100vh-4rem)] flex -mb-16">
         {/* Список чатов */}
-        <div className={`${selectedChat ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[400px] border-r border-white/10 bg-[#1C1E20]/30 backdrop-blur-sm relative z-10`}>
+        <div className={`${selectedChat ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-96 border-r border-gray-700/50`}>
           {/* Поиск */}
-          <div className="p-4 space-y-4 border-b border-white/10 bg-[#1C1E20]/80 backdrop-blur-md">
-            <div className="flex items-center justify-between px-1">
-              <h1 className="text-2xl font-bold text-white">Сообщения</h1>
-              {totalUnread > 0 && (
-                <Badge variant="default" className="bg-blue-600 text-white hover:bg-blue-500 border-none">
-                  {totalUnread} новых
-                </Badge>
-              )}
-            </div>
-            <div className="relative group">
-              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-blue-500 transition-colors" />
-              <Input
-                type="search"
-                placeholder="Поиск сообщений..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 bg-[#101112] border-white/10 focus:border-blue-500/50 h-11 rounded-xl text-white placeholder-white/30 transition-all shadow-sm"
-              />
-            </div>
+          <div className="p-4 border-b border-gray-700/50">
+            <Input
+              type="search"
+              placeholder="Поиск сообщений..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              icon={<SearchIcon className="w-4 h-4" />}
+            />
+            {totalUnread > 0 && (
+              <p className="text-sm text-telegram-textSecondary mt-2">
+                Непрочитанных: {totalUnread}
+              </p>
+            )}
           </div>
 
           {/* Список чатов */}
-          <div className="flex-1 overflow-y-auto p-2 space-y-1.5 scrollbar-thin scrollbar-thumb-white/10">
+          <div className="flex-1 overflow-y-auto">
             {filteredChats.map((chat, index) => (
               <motion.div
                 key={chat.id}
-                initial={{ opacity: 0, x: -10 }}
+                initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
               >
                 <button
                   onClick={() => setSelectedChat(chat)}
-                  className={`w-full p-3 rounded-xl transition-all border border-transparent group relative overflow-hidden ${
-                    selectedChat?.id === chat.id 
-                      ? 'bg-blue-600/10 border-blue-500/20 shadow-lg shadow-blue-500/5' 
-                      : 'hover:bg-white/5 hover:border-white/5'
+                  className={`w-full p-4 hover:bg-telegram-bgSecondary transition-colors border-b border-gray-700/50 ${
+                    selectedChat?.id === chat.id ? 'bg-telegram-bgSecondary' : ''
                   }`}
                 >
-                  {selectedChat?.id === chat.id && (
-                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-xl" />
-                  )}
-                  
-                  <div className="flex items-center gap-3.5">
-                    <div className="relative shrink-0">
-                      <Avatar
-                        firstName={chat.otherUser.firstName}
-                        lastName={chat.otherUser.lastName}
-                        src={chat.otherUser.photoUrl}
-                        size="md"
-                        className={`ring-2 ${selectedChat?.id === chat.id ? 'ring-blue-500/30' : 'ring-white/5'} shadow-lg`}
-                      />
-                    </div>
+                  <div className="flex items-start gap-3">
+                    <Avatar
+                      firstName={chat.otherUser.firstName}
+                      lastName={chat.otherUser.lastName}
+                      src={chat.otherUser.photoUrl}
+                      size="md"
+                    />
                     
-                    <div className="flex-1 text-left min-w-0">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <h3 className={`font-semibold text-sm truncate flex items-center gap-1.5 ${selectedChat?.id === chat.id ? 'text-blue-100' : 'text-white'}`}>
-                          {chat.otherUser.firstName} {chat.otherUser.lastName}
-                          {chat.status === 'accepted' && (
-                            <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                    <div className="flex-1 text-left">
+                      <div className="flex items-start justify-between mb-1">
+                        <div>
+                          <h3 className="font-medium flex items-center gap-2">
+                            {chat.otherUser.firstName} {chat.otherUser.lastName}
+                            {chat.status === 'accepted' && (
+                              <CheckCircle className="w-4 h-4 text-telegram-success" />
+                            )}
+                            {chat.status === 'rejected' && (
+                              <X className="w-4 h-4 text-telegram-danger" />
+                            )}
+                          </h3>
+                          <p className="text-xs text-telegram-textSecondary">
+                            {chat.listingTitle}
+                          </p>
+                          {chat.otherUser.role === "blogger" && chat.otherUser.id && (
+                            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); window.location.href = `/bloggers/${chat.otherUser.id}` }} className="px-0 text-telegram-primary">
+                              Открыть профиль блогера
+                            </Button>
                           )}
-                        </h3>
-                        <span className={`text-[11px] font-medium shrink-0 ${selectedChat?.id === chat.id ? 'text-blue-200/70' : 'text-white/30'}`}>
+                        </div>
+                        <span className="text-xs text-telegram-textSecondary">
                           {getRelativeTime(chat.lastMessage.createdAt)}
                         </span>
                       </div>
                       
-                      <p className="text-xs text-white/40 truncate mb-1.5">
-                        {chat.listingTitle}
-                      </p>
-                      
-                      <div className="flex items-center justify-between gap-2">
-                        <p className={`text-sm truncate leading-snug ${selectedChat?.id === chat.id ? 'text-blue-100/80' : 'text-white/60'}`}>
-                          <span className={chat.lastMessage.senderId === currentUserId ? 'text-white/30' : ''}>
-                            {chat.lastMessage.senderId === currentUserId && 'Вы: '}
-                          </span>
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-telegram-textSecondary line-clamp-1">
+                          {chat.lastMessage.senderId === currentUserId && 'Вы: '}
                           {chat.lastMessage.content}
                         </p>
                         {chat.unreadCount > 0 && (
-                          <Badge variant="default" className="bg-blue-600 text-white hover:bg-blue-500 h-5 px-1.5 min-w-[1.25rem] justify-center text-[10px] border-none shadow-lg shadow-blue-500/20 animate-pulse">
+                          <Badge variant="primary" className="ml-2">
                             {chat.unreadCount}
                           </Badge>
                         )}
@@ -249,45 +241,36 @@ function MessagesPageContent() {
                 </button>
               </motion.div>
             ))}
-            
-            {filteredChats.length === 0 && (
-              <div className="text-center py-12 px-4">
-                 <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <SearchIcon className="w-8 h-8 text-white/20" />
-                 </div>
-                 <p className="text-white/40 text-sm">Ничего не найдено</p>
-              </div>
-            )}
           </div>
         </div>
 
         {/* Окно чата */}
-        <div className={`flex-1 flex flex-col h-full bg-[#101112] relative overflow-hidden ${!selectedChat ? 'hidden md:flex' : ''}`}>
-          {/* Background Decor */}
-          <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 via-transparent to-transparent pointer-events-none" />
-
-          {selectedChat ? (
-            <ChatWindow
-              chat={selectedChat}
-              currentUserId={currentUserId}
-              onBack={() => setSelectedChat(null)}
-            />
-          ) : (
-            <div className="flex-1 flex items-center justify-center p-8">
-              <div className="text-center max-w-sm">
-                <div className="w-24 h-24 bg-gradient-to-tr from-blue-500/20 to-purple-500/20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-blue-500/10 border border-white/5 relative overflow-hidden">
-                   <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
-                   <MessageSquare className="w-10 h-10 text-blue-400 relative z-10" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-3">Ваши сообщения</h3>
-                <p className="text-white/40 leading-relaxed">
-                  Выберите чат слева, чтобы продолжить общение, или найдите новое задание для обсуждения.
-                </p>
-              </div>
+        {selectedChat ? (
+          <ChatWindow
+            chat={selectedChat}
+            currentUserId={currentUserId}
+            onBack={() => setSelectedChat(null)}
+          />
+        ) : (
+          <div className="hidden md:flex flex-1 items-center justify-center">
+            <div className="text-center">
+              <MessageSquare className="w-16 h-16 text-telegram-textSecondary mx-auto mb-4" />
+              <p className="text-telegram-textSecondary">
+                Выберите чат для начала общения
+              </p>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </Layout>
   )
 }
+
+
+
+
+
+
+
+
+
