@@ -35,48 +35,84 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [isTyping, setIsTyping] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const typingTimer = useRef<any>(null)
 
+  // Безопасное получение данных пользователя
+  const otherUser = chat?.otherUser || {}
+  const otherFirstName = String(otherUser.firstName || 'Пользователь')
+  const otherLastName = String(otherUser.lastName || '')
+  const otherPhotoUrl = otherUser.photoUrl
+  const otherRole = otherUser.role
+  const otherUserId = otherUser.id
+  const listingTitle = String(chat?.listingTitle || 'Объявление')
+  const chatStatus = chat?.status
+  const responseId = chat?.responseId
+
   // Загрузка реальных сообщений и подключение к комнате
   useEffect(() => {
+    if (!responseId) {
+      setError('Не удалось загрузить чат: отсутствует ID')
+      return
+    }
+
     let isMounted = true
     const load = async () => {
       try {
-        const res = await messagesApi.getByResponse(chat.responseId, 1, 200)
-        const items = (res as any)?.data || res?.data || []
+        const res = await messagesApi.getByResponse(responseId, 1, 200)
+        // Безопасное извлечение массива
+        let items: any[] = []
+        if (Array.isArray(res)) {
+          items = res
+        } else if (res && typeof res === 'object') {
+          if (Array.isArray((res as any).data)) {
+            items = (res as any).data
+          } else if (Array.isArray((res as any).items)) {
+            items = (res as any).items
+          }
+        }
+        
         if (!isMounted) return
-        const normalized = items.map((m: any) => ({
-          id: m.id,
-          content: m.content,
-          senderId: m.senderId,
-          createdAt: new Date(m.createdAt),
-          isRead: !!m.isRead,
-        }))
+        
+        const normalized = items
+          .filter((m: any) => m && m.id)
+          .map((m: any) => ({
+            id: String(m.id),
+            content: String(m.content || ''),
+            senderId: String(m.senderId || ''),
+            createdAt: new Date(m.createdAt || Date.now()),
+            isRead: !!m.isRead,
+          }))
         setMessages(normalized.reverse())
+        setError(null)
+        
         // Отметим как прочитанные входящие
         for (const m of normalized) {
           if (!m.isRead && m.senderId !== currentUserId) {
             try { await messagesApi.markAsRead(m.id) } catch {}
           }
         }
-      } catch {
-        setMessages([])
+      } catch (e) {
+        if (isMounted) {
+          setMessages([])
+          setError('Не удалось загрузить сообщения')
+        }
       }
     }
     load()
 
     // Подключаемся к комнате чата
-    try { chatService.joinChat(chat.responseId) } catch {}
+    try { chatService.joinChat(responseId) } catch {}
 
     // Слушатель новых сообщений
     const onNewMessage = (data: any) => {
-      if (data?.responseId !== chat.responseId) return
+      if (!data || data.responseId !== responseId) return
       const incoming: Message = {
-        id: data.id,
-        content: data.content,
-        senderId: data.senderId,
+        id: String(data.id || Date.now()),
+        content: String(data.content || ''),
+        senderId: String(data.senderId || ''),
         createdAt: new Date(data.createdAt || Date.now()),
         isRead: data.isRead ?? (data.senderId === currentUserId),
       }
@@ -86,7 +122,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
       }
     }
     const onTyping = (data: any) => {
-      if (data?.responseId !== chat.responseId || data?.userId === currentUserId) return
+      if (!data || data.responseId !== responseId || data.userId === currentUserId) return
       setIsTyping(true)
       if (typingTimer.current) clearTimeout(typingTimer.current)
       typingTimer.current = setTimeout(() => setIsTyping(false), 1500)
@@ -96,11 +132,11 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
 
     return () => {
       isMounted = false
-      try { chatService.leaveChat(chat.responseId) } catch {}
+      try { chatService.leaveChat(responseId) } catch {}
       chatService.off('message', onNewMessage)
       chatService.off('typing', onTyping)
     }
-  }, [chat.responseId, currentUserId])
+  }, [responseId, currentUserId])
 
   // Автоскролл к последнему сообщению
   useEffect(() => {
@@ -108,23 +144,23 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
   }, [messages])
 
   const sendMessage = async () => {
-    if (!message.trim()) return
+    if (!message.trim() || !responseId) return
     const content = message
     setMessage('')
     try {
-      console.log('📤 Sending message:', { responseId: chat.responseId, content })
-      const res = await messagesApi.send(chat.responseId, content)
+      console.log('📤 Sending message:', { responseId, content })
+      const res = await messagesApi.send(responseId, content)
       console.log('✅ Message sent:', res)
-      const m = (res as any)?.data || res
+      const m = (res as any)?.data || res || {}
       const newMessage: Message = {
-        id: m.id || Date.now().toString(),
-        content: m.content || content,
-        senderId: m.senderId || currentUserId,
+        id: String(m.id || Date.now()),
+        content: String(m.content || content),
+        senderId: String(m.senderId || currentUserId),
         createdAt: new Date(m.createdAt || Date.now()),
         isRead: !!m.isRead,
       }
       setMessages(prev => [...prev, newMessage])
-      try { chatService.stopTyping(chat.responseId) } catch {}
+      try { chatService.stopTyping(responseId) } catch {}
     } catch (e: any) {
       console.error('❌ Message send error:', e)
       alert(`Не удалось отправить: ${e?.response?.data?.message || e?.message || 'Неизвестная ошибка'}`)
@@ -136,9 +172,11 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
   // Отправляем индикатор набора текста
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(e.target.value)
-    try { chatService.startTyping(chat.responseId) } catch {}
-    if (typingTimer.current) clearTimeout(typingTimer.current)
-    typingTimer.current = setTimeout(() => { try { chatService.stopTyping(chat.responseId) } catch {} }, 1000)
+    if (responseId) {
+      try { chatService.startTyping(responseId) } catch {}
+      if (typingTimer.current) clearTimeout(typingTimer.current)
+      typingTimer.current = setTimeout(() => { try { chatService.stopTyping(responseId) } catch {} }, 1000)
+    }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -173,6 +211,18 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
     }
   }
 
+  // Показываем ошибку если есть
+  if (error) {
+    return (
+      <div className="flex flex-col flex-1 h-full items-center justify-center">
+        <p className="text-telegram-danger mb-4">{error}</p>
+        <button onClick={onBack} className="text-telegram-primary underline">
+          Назад к списку
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col flex-1 h-full">
       {/* Заголовок чата */}
@@ -186,23 +236,23 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
           </button>
           
           <Avatar
-            firstName={chat.otherUser.firstName}
-            lastName={chat.otherUser.lastName}
-            src={chat.otherUser.photoUrl}
+            firstName={otherFirstName}
+            lastName={otherLastName}
+            src={otherPhotoUrl}
             size="sm"
           />
           
-          <div onClick={() => { if (chat.otherUser?.role === 'blogger' && chat.otherUser?.id) { window.location.href = `/bloggers/${chat.otherUser.id}` } }} className={chat.otherUser?.role === 'blogger' && chat.otherUser?.id ? 'cursor-pointer hover:opacity-80 hover:underline' : ''}>
+          <div onClick={() => { if (otherRole === 'blogger' && otherUserId) { window.location.href = `/bloggers/${otherUserId}` } }} className={otherRole === 'blogger' && otherUserId ? 'cursor-pointer hover:opacity-80 hover:underline' : ''}>
             <h3 className="font-medium flex items-center gap-2">
-              {chat.otherUser.firstName} {chat.otherUser.lastName}
-              {chat.status === 'accepted' && (
+              {otherFirstName} {otherLastName}
+              {chatStatus === 'accepted' && (
                 <Badge variant="success" className="text-xs">
                   Сотрудничество
                 </Badge>
               )}
             </h3>
             <p className="text-xs text-telegram-textSecondary">
-              {chat.listingTitle}
+              {listingTitle}
             </p>
           </div>
         </div>
@@ -220,7 +270,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
             
             return (
               <motion.div
-                key={msg.id}
+                key={`${msg.id}-${index}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -231,9 +281,9 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
                   <div className="w-8 h-8">
                     {showAvatar && (
                       <Avatar
-                        firstName={chat.otherUser.firstName}
-                        lastName={chat.otherUser.lastName}
-                        src={chat.otherUser.photoUrl}
+                        firstName={otherFirstName}
+                        lastName={otherLastName}
+                        src={otherPhotoUrl}
                         size="sm"
                       />
                     )}
@@ -274,9 +324,9 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
               className="flex items-center gap-2"
             >
               <Avatar
-                firstName={chat.otherUser.firstName}
-                lastName={chat.otherUser.lastName}
-                src={chat.otherUser.photoUrl}
+                firstName={otherFirstName}
+                lastName={otherLastName}
+                src={otherPhotoUrl}
                 size="sm"
               />
               <div className="bg-telegram-bgSecondary rounded-2xl px-4 py-2">

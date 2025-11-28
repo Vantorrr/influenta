@@ -68,6 +68,7 @@ function MessagesPageContent() {
   const [search, setSearch] = useState('')
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
   const [chats, setChats] = useState<Chat[]>([])
+  const [error, setError] = useState<string | null>(null)
   const currentUserId = user?.id || ''
 
   // Загрузка реального списка чатов
@@ -76,44 +77,71 @@ function MessagesPageContent() {
     ;(async () => {
       try {
         const res = await messagesApi.getChatList()
-        const rows = (res as any)?.data || res
-        const normalized: Chat[] = (rows || []).map((row: any) => {
-          // Определяем, кто я: блогер (автор отклика) или рекламодатель (владелец объявления)
-          const iAmBlogger = user.role === 'blogger'
-          const otherUserData = iAmBlogger
-            ? row.response?.listing?.advertiser?.user // Я блогер → собеседник рекламодатель
-            : row.response?.blogger?.user // Я рекламодатель → собеседник блогер
-          
-          return {
-            id: row.responseId,
-            responseId: row.responseId,
-            listingTitle: row.response?.listing?.title || 'Объявление',
-            otherUser: {
-              id: otherUserData?.id,
-              firstName: otherUserData?.firstName || 'Пользователь',
-              lastName: otherUserData?.lastName || '',
-              username: otherUserData?.username || '',
-              photoUrl: otherUserData?.photoUrl,
-              role: iAmBlogger ? 'advertiser' : 'blogger',
-            },
-            lastMessage: row.lastMessage ? {
-              content: row.lastMessage.content,
-              createdAt: new Date(row.lastMessage.createdAt),
-              isRead: !!row.lastMessage.isRead,
-              senderId: row.lastMessage.senderId,
-            } : {
-              content: 'Нет сообщений',
-              createdAt: new Date(),
-              isRead: true,
-              senderId: '',
-            },
-            unreadCount: row.unreadCount || 0,
-            status: 'active',
+        
+        // Безопасное извлечение массива
+        let rows: any[] = []
+        if (Array.isArray(res)) {
+          rows = res
+        } else if (res && typeof res === 'object') {
+          if (Array.isArray((res as any).data)) {
+            rows = (res as any).data
+          } else if (Array.isArray((res as any).items)) {
+            rows = (res as any).items
           }
-        })
+        }
+        
+        const normalized: Chat[] = rows
+          .filter((row: any) => row && row.responseId) // Фильтруем невалидные записи
+          .map((row: any) => {
+            // Определяем, кто я: блогер (автор отклика) или рекламодатель (владелец объявления)
+            const iAmBlogger = user.role === 'blogger'
+            const otherUserData = iAmBlogger
+              ? row.response?.listing?.advertiser?.user // Я блогер → собеседник рекламодатель
+              : row.response?.blogger?.user // Я рекламодатель → собеседник блогер
+            
+            // Безопасное извлечение content
+            let messageContent = 'Нет сообщений'
+            if (row.lastMessage?.content) {
+              if (typeof row.lastMessage.content === 'object') {
+                messageContent = JSON.stringify(row.lastMessage.content)
+              } else {
+                messageContent = String(row.lastMessage.content)
+              }
+            }
+            
+            return {
+              id: String(row.responseId),
+              responseId: String(row.responseId),
+              listingTitle: String(row.response?.listing?.title || 'Объявление'),
+              otherUser: {
+                id: otherUserData?.id ? String(otherUserData.id) : undefined,
+                firstName: String(otherUserData?.firstName || 'Пользователь'),
+                lastName: String(otherUserData?.lastName || ''),
+                username: String(otherUserData?.username || ''),
+                photoUrl: otherUserData?.photoUrl,
+                role: iAmBlogger ? 'advertiser' : 'blogger',
+              },
+              lastMessage: row.lastMessage ? {
+                content: messageContent,
+                createdAt: new Date(row.lastMessage.createdAt || Date.now()),
+                isRead: !!row.lastMessage.isRead,
+                senderId: String(row.lastMessage.senderId || ''),
+              } : {
+                content: 'Нет сообщений',
+                createdAt: new Date(),
+                isRead: true,
+                senderId: '',
+              },
+              unreadCount: Number(row.unreadCount) || 0,
+              status: 'active',
+            }
+          })
         setChats(normalized)
-      } catch {
+        setError(null)
+      } catch (e) {
+        console.error('Failed to load chats:', e)
         setChats([])
+        setError('Не удалось загрузить список чатов')
       }
     })()
   }, [user])
@@ -121,12 +149,22 @@ function MessagesPageContent() {
   // Маркируем как прочитанные при открытии чата
   useEffect(() => {
     (async () => {
-      if (!selectedChat) return
+      if (!selectedChat?.responseId) return
       try {
         const res = await messagesApi.getByResponse(selectedChat.responseId, 1, 50)
-        const items = (res as any)?.data || res?.data || []
+        
+        // Безопасное извлечение массива
+        let items: any[] = []
+        if (Array.isArray(res)) {
+          items = res
+        } else if (res && typeof res === 'object') {
+          if (Array.isArray((res as any).data)) {
+            items = (res as any).data
+          }
+        }
+        
         for (const m of items) {
-          if (!m.isRead && m.senderId !== currentUserId) {
+          if (m && !m.isRead && m.senderId !== currentUserId) {
             try { await messagesApi.markAsRead(m.id) } catch {}
           }
         }
@@ -146,14 +184,14 @@ function MessagesPageContent() {
   const filteredChats = chats.filter(chat => {
     const searchLower = search.toLowerCase()
     return (
-      chat.listingTitle.toLowerCase().includes(searchLower) ||
-      chat.otherUser.firstName.toLowerCase().includes(searchLower) ||
-      chat.otherUser.lastName.toLowerCase().includes(searchLower) ||
-      chat.otherUser.username.toLowerCase().includes(searchLower)
+      (chat.listingTitle || '').toLowerCase().includes(searchLower) ||
+      (chat.otherUser?.firstName || '').toLowerCase().includes(searchLower) ||
+      (chat.otherUser?.lastName || '').toLowerCase().includes(searchLower) ||
+      (chat.otherUser?.username || '').toLowerCase().includes(searchLower)
     )
   })
 
-  const totalUnread = chats.reduce((sum, chat) => sum + chat.unreadCount, 0)
+  const totalUnread = chats.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0)
 
   return (
     <Layout>
@@ -176,11 +214,23 @@ function MessagesPageContent() {
             )}
           </div>
 
+          {/* Ошибка загрузки */}
+          {error && (
+            <div className="p-4 text-center text-telegram-danger">
+              {error}
+            </div>
+          )}
+
           {/* Список чатов */}
           <div className="flex-1 overflow-y-auto">
+            {filteredChats.length === 0 && !error && (
+              <div className="p-4 text-center text-telegram-textSecondary">
+                {chats.length === 0 ? 'Нет активных чатов' : 'Ничего не найдено'}
+              </div>
+            )}
             {filteredChats.map((chat, index) => (
               <motion.div
-                key={chat.id}
+                key={`${chat.id}-${index}`}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
@@ -193,9 +243,9 @@ function MessagesPageContent() {
                 >
                   <div className="flex items-start gap-3">
                     <Avatar
-                      firstName={chat.otherUser.firstName}
-                      lastName={chat.otherUser.lastName}
-                      src={chat.otherUser.photoUrl}
+                      firstName={chat.otherUser?.firstName || 'П'}
+                      lastName={chat.otherUser?.lastName || ''}
+                      src={chat.otherUser?.photoUrl}
                       size="md"
                     />
                     
@@ -203,7 +253,7 @@ function MessagesPageContent() {
                       <div className="flex items-start justify-between mb-1">
                         <div>
                           <h3 className="font-medium flex items-center gap-2">
-                            {chat.otherUser.firstName} {chat.otherUser.lastName}
+                            {chat.otherUser?.firstName || 'Пользователь'} {chat.otherUser?.lastName || ''}
                             {chat.status === 'accepted' && (
                               <CheckCircle className="w-4 h-4 text-telegram-success" />
                             )}
@@ -212,25 +262,25 @@ function MessagesPageContent() {
                             )}
                           </h3>
                           <p className="text-xs text-telegram-textSecondary">
-                            {chat.listingTitle}
+                            {chat.listingTitle || 'Объявление'}
                           </p>
-                          {chat.otherUser.role === "blogger" && chat.otherUser.id && (
+                          {chat.otherUser?.role === "blogger" && chat.otherUser?.id && (
                             <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); window.location.href = `/bloggers/${chat.otherUser.id}` }} className="px-0 text-telegram-primary">
                               Открыть профиль блогера
                             </Button>
                           )}
                         </div>
                         <span className="text-xs text-telegram-textSecondary">
-                          {getRelativeTime(chat.lastMessage.createdAt)}
+                          {chat.lastMessage?.createdAt ? getRelativeTime(chat.lastMessage.createdAt) : ''}
                         </span>
                       </div>
                       
                       <div className="flex items-center justify-between">
                         <p className="text-sm text-telegram-textSecondary line-clamp-1">
-                          {chat.lastMessage.senderId === currentUserId && 'Вы: '}
-                          {chat.lastMessage.content}
+                          {chat.lastMessage?.senderId === currentUserId && 'Вы: '}
+                          {chat.lastMessage?.content || 'Нет сообщений'}
                         </p>
-                        {chat.unreadCount > 0 && (
+                        {(chat.unreadCount || 0) > 0 && (
                           <Badge variant="primary" className="ml-2">
                             {chat.unreadCount}
                           </Badge>
