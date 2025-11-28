@@ -54,7 +54,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
         if (!isMounted) return
         const normalized = items.map((m: any) => ({
           id: m.id,
-          content: m.content,
+          content: typeof m.content === 'object' ? JSON.stringify(m.content) : String(m.content || ''),
           senderId: m.senderId,
           createdAt: new Date(m.createdAt),
           isRead: !!m.isRead,
@@ -81,7 +81,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
       
       const incoming: Message = {
         id: data.id,
-        content: data.content,
+        content: typeof data.content === 'object' ? JSON.stringify(data.content) : String(data.content || ''),
         senderId: data.senderId,
         createdAt: new Date(data.createdAt || Date.now()),
         isRead: data.isRead ?? (data.senderId === currentUserId),
@@ -129,7 +129,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
       const m = (res as any)?.data || res
       const newMessage: Message = {
         id: m.id || Date.now().toString(),
-        content: m.content || content,
+        content: typeof m.content === 'object' ? JSON.stringify(m.content) : String(m.content || content),
         senderId: m.senderId || currentUserId,
         createdAt: new Date(m.createdAt || Date.now()),
         isRead: !!m.isRead,
