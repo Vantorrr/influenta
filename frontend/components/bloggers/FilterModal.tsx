@@ -23,6 +23,9 @@ const PLATFORMS = [
   { id: 'other', name: 'Other', icon: 'OT' },
 ]
 
+const MAIN_PLATFORMS = PLATFORMS.slice(0, 5)
+const OTHER_PLATFORMS = PLATFORMS.slice(5)
+
 interface FilterModalProps {
   isOpen: boolean
   onClose: () => void
@@ -32,11 +35,15 @@ interface FilterModalProps {
 
 export function FilterModal({ isOpen, onClose, filters, onApply }: FilterModalProps) {
   const [localFilters, setLocalFilters] = useState<BloggerFilters>(filters)
+  const [showAllPlatforms, setShowAllPlatforms] = useState(false)
 
   // Sync when opening
   useEffect(() => {
     if (isOpen) {
       setLocalFilters(filters)
+      // If selected platform is not in main, expand automatically
+      const isOtherSelected = filters.platform && !MAIN_PLATFORMS.find(p => p.id === filters.platform)
+      if (isOtherSelected) setShowAllPlatforms(true)
     }
   }, [isOpen, filters])
 
@@ -62,6 +69,7 @@ export function FilterModal({ isOpen, onClose, filters, onApply }: FilterModalPr
 
   const handleReset = () => {
     setLocalFilters({})
+    setShowAllPlatforms(false)
   }
 
   const handleApply = () => {
@@ -77,6 +85,8 @@ export function FilterModal({ isOpen, onClose, filters, onApply }: FilterModalPr
   ]
 
   if (!isOpen) return null
+
+  const visiblePlatforms = showAllPlatforms ? PLATFORMS : MAIN_PLATFORMS
 
   return (
     <AnimatePresence>
@@ -135,25 +145,33 @@ export function FilterModal({ isOpen, onClose, filters, onApply }: FilterModalPr
                 <label className="text-sm font-medium text-telegram-textSecondary uppercase tracking-wider">
                   Платформа
                 </label>
-                <div className="flex gap-3">
-                  {PLATFORMS.map(p => {
+                <div className="grid grid-cols-3 gap-3">
+                  {visiblePlatforms.map(p => {
                     const isActive = localFilters.platform === p.id
                     return (
                       <button
                         key={p.id}
                         onClick={() => handlePlatformToggle(p.id)}
                         className={cn(
-                          "flex-1 py-3 px-4 rounded-xl border transition-all flex items-center justify-center gap-2",
+                          "py-3 px-2 rounded-xl border transition-all flex items-center justify-center gap-2",
                           isActive 
                             ? "bg-telegram-primary/10 border-telegram-primary text-telegram-primary" 
                             : "bg-telegram-bg border-white/5 text-telegram-textSecondary hover:bg-white/5"
                         )}
                       >
-                        <span className="font-semibold">{p.name}</span>
-                        {isActive && <Check className="w-4 h-4" />}
+                        <span className="font-semibold text-sm truncate">{p.name}</span>
+                        {isActive && <Check className="w-3 h-3 flex-shrink-0" />}
                       </button>
                     )
                   })}
+                  {!showAllPlatforms && (
+                    <button
+                      onClick={() => setShowAllPlatforms(true)}
+                      className="py-3 px-2 rounded-xl border border-white/5 bg-telegram-bg text-telegram-textSecondary hover:bg-white/5 transition-all flex items-center justify-center"
+                    >
+                      <span className="font-semibold text-sm">Другие...</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
