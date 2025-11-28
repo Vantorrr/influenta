@@ -49,7 +49,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
         const res = await messagesApi.getByResponse(chat.responseId, 1, 200)
         // Handle both paginated response { data: [...] } and direct array response [...]
         const raw = (res as any)?.data || (Array.isArray(res) ? res : [])
-        const items = Array.isArray(raw) ? raw : []
+        const items = (Array.isArray(raw) ? raw : []).filter((i: any) => i && i.id)
         
         if (!isMounted) return
         const normalized = items.map((m: any) => ({

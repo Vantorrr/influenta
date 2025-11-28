@@ -73,7 +73,11 @@ function MessagesPageContent() {
       try {
         const res = await messagesApi.getChatList()
         const rows = (res as any)?.data || res
-        const normalized: Chat[] = (rows || []).map((row: any) => {
+        const rawRows = Array.isArray(rows) ? rows : []
+        
+        const normalized: Chat[] = rawRows
+          .filter((row: any) => row && row.responseId)
+          .map((row: any) => {
           // Определяем, кто я: блогер (автор отклика) или рекламодатель (владелец объявления)
           const iAmBlogger = user.role === 'blogger'
           const otherUserData = iAmBlogger
