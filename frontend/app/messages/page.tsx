@@ -116,7 +116,14 @@ function MessagesPageContent() {
         normalized.sort((a, b) => b.lastMessage.createdAt.getTime() - a.lastMessage.createdAt.getTime())
 
         // Убираем дубликаты чатов (оставляем один чат на одного пользователя - самый свежий)
-        const uniqueChats = Array.from(new Map(normalized.map(item => [item.otherUser.id, item])).values())
+        const seenUsers = new Set()
+        const uniqueChats: Chat[] = []
+        for (const chat of normalized) {
+          if (chat.otherUser.id && !seenUsers.has(chat.otherUser.id)) {
+            uniqueChats.push(chat)
+            seenUsers.add(chat.otherUser.id)
+          }
+        }
         setChats(uniqueChats)
       } catch {
         setChats([])
