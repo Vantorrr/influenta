@@ -30,41 +30,42 @@ import { VerificationTooltip } from '@/components/VerificationTooltip'
 // Компонент с контентом страницы (внутри Suspense)
 function BloggersPageContent() {
   const router = useRouter()
-  const [search, setSearch] = useState('')
-  const [filters, setFilters] = useState<BloggerFilters>({})
+  
+  // Ленивая инициализация поиска из sessionStorage
+  const [search, setSearch] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    try {
+      const raw = sessionStorage.getItem('__bloggers_filters_v1')
+      return raw ? (JSON.parse(raw).search || '') : ''
+    } catch { return '' }
+  })
+
+  // Ленивая инициализация фильтров из sessionStorage
+  const [filters, setFilters] = useState<BloggerFilters>(() => {
+    if (typeof window === 'undefined') return {}
+    try {
+      const raw = sessionStorage.getItem('__bloggers_filters_v1')
+      if (raw) {
+        const saved = JSON.parse(raw)
+        const f = saved.filters || {}
+        if (!f.categories) f.categories = []
+        return f
+      }
+    } catch {}
+    return {}
+  })
+
   const [bloggers, setBloggers] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
   const [showFilters, setShowFilters] = useState(false)
-  const isRestored = useRef(false)
 
   useScrollRestoration()
 
-  // Восстановление сохранённых фильтров и поиска
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    try {
-      const raw = sessionStorage.getItem('__bloggers_filters_v1')
-      if (raw) {
-        const saved = JSON.parse(raw) as { search?: string; filters?: BloggerFilters }
-        if (typeof saved.search === 'string') setSearch(saved.search)
-        if (saved.filters) {
-          setFilters(prev => ({
-            ...prev,
-            ...saved.filters,
-            categories: saved.filters?.categories ?? prev.categories ?? [],
-          }))
-        }
-      }
-    } catch {} finally {
-      isRestored.current = true
-    }
-  }, [])
-
   // Сохраняем фильтры и поиск при изменении
   useEffect(() => {
-    if (typeof window === 'undefined' || !isRestored.current) return
+    if (typeof window === 'undefined') return
     try {
       sessionStorage.setItem(
         '__bloggers_filters_v1',
@@ -74,6 +75,7 @@ function BloggersPageContent() {
   }, [search, filters])
 
   useEffect(() => {
+    let ignore = false
     ;(async () => {
       setIsLoading(true)
       try {
@@ -81,17 +83,21 @@ function BloggersPageContent() {
         if (search && search.trim().length > 0) query.search = search.trim()
         
         const data = await bloggersApi.search(query, 1, 500)
+        if (ignore) return
+
         const items = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : [])
         
         // Используем порядок с бэкенда (там уже стоит createdAt DESC)
         setBloggers(items)
       } catch (e: any) {
+        if (ignore) return
         const msg = e?.response?.data?.message || e?.message || 'Ошибка загрузки'
         setError(Array.isArray(msg) ? msg.join(', ') : String(msg))
       } finally {
-        setIsLoading(false)
+        if (!ignore) setIsLoading(false)
       }
     })()
+    return () => { ignore = true }
   }, [search, filters])
 
   const activeFiltersCount = Object.keys(filters).filter(k => {
