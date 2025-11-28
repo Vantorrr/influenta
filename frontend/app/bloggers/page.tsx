@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { 
   Search as SearchIcon, 
@@ -50,7 +51,7 @@ function BloggersPageContent() {
         setFilters(prev => ({
           ...prev,
           ...saved.filters,
-          categories: saved.filters.categories ?? prev.categories ?? [],
+          categories: saved.filters?.categories ?? prev.categories ?? [],
         }))
       }
     } catch {}
@@ -132,9 +133,9 @@ function BloggersPageContent() {
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
             onClick={() => router.back()}
-            className="h-8 w-8 -ml-2 text-telegram-textSecondary hover:text-white"
+            className="h-8 w-8 -ml-2 p-0 text-telegram-textSecondary hover:text-white"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
