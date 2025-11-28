@@ -78,15 +78,8 @@ function BloggersPageContent() {
         const data = await bloggersApi.search(query, 1, 500)
         const items = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : [])
         
-        // Сортировка: сначала верифицированные, потом по дате регистрации (новые сверху)
-        const sorted = [...items].sort((a: any, b: any) => {
-          if (a.isVerified !== b.isVerified) return a.isVerified ? -1 : 1
-          // Fallback to ID if createdAt missing to ensure consistent order
-          const dateA = new Date(a.user?.createdAt || a.createdAt || 0).getTime()
-          const dateB = new Date(b.user?.createdAt || b.createdAt || 0).getTime()
-          return dateB - dateA
-        })
-        setBloggers(sorted)
+        // Используем порядок с бэкенда (там уже стоит createdAt DESC)
+        setBloggers(items)
       } catch (e: any) {
         const msg = e?.response?.data?.message || e?.message || 'Ошибка загрузки'
         setError(Array.isArray(msg) ? msg.join(', ') : String(msg))
