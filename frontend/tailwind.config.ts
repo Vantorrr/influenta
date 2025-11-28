@@ -10,16 +10,16 @@ const config: Config = {
     extend: {
       colors: {
         telegram: {
-          primary: '#2AABEE',
-          secondary: '#229ED9',
-          bg: '#17212B',
-          bgSecondary: '#232E3C',
-          text: '#FFFFFF',
-          textSecondary: '#8B9AAB',
-          accent: '#71AAEB',
+          primary: '#6B859E',
+          secondary: '#506476',
+          bg: '#101112',
+          bgSecondary: '#1C1E20',
+          text: '#F5F5F5',
+          textSecondary: '#9CA3AF',
+          accent: '#EBB62D',
           success: '#4DCD5E',
-          danger: '#FF3B30',
-          warning: '#FFA000',
+          danger: '#EF4444',
+          warning: '#EBB62D',
         },
       },
       fontFamily: {

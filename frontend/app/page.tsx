@@ -367,8 +367,8 @@ export default function HomePage() {
                 </p>
                 <a
                   href="https://t.me/polina_khristya"
-                  target="_blank"
-                  rel="noopener noreferrer"
+          target="_blank"
+          rel="noopener noreferrer"
                   className="inline-flex items-center gap-3 bg-telegram-primary text-white px-6 py-3 rounded-xl font-semibold hover:bg-telegram-primary/90 transition-colors"
                 >
                   Связаться с поддержкой
@@ -412,4 +412,3 @@ export default function HomePage() {
     </div>
   )
 }
-

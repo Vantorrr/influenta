@@ -30,15 +30,7 @@ export class DashboardStatsService {
     const user = await this.usersRepo.findOne({ where: { id: userId } })
     if (!user) return { profileViews: 0, activeResponses: 0, recentActivity: [] }
 
-    // Считаем только просмотры профиля другими пользователями (userId != targetUserId)
-    const profileViews = await this.analyticsRepo
-      .createQueryBuilder('a')
-      .where('a.event = :event', { event: 'profile_view' })
-      .andWhere('a.targetUserId = :uid', { uid: userId })
-      .andWhere('a.userId <> a.targetUserId')
-      .andWhere('a.createdAt > :since', { since })
-      .getCount()
-      .catch(() => 0)
+    const profileViews = await this.analyticsRepo.count({ where: { event: 'profile_view', targetUserId: userId, createdAt: MoreThan(since) } }).catch(() => 0)
 
     if (user.role === 'blogger') {
       const blogger = await this.bloggersRepo.findOne({ where: { userId } }).catch(() => null)
@@ -123,7 +115,7 @@ export class DashboardStatsService {
     const responsesByDay: Record<string, number> = {}
     labels.forEach(l => { viewsByDay[l] = 0; responsesByDay[l] = 0 })
 
-    // Profile views per day (analytics events), только от других пользователей
+    // Profile views per day (analytics events)
     try {
       const raw = await this.analyticsRepo
         .createQueryBuilder('a')
@@ -131,7 +123,6 @@ export class DashboardStatsService {
         .addSelect('COUNT(*)', 'c')
         .where('a.event = :event', { event: 'profile_view' })
         .andWhere('a.targetUserId = :uid', { uid: userId })
-        .andWhere('a.userId <> a.targetUserId')
         .andWhere("a.createdAt >= NOW() - INTERVAL '7 days'")
         .groupBy("to_char(a.createdAt, 'YYYY-MM-DD')")
         .getRawMany()

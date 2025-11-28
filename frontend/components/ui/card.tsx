@@ -10,8 +10,8 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
     <div
       ref={ref}
       className={cn(
-        'bg-telegram-bgSecondary rounded-xl p-4 border border-gray-700/50',
-        hover && 'transition-all hover:border-telegram-primary/50 hover:shadow-lg',
+        'bg-telegram-bgSecondary rounded-xl p-4 border border-white/5 shadow-sm',
+        hover && 'transition-all hover:border-telegram-primary/30 hover:shadow-md hover:bg-telegram-bgSecondary/80',
         className
       )}
       {...props}

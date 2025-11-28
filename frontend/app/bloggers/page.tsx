@@ -1,35 +1,39 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
+import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Search, ChevronRight, SlidersHorizontal, X } from 'lucide-react'
+import { 
+  Search as SearchIcon, 
+  SlidersHorizontal, 
+  Users, 
+  Shield, 
+  Eye, 
+  MessageCircle, 
+  Star 
+} from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Avatar } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { motion, AnimatePresence } from 'framer-motion'
-import { cn, getCategoryLabel } from '@/lib/utils'
-import { VerificationTooltip } from '@/components/VerificationTooltip'
-import { bloggersApi, analyticsApi } from '@/lib/api'
-import { useQuery } from '@tanstack/react-query'
+import { Badge } from '@/components/ui/badge'
+import { Avatar } from '@/components/ui/avatar'
+import { formatNumber, formatPrice, getCategoryLabel } from '@/lib/utils'
+import { bloggersApi } from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
-import { BloggerCategory, type BloggerFilters } from '@/types'
 import { useScrollRestoration } from '@/hooks/useScrollRestoration'
-import { Layout } from '@/components/layout/Layout'
+import { BloggerFilters } from '@/types'
+import { FilterModal } from '@/components/bloggers/FilterModal'
 
+// Компонент с контентом страницы (внутри Suspense)
 function BloggersPageContent() {
   const [search, setSearch] = useState('')
-  const [showFilters, setShowFilters] = useState(false)
-  const [filters, setFilters] = useState<BloggerFilters>({
-    categories: [],
-    verifiedOnly: false,
-  })
+  const [filters, setFilters] = useState<BloggerFilters>({})
+  const [bloggers, setBloggers] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
-  const pathname = usePathname()
+  const [showFilters, setShowFilters] = useState(false)
 
-  // Подключаем хук восстановления скролла
   useScrollRestoration()
 
   // Восстановление сохранённых фильтров и поиска
@@ -38,13 +42,8 @@ function BloggersPageContent() {
     try {
       const raw = sessionStorage.getItem('__bloggers_filters_v1')
       if (!raw) return
-      const saved = JSON.parse(raw) as {
-        search?: string
-        filters?: BloggerFilters
-      }
-      if (typeof saved.search === 'string') {
-        setSearch(saved.search)
-      }
+      const saved = JSON.parse(raw) as { search?: string; filters?: BloggerFilters }
+      if (typeof saved.search === 'string') setSearch(saved.search)
       if (saved.filters) {
         setFilters(prev => ({
           ...prev,
@@ -52,9 +51,7 @@ function BloggersPageContent() {
           categories: saved.filters.categories ?? prev.categories ?? [],
         }))
       }
-    } catch {
-      // ignore parse errors
-    }
+    } catch {}
   }, [])
 
   // Сохраняем фильтры и поиск при изменении
@@ -65,422 +62,241 @@ function BloggersPageContent() {
         '__bloggers_filters_v1',
         JSON.stringify({ search, filters }),
       )
-    } catch {
-      // ignore quota errors
-    }
+    } catch {}
   }, [search, filters])
 
-  // Дополнительно скроллим к последнему открытому блогеру (надёжно для мини‑аппа)
+  useEffect(() => {
+    ;(async () => {
+      setIsLoading(true)
+      try {
+        const query: any = { ...filters }
+        if (search && search.trim().length > 0) query.search = search.trim()
+        
+        const data = await bloggersApi.search(query, 1, 500)
+        const items = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : [])
+        
+        // Сортировка: сначала верифицированные, потом по подписчикам
+        const sorted = [...items].sort((a: any, b: any) => {
+          if (a.isVerified !== b.isVerified) return a.isVerified ? -1 : 1
+          return (b.subscribersCount || 0) - (a.subscribersCount || 0)
+        })
+        setBloggers(sorted)
+      } catch (e: any) {
+        const msg = e?.response?.data?.message || e?.message || 'Ошибка загрузки'
+        setError(Array.isArray(msg) ? msg.join(', ') : String(msg))
+      } finally {
+        setIsLoading(false)
+      }
+    })()
+  }, [search, filters])
+
+  // Восстановление скролла к последнему элементу
   useEffect(() => {
     if (typeof window === 'undefined') return
     const lastId = sessionStorage.getItem('__bloggers_last_id')
     if (!lastId) return
-    const el = document.getElementById(`blogger-${lastId}`)
-    if (el) {
-      setTimeout(() => {
+    // Небольшая задержка, чтобы DOM успел отрисоваться
+    setTimeout(() => {
+      const el = document.getElementById(`blogger-${lastId}`)
+      if (el) {
         el.scrollIntoView({ block: 'center' })
-      }, 50)
-    }
-  }, [])
+      }
+    }, 100)
+  }, [bloggers])
 
-  useEffect(() => {
-    analyticsApi.track('bloggers_list_view')
-  }, [])
+  const activeFiltersCount = Object.keys(filters).filter(k => {
+    const val = filters[k as keyof BloggerFilters]
+    return Array.isArray(val) ? val.length > 0 : val !== undefined
+  }).length
 
-  const categories = Object.values(BloggerCategory)
-
-  const toggleCategory = (category: BloggerCategory) => {
-    setFilters(prev => ({
-      ...prev,
-      categories: prev.categories?.includes(category)
-        ? prev.categories.filter(c => c !== category)
-        : [...(prev.categories || []), category],
-    }))
+  if (isLoading && bloggers.length === 0) {
+    return (
+      <div className="min-h-screen bg-telegram-bg flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-telegram-primary mx-auto mb-4"></div>
+          <p className="text-telegram-textSecondary">Поиск блогеров...</p>
+        </div>
+      </div>
+    )
   }
-
-  const clearFilters = () => {
-    setFilters({
-      categories: [],
-      verifiedOnly: false,
-    })
-  }
-
-  const activeFiltersCount =
-    (filters.categories?.length || 0) +
-    (filters.verifiedOnly ? 1 : 0) +
-    (filters.minSubscribers ? 1 : 0) +
-    (filters.minPrice || filters.maxPrice ? 1 : 0) +
-    (filters.platform ? 1 : 0)
-
-  // Load bloggers using React Query
-  const { data, isLoading } = useQuery({
-    queryKey: ['bloggers', filters, search],
-    queryFn: () => bloggersApi.search({ ...filters, search }, 1, 500),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    enabled: !!user,
-  })
-
-  const bloggers = data?.data || []
-
 
   return (
-    <Layout>
-      <div className="container py-4 space-y-4">
-        {/* Search Bar */}
-        <div className="flex gap-2">
-          <Input
-            type="search"
-            placeholder="Поиск блогеров..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            icon={<Search className="w-4 h-4" />}
-            className="flex-1"
-          />
-          <Button
-            variant="secondary"
+    <div className="space-y-6 pb-20">
+      {/* Header & Search */}
+      <div className="sticky top-0 z-10 bg-telegram-bg/95 backdrop-blur-md py-4 space-y-4 border-b border-white/5 -mx-4 px-4 md:mx-0 md:px-0">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Блогеры</h1>
+            <p className="text-sm text-telegram-textSecondary">
+              {bloggers.length} {bloggers.length === 1 ? 'блогер' : 'блогеров'} найдено
+            </p>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-telegram-textSecondary" />
+            <Input
+              type="search"
+              placeholder="Поиск по имени..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 bg-telegram-bgSecondary border-white/5 focus:border-telegram-primary/50 transition-colors"
+            />
+          </div>
+          <Button 
+            variant={activeFiltersCount > 0 ? 'primary' : 'secondary'}
             onClick={() => setShowFilters(true)}
-            className="relative"
+            className="relative px-3"
           >
             <SlidersHorizontal className="w-4 h-4" />
             {activeFiltersCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-telegram-primary text-white text-xs rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] flex items-center justify-center text-white border border-telegram-bg">
                 {activeFiltersCount}
               </span>
             )}
           </Button>
         </div>
+      </div>
 
-        {/* Active Filters */}
-        {activeFiltersCount > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {filters.categories?.map(category => (
-              <Badge key={category} variant="primary">
-                {getCategoryLabel(category)}
-                <button
-                  onClick={() => toggleCategory(category)}
-                  className="ml-1"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </Badge>
-            ))}
-            {filters.verifiedOnly && (
-              <Badge variant="primary">
-                Только верифицированные
-                <button
-                  onClick={() =>
-                    setFilters(prev => ({ ...prev, verifiedOnly: false }))
-                  }
-                  className="ml-1"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </Badge>
-            )}
-            <button
-              onClick={clearFilters}
-              className="text-sm text-telegram-primary"
+      {/* Bloggers Grid */}
+      <div className="grid grid-cols-1 gap-4">
+        {bloggers.map((blogger, index) => (
+          <motion.div
+            id={`blogger-${blogger.id}`}
+            key={blogger.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+          >
+            <Link
+              href={`/bloggers/${blogger.id}`}
+              scroll={false}
+              onClick={() => {
+                if (typeof window === 'undefined') return
+                sessionStorage.setItem('__bloggers_last_id', String(blogger.id))
+              }}
             >
-              Сбросить все
-            </button>
-          </div>
-        )}
-
-        {/* Results Count */}
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-telegram-textSecondary">
-            Найдено блогеров: {data?.total || bloggers.length}
-          </p>
-        </div>
-
-        {/* Bloggers List */}
-        <div className="space-y-3">
-          {bloggers.map((blogger, index) => (
-            <motion.div
-              key={blogger.id}
-              id={`blogger-${blogger.id}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Link
-                href={`/bloggers/${blogger.id}`}
-                scroll={false}
-                onClick={() => {
-                  if (typeof window === 'undefined') return
-                  // Запоминаем последнего открытого блогера
-                  sessionStorage.setItem(
-                    '__bloggers_last_id',
-                    String(blogger.id),
-                  )
-                }}
-              >
-                <Card hover className="overflow-hidden">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
+              <Card hover className="group relative overflow-hidden border-white/5 bg-[#1C1E20]">
+                {/* Subtle highlight on hover */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-4">
+                    {/* Avatar */}
+                    <div className="relative">
                       <Avatar
                         src={blogger.user?.photoUrl}
                         firstName={blogger.user?.firstName || ''}
                         lastName={blogger.user?.lastName || ''}
-                        size="lg"
+                        className="w-14 h-14 border-2 border-telegram-bg ring-2 ring-white/5"
                       />
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <div>
-                            <h3 className="font-semibold flex items-center gap-1">
-                              {blogger.user?.firstName} {blogger.user?.lastName}
-                              {blogger.user?.isVerified && <VerificationTooltip />}
-                            </h3>
-                            <p className="text-sm text-telegram-textSecondary">
-                              {blogger.categories && blogger.categories.length > 0 
-                                ? getCategoryLabel(blogger.categories[0])
-                                : 'Блогер'}
-                            </p>
-                          </div>
-                          <ChevronRight className="w-5 h-5 text-telegram-textSecondary flex-shrink-0" />
+                      {blogger.isVerified && (
+                        <div className="absolute -bottom-1 -right-1 bg-telegram-bg rounded-full p-0.5">
+                          <Shield className="w-4 h-4 text-telegram-primary fill-current" />
                         </div>
-                        
-                        <p className="text-sm text-telegram-textSecondary mb-3 line-clamp-2">
-                          {blogger.bio}
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0 space-y-2">
+                      {/* Name & Username */}
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-bold text-white truncate pr-2 text-[17px]">
+                            {blogger.user?.firstName} {blogger.user?.lastName}
+                          </h3>
+                          {/* Price Tag - Gold Accent */}
+                          {blogger.pricePerPost > 0 && (
+                            <div className="flex-shrink-0 text-telegram-accent font-bold text-sm bg-telegram-accent/10 px-2 py-1 rounded-lg">
+                              {formatPrice(blogger.pricePerPost)}
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-sm text-telegram-textSecondary truncate">
+                          @{blogger.user?.username || blogger.user?.telegramUsername || 'username'}
                         </p>
-                        
-                        {blogger.categories && blogger.categories.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            {blogger.categories.slice(0, 3).map(category => (
-                              <Badge key={category} variant="default">
-                                {getCategoryLabel(category)}
-                              </Badge>
-                            ))}
-                            {blogger.categories.length > 3 && (
-                              <Badge variant="default">
-                                +{blogger.categories.length - 3}
-                              </Badge>
-                            )}
+                      </div>
+
+                      {/* Stats Grid */}
+                      <div className="grid grid-cols-3 gap-2 py-2 border-t border-white/5 border-b mb-2">
+                        <div className="text-center px-1">
+                          <div className="flex items-center justify-center gap-1 text-telegram-textSecondary text-xs mb-0.5">
+                            <Users className="w-3 h-3" />
+                            <span>Подп.</span>
                           </div>
-                        )}
+                          <div className="font-semibold text-sm text-white">
+                            {formatNumber(blogger.subscribersCount || 0)}
+                          </div>
+                        </div>
+                        <div className="text-center px-1 border-l border-white/5">
+                          <div className="flex items-center justify-center gap-1 text-telegram-textSecondary text-xs mb-0.5">
+                            <Eye className="w-3 h-3" />
+                            <span>Просм.</span>
+                          </div>
+                          <div className="font-semibold text-sm text-white">
+                            {formatNumber(blogger.averageViews || 0)}
+                          </div>
+                        </div>
+                        <div className="text-center px-1 border-l border-white/5">
+                          <div className="flex items-center justify-center gap-1 text-telegram-textSecondary text-xs mb-0.5">
+                            <Star className="w-3 h-3" />
+                            <span>ER</span>
+                          </div>
+                          <div className="font-semibold text-sm text-white">
+                            {blogger.engagementRate || 0}%
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Badges */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {(blogger.categories || []).slice(0, 3).map((c: string) => (
+                          <span 
+                            key={c} 
+                            className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/5 text-telegram-textSecondary border border-white/5"
+                          >
+                            {getCategoryLabel(c)}
+                          </span>
+                        ))}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          </motion.div>
+        ))}
       </div>
 
-      {/* Filters Modal */}
-      <AnimatePresence>
-        {showFilters && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50"
-            onClick={() => setShowFilters(false)}
-          >
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 30 }}
-              className="absolute bottom-0 left-0 right-0 bg-telegram-bgSecondary rounded-t-2xl p-6 max-h-[80vh] overflow-y-auto"
-              onClick={e => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold">Фильтры</h3>
-                <button
-                  onClick={() => setShowFilters(false)}
-                  className="p-2 hover:bg-telegram-bg rounded-lg transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+      {/* Пустое состояние */}
+      {!isLoading && bloggers.length === 0 && (
+        <div className="text-center py-12 opacity-60">
+          <div className="bg-telegram-bgSecondary w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <SearchIcon className="w-8 h-8 text-telegram-textSecondary" />
+          </div>
+          <h3 className="text-lg font-medium mb-1">Ничего не найдено</h3>
+          <p className="text-sm text-telegram-textSecondary">Попробуйте изменить фильтры</p>
+        </div>
+      )}
 
-              {/* Categories */}
-              <div className="mb-6">
-                <h4 className="font-medium mb-3">Категории</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {categories.map(category => (
-                    <button
-                      key={category}
-                      onClick={() => toggleCategory(category)}
-                      className={cn(
-                        'p-3 rounded-lg border-2 text-sm transition-all',
-                        filters.categories?.includes(category)
-                          ? 'border-telegram-primary bg-telegram-primary/20'
-                          : 'border-gray-600 hover:border-gray-500',
-                      )}
-                    >
-                      {getCategoryLabel(category)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Social Platforms */}
-              <div className="mb-6">
-                <h4 className="font-medium mb-3">Социальные сети</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { value: 'telegram', label: 'Telegram' },
-                    { value: 'instagram', label: 'Instagram' },
-                    { value: 'youtube', label: 'YouTube' },
-                    { value: 'tiktok', label: 'TikTok' },
-                    { value: 'vk', label: 'VKontakte' },
-                    { value: 'other', label: 'Другие' },
-                  ].map(platform => (
-                    <button
-                      key={platform.value}
-                      onClick={() => {
-                        setFilters(prev => ({
-                          ...prev,
-                          platform:
-                            prev.platform === platform.value
-                              ? undefined
-                              : platform.value,
-                        }))
-                      }}
-                      className={cn(
-                        'p-3 rounded-lg border-2 text-sm transition-all',
-                        filters.platform === platform.value
-                          ? 'border-telegram-primary bg-telegram-primary/20'
-                          : 'border-gray-600 hover:border-gray-500',
-                      )}
-                    >
-                      {platform.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Subscribers Range */}
-              <div className="mb-6">
-                <h4 className="font-medium mb-3">Количество подписчиков</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    type="number"
-                    placeholder="От"
-                    value={filters.minSubscribers || ''}
-                    onChange={e =>
-                      setFilters(prev => ({
-                        ...prev,
-                        minSubscribers: e.target.value
-                          ? parseInt(e.target.value)
-                          : undefined,
-                      }))
-                    }
-                  />
-                  <Input
-                    type="number"
-                    placeholder="До"
-                    value={filters.maxSubscribers || ''}
-                    onChange={e =>
-                      setFilters(prev => ({
-                        ...prev,
-                        maxSubscribers: e.target.value
-                          ? parseInt(e.target.value)
-                          : undefined,
-                      }))
-                    }
-                  />
-                </div>
-              </div>
-
-              {/* Price Range */}
-              <div className="mb-6">
-                <h4 className="font-medium mb-3">Цена за пост (₽)</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    type="number"
-                    placeholder="От"
-                    value={filters.minPrice || ''}
-                    onChange={e =>
-                      setFilters(prev => ({
-                        ...prev,
-                        minPrice: e.target.value
-                          ? parseInt(e.target.value)
-                          : undefined,
-                      }))
-                    }
-                  />
-                  <Input
-                    type="number"
-                    placeholder="До"
-                    value={filters.maxPrice || ''}
-                    onChange={e =>
-                      setFilters(prev => ({
-                        ...prev,
-                        maxPrice: e.target.value
-                          ? parseInt(e.target.value)
-                          : undefined,
-                      }))
-                    }
-                  />
-                </div>
-              </div>
-
-              {/* Other Filters */}
-              <div className="mb-6">
-                <h4 className="font-medium mb-3">Дополнительно</h4>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={!!filters.verifiedOnly}
-                    onChange={e =>
-                      setFilters(prev => ({
-                        ...prev,
-                        verifiedOnly: e.target.checked,
-                      }))
-                    }
-                    className="w-4 h-4 rounded border-gray-600 text-telegram-primary focus:ring-telegram-primary"
-                  />
-                  <span>Только верифицированные</span>
-                </label>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-3">
-                <Button
-                  variant="secondary"
-                  fullWidth
-                  onClick={() => {
-                    clearFilters()
-                    setShowFilters(false)
-                  }}
-                >
-                  Сбросить
-                </Button>
-                <Button
-                  variant="primary"
-                  fullWidth
-                  onClick={() => setShowFilters(false)}
-                >
-                  Применить
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </Layout>
+      <FilterModal
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        filters={filters}
+        onApply={setFilters}
+      />
+    </div>
   )
 }
 
 export default function BloggersPage() {
   return (
-    <Suspense fallback={
-      <Layout>
-        <div className="container py-4 flex items-center justify-center min-h-[50vh]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-telegram-primary mx-auto mb-4"></div>
-            <p className="text-telegram-textSecondary">Загрузка блогеров...</p>
-          </div>
-        </div>
-      </Layout>
-    }>
-      <BloggersPageContent />
-    </Suspense>
+    <div className="container min-h-screen bg-telegram-bg">
+      <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-telegram-primary"></div></div>}>
+        <BloggersPageContent />
+      </Suspense>
+    </div>
   )
 }
+

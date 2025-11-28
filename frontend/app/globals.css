@@ -4,16 +4,16 @@
 
 /* CSS переменные для темы Telegram */
 :root {
-  --color-telegram-primary: #2AABEE;
-  --color-telegram-secondary: #229ED9;
-  --color-telegram-bg: #17212B;
-  --color-telegram-bgSecondary: #232E3C;
-  --color-telegram-text: #FFFFFF;
-  --color-telegram-textSecondary: #8B9AAB;
-  --color-telegram-accent: #71AAEB;
+  --color-telegram-primary: #6B859E; /* Pale Slate Blue (Expensive/Pale look) */
+  --color-telegram-secondary: #506476; /* Darker Slate */
+  --color-telegram-bg: #101112; /* Deep Graphite/Black (Whoop style) */
+  --color-telegram-bgSecondary: #1C1E20; /* Lighter Graphite for cards */
+  --color-telegram-text: #F5F5F5; /* Off-white */
+  --color-telegram-textSecondary: #9CA3AF; /* Neutral Gray */
+  --color-telegram-accent: #EBB62D; /* Gold/Amber Accent */
   --color-telegram-success: #4DCD5E;
-  --color-telegram-danger: #FF3B30;
-  --color-telegram-warning: #FFA000;
+  --color-telegram-danger: #EF4444;
+  --color-telegram-warning: #EBB62D;
 }
 
 @layer base {
@@ -141,14 +141,14 @@
   .card {
     border-radius: 0.75rem;
     padding: 1rem;
-    border: 1px solid rgb(55 65 81 / 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     background-color: var(--color-telegram-bgSecondary);
   }
 
   .input {
     width: 100%;
     padding: 0.5rem 1rem;
-    border: 1px solid rgb(75 85 99);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 0.5rem;
     transition: border-color 150ms;
     background-color: var(--color-telegram-bg);

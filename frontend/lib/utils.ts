@@ -205,4 +205,3 @@ export function parseNumberInput(value: string): number {
   const digits = value.replace(/\D/g, '')
   return digits ? parseInt(digits, 10) : 0
 }
-
