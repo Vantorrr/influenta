@@ -76,14 +76,16 @@ function MessagesPageContent() {
     ;(async () => {
       try {
         const res = await messagesApi.getChatList()
-        const rows = (res as any)?.data || res
-        const normalized: Chat[] = (rows || []).map((row: any) => {
+        const rawRows = (res as any)?.data ?? res
+        const rows = Array.isArray(rawRows) ? rawRows : []
+        const normalized: Chat[] = rows.map((row: any) => {
           // Определяем, кто я: блогер (автор отклика) или рекламодатель (владелец объявления)
           const iAmBlogger = user.role === 'blogger'
           const otherUserData = iAmBlogger
             ? row.response?.listing?.advertiser?.user // Я блогер → собеседник рекламодатель
             : row.response?.blogger?.user // Я рекламодатель → собеседник блогер
           
+          const lastMessageData = row.lastMessage || null
           return {
             id: row.responseId,
             responseId: row.responseId,
@@ -96,11 +98,11 @@ function MessagesPageContent() {
               photoUrl: otherUserData?.photoUrl,
               role: iAmBlogger ? 'advertiser' : 'blogger',
             },
-            lastMessage: row.lastMessage ? {
-              content: row.lastMessage.content,
-              createdAt: new Date(row.lastMessage.createdAt),
-              isRead: !!row.lastMessage.isRead,
-              senderId: row.lastMessage.senderId,
+            lastMessage: lastMessageData ? {
+              content: typeof lastMessageData.content === 'object' ? JSON.stringify(lastMessageData.content) : String(lastMessageData.content || ''),
+              createdAt: lastMessageData.createdAt ? new Date(lastMessageData.createdAt) : new Date(),
+              isRead: !!lastMessageData.isRead,
+              senderId: lastMessageData.senderId,
             } : {
               content: 'Нет сообщений',
               createdAt: new Date(),
@@ -124,7 +126,8 @@ function MessagesPageContent() {
       if (!selectedChat) return
       try {
         const res = await messagesApi.getByResponse(selectedChat.responseId, 1, 50)
-        const items = (res as any)?.data || res?.data || []
+        const rawItems = (res as any)?.data ?? res
+        const items = Array.isArray(rawItems) ? rawItems : []
         for (const m of items) {
           if (!m.isRead && m.senderId !== currentUserId) {
             try { await messagesApi.markAsRead(m.id) } catch {}

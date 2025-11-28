@@ -45,7 +45,8 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
     const load = async () => {
       try {
         const res = await messagesApi.getByResponse(chat.responseId, 1, 200)
-        const items = (res as any)?.data || res?.data || []
+        const raw = (res as any)?.data ?? res
+        const items = Array.isArray(raw) ? raw : []
         if (!isMounted) return
         const normalized = items.map((m: any) => ({
           id: m.id || Math.random().toString(), // Safety fix: ensure ID exists
@@ -115,7 +116,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
       console.log('📤 Sending message:', { responseId: chat.responseId, content })
       const res = await messagesApi.send(chat.responseId, content)
       console.log('✅ Message sent:', res)
-      const m = (res as any)?.data || res
+      const m = (res as any)?.data ?? res ?? {}
       const newMessage: Message = {
         id: m.id || Date.now().toString(),
         content: typeof m.content === 'object' ? JSON.stringify(m.content) : String(m.content || content),
@@ -213,7 +214,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#0E1621] relative">
         <div className="absolute inset-0 bg-[url('/bg-pattern.png')] opacity-5 pointer-events-none" />
         <AnimatePresence initial={false}>
-          {messages.map((msg, index) => {
+        {messages.filter(Boolean).map((msg, index) => {
             const isOwn = msg.senderId === currentUserId
             const showAvatar = !isOwn && (
               index === 0 || messages[index - 1]?.senderId !== msg.senderId
