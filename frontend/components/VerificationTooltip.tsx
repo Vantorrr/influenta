@@ -14,15 +14,16 @@ export function VerificationTooltip({ className = '' }: VerificationTooltipProps
   return (
     <>
       <div 
-        className={`bg-gradient-to-br from-blue-400 to-blue-600 rounded-full w-5 h-5 flex items-center justify-center cursor-help relative shadow-lg shadow-blue-500/50 ring-2 ring-white/20 ${className}`}
+        className={`bg-gradient-to-br from-blue-500 to-blue-600 rounded-full w-6 h-6 flex items-center justify-center cursor-help shadow-lg shadow-blue-500/40 ring-2 ring-telegram-bg ${className}`}
         onClick={(e) => {
           e.preventDefault()
           e.stopPropagation()
           setShowTooltip(true)
         }}
+        onMouseEnter={() => setShowTooltip(true)}
         title="Верифицирован"
       >
-        <svg className="w-3 h-3 text-white drop-shadow-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg className="w-3.5 h-3.5 text-white drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="20 6 9 17 4 12"/>
         </svg>
       </div>
