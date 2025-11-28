@@ -22,10 +22,10 @@ export function Navigation() {
       active: pathname === '/dashboard',
     },
     {
-      href: userRole === 'blogger' ? '/offers' : '/bloggers',
+      href: userRole === 'blogger' ? '/listings' : '/bloggers',
       icon: Search,
-      label: 'Поиск',
-      active: pathname === (userRole === 'blogger' ? '/offers' : '/bloggers'),
+      label: userRole === 'blogger' ? 'Лента' : 'Поиск',
+      active: pathname === (userRole === 'blogger' ? '/listings' : '/bloggers'),
     },
     {
       href: userRole === 'blogger' ? '/offers' : '/listings/create',
