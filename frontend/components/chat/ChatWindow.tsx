@@ -48,8 +48,8 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
         const items = (res as any)?.data || res?.data || []
         if (!isMounted) return
         const normalized = items.map((m: any) => ({
-          id: m.id,
-          content: m.content,
+          id: m.id || Math.random().toString(), // Safety fix: ensure ID exists
+          content: typeof m.content === 'object' ? JSON.stringify(m.content) : String(m.content || ''), // Safety fix: ensure string
           senderId: m.senderId,
           createdAt: new Date(m.createdAt),
           isRead: !!m.isRead,
@@ -74,8 +74,8 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
     const onNewMessage = (data: any) => {
       if (data?.responseId !== chat.responseId) return
       const incoming: Message = {
-        id: data.id,
-        content: data.content,
+        id: data.id || Date.now().toString(),
+        content: typeof data.content === 'object' ? JSON.stringify(data.content) : String(data.content || ''),
         senderId: data.senderId,
         createdAt: new Date(data.createdAt || Date.now()),
         isRead: data.isRead ?? (data.senderId === currentUserId),
@@ -118,7 +118,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
       const m = (res as any)?.data || res
       const newMessage: Message = {
         id: m.id || Date.now().toString(),
-        content: m.content || content,
+        content: typeof m.content === 'object' ? JSON.stringify(m.content) : String(m.content || content),
         senderId: m.senderId || currentUserId,
         createdAt: new Date(m.createdAt || Date.now()),
         isRead: !!m.isRead,
@@ -220,7 +220,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
             
             return (
               <motion.div
-                key={msg.id}
+                key={`${msg.id}-${index}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
