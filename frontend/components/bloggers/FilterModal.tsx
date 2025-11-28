@@ -261,16 +261,16 @@ export function FilterModal({ isOpen, onClose, filters, onApply }: FilterModalPr
               <div className="flex items-center justify-between p-4 rounded-xl bg-telegram-bg border border-white/5">
                 <span className="font-medium text-white">Только верифицированные</span>
                 <button
-                  onClick={() => setLocalFilters(p => ({ ...p, isVerified: !p.isVerified }))}
+                  onClick={() => setLocalFilters(p => ({ ...p, verifiedOnly: !p.verifiedOnly }))}
                   className={cn(
                     "w-12 h-7 rounded-full p-1 transition-colors duration-200 ease-in-out",
-                    localFilters.isVerified ? "bg-telegram-primary" : "bg-white/10"
+                    localFilters.verifiedOnly ? "bg-telegram-primary" : "bg-white/10"
                   )}
                 >
                   <div 
                     className={cn(
                       "w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 ease-in-out",
-                      localFilters.isVerified ? "translate-x-5" : "translate-x-0"
+                      localFilters.verifiedOnly ? "translate-x-5" : "translate-x-0"
                     )} 
                   />
                 </button>
