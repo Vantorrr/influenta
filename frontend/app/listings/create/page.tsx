@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
@@ -26,12 +26,20 @@ import {
 } from '@/types'
 import { listingsApi } from '@/lib/api'
 import { getCategoryLabel, getPostFormatLabel, formatNumberInput, parseNumberInput } from '@/lib/utils'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function CreateListingPage() {
   const router = useRouter()
+  const { user, isLoading: isAuthLoading } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   
+  useEffect(() => {
+    if (!isAuthLoading && user && user.role === 'blogger') {
+      router.push('/dashboard')
+    }
+  }, [user, isAuthLoading, router])
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
