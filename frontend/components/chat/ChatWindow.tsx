@@ -72,8 +72,10 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
           if (!m || !m.id) continue
           parsed.push({
             id: String(m.id),
-            content: String(m.content || ''),
-            senderId: String(m.senderId || ''),
+            // Бэкенд возвращает text, фронт ожидает content
+            content: String(m.text || m.content || ''),
+            // Бэкенд возвращает userId, фронт ожидает senderId
+            senderId: String(m.userId || m.senderId || ''),
             createdAt: new Date(m.createdAt || Date.now()),
             isRead: Boolean(m.isRead),
           })
@@ -107,8 +109,8 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
       if (!data || data.responseId !== responseId) return
       const msg: Message = {
         id: String(data.id || Date.now()),
-        content: String(data.content || ''),
-        senderId: String(data.senderId || ''),
+        content: String(data.text || data.content || ''),
+        senderId: String(data.userId || data.senderId || ''),
         createdAt: new Date(data.createdAt || Date.now()),
         isRead: Boolean(data.isRead),
       }
@@ -152,8 +154,8 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
       const m = (res as any)?.data || res || {}
       const newMsg: Message = {
         id: String(m.id || Date.now()),
-        content: String(m.content || text),
-        senderId: String(m.senderId || currentUserId),
+        content: String(m.text || m.content || text),
+        senderId: String(m.userId || m.senderId || currentUserId),
         createdAt: new Date(m.createdAt || Date.now()),
         isRead: Boolean(m.isRead),
       }

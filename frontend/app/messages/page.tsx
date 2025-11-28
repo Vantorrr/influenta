@@ -99,13 +99,14 @@ function MessagesPageContent() {
               ? row.response?.listing?.advertiser?.user // Я блогер → собеседник рекламодатель
               : row.response?.blogger?.user // Я рекламодатель → собеседник блогер
             
-            // Безопасное извлечение content
+            // Безопасное извлечение content (бэкенд может вернуть text или content)
             let messageContent = 'Нет сообщений'
-            if (row.lastMessage?.content) {
-              if (typeof row.lastMessage.content === 'object') {
-                messageContent = JSON.stringify(row.lastMessage.content)
+            const rawContent = row.lastMessage?.text || row.lastMessage?.content
+            if (rawContent) {
+              if (typeof rawContent === 'object') {
+                messageContent = JSON.stringify(rawContent)
               } else {
-                messageContent = String(row.lastMessage.content)
+                messageContent = String(rawContent)
               }
             }
             
@@ -125,7 +126,8 @@ function MessagesPageContent() {
                 content: messageContent,
                 createdAt: new Date(row.lastMessage.createdAt || Date.now()),
                 isRead: !!row.lastMessage.isRead,
-                senderId: String(row.lastMessage.senderId || ''),
+                // Бэкенд может вернуть userId или senderId
+                senderId: String(row.lastMessage.userId || row.lastMessage.senderId || ''),
               } : {
                 content: 'Нет сообщений',
                 createdAt: new Date(),
