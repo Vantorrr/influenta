@@ -1,23 +1,19 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  ArrowLeft,
-  Send,
-  Info,
-  CheckCircle,
-  Clock,
-  X,
-  Check,
-  Paperclip
-} from 'lucide-react'
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { formatTime, getRelativeTime } from '@/lib/utils'
+import { formatTime } from '@/lib/utils'
 import { messagesApi } from '@/lib/api'
 import { chatService } from '@/lib/chat.service'
+
+// Simple SVG Icons to prevent Lucide crash
+const IconArrowLeft = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+const IconInfo = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+const IconSend = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+const IconPaperclip = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+const IconCheck = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
 
 interface Message {
   id: string
@@ -37,79 +33,65 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [isTyping, setIsTyping] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const typingTimer = useRef<any>(null)
 
-  // Загрузка реальных сообщений и подключение к комнате
+  // Base logic restored
   useEffect(() => {
     let isMounted = true
-    setError(null)
     const load = async () => {
       try {
         const res = await messagesApi.getByResponse(chat.responseId, 1, 50)
-        // Handle both paginated response { data: [...] } and direct array response [...]
-        const raw = (res as any)?.data || (Array.isArray(res) ? res : [])
-        const items = (Array.isArray(raw) ? raw : []).filter((i: any) => i && i.id)
+        // Only fix for array/paginated structure
+        const raw = (res as any)?.data || res?.data || (Array.isArray(res) ? res : [])
+        const items = Array.isArray(raw) ? raw : []
         
         if (!isMounted) return
         const normalized = items.map((m: any) => ({
-          id: m?.id || String(Math.random()),
-          content: typeof m?.content === 'object' ? JSON.stringify(m.content) : String(m?.content || ''),
-          senderId: m?.senderId,
-          createdAt: new Date(m?.createdAt || Date.now()),
-          isRead: !!m?.isRead,
+          id: m.id,
+          content: typeof m.content === 'object' ? JSON.stringify(m.content) : String(m.content || ''),
+          senderId: m.senderId,
+          createdAt: new Date(m.createdAt),
+          isRead: !!m.isRead,
         }))
+        setMessages(normalized.reverse())
         
-        // Deduplicate messages by ID to prevent key collisions
-        const uniqueMessages = Array.from(new Map(normalized.map((m: any) => [m.id, m])).values())
-        
-        setMessages((uniqueMessages as Message[]).reverse())
-        // Отметим как прочитанные входящие
         for (const m of normalized) {
           if (!m.isRead && m.senderId !== currentUserId) {
             try { await messagesApi.markAsRead(m.id) } catch {}
           }
         }
-      } catch (e) {
-        console.error('Failed to load messages', e)
-        setError('Не удалось загрузить сообщения')
+      } catch {
         setMessages([])
       }
     }
     load()
 
-    // Подключаемся к комнате чата
     try { chatService.joinChat(chat.responseId) } catch {}
 
-    // Слушатель новых сообщений
     const onNewMessage = (data: any) => {
       if (data?.responseId !== chat.responseId) return
-      
       const incoming: Message = {
-        id: data?.id || String(Math.random()),
-        content: typeof data?.content === 'object' ? JSON.stringify(data.content) : String(data?.content || ''),
-        senderId: data?.senderId,
-        createdAt: new Date(data?.createdAt || Date.now()),
-        isRead: data?.isRead ?? (data?.senderId === currentUserId),
+        id: data.id,
+        content: typeof data.content === 'object' ? JSON.stringify(data.content) : String(data.content || ''),
+        senderId: data.senderId,
+        createdAt: new Date(data.createdAt || Date.now()),
+        isRead: data.isRead ?? (data.senderId === currentUserId),
       }
-
-      setMessages(prev => {
-        if (prev.some(m => m.id === incoming.id)) return prev
-        return [...prev, incoming]
-      })
-
+      setMessages(prev => [...prev, incoming]) // Simple append
       if (incoming.senderId !== currentUserId && !incoming.isRead) {
         try { messagesApi.markAsRead(incoming.id) } catch {}
       }
     }
+    
     const onTyping = (data: any) => {
       if (data?.responseId !== chat.responseId || data?.userId === currentUserId) return
       setIsTyping(true)
       if (typingTimer.current) clearTimeout(typingTimer.current)
       typingTimer.current = setTimeout(() => setIsTyping(false), 1500)
     }
+
     chatService.on('message', onNewMessage)
     chatService.on('typing', onTyping)
 
@@ -121,7 +103,6 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
     }
   }, [chat.responseId, currentUserId])
 
-  // Автоскролл к последнему сообщению
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
@@ -131,9 +112,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
     const content = message
     setMessage('')
     try {
-      console.log('📤 Sending message:', { responseId: chat.responseId, content })
       const res = await messagesApi.send(chat.responseId, content)
-      console.log('✅ Message sent:', res)
       const m = (res as any)?.data || res
       const newMessage: Message = {
         id: m.id || Date.now().toString(),
@@ -142,20 +121,14 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
         createdAt: new Date(m.createdAt || Date.now()),
         isRead: !!m.isRead,
       }
-      setMessages(prev => {
-        if (prev.some(msg => msg.id === newMessage.id)) return prev
-        return [...prev, newMessage]
-      })
+      setMessages(prev => [...prev, newMessage]) // Simple append
       try { chatService.stopTyping(chat.responseId) } catch {}
     } catch (e: any) {
-      console.error('❌ Message send error:', e)
-      alert(`Не удалось отправить: ${e?.response?.data?.message || e?.message || 'Неизвестная ошибка'}`)
-      // Возвращаем текст в инпут, если не отправилось
+      alert(`Ошибка: ${e?.message || 'Не удалось отправить'}`)
       setMessage(content)
     }
   }
 
-  // Отправляем индикатор набора текста
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(e.target.value)
     try { chatService.startTyping(chat.responseId) } catch {}
@@ -172,190 +145,97 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
 
   const getMessageStatus = (msg: Message) => {
     if (msg.senderId !== currentUserId) return null
-    
     if (msg.isRead) {
-      return <div className="flex -space-x-2">
-        <Check className="w-3.5 h-3.5 text-blue-200" />
-        <Check className="w-3.5 h-3.5 text-blue-200" />
-      </div>
-    } else {
-      return <Check className="w-3.5 h-3.5 text-blue-200/70" />
+      return <div className="flex -space-x-2 text-blue-200"><IconCheck /><IconCheck /></div>
     }
+    return <div className="text-blue-200/70"><IconCheck /></div>
   }
 
   return (
     <div className="flex flex-col h-full bg-[#0F0F10] relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none opacity-20" />
-      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-blue-500/10 to-transparent pointer-events-none" />
-
-      {/* Заголовок чата */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[#1C1E20]/90 backdrop-blur-md sticky top-0 z-30 shadow-lg shadow-black/5">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[#1C1E20]/90 backdrop-blur-md sticky top-0 z-30 shadow-lg">
         <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="md:hidden p-2 hover:bg-white/10 rounded-full transition-colors -ml-2 text-white"
-          >
-            <ArrowLeft className="w-6 h-6" />
+          <button onClick={onBack} className="md:hidden p-2 hover:bg-white/10 rounded-full text-white">
+            <IconArrowLeft />
           </button>
-          
           <div className="relative">
-            <Avatar
-              firstName={chat.otherUser.firstName}
-              lastName={chat.otherUser.lastName}
-              src={chat.otherUser.photoUrl}
-              size="sm"
-              className="ring-2 ring-white/10 shadow-xl h-10 w-10"
+            <Avatar 
+              firstName={chat.otherUser?.firstName} 
+              lastName={chat.otherUser?.lastName} 
+              src={chat.otherUser?.photoUrl} 
+              size="sm" 
+              className="ring-2 ring-white/10"
             />
-            {chat.otherUser.isOnline && (
-              <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#1C1E20] rounded-full ring-1 ring-black/20" />
-            )}
           </div>
-          
-          <div 
-            onClick={() => { if (chat.otherUser?.role === 'blogger' && chat.otherUser?.id) { window.location.href = `/bloggers/${chat.otherUser.id}` } }} 
-            className={`flex flex-col ${chat.otherUser?.role === 'blogger' && chat.otherUser?.id ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
-          >
-            <h3 className="font-bold text-white flex items-center gap-2 text-base leading-tight">
-              {chat.otherUser.firstName} {chat.otherUser.lastName}
-              {chat.status === 'accepted' && (
-                <Badge variant="default" className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px] px-1.5 py-0 h-5 font-medium">
-                  Сотрудничество
-                </Badge>
-              )}
+          <div>
+            <h3 className="font-bold text-white text-base">
+              {chat.otherUser?.firstName} {chat.otherUser?.lastName}
             </h3>
-            <p className="text-xs text-white/50 font-medium truncate max-w-[200px]">
+            <p className="text-xs text-white/50 truncate max-w-[200px]">
               {chat.listingTitle}
             </p>
           </div>
         </div>
-        
-        <div className="flex items-center gap-2">
-           <Button variant="ghost" size="sm" className="text-white/50 hover:text-white hover:bg-white/10 p-2 h-10 w-10 rounded-full">
-             <Info className="w-6 h-6" />
-           </Button>
-        </div>
+        <Button variant="ghost" size="sm" className="text-white/50 hover:text-white hover:bg-white/10 p-2 rounded-full">
+          <IconInfo />
+        </Button>
       </div>
 
-      {/* Сообщения */}
-      <div className="flex-1 overflow-y-auto px-4 pt-6 pb-32 space-y-6 relative z-10 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-        {error && (
-          <div className="text-center py-4">
-            <p className="text-red-400 text-sm bg-red-500/10 inline-block px-3 py-1 rounded-full border border-red-500/20">
-              {error}
-            </p>
-          </div>
-        )}
-
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-4 pt-6 pb-32 space-y-4 relative z-10">
         {messages.map((msg, index) => {
           const isOwn = msg.senderId === currentUserId
-          const showAvatar = !isOwn && (
-            index === 0 || messages[index - 1]?.senderId !== msg.senderId
-          )
-          const isSequential = index > 0 && messages[index - 1]?.senderId === msg.senderId
-          
           return (
-            <div
-              key={msg.id}
-              className={`flex gap-3 ${isOwn ? 'justify-end' : 'justify-start'} ${isSequential ? 'mt-1.5' : 'mt-5'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
-            >
+            <div key={msg.id || index} className={`flex gap-3 ${isOwn ? 'justify-end' : 'justify-start'}`}>
               {!isOwn && (
-                <div className={`w-8 h-8 flex-shrink-0 flex items-end ${!showAvatar ? 'opacity-0' : ''}`}>
-                    <Avatar
-                      firstName={chat.otherUser.firstName}
-                      lastName={chat.otherUser.lastName}
-                      src={chat.otherUser.photoUrl}
-                      size="sm"
-                    />
+                <div className="w-8 h-8 flex-shrink-0 flex items-end">
+                  <Avatar firstName={chat.otherUser?.firstName} src={chat.otherUser?.photoUrl} size="sm" />
                 </div>
               )}
-              
-              <div className={`max-w-[85%] md:max-w-[65%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
-                <div
-                  className={`relative px-5 py-3 shadow-md transition-all ${
-                    isOwn
-                      ? 'bg-gradient-to-tr from-[#3B82F6] to-[#2563EB] text-white rounded-2xl rounded-tr-sm shadow-blue-900/20'
-                      : 'bg-[#1F2123] text-white border border-white/5 rounded-2xl rounded-tl-sm shadow-black/20'
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed tracking-wide font-light">{msg.content}</p>
-                  
-                  <div className={`flex items-center gap-1.5 mt-1.5 justify-end select-none ${isOwn ? 'text-blue-100/80' : 'text-white/30'}`}>
-                    <span className="text-[10px] font-medium tracking-wide">
-                      {formatTime(msg.createdAt)}
-                    </span>
-                    {isOwn && getMessageStatus(msg)}
-                  </div>
+              <div className={`max-w-[85%] md:max-w-[65%] px-4 py-2 rounded-2xl ${
+                isOwn 
+                  ? 'bg-blue-600 text-white rounded-tr-sm' 
+                  : 'bg-[#1F2123] text-white border border-white/5 rounded-tl-sm'
+              }`}>
+                <p className="text-[15px] break-words">{msg.content}</p>
+                <div className={`flex items-center gap-1 justify-end text-[10px] mt-1 ${isOwn ? 'text-blue-200' : 'text-white/40'}`}>
+                  {formatTime(msg.createdAt)}
+                  {isOwn && <div className="w-4 h-4 scale-75">{getMessageStatus(msg)}</div>}
                 </div>
               </div>
             </div>
           )
         })}
-        
-        {/* Индикатор печати */}
-        {isTyping && (
-          <div className="flex items-center gap-3 mt-2 animate-pulse">
-            <div className="w-8 h-8 flex items-center justify-center">
-                <Avatar
-                  firstName={chat.otherUser.firstName}
-                  lastName={chat.otherUser.lastName}
-                  src={chat.otherUser.photoUrl}
-                  size="sm"
-                />
-            </div>
-            <div className="bg-[#1F2123] border border-white/5 rounded-2xl rounded-tl-sm px-4 py-3 shadow-md">
-              <div className="flex gap-1.5">
-                <div className="w-1.5 h-1.5 bg-white/50 rounded-full" />
-                <div className="w-1.5 h-1.5 bg-white/50 rounded-full" />
-                <div className="w-1.5 h-1.5 bg-white/50 rounded-full" />
-              </div>
-            </div>
-          </div>
-        )}
-        
         <div ref={messagesEndRef} className="h-4" />
       </div>
 
-      {/* Форма ввода - Floating Glass Bar */}
-      <div className="absolute bottom-0 left-0 right-0 z-40 p-4 pb-8 bg-gradient-to-t from-[#0F0F10] via-[#0F0F10]/95 to-transparent pt-12 pointer-events-none">
-        <div className="max-w-4xl mx-auto flex items-end gap-3 bg-[#1C1E20] p-2 rounded-[24px] border border-white/10 shadow-2xl shadow-black/50 ring-1 ring-white/5 pointer-events-auto backdrop-blur-2xl">
-          <Button variant="ghost" size="sm" className="text-white/40 hover:text-white hover:bg-white/10 h-11 w-11 shrink-0 rounded-full">
-             <Paperclip className="w-5 h-5" />
+      {/* Input */}
+      <div className="absolute bottom-0 left-0 right-0 z-40 p-4 pb-8 bg-gradient-to-t from-[#0F0F10] via-[#0F0F10]/95 to-transparent pt-12">
+        <div className="max-w-4xl mx-auto flex items-end gap-2 bg-[#1C1E20] p-2 rounded-2xl border border-white/10 shadow-2xl">
+          <Button variant="ghost" size="sm" className="text-white/40 hover:text-white h-10 w-10 rounded-full p-2">
+             <IconPaperclip />
           </Button>
-
           <textarea
             ref={inputRef}
             value={message}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             placeholder="Сообщение..."
-            className="flex-1 bg-transparent border-0 px-2 py-3 resize-none text-white placeholder-white/30 focus:ring-0 focus:outline-none max-h-32 min-h-[48px] text-[16px] leading-normal scrollbar-hide"
+            className="flex-1 bg-transparent border-0 px-2 py-2.5 text-white placeholder-white/30 focus:ring-0 focus:outline-none max-h-32 min-h-[44px] resize-none"
             rows={1}
-            style={{ height: 'auto', minHeight: '48px' }}
-            onInput={(e) => {
-               const target = e.target as HTMLTextAreaElement;
-               target.style.height = 'auto';
-               target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
-            }}
           />
-          
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <button
             onClick={sendMessage}
             disabled={!message.trim()}
-            className={`h-11 w-11 rounded-full flex items-center justify-center transition-all shrink-0 shadow-lg ${
-              message.trim()
-                ? 'bg-blue-600 text-white shadow-blue-500/30 hover:bg-blue-500'
-                : 'bg-white/5 text-white/20 cursor-not-allowed'
+            className={`h-10 w-10 rounded-full flex items-center justify-center transition-all active:scale-95 ${
+              message.trim() ? 'bg-blue-600 text-white' : 'bg-white/10 text-white/20'
             }`}
           >
-            <Send className="w-5 h-5 ml-0.5" />
-          </motion.button>
+            <div className="p-2"><IconSend /></div>
+          </button>
         </div>
       </div>
     </div>
   )
 }
-
-
