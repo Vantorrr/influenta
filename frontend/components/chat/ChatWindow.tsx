@@ -37,6 +37,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [isTyping, setIsTyping] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const typingTimer = useRef<any>(null)
@@ -44,9 +45,10 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
   // Загрузка реальных сообщений и подключение к комнате
   useEffect(() => {
     let isMounted = true
+    setError(null)
     const load = async () => {
       try {
-        const res = await messagesApi.getByResponse(chat.responseId, 1, 200)
+        const res = await messagesApi.getByResponse(chat.responseId, 1, 50)
         // Handle both paginated response { data: [...] } and direct array response [...]
         const raw = (res as any)?.data || (Array.isArray(res) ? res : [])
         const items = (Array.isArray(raw) ? raw : []).filter((i: any) => i && i.id)
@@ -70,7 +72,9 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
             try { await messagesApi.markAsRead(m.id) } catch {}
           }
         }
-      } catch {
+      } catch (e) {
+        console.error('Failed to load messages', e)
+        setError('Не удалось загрузить сообщения')
         setMessages([])
       }
     }
@@ -235,96 +239,79 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
 
       {/* Сообщения */}
       <div className="flex-1 overflow-y-auto px-4 pt-6 pb-32 space-y-6 relative z-10 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-        <AnimatePresence initial={false}>
-          {messages.map((msg, index) => {
-            const isOwn = msg.senderId === currentUserId
-            const showAvatar = !isOwn && (
-              index === 0 || messages[index - 1]?.senderId !== msg.senderId
-            )
-            const isSequential = index > 0 && messages[index - 1]?.senderId === msg.senderId
-            
-            return (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.2 }}
-                className={`flex gap-3 ${isOwn ? 'justify-end' : 'justify-start'} ${isSequential ? 'mt-1.5' : 'mt-5'}`}
-              >
-                {!isOwn && (
-                  <div className={`w-8 h-8 flex-shrink-0 flex items-end ${!showAvatar ? 'opacity-0' : ''}`}>
-                      <Avatar
-                        firstName={chat.otherUser.firstName}
-                        lastName={chat.otherUser.lastName}
-                        src={chat.otherUser.photoUrl}
-                        size="sm"
-                      />
-                  </div>
-                )}
-                
-                <div className={`max-w-[85%] md:max-w-[65%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
-                  <div
-                    className={`relative px-5 py-3 shadow-md transition-all ${
-                      isOwn
-                        ? 'bg-gradient-to-tr from-[#3B82F6] to-[#2563EB] text-white rounded-2xl rounded-tr-sm shadow-blue-900/20'
-                        : 'bg-[#1F2123] text-white border border-white/5 rounded-2xl rounded-tl-sm shadow-black/20'
-                    }`}
-                  >
-                    <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed tracking-wide font-light">{msg.content}</p>
-                    
-                    <div className={`flex items-center gap-1.5 mt-1.5 justify-end select-none ${isOwn ? 'text-blue-100/80' : 'text-white/30'}`}>
-                      <span className="text-[10px] font-medium tracking-wide">
-                        {formatTime(msg.createdAt)}
-                      </span>
-                      {isOwn && getMessageStatus(msg)}
-                    </div>
+        {error && (
+          <div className="text-center py-4">
+            <p className="text-red-400 text-sm bg-red-500/10 inline-block px-3 py-1 rounded-full border border-red-500/20">
+              {error}
+            </p>
+          </div>
+        )}
+
+        {messages.map((msg, index) => {
+          const isOwn = msg.senderId === currentUserId
+          const showAvatar = !isOwn && (
+            index === 0 || messages[index - 1]?.senderId !== msg.senderId
+          )
+          const isSequential = index > 0 && messages[index - 1]?.senderId === msg.senderId
+          
+          return (
+            <div
+              key={msg.id}
+              className={`flex gap-3 ${isOwn ? 'justify-end' : 'justify-start'} ${isSequential ? 'mt-1.5' : 'mt-5'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
+            >
+              {!isOwn && (
+                <div className={`w-8 h-8 flex-shrink-0 flex items-end ${!showAvatar ? 'opacity-0' : ''}`}>
+                    <Avatar
+                      firstName={chat.otherUser.firstName}
+                      lastName={chat.otherUser.lastName}
+                      src={chat.otherUser.photoUrl}
+                      size="sm"
+                    />
+                </div>
+              )}
+              
+              <div className={`max-w-[85%] md:max-w-[65%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                <div
+                  className={`relative px-5 py-3 shadow-md transition-all ${
+                    isOwn
+                      ? 'bg-gradient-to-tr from-[#3B82F6] to-[#2563EB] text-white rounded-2xl rounded-tr-sm shadow-blue-900/20'
+                      : 'bg-[#1F2123] text-white border border-white/5 rounded-2xl rounded-tl-sm shadow-black/20'
+                  }`}
+                >
+                  <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed tracking-wide font-light">{msg.content}</p>
+                  
+                  <div className={`flex items-center gap-1.5 mt-1.5 justify-end select-none ${isOwn ? 'text-blue-100/80' : 'text-white/30'}`}>
+                    <span className="text-[10px] font-medium tracking-wide">
+                      {formatTime(msg.createdAt)}
+                    </span>
+                    {isOwn && getMessageStatus(msg)}
                   </div>
                 </div>
-              </motion.div>
-            )
-          })}
-        </AnimatePresence>
+              </div>
+            </div>
+          )
+        })}
         
         {/* Индикатор печати */}
-        <AnimatePresence>
-          {isTyping && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="flex items-center gap-3 mt-2"
-            >
-              <div className="w-8 h-8 flex items-center justify-center">
-                 <Avatar
-                    firstName={chat.otherUser.firstName}
-                    lastName={chat.otherUser.lastName}
-                    src={chat.otherUser.photoUrl}
-                    size="sm"
-                  />
+        {isTyping && (
+          <div className="flex items-center gap-3 mt-2 animate-pulse">
+            <div className="w-8 h-8 flex items-center justify-center">
+                <Avatar
+                  firstName={chat.otherUser.firstName}
+                  lastName={chat.otherUser.lastName}
+                  src={chat.otherUser.photoUrl}
+                  size="sm"
+                />
+            </div>
+            <div className="bg-[#1F2123] border border-white/5 rounded-2xl rounded-tl-sm px-4 py-3 shadow-md">
+              <div className="flex gap-1.5">
+                <div className="w-1.5 h-1.5 bg-white/50 rounded-full" />
+                <div className="w-1.5 h-1.5 bg-white/50 rounded-full" />
+                <div className="w-1.5 h-1.5 bg-white/50 rounded-full" />
               </div>
-              <div className="bg-[#1F2123] border border-white/5 rounded-2xl rounded-tl-sm px-4 py-3 shadow-md">
-                <div className="flex gap-1.5">
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-                    transition={{ duration: 1, repeat: Infinity }}
-                    className="w-1.5 h-1.5 bg-white/50 rounded-full"
-                  />
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-                    transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
-                    className="w-1.5 h-1.5 bg-white/50 rounded-full"
-                  />
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-                    transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
-                    className="w-1.5 h-1.5 bg-white/50 rounded-full"
-                  />
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </div>
+        )}
         
         <div ref={messagesEndRef} className="h-4" />
       </div>
