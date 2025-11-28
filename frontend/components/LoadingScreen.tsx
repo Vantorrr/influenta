@@ -46,7 +46,7 @@ export function LoadingScreen() {
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.8 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-telegram-bg overflow-hidden"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-telegram-bg overflow-hidden"
         >
           {/* Анимированные частицы на фоне */}
           <div className="absolute inset-0">
