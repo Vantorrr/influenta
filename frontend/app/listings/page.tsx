@@ -1,18 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { 
   Search, 
-  Filter, 
-  Briefcase, 
   Clock, 
-  ChevronRight, 
   Plus,
-  Layers,
-  Target
+  Briefcase
 } from 'lucide-react'
 import { Layout } from '@/components/layout/Layout'
 import { Input } from '@/components/ui/input'
@@ -21,7 +16,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { listingsApi } from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
-import { formatPrice, getCategoryLabel, getPostFormatLabel } from '@/lib/utils'
+import { formatPrice, getCategoryLabel } from '@/lib/utils'
 import { Listing } from '@/types'
 
 export default function ListingsPage() {
@@ -36,8 +31,12 @@ export default function ListingsPage() {
     loadListings()
   }, [activeTab])
 
-  const loadListings = async () => {
-    setIsLoading(true)
+  const loadListings = async (isSearch = false) => {
+    // Если это поиск и у нас уже есть данные, не показываем загрузку на весь экран
+    if (!isSearch || listings.length === 0) {
+      setIsLoading(true)
+    }
+    
     try {
       let data
       if (activeTab === 'my') {
@@ -56,7 +55,7 @@ export default function ListingsPage() {
   // Дебаунс поиска
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (activeTab === 'all') loadListings()
+      if (activeTab === 'all') loadListings(true)
     }, 500)
     return () => clearTimeout(timer)
   }, [searchQuery])
@@ -121,61 +120,55 @@ export default function ListingsPage() {
         </div>
 
         {/* Listings Grid */}
-        {isLoading ? (
+        {isLoading && listings.length === 0 ? (
           <div className="flex justify-center py-10">
             <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />
           </div>
         ) : listings.length > 0 ? (
           <div className="grid gap-3">
-            <AnimatePresence mode="popLayout">
-              {listings.map((listing, i) => (
-                <motion.div
-                  key={listing.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ delay: i * 0.05 }}
-                >
-                  <Link href={`/listings/${listing.id}`} className="block touch-manipulation active:scale-[0.99] transition-transform">
-                    <Card className="bg-[#1C1E20] border-white/5 p-5 hover:border-white/10 transition-colors shadow-sm">
-                      <div className="flex justify-between items-start mb-3">
-                        <h3 className="text-lg font-bold text-white leading-snug flex-1 pr-4">
-                          {listing.title}
-                        </h3>
-                        <Badge variant="default" className="bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold hover:bg-blue-500/20 shrink-0">
-                          {listing.budget > 0 ? formatPrice(listing.budget) : 'Договорная'}
-                        </Badge>
-                      </div>
-                      
-                      <p className="text-sm text-white/60 line-clamp-2 mb-4 leading-relaxed">
-                        {listing.description}
-                      </p>
+            {listings.map((listing) => (
+              <Link 
+                key={listing.id} 
+                href={`/listings/${listing.id}`} 
+                className="block touch-manipulation active:scale-[0.99] transition-transform"
+              >
+                <Card className="bg-[#1C1E20] border-white/5 p-5 hover:border-white/10 transition-colors shadow-sm">
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="text-lg font-bold text-white leading-snug flex-1 pr-4">
+                      {listing.title}
+                    </h3>
+                    <Badge variant="default" className="bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold hover:bg-blue-500/20 shrink-0">
+                      {listing.budget > 0 ? formatPrice(listing.budget) : 'Договорная'}
+                    </Badge>
+                  </div>
+                  
+                  <p className="text-sm text-white/60 line-clamp-2 mb-4 leading-relaxed">
+                    {listing.description}
+                  </p>
 
-                      <div className="flex flex-wrap items-center gap-2">
-                        {listing.targetCategories?.slice(0, 3).map(cat => (
-                          <Badge key={cat} variant="default" className="bg-[#2A2A2A] text-white/70 border border-white/5 font-normal text-xs hover:bg-[#333]">
-                            {getCategoryLabel(cat)}
-                          </Badge>
-                        ))}
-                        
-                        {listing.requirements?.minSubscribers && (
-                           <Badge variant="default" className="bg-[#2A2A2A] text-white/70 border border-white/5 font-normal text-xs hover:bg-[#333]">
-                             от {listing.requirements.minSubscribers / 1000}k подп.
-                           </Badge>
-                        )}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {listing.targetCategories?.slice(0, 3).map(cat => (
+                      <Badge key={cat} variant="default" className="bg-[#2A2A2A] text-white/70 border border-white/5 font-normal text-xs hover:bg-[#333]">
+                        {getCategoryLabel(cat)}
+                      </Badge>
+                    ))}
+                    
+                    {listing.requirements?.minSubscribers && (
+                       <Badge variant="default" className="bg-[#2A2A2A] text-white/70 border border-white/5 font-normal text-xs hover:bg-[#333]">
+                         от {listing.requirements.minSubscribers / 1000}k подп.
+                       </Badge>
+                    )}
 
-                        {listing.deadline && (
-                          <span className="text-xs text-white/40 ml-auto flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {new Date(listing.deadline).toLocaleDateString('ru-RU')}
-                          </span>
-                        )}
-                      </div>
-                    </Card>
-                  </Link>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+                    {listing.deadline && (
+                      <span className="text-xs text-white/40 ml-auto flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {new Date(listing.deadline).toLocaleDateString('ru-RU')}
+                      </span>
+                    )}
+                  </div>
+                </Card>
+              </Link>
+            ))}
           </div>
         ) : (
           <div className="text-center py-12 text-white/30">
