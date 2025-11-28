@@ -27,6 +27,8 @@ import { BloggerFilters } from '@/types'
 import { FilterModal } from '@/components/bloggers/FilterModal'
 import { VerificationTooltip } from '@/components/VerificationTooltip'
 
+import { Layout } from '@/components/layout/Layout'
+
 // Компонент с контентом страницы (внутри Suspense)
 function BloggersPageContent() {
   const router = useRouter()
@@ -297,11 +299,13 @@ function BloggersPageContent() {
 
 export default function BloggersPage() {
   return (
-    <div className="container min-h-screen bg-telegram-bg">
-      <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-telegram-primary"></div></div>}>
-        <BloggersPageContent />
-      </Suspense>
-    </div>
+    <Layout>
+      <div className="container min-h-screen bg-telegram-bg">
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-telegram-primary"></div></div>}>
+          <BloggersPageContent />
+        </Suspense>
+      </div>
+    </Layout>
   )
 }
 
