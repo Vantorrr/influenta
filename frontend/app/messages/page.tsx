@@ -89,18 +89,18 @@ function MessagesPageContent() {
             responseId: row.responseId,
             listingTitle: row.response?.listing?.title || 'Объявление',
             otherUser: {
-              id: otherUserData?.id,
-              firstName: otherUserData?.firstName || 'Пользователь',
-              lastName: otherUserData?.lastName || '',
-              username: otherUserData?.username || '',
-              photoUrl: otherUserData?.photoUrl,
+              id: String(otherUserData?.id || ''),
+              firstName: String(otherUserData?.firstName || 'Пользователь'),
+              lastName: String(otherUserData?.lastName || ''),
+              username: String(otherUserData?.username || ''),
+              photoUrl: otherUserData?.photoUrl ? String(otherUserData.photoUrl) : undefined,
               role: iAmBlogger ? 'advertiser' : 'blogger',
             },
             lastMessage: row.lastMessage ? {
               content: typeof row.lastMessage.content === 'object' ? JSON.stringify(row.lastMessage.content) : String(row.lastMessage.content || ''),
               createdAt: new Date(row.lastMessage.createdAt),
               isRead: !!row.lastMessage.isRead,
-              senderId: row.lastMessage.senderId,
+              senderId: String(row.lastMessage.senderId || ''),
             } : {
               content: 'Нет сообщений',
               createdAt: new Date(0), // Old date to sort last
@@ -112,11 +112,20 @@ function MessagesPageContent() {
           }
         })
         
-        // Сортируем по дате
+        // Сортируем по дате последнего сообщения (сначала новые)
         normalized.sort((a, b) => b.lastMessage.createdAt.getTime() - a.lastMessage.createdAt.getTime())
 
-        // Убираем только полные дубли (по ID отклика)
-        const uniqueChats = Array.from(new Map(normalized.map(item => [item.responseId, item])).values())
+        // Убираем дубликаты чатов (оставляем один чат на одного пользователя - самый свежий)
+        const uniqueChats: Chat[] = []
+        const seenUsers = new Set()
+        
+        for (const chat of normalized) {
+          if (!seenUsers.has(chat.otherUser.id)) {
+            uniqueChats.push(chat)
+            seenUsers.add(chat.otherUser.id)
+          }
+        }
+        
         setChats(uniqueChats)
       } catch {
         setChats([])
