@@ -3,16 +3,17 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Users, Eye, Shield, Ban, CheckCircle, Trash2, MessageSquare, Send } from 'lucide-react'
+import { ArrowLeft, Users, Eye, Shield, Ban, CheckCircle, Trash2, MessageSquare, Send, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
 import { bloggersApi, socialPlatformsApi, analyticsApi } from '@/lib/api'
-import { formatNumber, getCategoryLabel } from '@/lib/utils'
+import { formatNumber, getCategoryLabel, formatPrice } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { OfferModal } from '@/components/OfferModal'
 import { PlatformsList } from '@/components/profile/PlatformsList'
+import { VerificationTooltip } from '@/components/VerificationTooltip'
 import { useQuery } from '@tanstack/react-query'
 
 export default function BloggerDetailsPage() {
@@ -144,43 +145,165 @@ export default function BloggerDetailsPage() {
 
   const blogger = data
   const targetUserId = blogger.user?.id || blogger.userId || blogger.id
-  const isOwner = !!user && (user.id === targetUserId)
 
   return (
-    <div className="min-h-screen bg-telegram-bg p-4 space-y-4">
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-2 text-telegram-primary hover:opacity-80 transition-opacity"
-      >
-        <ArrowLeft className="w-4 h-4" /> Назад
-      </button>
+    <div className="min-h-screen bg-telegram-bg pb-20">
+      {/* Header Image / Pattern */}
+      <div className="h-48 bg-gradient-to-br from-telegram-primary/20 via-blue-900/20 to-telegram-bg relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-telegram-bg to-transparent" />
+        
+        {/* Back Button */}
+        <div className="absolute top-4 left-4 z-10">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.back()}
+            className="bg-black/20 backdrop-blur-md text-white hover:bg-black/30 border border-white/10"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Назад
+          </Button>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3">
-            <Avatar
-              src={blogger.user?.photoUrl}
-              firstName={blogger.user?.firstName || ''}
-              lastName={blogger.user?.lastName || ''}
-            />
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold truncate">
-                  {blogger.user?.firstName} {blogger.user?.lastName}
-                </span>
-                {blogger.isVerified && <Shield className="w-4 h-4 text-telegram-primary" />}
+      <div className="container px-4 -mt-20 relative z-10 space-y-6">
+        {/* Main Info Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Card className="border-white/5 bg-[#1C1E20]/95 backdrop-blur shadow-xl overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row gap-6 items-start">
+                {/* Avatar */}
+                <div className="relative">
+                  <Avatar
+                    src={blogger.user?.photoUrl}
+                    firstName={blogger.user?.firstName || ''}
+                    lastName={blogger.user?.lastName || ''}
+                    className="w-24 h-24 md:w-32 md:h-32 border-4 border-[#1C1E20] ring-4 ring-white/5 shadow-2xl"
+                  />
+                  {blogger.isVerified && (
+                    <div className="absolute -bottom-2 -right-2 z-10">
+                      <VerificationTooltip className="scale-110" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0 pt-2 space-y-3">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <h1 className="text-2xl md:text-3xl font-bold text-white truncate flex items-center gap-3">
+                        {blogger.user?.firstName} {blogger.user?.lastName}
+                      </h1>
+                      <p className="text-telegram-textSecondary text-lg">
+                        @{blogger.user?.username || blogger.user?.telegramUsername || 'username'}
+                      </p>
+                    </div>
+                    {/* Price Badge */}
+                    {(blogger.pricePerPost > 0 || blogger.pricePerStory > 0) && (
+                      <div className="flex flex-col items-end">
+                        {blogger.pricePerPost > 0 && (
+                          <div className="bg-telegram-accent/10 border border-telegram-accent/20 px-4 py-2 rounded-xl">
+                            <p className="text-xs text-telegram-accent/80 uppercase font-bold tracking-wider">Пост</p>
+                            <p className="text-xl font-bold text-telegram-accent">{formatPrice(blogger.pricePerPost)}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Categories */}
+                  <div className="flex flex-wrap gap-2">
+                    {(blogger.categories || []).map((c: string) => (
+                      <span 
+                        key={c} 
+                        className="text-xs font-medium uppercase tracking-wider px-3 py-1 rounded-lg bg-white/5 text-telegram-textSecondary border border-white/5"
+                      >
+                        {getCategoryLabel(c)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <p className="text-sm text-telegram-textSecondary truncate">
-                {blogger.categories && blogger.categories.length > 0 
-                  ? blogger.categories.slice(0, 2).join(', ')
-                  : 'Контакты скрыты до сотрудничества'}
-              </p>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Admin-only actions */}
-          {isAdmin && (
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-white/5">
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-2 text-telegram-textSecondary mb-1">
+                    <Users className="w-4 h-4" />
+                    <span className="text-sm">Подписчики</span>
+                  </div>
+                  <p className="text-xl md:text-2xl font-bold text-white">
+                    {formatNumber(blogger.subscribersCount || 0)}
+                  </p>
+                </div>
+                <div className="text-center border-l border-white/5">
+                  <div className="flex items-center justify-center gap-2 text-telegram-textSecondary mb-1">
+                    <Eye className="w-4 h-4" />
+                    <span className="text-sm">Просмотры</span>
+                  </div>
+                  <p className="text-xl md:text-2xl font-bold text-white">
+                    {formatNumber(blogger.averageViews || 0)}
+                  </p>
+                </div>
+                <div className="text-center border-l border-white/5">
+                  <div className="flex items-center justify-center gap-2 text-telegram-textSecondary mb-1">
+                    <MessageSquare className="w-4 h-4" />
+                    <span className="text-sm">ER</span>
+                  </div>
+                  <p className="text-xl md:text-2xl font-bold text-telegram-accent">
+                    {blogger.engagementRate || 0}%
+                  </p>
+                </div>
+              </div>
+
+              {/* Bio */}
+              {blogger.bio && (
+                <div className="mt-6 p-4 bg-white/5 rounded-xl border border-white/5">
+                  <p className="text-telegram-text leading-relaxed italic">
+                    "{blogger.bio}"
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Social Platforms */}
+        {platforms && platforms.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card className="border-white/5 bg-[#1C1E20] shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Users className="w-5 h-5 text-telegram-primary" />
+                  Социальные сети
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <PlatformsList 
+                  platforms={platforms as any}
+                  isAdmin={isAdmin}
+                  telegramUsername={blogger.user?.username || blogger.user?.telegramUsername}
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* Admin Actions */}
+        {isAdmin && (
+           <Card className="border-red-500/20 bg-red-500/5">
+             <CardHeader>
+               <CardTitle className="text-lg text-red-400">Панель администратора</CardTitle>
+             </CardHeader>
+             <CardContent>
             <div className="flex flex-wrap gap-2">
               <Button
                 variant={blogger.isVerified ? 'secondary' : 'primary'}
@@ -190,9 +313,7 @@ export default function BloggerDetailsPage() {
                     const uid = targetUserId
                     if (blogger.isVerified) {
                       setUnverifyReason('')
-                      // Покажем инлайн-поле прямо на странице (надежно для Mini App)
                       setShowUnverifyInline(true)
-                      // И параллельно попытаемся открыть модалку (если окружение позволяет)
                       try { setShowUnverifyModal(true) } catch {}
                     } else {
                       const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${uid}/verify`, {
@@ -204,7 +325,6 @@ export default function BloggerDetailsPage() {
                         alert(`Ошибка: ${resp.status} ${text}`)
                         return
                       }
-                      // Оптимистичное обновление UI
                       setData((prev: any) => (prev ? { ...prev, isVerified: true } : prev))
                       try { (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.('success') } catch {}
                       try { window.dispatchEvent(new CustomEvent('user-verified', { detail: { userId: uid } })) } catch {}
@@ -244,108 +364,47 @@ export default function BloggerDetailsPage() {
               >
                 <Trash2 className="w-4 h-4 mr-1" /> Удалить
               </Button>
-              {(blogger.user?.username || blogger.user?.telegramUsername) && (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => {
-                    if (typeof window === 'undefined') return
-                    const username = (
-                      blogger.user?.username ||
-                      (blogger.user as any)?.telegramUsername ||
-                      ''
-                    )
-                      .toString()
-                      .replace('@', '')
-                      .trim()
-                    if (!username) return
-                    const url = `https://t.me/${username}`
-                    window.open(url, '_blank')
-                  }}
-                >
-                  <Send className="w-4 h-4 mr-1" /> Telegram
-                </Button>
-              )}
             </div>
-          )}
-        {isAdmin && showUnverifyInline && (
-          <div className="mt-3 p-3 border border-telegram-border rounded-lg bg-telegram-bg/60">
-            <p className="text-sm text-telegram-textSecondary mb-2">Укажите причину снятия верификации:</p>
-            <input
-              value={unverifyReason}
-              onChange={(e) => setUnverifyReason(e.target.value)}
-              placeholder="Причина"
-              className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text mb-2"
-            />
-            <div className="flex gap-2">
-              <Button variant="secondary" size="sm" onClick={() => { setShowUnverifyInline(false); setShowUnverifyModal(false) }}>Отмена</Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={async () => {
-                  const uid = targetUserId
-                  const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${uid}/unverify`, {
-                    method: 'PATCH',
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ reason: unverifyReason || 'Без указания причины' })
-                  })
-                  if (!resp.ok) {
-                    const text = await resp.text(); alert(`Ошибка: ${resp.status} ${text}`)
-                    return
-                  }
-                  setShowUnverifyInline(false)
-                  setShowUnverifyModal(false)
-                  router.refresh()
-                }}
-              >Снять</Button>
-            </div>
+            {showUnverifyInline && (
+              <div className="mt-3 p-3 border border-telegram-border rounded-lg bg-telegram-bg/60">
+                <input
+                  value={unverifyReason}
+                  onChange={(e) => setUnverifyReason(e.target.value)}
+                  placeholder="Причина снятия верификации"
+                  className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text mb-2"
+                />
+                <div className="flex gap-2">
+                   <Button size="sm" variant="secondary" onClick={() => setShowUnverifyInline(false)}>Отмена</Button>
+                   <Button size="sm" variant="primary" onClick={async () => {
+                      const uid = targetUserId
+                      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${uid}/unverify`, {
+                        method: 'PATCH',
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reason: unverifyReason || 'Без указания причины' })
+                      })
+                      setShowUnverifyInline(false); router.refresh()
+                   }}>Снять</Button>
+                </div>
+              </div>
+            )}
+             </CardContent>
+           </Card>
+        )}
+
+        {/* Action Button */}
+        {user?.role === 'advertiser' && (
+          <div className="fixed bottom-6 left-4 right-4 z-20">
+            <Button
+              variant="primary"
+              className="w-full h-14 text-lg font-bold shadow-2xl shadow-telegram-primary/40 bg-gradient-to-r from-telegram-primary to-telegram-accent border border-white/20"
+              onClick={() => setShowOfferModal(true)}
+            >
+              <MessageSquare className="w-5 h-5 mr-2" />
+              Предложить сотрудничество
+            </Button>
           </div>
         )}
-          <div className="flex flex-wrap gap-2">
-            {(blogger.categories || []).map((c: string) => (
-              <Badge key={c} variant="default">{getCategoryLabel(c)}</Badge>
-            ))}
-          </div>
-
-          {/* О себе */}
-          {blogger.bio && (
-            <div className="pt-4 border-t border-telegram-border">
-              <h4 className="font-medium text-sm text-telegram-textSecondary mb-2">О себе</h4>
-              <p className="text-telegram-text">{blogger.bio}</p>
-            </div>
-          )}
-
-          {/* Кнопка для рекламодателей */}
-          {user?.role === 'advertiser' && (
-            <div className="mt-6 space-y-3">
-              <Button
-                variant="primary"
-                fullWidth
-                onClick={() => setShowOfferModal(true)}
-              >
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Предложить сотрудничество
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Социальные сети блогера */}
-      {platforms && platforms.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Социальные сети</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PlatformsList 
-              platforms={platforms as any}
-              isAdmin={isAdmin}
-              telegramUsername={blogger.user?.username || blogger.user?.telegramUsername}
-            />
-          </CardContent>
-        </Card>
-      )}
+      </div>
 
   {/* Modal: причина снятия верификации */}
   {showUnverifyModal && (
@@ -399,16 +458,3 @@ export default function BloggerDetailsPage() {
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

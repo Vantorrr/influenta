@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, Suspense, useRef } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -37,6 +37,7 @@ function BloggersPageContent() {
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
   const [showFilters, setShowFilters] = useState(false)
+  const isRestored = useRef(false)
 
   useScrollRestoration()
 
@@ -45,22 +46,25 @@ function BloggersPageContent() {
     if (typeof window === 'undefined') return
     try {
       const raw = sessionStorage.getItem('__bloggers_filters_v1')
-      if (!raw) return
-      const saved = JSON.parse(raw) as { search?: string; filters?: BloggerFilters }
-      if (typeof saved.search === 'string') setSearch(saved.search)
-      if (saved.filters) {
-        setFilters(prev => ({
-          ...prev,
-          ...saved.filters,
-          categories: saved.filters?.categories ?? prev.categories ?? [],
-        }))
+      if (raw) {
+        const saved = JSON.parse(raw) as { search?: string; filters?: BloggerFilters }
+        if (typeof saved.search === 'string') setSearch(saved.search)
+        if (saved.filters) {
+          setFilters(prev => ({
+            ...prev,
+            ...saved.filters,
+            categories: saved.filters?.categories ?? prev.categories ?? [],
+          }))
+        }
       }
-    } catch {}
+    } catch {} finally {
+      isRestored.current = true
+    }
   }, [])
 
   // Сохраняем фильтры и поиск при изменении
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined' || !isRestored.current) return
     try {
       sessionStorage.setItem(
         '__bloggers_filters_v1',
