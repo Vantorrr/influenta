@@ -550,7 +550,26 @@ export class AdminService {
       });
     }
 
-    if (!blogger) throw new NotFoundException('Blogger not found');
+    if (!blogger) {
+      // Если записи в bloggers нет, но юзер есть - создадим её
+      const user = await this.usersRepository.findOne({ where: { id } });
+      if (user && user.role === 'blogger') {
+        blogger = this.bloggersRepository.create({
+          userId: user.id,
+          user: user,
+          categories: [],
+          postExamples: [],
+          isFeatured: false,
+          subscribersCount: 0,
+          averageViews: 0,
+          pricePerPost: 0,
+          isPublic: true,
+        });
+        await this.bloggersRepository.save(blogger);
+      } else {
+        throw new NotFoundException('Blogger not found');
+      }
+    }
 
     // Update Blogger fields
     if (dto.bio !== undefined) blogger.bio = dto.bio;
