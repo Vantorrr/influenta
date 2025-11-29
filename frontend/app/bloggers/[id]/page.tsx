@@ -153,7 +153,7 @@ export default function BloggerDetailsPage() {
   const targetUserId = blogger.user?.id || blogger.userId || blogger.id
 
   return (
-    <div className="min-h-screen bg-telegram-bg pb-20">
+    <div className="min-h-screen bg-telegram-bg pb-40">
       {/* Header Image / Pattern */}
       <div className="h-32 bg-gradient-to-br from-telegram-primary/20 via-blue-900/20 to-telegram-bg relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10" />
@@ -572,7 +572,7 @@ export default function BloggerDetailsPage() {
 
         {/* Action Button */}
         {user?.role === 'advertiser' && (
-          <div className="fixed bottom-6 left-4 right-4 z-20">
+          <div className="fixed bottom-20 left-4 right-4 z-20">
             <Button
               variant="primary"
               className="w-full h-14 text-lg font-bold shadow-2xl shadow-telegram-primary/40 bg-gradient-to-r from-telegram-primary to-telegram-accent border border-white/20"

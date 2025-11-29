@@ -49,14 +49,14 @@ export function Navigation() {
   ]
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-telegram-bgSecondary/95 backdrop-blur-lg border-t border-white/5 pb-[env(safe-area-inset-bottom)]">
+    <div className="fixed bottom-0 left-0 right-0 z-[9999] bg-telegram-bgSecondary/95 backdrop-blur-lg border-t border-white/5 pb-[env(safe-area-inset-bottom)]">
       <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             className={cn(
-              'flex flex-col items-center justify-center w-full h-full transition-colors duration-200',
+              'flex flex-col items-center justify-center w-full h-full transition-colors duration-200 touch-manipulation active:scale-95 select-none',
               item.active
                 ? 'text-telegram-primary'
                 : 'text-telegram-textSecondary hover:text-telegram-text'
