@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Users, Eye, Shield, Ban, CheckCircle, Trash2, MessageSquare, Send, TrendingUp } from 'lucide-react'
+import { ArrowLeft, Users, Eye, Shield, Ban, CheckCircle, Trash2, MessageSquare, Send, TrendingUp, Lock, Unlock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
@@ -77,7 +77,7 @@ export default function BloggerDetailsPage() {
     }
   }, [params?.id])
 
-  // Короткий поллинг после действий админа: если еще не верифицировано, попробуем подтянуть изменения
+  // Короткий поллинг после действий админа
   useEffect(() => {
     if (!params?.id) return
     if (!data || data.isVerified) return
@@ -304,112 +304,168 @@ export default function BloggerDetailsPage() {
           </motion.div>
         )}
 
-        {/* Admin Actions */}
+        {/* Admin Actions Panel - Premium Redesign */}
         {isAdmin && (
-           <Card className="border-red-500/20 bg-red-500/5">
-             <CardHeader>
-               <CardTitle className="text-lg text-red-400">Панель администратора</CardTitle>
-             </CardHeader>
-             <CardContent>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={blogger.isVerified ? 'secondary' : 'primary'}
-                size="sm"
-                onClick={async () => {
-                  try {
-                    const uid = targetUserId
-                    if (blogger.isVerified) {
-                      setUnverifyReason('')
-                      setShowUnverifyInline(true)
-                      try { setShowUnverifyModal(true) } catch {}
-                    } else {
-                      const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${uid}/verify`, {
-                        method: 'PATCH',
-                        headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` },
-                      })
-                      if (!resp.ok) {
-                        const text = await resp.text()
-                        alert(`Ошибка: ${resp.status} ${text}`)
-                        return
-                      }
-                      setData((prev: any) => (prev ? { ...prev, isVerified: true } : prev))
-                      try { (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.('success') } catch {}
-                      try { window.dispatchEvent(new CustomEvent('user-verified', { detail: { userId: uid } })) } catch {}
-                      try { router.refresh() } catch {}
-                    }
-                  } catch (e: any) {
-                    alert(`Ошибка: ${e?.message || e}`)
-                  }
-                }}
-              >
-                {blogger.isVerified ? (<><Shield className="w-4 h-4 mr-1" /> Снять верификацию</>) : (<><CheckCircle className="w-4 h-4 mr-1" /> Верифицировать</>)}
-              </Button>
-              <Button
-                variant={blogger.user?.isActive === false ? 'primary' : 'danger'}
-                size="sm"
-                onClick={async () => {
-                  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${blogger.user?.id || blogger.id}/block`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` } })
-                  router.refresh()
-                }}
-              >
-                <Ban className="w-4 h-4 mr-1" /> {blogger.user?.isActive === false ? 'Разблокировать' : 'Заблокировать'}
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  const username = blogger.user?.username || blogger.user?.telegramUsername
-                  if (username) {
-                    window.open(`https://t.me/${username}`, '_blank')
-                  } else {
-                    alert('У пользователя нет username')
-                  }
-                }}
-              >
-                <Send className="w-4 h-4 mr-1" /> Telegram
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={async () => {
-                  if (!confirm('Удалить пользователя (деактивация)?')) return
-                  await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${blogger.user?.id || blogger.id}`,
-                    {
-                      method: 'DELETE',
-                      headers: { Authorization: `Bearer ${localStorage.getItem('influenta_token')}` },
-                    },
-                  )
-                  router.back()
-                }}
-              >
-                <Trash2 className="w-4 h-4 mr-1" /> Удалить
-              </Button>
-            </div>
-            {showUnverifyInline && (
-              <div className="mt-3 p-3 border border-telegram-border rounded-lg bg-telegram-bg/60">
-                <input
-                  value={unverifyReason}
-                  onChange={(e) => setUnverifyReason(e.target.value)}
-                  placeholder="Причина снятия верификации"
-                  className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg text-telegram-text mb-2"
-                />
-                <div className="flex gap-2">
-                   <Button size="sm" variant="secondary" onClick={() => setShowUnverifyInline(false)}>Отмена</Button>
-                   <Button size="sm" variant="primary" onClick={async () => {
-                      const uid = targetUserId
-                      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${uid}/unverify`, {
-                        method: 'PATCH',
-                        headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ reason: unverifyReason || 'Без указания причины' })
-                      })
-                      setShowUnverifyInline(false); router.refresh()
-                   }}>Снять</Button>
-                </div>
-              </div>
-            )}
-             </CardContent>
-           </Card>
+           <motion.div
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ delay: 0.2 }}
+           >
+             <div style={{
+               background: 'rgba(30, 30, 46, 0.8)',
+               backdropFilter: 'blur(12px)',
+               border: '1px solid rgba(255, 255, 255, 0.08)',
+               borderRadius: 24,
+               padding: 20,
+               boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)'
+             }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                 <Shield className="text-telegram-primary" size={20} />
+                 <h3 style={{ fontSize: 16, fontWeight: 600, color: 'white' }}>Управление профилем</h3>
+               </div>
+               
+               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                 {/* Telegram Link */}
+                 <button
+                   onClick={() => {
+                     const username = blogger.user?.username || blogger.user?.telegramUsername
+                     if (username) {
+                       window.open(`https://t.me/${username}`, '_blank')
+                     } else {
+                       alert('У пользователя нет username')
+                     }
+                   }}
+                   style={{
+                     padding: 16,
+                     borderRadius: 16,
+                     border: '1px solid rgba(51, 144, 236, 0.2)',
+                     background: 'rgba(51, 144, 236, 0.1)',
+                     color: '#3390ec',
+                     fontSize: 14,
+                     fontWeight: 600,
+                     cursor: 'pointer',
+                     display: 'flex',
+                     flexDirection: 'column',
+                     alignItems: 'center',
+                     justifyContent: 'center',
+                     gap: 8,
+                     transition: 'all 0.2s'
+                   }}
+                 >
+                   <Send size={24} />
+                   Telegram
+                 </button>
+
+                 {/* Verify/Unverify */}
+                 <button
+                   onClick={async () => {
+                     try {
+                       const uid = targetUserId
+                       if (blogger.isVerified) {
+                         setUnverifyReason('')
+                         setShowUnverifyInline(true)
+                         try { setShowUnverifyModal(true) } catch {}
+                       } else {
+                         const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${uid}/verify`, {
+                           method: 'PATCH',
+                           headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` },
+                         })
+                         if (!resp.ok) {
+                           const text = await resp.text()
+                           alert(`Ошибка: ${resp.status} ${text}`)
+                           return
+                         }
+                         setData((prev: any) => (prev ? { ...prev, isVerified: true } : prev))
+                         try { router.refresh() } catch {}
+                       }
+                     } catch (e: any) {
+                       alert(`Ошибка: ${e?.message || e}`)
+                     }
+                   }}
+                   style={{
+                     padding: 16,
+                     borderRadius: 16,
+                     border: blogger.isVerified ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(34, 197, 94, 0.2)',
+                     background: blogger.isVerified ? 'rgba(255, 255, 255, 0.05)' : 'rgba(34, 197, 94, 0.1)',
+                     color: blogger.isVerified ? 'rgba(255, 255, 255, 0.7)' : '#22c55e',
+                     fontSize: 14,
+                     fontWeight: 600,
+                     cursor: 'pointer',
+                     display: 'flex',
+                     flexDirection: 'column',
+                     alignItems: 'center',
+                     justifyContent: 'center',
+                     gap: 8,
+                     transition: 'all 0.2s'
+                   }}
+                 >
+                   {blogger.isVerified ? <Shield size={24} /> : <CheckCircle size={24} />}
+                   {blogger.isVerified ? 'Снять галочку' : 'Верифицировать'}
+                 </button>
+
+                 {/* Block/Unblock */}
+                 <button
+                   onClick={async () => {
+                     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${blogger.user?.id || blogger.id}/block`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` } })
+                     router.refresh()
+                   }}
+                   style={{
+                     padding: 16,
+                     borderRadius: 16,
+                     border: blogger.user?.isActive === false ? '1px solid rgba(34, 197, 94, 0.2)' : '1px solid rgba(234, 179, 8, 0.2)',
+                     background: blogger.user?.isActive === false ? 'rgba(34, 197, 94, 0.1)' : 'rgba(234, 179, 8, 0.1)',
+                     color: blogger.user?.isActive === false ? '#22c55e' : '#eab308',
+                     fontSize: 14,
+                     fontWeight: 600,
+                     cursor: 'pointer',
+                     display: 'flex',
+                     flexDirection: 'column',
+                     alignItems: 'center',
+                     justifyContent: 'center',
+                     gap: 8,
+                     transition: 'all 0.2s'
+                   }}
+                 >
+                   {blogger.user?.isActive === false ? <Unlock size={24} /> : <Lock size={24} />}
+                   {blogger.user?.isActive === false ? 'Разблокировать' : 'Заблокировать'}
+                 </button>
+
+                 {/* Delete */}
+                 <button
+                   onClick={async () => {
+                     if (!confirm('Удалить пользователя навсегда?')) return
+                     await fetch(
+                       `${process.env.NEXT_PUBLIC_API_URL}/admin/users/${blogger.user?.id || blogger.id}`,
+                       {
+                         method: 'DELETE',
+                         headers: { Authorization: `Bearer ${localStorage.getItem('influenta_token')}` },
+                       },
+                     )
+                     router.back()
+                   }}
+                   style={{
+                     padding: 16,
+                     borderRadius: 16,
+                     border: '1px solid rgba(239, 68, 68, 0.2)',
+                     background: 'rgba(239, 68, 68, 0.1)',
+                     color: '#ef4444',
+                     fontSize: 14,
+                     fontWeight: 600,
+                     cursor: 'pointer',
+                     display: 'flex',
+                     flexDirection: 'column',
+                     alignItems: 'center',
+                     justifyContent: 'center',
+                     gap: 8,
+                     transition: 'all 0.2s'
+                   }}
+                 >
+                   <Trash2 size={24} />
+                   Удалить
+                 </button>
+               </div>
+             </div>
+           </motion.div>
         )}
 
         {/* Action Button */}
