@@ -43,7 +43,7 @@ export function LoadingScreen() {
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.6 }}
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#080a0f] overflow-hidden"
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-[#080a0f] overflow-hidden"
         >
           {/* Статичный фон с градиентом */}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-[#080a0f] to-[#080a0f]" />
