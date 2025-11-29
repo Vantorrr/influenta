@@ -96,8 +96,7 @@ export class BloggersService implements OnModuleInit {
     }
 
     const [data, total] = await query
-      .orderBy('blogger.isFeatured', 'DESC', 'NULLS LAST')
-      .addOrderBy('user.createdAt', 'DESC')
+      .orderBy('user.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
