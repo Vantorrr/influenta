@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole } from '@/users/entities/user.entity';
+import { Blogger } from './entities/blogger.entity';
 import { SocialPlatform } from '@/social-platforms/entities/social-platform.entity';
 import { BloggerSearchDto } from './dto/blogger-search.dto';
 import { PaginationDto } from '@/common/dto/pagination.dto';
@@ -22,6 +23,7 @@ export class BloggersService {
 
     const query = this.usersRepository
       .createQueryBuilder('user')
+      .leftJoinAndMapOne('user.blogger', Blogger, 'blogger', 'blogger.userId = user.id')
       .where('user.isActive = :isActive', { isActive: true })
       .andWhere('user.role = :role', { role: UserRole.BLOGGER });
 
@@ -81,7 +83,8 @@ export class BloggersService {
     }
 
     const [data, total] = await query
-      .orderBy('user.createdAt', 'DESC')
+      .orderBy('blogger.isFeatured', 'DESC', 'NULLS LAST')
+      .addOrderBy('user.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
@@ -111,6 +114,7 @@ export class BloggersService {
       pricePerPost: user.pricePerPost || 0,
       pricePerStory: user.pricePerStory || 0,
       isVerified: user.isVerified,
+      isFeatured: (user as any).blogger?.isFeatured || false,
       createdAt: user.createdAt,
     }));
 
@@ -126,9 +130,12 @@ export class BloggersService {
   }
 
   async findOne(id: string) {
-    const user = await this.usersRepository.findOne({
-      where: { id, isActive: true, role: UserRole.BLOGGER },
-    });
+    const user = await this.usersRepository.createQueryBuilder('user')
+      .leftJoinAndMapOne('user.blogger', Blogger, 'blogger', 'blogger.userId = user.id')
+      .where('user.id = :id', { id })
+      .andWhere('user.isActive = :isActive', { isActive: true })
+      .andWhere('user.role = :role', { role: UserRole.BLOGGER })
+      .getOne();
 
     if (!user) {
       throw new NotFoundException('Blogger not found');
@@ -153,6 +160,8 @@ export class BloggersService {
       pricePerPost: user.pricePerPost || 0,
       pricePerStory: user.pricePerStory || 0,
       isVerified: user.isVerified,
+      isFeatured: (user as any).blogger?.isFeatured || false,
+      adminNotes: (user as any).blogger?.adminNotes,
     };
   }
 

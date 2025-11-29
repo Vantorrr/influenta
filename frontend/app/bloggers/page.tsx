@@ -176,9 +176,9 @@ function BloggersPageContent() {
                 sessionStorage.setItem('__bloggers_last_id', String(blogger.id))
               }}
             >
-              <Card className="group relative overflow-hidden border-white/5 bg-[#1C1E20] active:scale-[0.98] transition-transform duration-100">
+              <Card className={`group relative overflow-hidden border-white/5 bg-[#1C1E20] active:scale-[0.98] transition-transform duration-100 ${blogger.isFeatured ? 'ring-1 ring-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)]' : ''}`}>
                 {/* Subtle highlight on hover (desktop only) */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent opacity-0 md:group-hover:opacity-100 transition-opacity pointer-events-none" />
+                <div className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent opacity-0 md:group-hover:opacity-100 transition-opacity pointer-events-none ${blogger.isFeatured ? 'via-amber-500/10' : ''}`} />
                 
                 <CardContent className="p-4">
                   <div className="flex items-start gap-4">
@@ -188,10 +188,15 @@ function BloggersPageContent() {
                         src={blogger.user?.photoUrl}
                         firstName={blogger.user?.firstName || ''}
                         lastName={blogger.user?.lastName || ''}
-                        className="w-14 h-14 border-2 border-telegram-bg ring-2 ring-white/5"
+                        className={`w-14 h-14 rounded-full border-2 ${blogger.isFeatured ? 'border-amber-500' : 'border-telegram-bg ring-2 ring-white/5'}`}
                       />
                       {blogger.isVerified && (
                         <VerificationTooltip className="absolute -bottom-1 -right-1 z-10" />
+                      )}
+                      {blogger.isFeatured && (
+                        <div className="absolute -top-2 -left-2 z-20 bg-amber-500 text-black rounded-full p-0.5 border-2 border-[#1C1E20] shadow-lg shadow-amber-500/40">
+                           <Star className="w-3 h-3 fill-current" />
+                        </div>
                       )}
                     </div>
 
@@ -250,6 +255,12 @@ function BloggersPageContent() {
 
                       {/* Badges */}
                       <div className="flex flex-wrap gap-1.5">
+                        {blogger.isFeatured && (
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-400 to-orange-500 text-black border border-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.3)] flex items-center gap-1">
+                            <Star className="w-3 h-3 fill-current" />
+                            TOP
+                          </span>
+                        )}
                         {(blogger.categories || []).slice(0, 3).map((c: string) => (
                           <span 
                             key={c} 

@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber, IsArray, IsEnum } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsArray, IsEnum, IsBoolean } from 'class-validator';
 import { BloggerCategory } from '../../bloggers/entities/blogger.entity';
 
 export class UpdateBloggerAdminDto {
@@ -29,5 +29,9 @@ export class UpdateBloggerAdminDto {
   @IsOptional()
   @IsString()
   adminNotes?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isFeatured?: boolean;
 }
 

@@ -558,6 +558,7 @@ export class AdminService {
     if (dto.pricePerStory !== undefined) blogger.pricePerStory = dto.pricePerStory;
     if (dto.categories !== undefined) blogger.categories = dto.categories;
     if (dto.adminNotes !== undefined) blogger.adminNotes = dto.adminNotes;
+    if (dto.isFeatured !== undefined) blogger.isFeatured = dto.isFeatured;
 
     await this.bloggersRepository.save(blogger);
 

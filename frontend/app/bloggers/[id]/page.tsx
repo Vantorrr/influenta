@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Users, Eye, Shield, Ban, CheckCircle, Trash2, MessageSquare, Send, TrendingUp, Lock, Unlock, Edit, FileText } from 'lucide-react'
+import { ArrowLeft, Users, Eye, Shield, Ban, CheckCircle, Trash2, MessageSquare, Send, TrendingUp, Lock, Unlock, Edit, FileText, Star } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
@@ -218,6 +218,12 @@ export default function BloggerDetailsPage() {
 
                   {/* Categories */}
                   <div className="flex flex-wrap gap-1.5">
+                    {blogger.isFeatured && (
+                      <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-400 to-orange-500 text-black border border-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)] flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-current" />
+                        Выбор платформы
+                      </span>
+                    )}
                     {(blogger.categories || []).map((c: string) => (
                       <span 
                         key={c} 
@@ -331,6 +337,37 @@ export default function BloggerDetailsPage() {
                </div>
                
                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                 {/* Feature / Unfeature */}
+                 <button
+                   onClick={async () => {
+                     try {
+                       await adminApi.updateBlogger(params.id || String(targetUserId), { isFeatured: !blogger.isFeatured })
+                       await loadBlogger(params.id || String(targetUserId))
+                     } catch (e: any) {
+                       alert('Ошибка: ' + e.message)
+                     }
+                   }}
+                   style={{
+                     padding: 16,
+                     borderRadius: 16,
+                     border: blogger.isFeatured ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
+                     background: blogger.isFeatured ? 'rgba(245, 158, 11, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                     color: blogger.isFeatured ? '#fbbf24' : 'rgba(255, 255, 255, 0.9)',
+                     fontSize: 14,
+                     fontWeight: 600,
+                     cursor: 'pointer',
+                     display: 'flex',
+                     flexDirection: 'column',
+                     alignItems: 'center',
+                     justifyContent: 'center',
+                     gap: 8,
+                     transition: 'all 0.2s'
+                   }}
+                 >
+                   <Star size={24} fill={blogger.isFeatured ? "currentColor" : "none"} />
+                   {blogger.isFeatured ? 'В топе' : 'В топ'}
+                 </button>
+
                  {/* Telegram Link */}
                  <button
                    onClick={() => {

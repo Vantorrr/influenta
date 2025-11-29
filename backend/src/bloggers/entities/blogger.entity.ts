@@ -74,5 +74,8 @@ export class Blogger extends BaseEntity {
 
   @Column({ type: 'text', nullable: true })
   adminNotes: string;
+
+  @Column({ default: false })
+  isFeatured: boolean;
 }
 
