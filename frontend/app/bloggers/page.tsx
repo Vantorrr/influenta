@@ -76,30 +76,28 @@ function BloggersPageContent() {
     } catch {}
   }, [search, filters])
 
-  useEffect(() => {
-    let ignore = false
-    ;(async () => {
-      setIsLoading(true)
-      try {
-        const query: any = { ...filters }
-        if (search && search.trim().length > 0) query.search = search.trim()
-        
-        const data = await bloggersApi.search(query, 1, 500)
-        if (ignore) return
+  const loadData = async () => {
+    setIsLoading(true)
+    try {
+      const query: any = { ...filters }
+      if (search && search.trim().length > 0) query.search = search.trim()
+      
+      const data = await bloggersApi.search(query, 1, 500)
+      const items = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : [])
+      setBloggers(items)
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || e?.message || 'Ошибка загрузки'
+      setError(Array.isArray(msg) ? msg.join(', ') : String(msg))
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-        const items = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : [])
-        
-        // Используем порядок с бэкенда (там уже стоит createdAt DESC)
-        setBloggers(items)
-      } catch (e: any) {
-        if (ignore) return
-        const msg = e?.response?.data?.message || e?.message || 'Ошибка загрузки'
-        setError(Array.isArray(msg) ? msg.join(', ') : String(msg))
-      } finally {
-        if (!ignore) setIsLoading(false)
-      }
-    })()
-    return () => { ignore = true }
+  useEffect(() => {
+    loadData()
+    const onFocus = () => loadData()
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
   }, [search, filters])
 
   const activeFiltersCount = Object.keys(filters).filter(k => {

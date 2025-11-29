@@ -37,6 +37,8 @@ export interface Blogger {
   contacts?: ContactInfo
   isPublic: boolean
   isVerified: boolean
+  isFeatured?: boolean
+  adminNotes?: string
   createdAt: Date
   updatedAt: Date
 }
