@@ -71,5 +71,8 @@ export class Blogger extends BaseEntity {
 
   @Column({ default: false })
   isVerified: boolean;
+
+  @Column({ type: 'text', nullable: true })
+  adminNotes: string;
 }
 

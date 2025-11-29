@@ -8,6 +8,7 @@ import { Listing, ListingStatus } from '../listings/entities/listing.entity';
 import { Response as ListingResponse } from '../responses/entities/response.entity';
 import { ConfigService } from '@nestjs/config';
 import { TelegramService } from '../telegram/telegram.service';
+import { UpdateBloggerAdminDto } from './dto/update-blogger-admin.dto';
 
 @Injectable()
 export class AdminService {
@@ -534,6 +535,40 @@ export class AdminService {
       END $$;
     `);
     return { success: true };
+  }
+
+  async updateBlogger(id: string, dto: UpdateBloggerAdminDto) {
+    let blogger = await this.bloggersRepository.findOne({
+      where: { id },
+      relations: ['user'],
+    });
+
+    if (!blogger) {
+      blogger = await this.bloggersRepository.findOne({
+        where: { userId: id },
+        relations: ['user'],
+      });
+    }
+
+    if (!blogger) throw new NotFoundException('Blogger not found');
+
+    // Update Blogger fields
+    if (dto.bio !== undefined) blogger.bio = dto.bio;
+    if (dto.pricePerPost !== undefined) blogger.pricePerPost = dto.pricePerPost;
+    if (dto.pricePerStory !== undefined) blogger.pricePerStory = dto.pricePerStory;
+    if (dto.categories !== undefined) blogger.categories = dto.categories;
+    if (dto.adminNotes !== undefined) blogger.adminNotes = dto.adminNotes;
+
+    await this.bloggersRepository.save(blogger);
+
+    // Update User fields
+    if (blogger.user && (dto.firstName !== undefined || dto.lastName !== undefined)) {
+      if (dto.firstName !== undefined) blogger.user.firstName = dto.firstName;
+      if (dto.lastName !== undefined) blogger.user.lastName = dto.lastName;
+      await this.usersRepository.save(blogger.user);
+    }
+
+    return blogger;
   }
 }
 

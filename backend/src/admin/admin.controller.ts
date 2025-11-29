@@ -3,9 +3,21 @@ import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { AdminGuard } from '@/common/guards/admin.guard';
 
+import { UpdateBloggerAdminDto } from './dto/update-blogger-admin.dto';
+
 @Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
+
+  // Обновить данные блогера (админ)
+  @Patch('bloggers/:id')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  async updateBlogger(
+    @Param('id') id: string,
+    @Body() dto: UpdateBloggerAdminDto,
+  ) {
+    return this.adminService.updateBlogger(id, dto);
+  }
 
   @Get('health')
   health() {

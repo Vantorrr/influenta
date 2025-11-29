@@ -378,5 +378,13 @@ export const socialPlatformsApi = {
   },
 }
 
+// Admin API
+export const adminApi = {
+  async updateBlogger(id: string, data: Partial<any>): Promise<ApiResponse<Blogger>> {
+    const response = await api.patch(`/admin/bloggers/${id}`, data)
+    return response.data
+  }
+}
+
 export default api
 

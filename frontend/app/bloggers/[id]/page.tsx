@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Users, Eye, Shield, Ban, CheckCircle, Trash2, MessageSquare, Send, TrendingUp, Lock, Unlock } from 'lucide-react'
+import { ArrowLeft, Users, Eye, Shield, Ban, CheckCircle, Trash2, MessageSquare, Send, TrendingUp, Lock, Unlock, Edit, FileText } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
-import { bloggersApi, socialPlatformsApi, analyticsApi } from '@/lib/api'
+import { bloggersApi, socialPlatformsApi, analyticsApi, adminApi } from '@/lib/api'
 import { formatNumber, getCategoryLabel, formatPrice } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
@@ -27,6 +27,12 @@ export default function BloggerDetailsPage() {
   const [showUnverifyModal, setShowUnverifyModal] = useState(false)
   const [showUnverifyInline, setShowUnverifyInline] = useState(false)
   const [unverifyReason, setUnverifyReason] = useState('')
+  
+  // Admin features state
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showNoteModal, setShowNoteModal] = useState(false)
+  const [editForm, setEditForm] = useState<any>({})
+  const [noteText, setNoteText] = useState('')
 
   // ID пользователя для загрузки платформ (после загрузки профиля)
   const userIdForPlatforms = (data?.user?.id || data?.id) as string | undefined
@@ -356,6 +362,65 @@ export default function BloggerDetailsPage() {
                    Telegram
                  </button>
 
+                 {/* Admin Note */}
+                 <button
+                   onClick={() => {
+                     setNoteText(blogger.adminNotes || '')
+                     setShowNoteModal(true)
+                   }}
+                   style={{
+                     padding: 16,
+                     borderRadius: 16,
+                     border: blogger.adminNotes ? '1px solid rgba(234, 179, 8, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
+                     background: blogger.adminNotes ? 'rgba(234, 179, 8, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                     color: blogger.adminNotes ? '#eab308' : 'rgba(255, 255, 255, 0.9)',
+                     fontSize: 14,
+                     fontWeight: 600,
+                     cursor: 'pointer',
+                     display: 'flex',
+                     flexDirection: 'column',
+                     alignItems: 'center',
+                     justifyContent: 'center',
+                     gap: 8,
+                     transition: 'all 0.2s'
+                   }}
+                 >
+                   <FileText size={24} />
+                   {blogger.adminNotes ? 'Смотреть заметку' : 'Создать заметку'}
+                 </button>
+
+                 {/* Edit Profile */}
+                 <button
+                   onClick={() => {
+                     setEditForm({
+                       firstName: blogger.user?.firstName || '',
+                       lastName: blogger.user?.lastName || '',
+                       bio: blogger.bio || '',
+                       pricePerPost: blogger.pricePerPost || 0,
+                     })
+                     setShowEditModal(true)
+                   }}
+                   style={{
+                     padding: 16,
+                     borderRadius: 16,
+                     border: '1px solid rgba(255, 255, 255, 0.1)',
+                     background: 'rgba(255, 255, 255, 0.05)',
+                     color: 'rgba(255, 255, 255, 0.9)',
+                     fontSize: 14,
+                     fontWeight: 600,
+                     cursor: 'pointer',
+                     display: 'flex',
+                     flexDirection: 'column',
+                     alignItems: 'center',
+                     justifyContent: 'center',
+                     gap: 8,
+                     transition: 'all 0.2s'
+                   }}
+                 >
+                   <Edit size={24} />
+                   Редактировать
+                 </button>
+
                  {/* Verify/Unverify */}
                  <button
                    onClick={async () => {
@@ -532,6 +597,112 @@ export default function BloggerDetailsPage() {
           }}
         />
       )}
+
+  {/* Edit Modal */}
+  {showEditModal && (
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowEditModal(false)}>
+      <div className="bg-[#1C1E20] border border-white/10 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-xl font-bold text-white mb-6">Редактирование профиля</h3>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs text-telegram-textSecondary mb-1">Имя</label>
+            <input
+              value={editForm.firstName}
+              onChange={(e) => setEditForm({...editForm, firstName: e.target.value})}
+              className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-telegram-primary outline-none transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-telegram-textSecondary mb-1">Фамилия</label>
+            <input
+              value={editForm.lastName}
+              onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
+              className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-telegram-primary outline-none transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-telegram-textSecondary mb-1">О себе</label>
+            <textarea
+              value={editForm.bio}
+              onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
+              rows={4}
+              className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-telegram-primary outline-none transition-colors resize-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-telegram-textSecondary mb-1">Цена за пост (₽)</label>
+            <input
+              type="number"
+              value={editForm.pricePerPost}
+              onChange={(e) => setEditForm({...editForm, pricePerPost: Number(e.target.value)})}
+              className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-telegram-primary outline-none transition-colors"
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-8">
+          <Button variant="secondary" fullWidth onClick={() => setShowEditModal(false)}>Отмена</Button>
+          <Button
+            variant="primary"
+            fullWidth
+            className="bg-telegram-primary hover:bg-telegram-primary/90 text-white"
+            onClick={async () => {
+              try {
+                await adminApi.updateBlogger(params.id || String(targetUserId), editForm)
+                await loadBlogger(params.id || String(targetUserId))
+                setShowEditModal(false)
+              } catch (e: any) {
+                alert('Ошибка сохранения: ' + e.message)
+              }
+            }}
+          >
+            Сохранить
+          </Button>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* Note Modal */}
+  {showNoteModal && (
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowNoteModal(false)}>
+      <div className="bg-[#1C1E20] border border-white/10 rounded-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-3 mb-4">
+          <FileText className="text-yellow-500" />
+          <h3 className="text-xl font-bold text-white">Секретная заметка</h3>
+        </div>
+        <p className="text-sm text-white/50 mb-4">Эту информацию видит только администратор.</p>
+        
+        <textarea
+          value={noteText}
+          onChange={(e) => setNoteText(e.target.value)}
+          placeholder="Например: Отвечает долго, торгуется..."
+          className="w-full h-40 bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4 text-yellow-100 placeholder-yellow-500/30 focus:border-yellow-500/50 outline-none resize-none mb-6"
+        />
+
+        <div className="flex gap-3">
+          <Button variant="secondary" fullWidth onClick={() => setShowNoteModal(false)}>Закрыть</Button>
+          <Button
+            variant="primary"
+            fullWidth
+            className="bg-yellow-600 hover:bg-yellow-500 text-white border-none"
+            onClick={async () => {
+               try {
+                await adminApi.updateBlogger(params.id || String(targetUserId), { adminNotes: noteText })
+                await loadBlogger(params.id || String(targetUserId))
+                setShowNoteModal(false)
+              } catch (e: any) {
+                alert('Ошибка сохранения: ' + e.message)
+              }
+            }}
+          >
+            Сохранить заметку
+          </Button>
+        </div>
+      </div>
+    </div>
+  )}
     </div>
   )
 }
