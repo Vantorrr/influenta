@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole } from '@/users/entities/user.entity';
@@ -8,13 +8,26 @@ import { BloggerSearchDto } from './dto/blogger-search.dto';
 import { PaginationDto } from '@/common/dto/pagination.dto';
 
 @Injectable()
-export class BloggersService {
+export class BloggersService implements OnModuleInit {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
     @InjectRepository(SocialPlatform)
     private socialPlatformsRepository: Repository<SocialPlatform>,
   ) {}
+
+  async onModuleInit() {
+    try {
+      // Auto-migration for new columns
+      await this.usersRepository.query(`
+        ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS "adminNotes" text;
+        ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS "isFeatured" boolean DEFAULT false;
+      `);
+      console.log('✅ Bloggers schema fixed');
+    } catch (e) {
+      console.error('❌ Failed to fix bloggers schema', e);
+    }
+  }
 
   async search(searchDto: BloggerSearchDto & { minSubscribers?: number; maxSubscribers?: number; minPrice?: number; maxPrice?: number }, paginationDto: PaginationDto) {
     const { search, categories, verifiedOnly, minSubscribers, maxSubscribers, minPrice, maxPrice } = searchDto as any;
