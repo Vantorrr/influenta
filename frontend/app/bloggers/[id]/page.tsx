@@ -198,9 +198,15 @@ export default function BloggerDetailsPage() {
                       {blogger.user?.firstName} {blogger.user?.lastName}
                     </h1>
                     {isAdmin && (
-                      <p className="text-telegram-textSecondary text-sm md:text-lg">
+                      <a 
+                        href={`https://t.me/${blogger.user?.username || blogger.user?.telegramUsername}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-telegram-textSecondary text-sm md:text-lg hover:text-telegram-primary transition-colors flex items-center gap-1 w-fit"
+                      >
                         @{blogger.user?.username || blogger.user?.telegramUsername || 'username'}
-                      </p>
+                        <Send className="w-3 h-3 ml-1 opacity-70" />
+                      </a>
                     )}
                   </div>
 
@@ -347,6 +353,20 @@ export default function BloggerDetailsPage() {
                 }}
               >
                 <Ban className="w-4 h-4 mr-1" /> {blogger.user?.isActive === false ? 'Разблокировать' : 'Заблокировать'}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  const username = blogger.user?.username || blogger.user?.telegramUsername
+                  if (username) {
+                    window.open(`https://t.me/${username}`, '_blank')
+                  } else {
+                    alert('У пользователя нет username')
+                  }
+                }}
+              >
+                <Send className="w-4 h-4 mr-1" /> Telegram
               </Button>
               <Button
                 variant="danger"
