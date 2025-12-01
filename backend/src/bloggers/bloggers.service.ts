@@ -29,8 +29,8 @@ export class BloggersService implements OnModuleInit {
     }
   }
 
-  async search(searchDto: BloggerSearchDto & { minSubscribers?: number; maxSubscribers?: number; minPrice?: number; maxPrice?: number }, paginationDto: PaginationDto) {
-    const { search, categories, verifiedOnly, minSubscribers, maxSubscribers, minPrice, maxPrice } = searchDto as any;
+  async search(searchDto: BloggerSearchDto & { minSubscribers?: number; maxSubscribers?: number; minPrice?: number; maxPrice?: number; minAverageViews?: number; maxAverageViews?: number }, paginationDto: PaginationDto) {
+    const { search, categories, verifiedOnly, minSubscribers, maxSubscribers, minPrice, maxPrice, minAverageViews, maxAverageViews } = searchDto as any;
     const platform = (searchDto as any)?.platform as string | undefined;
     const { page = 1, limit = 20 } = paginationDto;
 
@@ -83,6 +83,17 @@ export class BloggersService implements OnModuleInit {
     // Фильтр по максимальной цене поста
     if (typeof maxPrice === 'number' && !Number.isNaN(maxPrice)) {
       query.andWhere('COALESCE(user.pricePerPost, 0) <= :maxPrice', { maxPrice })
+    }
+
+    // Фильтр по минимальным просмотрам
+    if (typeof minAverageViews === 'number' && !Number.isNaN(minAverageViews)) {
+      // Используем значение из bloggers или вычисляем из подписчиков (35%)
+      query.andWhere('COALESCE(blogger.averageViews, FLOOR(COALESCE(user.subscribersCount, 0) * 0.35)) >= :minViews', { minViews: minAverageViews })
+    }
+
+    // Фильтр по максимальным просмотрам
+    if (typeof maxAverageViews === 'number' && !Number.isNaN(maxAverageViews)) {
+      query.andWhere('COALESCE(blogger.averageViews, FLOOR(COALESCE(user.subscribersCount, 0) * 0.35)) <= :maxViews', { maxViews: maxAverageViews })
     }
 
     // Фильтр по платформе

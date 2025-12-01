@@ -254,8 +254,12 @@ export interface BloggerFilters {
   platform?: string
   minSubscribers?: number
   maxSubscribers?: number
+  minAverageViews?: number
+  maxAverageViews?: number
   minPrice?: number
   maxPrice?: number
+  minAverageViews?: number
+  maxAverageViews?: number
   verifiedOnly?: boolean
   search?: string
 }

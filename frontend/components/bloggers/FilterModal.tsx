@@ -231,6 +231,34 @@ export function FilterModal({ isOpen, onClose, filters, onApply }: FilterModalPr
                 </div>
               </div>
 
+              {/* Views Range */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-telegram-textSecondary uppercase tracking-wider">
+                  Охват (Просмотры)
+                </label>
+                <div className="flex gap-4 items-center">
+                  <div className="relative flex-1">
+                    <Input
+                      type="number"
+                      placeholder="От"
+                      value={localFilters.minAverageViews || ''}
+                      onChange={e => setLocalFilters(p => ({ ...p, minAverageViews: e.target.value ? Number(e.target.value) : undefined }))}
+                      className="bg-telegram-bg border-white/5 focus:border-telegram-primary"
+                    />
+                  </div>
+                  <span className="text-white/20">—</span>
+                  <div className="relative flex-1">
+                    <Input
+                      type="number"
+                      placeholder="До"
+                      value={localFilters.maxAverageViews || ''}
+                      onChange={e => setLocalFilters(p => ({ ...p, maxAverageViews: e.target.value ? Number(e.target.value) : undefined }))}
+                      className="bg-telegram-bg border-white/5 focus:border-telegram-primary"
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Categories */}
               <div className="space-y-3">
                 <label className="text-sm font-medium text-telegram-textSecondary uppercase tracking-wider">

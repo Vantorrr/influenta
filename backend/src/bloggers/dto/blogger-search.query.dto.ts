@@ -43,6 +43,18 @@ export class BloggerSearchQueryDto {
   @Type(() => Number)
   @IsInt()
   @Min(0)
+  minAverageViews?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  maxAverageViews?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
   minPrice?: number;
 
   @IsOptional()
