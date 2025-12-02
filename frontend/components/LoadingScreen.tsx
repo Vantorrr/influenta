@@ -10,20 +10,16 @@ export function LoadingScreen() {
   const [loadingText, setLoadingText] = useState('Запуск платформы...')
 
   useEffect(() => {
-    // Непрерывная мягкая вибрация во время загрузки
-    // Быстрые soft импульсы создают ощущение сплошной вибрации
+    // Плавная вибрация: selectionChanged — самый мягкий тип
+    // Интервал 30мс создаёт ощущение непрерывности
     const haptic = (window as any).Telegram?.WebApp?.HapticFeedback
     
     let vibrationInterval: NodeJS.Timeout | null = null
     
     if (haptic) {
-      // Telegram: быстрые soft импульсы каждые 50мс = сплошная мягкая вибрация
       vibrationInterval = setInterval(() => {
-        haptic.impactOccurred('soft')
-      }, 50)
-    } else {
-      // Fallback: одна длинная вибрация на всю загрузку
-      try { navigator.vibrate?.(2000) } catch {}
+        haptic.selectionChanged()
+      }, 30)
     }
     
     const vibrationTimers: NodeJS.Timeout[] = []
@@ -51,9 +47,7 @@ export function LoadingScreen() {
     return () => {
       clearTimeout(timer)
       clearInterval(interval)
-      vibrationTimers.forEach(t => clearTimeout(t))
       if (vibrationInterval) clearInterval(vibrationInterval)
-      try { navigator.vibrate?.(0) } catch {} // Останавливаем вибрацию
     }
   }, [])
 
