@@ -10,29 +10,23 @@ export function LoadingScreen() {
   const [loadingText, setLoadingText] = useState('Запуск платформы...')
 
   useEffect(() => {
-    // Мягкая нарастающая вибрация во время загрузки
-    // Меньше импульсов, более плавные интервалы, только soft/light
-    const vibrationPattern = [
-      { delay: 300, style: 'soft' as const },
-      { delay: 700, style: 'soft' as const },
-      { delay: 1100, style: 'light' as const },
-      { delay: 1500, style: 'light' as const },
-      { delay: 1900, style: 'medium' as const },  // Лёгкое усиление в конце
-    ]
-
-    const vibrationTimers: NodeJS.Timeout[] = []
+    // Непрерывная мягкая вибрация во время загрузки
+    // Быстрые soft импульсы создают ощущение сплошной вибрации
     const haptic = (window as any).Telegram?.WebApp?.HapticFeedback
     
-    vibrationPattern.forEach(({ delay, style }) => {
-      const timer = setTimeout(() => {
-        if (haptic) {
-          haptic.impactOccurred(style)
-        }
-        // Fallback — очень короткая вибрация
-        try { navigator.vibrate?.(style === 'soft' ? 3 : style === 'light' ? 5 : 8) } catch {}
-      }, delay)
-      vibrationTimers.push(timer)
-    })
+    let vibrationInterval: NodeJS.Timeout | null = null
+    
+    if (haptic) {
+      // Telegram: быстрые soft импульсы каждые 50мс = сплошная мягкая вибрация
+      vibrationInterval = setInterval(() => {
+        haptic.impactOccurred('soft')
+      }, 50)
+    } else {
+      // Fallback: одна длинная вибрация на всю загрузку
+      try { navigator.vibrate?.(2000) } catch {}
+    }
+    
+    const vibrationTimers: NodeJS.Timeout[] = []
 
     // Имитация загрузки с меняющимся текстом
     const interval = setInterval(() => {
@@ -58,6 +52,8 @@ export function LoadingScreen() {
       clearTimeout(timer)
       clearInterval(interval)
       vibrationTimers.forEach(t => clearTimeout(t))
+      if (vibrationInterval) clearInterval(vibrationInterval)
+      try { navigator.vibrate?.(0) } catch {} // Останавливаем вибрацию
     }
   }, [])
 
