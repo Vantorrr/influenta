@@ -119,7 +119,7 @@ function BloggersPageContent() {
   return (
     <div className="space-y-6 pb-20">
       {/* Header & Search */}
-      <div className="sticky top-0 z-40 bg-telegram-bg/95 backdrop-blur-md py-4 space-y-4 border-b border-white/5 -mx-4 px-4 md:mx-0 md:px-0">
+      <div className="sticky top-0 z-40 bg-telegram-bg py-4 space-y-4 border-b border-white/5 -mx-4 px-4 md:mx-0 md:px-0">
         <div className="flex items-center gap-3">
           <div>
             <h1 className="text-2xl font-bold text-white">Блогеры</h1>
@@ -131,7 +131,7 @@ function BloggersPageContent() {
 
         <div className="flex gap-3">
           <div className="relative flex-1">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-telegram-textSecondary" />
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-telegram-textSecondary pointer-events-none" />
             <Input
               type="search"
               placeholder="Поиск по имени..."
@@ -141,13 +141,20 @@ function BloggersPageContent() {
             />
           </div>
           <button 
-            onClick={() => setShowFilters(true)}
-            className={`relative px-4 py-2 rounded-lg font-medium transition-colors touch-manipulation select-none ${activeFiltersCount > 0 ? 'bg-telegram-primary text-white' : 'bg-telegram-bgSecondary text-telegram-textSecondary'}`}
+            type="button"
+            onClick={() => {
+              setShowFilters(true)
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault()
+              setShowFilters(true)
+            }}
+            className={`relative z-50 min-w-[48px] min-h-[48px] flex items-center justify-center rounded-xl font-medium select-none active:opacity-70 ${activeFiltersCount > 0 ? 'bg-telegram-primary text-white' : 'bg-telegram-bgSecondary text-telegram-textSecondary'}`}
             style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
           >
-            <SlidersHorizontal className="w-4 h-4" />
+            <SlidersHorizontal className="w-5 h-5 pointer-events-none" />
             {activeFiltersCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] flex items-center justify-center text-white border border-telegram-bg">
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[10px] flex items-center justify-center text-white border-2 border-telegram-bg pointer-events-none">
                 {activeFiltersCount}
               </span>
             )}
