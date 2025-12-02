@@ -12,7 +12,8 @@ import {
   Eye, 
   MessageCircle, 
   Star,
-  ArrowLeft 
+  ArrowLeft,
+  Heart
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -20,7 +21,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
 import { formatNumber, formatPrice, getCategoryLabel } from '@/lib/utils'
-import { bloggersApi } from '@/lib/api'
+import { bloggersApi, favoritesApi } from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
 import { useScrollRestoration } from '@/hooks/useScrollRestoration'
 import { BloggerFilters } from '@/types'
@@ -62,6 +63,9 @@ function BloggersPageContent() {
   const [error, setError] = useState<string | null>(null)
   const { user, isAdmin } = useAuth()
   const [showFilters, setShowFilters] = useState(false)
+  const [favorites, setFavorites] = useState<Record<string, boolean>>({})
+  const [favoritesCount, setFavoritesCount] = useState(0)
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false)
 
   useScrollRestoration()
 
@@ -85,11 +89,45 @@ function BloggersPageContent() {
       const data = await bloggersApi.search(query, 1, 500)
       const items = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : [])
       setBloggers(items)
+
+      // Загружаем статус избранного для всех блогеров
+      if (user && items.length > 0) {
+        const bloggerIds = items.map((b: any) => b.id)
+        const favStatus = await favoritesApi.checkMany(bloggerIds)
+        setFavorites(favStatus)
+        
+        // Обновляем счётчик
+        const countRes = await favoritesApi.getCount()
+        setFavoritesCount(countRes.count)
+      }
     } catch (e: any) {
       const msg = e?.response?.data?.message || e?.message || 'Ошибка загрузки'
       setError(Array.isArray(msg) ? msg.join(', ') : String(msg))
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  // Переключение избранного
+  const toggleFavorite = async (e: React.MouseEvent, bloggerId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!user) return
+    
+    // Оптимистичный UI
+    const wasFavorite = favorites[bloggerId]
+    setFavorites(prev => ({ ...prev, [bloggerId]: !wasFavorite }))
+    setFavoritesCount(prev => wasFavorite ? prev - 1 : prev + 1)
+    
+    try {
+      await favoritesApi.toggle(bloggerId)
+      // Haptic feedback
+      try { (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred?.('light') } catch {}
+    } catch (e) {
+      // Откат при ошибке
+      setFavorites(prev => ({ ...prev, [bloggerId]: wasFavorite }))
+      setFavoritesCount(prev => wasFavorite ? prev + 1 : prev - 1)
     }
   }
 
@@ -159,6 +197,27 @@ function BloggersPageContent() {
               className="pl-9 bg-telegram-bgSecondary border-white/5 focus:border-telegram-primary/50 transition-colors"
             />
           </div>
+          
+          {/* Кнопка избранного */}
+          <button 
+            type="button"
+            onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
+            onTouchEnd={(e) => {
+              e.preventDefault()
+              setShowOnlyFavorites(!showOnlyFavorites)
+            }}
+            className={`relative z-50 min-w-[48px] min-h-[48px] flex items-center justify-center rounded-xl font-medium select-none active:opacity-70 transition-all ${showOnlyFavorites ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-500/30' : 'bg-telegram-bgSecondary text-telegram-textSecondary'}`}
+            style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+          >
+            <Heart className={`w-5 h-5 pointer-events-none transition-all ${showOnlyFavorites ? 'fill-current' : ''}`} />
+            {favoritesCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-pink-500 rounded-full text-[10px] flex items-center justify-center text-white border-2 border-telegram-bg pointer-events-none">
+                {favoritesCount}
+              </span>
+            )}
+          </button>
+
+          {/* Кнопка фильтров */}
           <button 
             type="button"
             onClick={() => {
@@ -183,7 +242,9 @@ function BloggersPageContent() {
 
       {/* Bloggers Grid */}
       <div className="grid grid-cols-1 gap-4">
-        {bloggers.map((blogger, index) => (
+        {bloggers
+          .filter(blogger => !showOnlyFavorites || favorites[blogger.id])
+          .map((blogger, index) => (
           <div
             id={`blogger-${blogger.id}`}
             key={blogger.id}
@@ -201,6 +262,27 @@ function BloggersPageContent() {
               <Card className={`group relative overflow-hidden border-white/5 bg-[#1C1E20] active:scale-[0.98] transition-transform duration-100 ${blogger.isFeatured ? 'ring-1 ring-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)]' : ''}`} style={{ touchAction: 'manipulation' }}>
                 {/* Subtle highlight on hover (desktop only) */}
                 <div className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent opacity-0 md:group-hover:opacity-100 transition-opacity pointer-events-none ${blogger.isFeatured ? 'via-amber-500/10' : ''}`} />
+                
+                {/* Кнопка избранного */}
+                {user && (
+                  <button
+                    type="button"
+                    onClick={(e) => toggleFavorite(e, blogger.id)}
+                    onTouchEnd={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      toggleFavorite(e as any, blogger.id)
+                    }}
+                    className={`absolute top-3 right-3 z-20 w-10 h-10 flex items-center justify-center rounded-full transition-all active:scale-90 ${
+                      favorites[blogger.id] 
+                        ? 'bg-pink-500/20 text-pink-500' 
+                        : 'bg-black/40 text-white/60 hover:text-white'
+                    }`}
+                    style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+                  >
+                    <Heart className={`w-5 h-5 transition-all ${favorites[blogger.id] ? 'fill-current scale-110' : ''}`} />
+                  </button>
+                )}
                 
                 <CardContent className="p-4">
                   <div className="flex items-start gap-4">
@@ -302,13 +384,31 @@ function BloggersPageContent() {
       </div>
 
       {/* Пустое состояние */}
-      {!isLoading && bloggers.length === 0 && (
+      {!isLoading && bloggers.filter(b => !showOnlyFavorites || favorites[b.id]).length === 0 && (
         <div className="text-center py-12 opacity-60">
           <div className="bg-telegram-bgSecondary w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <SearchIcon className="w-8 h-8 text-telegram-textSecondary" />
+            {showOnlyFavorites ? (
+              <Heart className="w-8 h-8 text-pink-500" />
+            ) : (
+              <SearchIcon className="w-8 h-8 text-telegram-textSecondary" />
+            )}
           </div>
-          <h3 className="text-lg font-medium mb-1">Ничего не найдено</h3>
-          <p className="text-sm text-telegram-textSecondary">Попробуйте изменить фильтры</p>
+          <h3 className="text-lg font-medium mb-1 text-white">
+            {showOnlyFavorites ? 'Нет избранных' : 'Ничего не найдено'}
+          </h3>
+          <p className="text-sm text-telegram-textSecondary">
+            {showOnlyFavorites 
+              ? 'Добавьте блогеров в избранное, нажав на сердечко' 
+              : 'Попробуйте изменить фильтры'}
+          </p>
+          {showOnlyFavorites && (
+            <button
+              onClick={() => setShowOnlyFavorites(false)}
+              className="mt-4 px-4 py-2 bg-telegram-primary text-white rounded-lg text-sm font-medium"
+            >
+              Показать всех блогеров
+            </button>
+          )}
         </div>
       )}
 

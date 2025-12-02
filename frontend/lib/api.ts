@@ -390,5 +390,50 @@ export const adminApi = {
   }
 }
 
+// Favorites API (Избранное)
+export const favoritesApi = {
+  // Добавить в избранное
+  async add(bloggerId: string): Promise<{ id: string; userId: string; bloggerId: string }> {
+    const response = await api.post(`/favorites/${bloggerId}`)
+    return response.data
+  },
+
+  // Убрать из избранного
+  async remove(bloggerId: string): Promise<{ success: boolean }> {
+    const response = await api.delete(`/favorites/${bloggerId}`)
+    return response.data
+  },
+
+  // Переключить состояние
+  async toggle(bloggerId: string): Promise<{ isFavorite: boolean }> {
+    const response = await api.post(`/favorites/${bloggerId}/toggle`)
+    return response.data
+  },
+
+  // Проверить, в избранном ли
+  async check(bloggerId: string): Promise<{ isFavorite: boolean }> {
+    const response = await api.get(`/favorites/check/${bloggerId}`)
+    return response.data
+  },
+
+  // Проверить несколько блогеров
+  async checkMany(bloggerIds: string[]): Promise<Record<string, boolean>> {
+    const response = await api.post('/favorites/check-many', { bloggerIds })
+    return response.data
+  },
+
+  // Список избранных
+  async getList(page = 1, limit = 50): Promise<{ data: Blogger[]; total: number }> {
+    const response = await api.get('/favorites', { params: { page, limit } })
+    return response.data
+  },
+
+  // Количество избранных
+  async getCount(): Promise<{ count: number }> {
+    const response = await api.get('/favorites/count')
+    return response.data
+  },
+}
+
 export default api
 

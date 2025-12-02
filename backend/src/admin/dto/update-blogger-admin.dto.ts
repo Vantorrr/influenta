@@ -34,4 +34,3 @@ export class UpdateBloggerAdminDto {
   @IsBoolean()
   isFeatured?: boolean;
 }
-

@@ -365,4 +365,3 @@ export function FilterModal({ isOpen, onClose, filters, onApply }: FilterModalPr
   )
 }
 
-

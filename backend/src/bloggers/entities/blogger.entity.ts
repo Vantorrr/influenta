@@ -78,4 +78,3 @@ export class Blogger extends BaseEntity {
   @Column({ default: false })
   isFeatured: boolean;
 }
-

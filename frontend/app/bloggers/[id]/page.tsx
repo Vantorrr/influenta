@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Users, Eye, Shield, Ban, CheckCircle, Trash2, MessageSquare, Send, TrendingUp, Lock, Unlock, Edit, FileText, Star } from 'lucide-react'
+import { ArrowLeft, Users, Eye, Shield, Ban, CheckCircle, Trash2, MessageSquare, Send, TrendingUp, Lock, Unlock, Edit, FileText, Star, Heart } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
-import { bloggersApi, socialPlatformsApi, analyticsApi, adminApi } from '@/lib/api'
+import { bloggersApi, socialPlatformsApi, analyticsApi, adminApi, favoritesApi } from '@/lib/api'
 import { formatNumber, getCategoryLabel, formatPrice } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
@@ -33,6 +33,10 @@ export default function BloggerDetailsPage() {
   const [showNoteModal, setShowNoteModal] = useState(false)
   const [editForm, setEditForm] = useState<any>({})
   const [noteText, setNoteText] = useState('')
+  
+  // Favorites state
+  const [isFavorite, setIsFavorite] = useState(false)
+  const [favoriteLoading, setFavoriteLoading] = useState(false)
 
   // ID пользователя для загрузки платформ (после загрузки профиля)
   const userIdForPlatforms = (data?.user?.id || data?.id) as string | undefined
@@ -57,8 +61,34 @@ export default function BloggerDetailsPage() {
 
   useEffect(() => {
     if (!user || !params?.id) return
-    ;(async () => { await loadBlogger(params.id!) })()
+    ;(async () => { 
+      await loadBlogger(params.id!)
+      // Проверяем, в избранном ли блогер
+      try {
+        const res = await favoritesApi.check(params.id!)
+        setIsFavorite(res.isFavorite)
+      } catch {}
+    })()
   }, [user, params?.id])
+
+  // Переключение избранного
+  const toggleFavorite = async () => {
+    if (!params?.id || favoriteLoading) return
+    
+    setFavoriteLoading(true)
+    const wasFavorite = isFavorite
+    setIsFavorite(!wasFavorite) // Оптимистичный UI
+    
+    try {
+      await favoritesApi.toggle(params.id)
+      // Haptic feedback
+      try { (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred?.('light') } catch {}
+    } catch (e) {
+      setIsFavorite(wasFavorite) // Откат при ошибке
+    } finally {
+      setFavoriteLoading(false)
+    }
+  }
 
   // Трекинг просмотра профиля другим пользователем
   useEffect(() => {
@@ -171,6 +201,22 @@ export default function BloggerDetailsPage() {
             Назад
           </Button>
         </div>
+        
+        {/* Favorite Button */}
+        {user && data && user.id !== (data.user?.id || data.userId || data.id) && (
+          <button
+            onClick={toggleFavorite}
+            disabled={favoriteLoading}
+            className={`absolute top-4 right-4 z-50 w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-90 ${
+              isFavorite 
+                ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/40' 
+                : 'bg-black/30 backdrop-blur-md text-white/80 hover:text-white border border-white/10'
+            }`}
+            style={{ touchAction: 'manipulation' }}
+          >
+            <Heart className={`w-6 h-6 transition-all ${isFavorite ? 'fill-current' : ''}`} />
+          </button>
+        )}
       </div>
 
       <div className="container px-4 -mt-12 relative z-10 space-y-6">
@@ -572,7 +618,7 @@ export default function BloggerDetailsPage() {
 
         {/* CTA Button - inside content, scrolls with page */}
         {user?.role === 'advertiser' && (
-          <div style={{ marginTop: 24, marginBottom: 32 }}>
+          <div style={{ marginTop: 40, marginBottom: 40, padding: '0 16px' }}>
             <button
               onClick={() => setShowOfferModal(true)}
               style={{
@@ -589,8 +635,10 @@ export default function BloggerDetailsPage() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 10,
-                boxShadow: '0 6px 24px rgba(51, 144, 236, 0.4)',
-                touchAction: 'manipulation'
+                boxShadow: '0 8px 24px rgba(51, 144, 236, 0.3)',
+                touchAction: 'manipulation',
+                position: 'relative',
+                zIndex: 10
               }}
             >
               <MessageSquare size={20} />

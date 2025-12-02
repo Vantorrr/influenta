@@ -20,6 +20,7 @@ import { SeedModule } from './seed/seed.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { SocialPlatformsModule } from './social-platforms/social-platforms.module';
+import { FavoritesModule } from './favorites/favorites.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { SocialPlatformsModule } from './social-platforms/social-platforms.modul
     UploadsModule,
     OffersModule,
     SocialPlatformsModule,
+    FavoritesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
