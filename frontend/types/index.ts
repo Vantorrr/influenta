@@ -205,6 +205,8 @@ export interface SocialPlatform {
   pricePerStream?: number
   statisticsScreenshots: string[]
   additionalInfo?: {
+    views30days?: number
+    uniqueViewers30days?: number
     averageViews?: number
     engagementRate?: number
     audienceAge?: string
@@ -254,12 +256,12 @@ export interface BloggerFilters {
   platform?: string
   minSubscribers?: number
   maxSubscribers?: number
-  minAverageViews?: number
-  maxAverageViews?: number
+  minViews30days?: number
+  maxViews30days?: number
+  minUniqueViewers30days?: number
+  maxUniqueViewers30days?: number
   minPrice?: number
   maxPrice?: number
-  minAverageViews?: number
-  maxAverageViews?: number
   verifiedOnly?: boolean
   search?: string
 }

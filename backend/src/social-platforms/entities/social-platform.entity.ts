@@ -58,6 +58,8 @@ export class SocialPlatform extends BaseEntity {
 
   @Column({ type: 'jsonb', nullable: true })
   additionalInfo?: {
+    views30days?: number; // Общее количество просмотров за 30 дней
+    uniqueViewers30days?: number; // Уникальные зрители за 30 дней
     averageViews?: number;
     engagementRate?: number;
     audienceAge?: string; // "18-24", "25-34", etc.

@@ -159,7 +159,7 @@ export default function AdminBloggersPage() {
           >
             <Link href={`/bloggers/${blogger.id}`} scroll={false}>
               <Card hover className="cursor-pointer">
-                <CardContent className="p-6">
+              <CardContent className="p-6">
                 <div className="flex items-start gap-4 min-w-0">
                   <Avatar
                     firstName={blogger.user?.firstName || ''}
@@ -226,8 +226,8 @@ export default function AdminBloggersPage() {
                     </div>
                   </div>
                 </div>
-                </CardContent>
-              </Card>
+              </CardContent>
+            </Card>
             </Link>
           </motion.div>
         ))}

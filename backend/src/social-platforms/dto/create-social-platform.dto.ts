@@ -51,6 +51,8 @@ export class CreateSocialPlatformDto {
   @IsOptional()
   @IsObject()
   additionalInfo?: {
+    views30days?: number;
+    uniqueViewers30days?: number;
     averageViews?: number;
     engagementRate?: number;
     audienceAge?: string;

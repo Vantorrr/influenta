@@ -108,12 +108,12 @@ export const bloggersApi = {
     if (filters?.categories && filters.categories.length > 0) params.categories = filters.categories.join(',')
     if (typeof filters?.minSubscribers === 'number') params.minSubscribers = filters.minSubscribers
     if (typeof filters?.maxSubscribers === 'number') params.maxSubscribers = filters.maxSubscribers
-    if (typeof filters?.minAverageViews === 'number') params.minAverageViews = filters.minAverageViews
-    if (typeof filters?.maxAverageViews === 'number') params.maxAverageViews = filters.maxAverageViews
+    if (typeof filters?.minViews30days === 'number') params.minViews30days = filters.minViews30days
+    if (typeof filters?.maxViews30days === 'number') params.maxViews30days = filters.maxViews30days
+    if (typeof filters?.minUniqueViewers30days === 'number') params.minUniqueViewers30days = filters.minUniqueViewers30days
+    if (typeof filters?.maxUniqueViewers30days === 'number') params.maxUniqueViewers30days = filters.maxUniqueViewers30days
     if (typeof filters?.minPrice === 'number') params.minPrice = filters.minPrice
     if (typeof filters?.maxPrice === 'number') params.maxPrice = filters.maxPrice
-    if (typeof filters?.minAverageViews === 'number') params.minAverageViews = filters.minAverageViews
-    if (typeof filters?.maxAverageViews === 'number') params.maxAverageViews = filters.maxAverageViews
 
     const response = await api.get('/bloggers/search', { params })
     return response.data

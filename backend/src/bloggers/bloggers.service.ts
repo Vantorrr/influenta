@@ -29,8 +29,8 @@ export class BloggersService implements OnModuleInit {
     }
   }
 
-  async search(searchDto: BloggerSearchDto & { minSubscribers?: number; maxSubscribers?: number; minPrice?: number; maxPrice?: number; minAverageViews?: number; maxAverageViews?: number }, paginationDto: PaginationDto) {
-    const { search, categories, verifiedOnly, minSubscribers, maxSubscribers, minPrice, maxPrice, minAverageViews, maxAverageViews } = searchDto as any;
+  async search(searchDto: BloggerSearchDto & { minSubscribers?: number; maxSubscribers?: number; minPrice?: number; maxPrice?: number; minViews30days?: number; maxViews30days?: number; minUniqueViewers30days?: number; maxUniqueViewers30days?: number }, paginationDto: PaginationDto) {
+    const { search, categories, verifiedOnly, minSubscribers, maxSubscribers, minPrice, maxPrice, minViews30days, maxViews30days, minUniqueViewers30days, maxUniqueViewers30days } = searchDto as any;
     const platform = (searchDto as any)?.platform as string | undefined;
     const { page = 1, limit = 20 } = paginationDto;
 
@@ -85,15 +85,46 @@ export class BloggersService implements OnModuleInit {
       query.andWhere('COALESCE(user.pricePerPost, 0) <= :maxPrice', { maxPrice })
     }
 
-    // Фильтр по минимальным просмотрам
-    if (typeof minAverageViews === 'number' && !Number.isNaN(minAverageViews)) {
-      // Используем значение из bloggers или вычисляем из подписчиков (35%)
-      query.andWhere('COALESCE(blogger.averageViews, FLOOR(COALESCE(user.subscribersCount, 0) * 0.35)) >= :minViews', { minViews: minAverageViews })
+    // Фильтр по просмотрам за 30 дней (из social_platforms.additionalInfo)
+    if (typeof minViews30days === 'number' && !Number.isNaN(minViews30days)) {
+      query.andWhere(`
+        EXISTS (
+          SELECT 1 FROM social_platforms sp
+          WHERE sp."userId" = user.id 
+          AND COALESCE((sp."additionalInfo"->>'views30days')::int, 0) >= :minViews30days
+        )
+      `, { minViews30days })
     }
 
-    // Фильтр по максимальным просмотрам
-    if (typeof maxAverageViews === 'number' && !Number.isNaN(maxAverageViews)) {
-      query.andWhere('COALESCE(blogger.averageViews, FLOOR(COALESCE(user.subscribersCount, 0) * 0.35)) <= :maxViews', { maxViews: maxAverageViews })
+    if (typeof maxViews30days === 'number' && !Number.isNaN(maxViews30days)) {
+      query.andWhere(`
+        EXISTS (
+          SELECT 1 FROM social_platforms sp
+          WHERE sp."userId" = user.id 
+          AND COALESCE((sp."additionalInfo"->>'views30days')::int, 0) <= :maxViews30days
+        )
+      `, { maxViews30days })
+    }
+
+    // Фильтр по уникальным зрителям за 30 дней
+    if (typeof minUniqueViewers30days === 'number' && !Number.isNaN(minUniqueViewers30days)) {
+      query.andWhere(`
+        EXISTS (
+          SELECT 1 FROM social_platforms sp
+          WHERE sp."userId" = user.id 
+          AND COALESCE((sp."additionalInfo"->>'uniqueViewers30days')::int, 0) >= :minUniqueViewers30days
+        )
+      `, { minUniqueViewers30days })
+    }
+
+    if (typeof maxUniqueViewers30days === 'number' && !Number.isNaN(maxUniqueViewers30days)) {
+      query.andWhere(`
+        EXISTS (
+          SELECT 1 FROM social_platforms sp
+          WHERE sp."userId" = user.id 
+          AND COALESCE((sp."additionalInfo"->>'uniqueViewers30days')::int, 0) <= :maxUniqueViewers30days
+        )
+      `, { maxUniqueViewers30days })
     }
 
     // Фильтр по платформе

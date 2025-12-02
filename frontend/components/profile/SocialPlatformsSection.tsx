@@ -226,9 +226,25 @@ export function SocialPlatformsSection() {
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, fontSize: 13 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'white' }}>
                       <Eye size={14} style={{ color: 'rgba(255,255,255,0.5)' }} />
-                      <span>{formatNumber(platform.subscribersCount)}</span>
+                      <span>{formatNumber(platform.subscribersCount)} подп.</span>
                     </div>
                     
+                    {platform.additionalInfo?.views30days && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#3390ec' }}>
+                        <BarChart2 size={14} />
+                        <span>{formatNumber(platform.additionalInfo.views30days)} просм./30д</span>
+                      </div>
+                    )}
+                    
+                    {platform.additionalInfo?.uniqueViewers30days && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#a665ff' }}>
+                        <Eye size={14} />
+                        <span>{formatNumber(platform.additionalInfo.uniqueViewers30days)} уник./30д</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, fontSize: 13, marginTop: 8 }}>
                     {(platform.pricePerPost || platform.pricePerPost === -1) && (
                       <div style={{ color: 'rgba(255,255,255,0.7)' }}>
                         Пост: <span style={{ color: '#22c55e', fontWeight: 600 }}>
@@ -404,6 +420,7 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
     pricePerReel: platform?.pricePerReel || undefined,
     isPrimary: platform?.isPrimary || false,
     statisticsScreenshots: platform?.statisticsScreenshots || [],
+    additionalInfo: platform?.additionalInfo || {},
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadingScreenshot, setUploadingScreenshot] = useState(false)
@@ -571,6 +588,60 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
           }}
           placeholder="100.000"
         />
+      </div>
+
+      {/* Статистика за 30 дней */}
+      <div style={{ marginBottom: 24, padding: 16, background: 'rgba(51, 144, 236, 0.08)', borderRadius: 16, border: '1px solid rgba(51, 144, 236, 0.2)' }}>
+        <h4 style={{ fontSize: 15, fontWeight: 600, color: 'white', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <BarChart2 size={18} style={{ color: '#3390ec' }} />
+          Статистика за 30 дней
+        </h4>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <label style={labelStyle}>Просмотры</label>
+            <input
+              style={inputStyle}
+              type="text"
+              inputMode="numeric"
+              value={formData.additionalInfo?.views30days ? formData.additionalInfo.views30days.toLocaleString('ru-RU') : ''}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, '')
+                setFormData({ 
+                  ...formData, 
+                  additionalInfo: { 
+                    ...formData.additionalInfo, 
+                    views30days: digits ? parseInt(digits) : undefined 
+                  } 
+                })
+              }}
+              placeholder="500.000"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>Уникальные зрители</label>
+            <input
+              style={inputStyle}
+              type="text"
+              inputMode="numeric"
+              value={formData.additionalInfo?.uniqueViewers30days ? formData.additionalInfo.uniqueViewers30days.toLocaleString('ru-RU') : ''}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, '')
+                setFormData({ 
+                  ...formData, 
+                  additionalInfo: { 
+                    ...formData.additionalInfo, 
+                    uniqueViewers30days: digits ? parseInt(digits) : undefined 
+                  } 
+                })
+              }}
+              placeholder="150.000"
+            />
+          </div>
+        </div>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 8 }}>
+          Эти данные помогут рекламодателям найти вас
+        </p>
       </div>
 
       <div style={{ marginBottom: 24 }}>
