@@ -7,7 +7,7 @@ import { ArrowLeft, Users, Eye, Shield, Ban, CheckCircle, Trash2, MessageSquare,
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
-import { bloggersApi, socialPlatformsApi, analyticsApi, adminApi, favoritesApi } from '@/lib/api'
+import { bloggersApi, socialPlatformsApi, analyticsApi, adminApi } from '@/lib/api'
 import { formatNumber, getCategoryLabel, formatPrice } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
@@ -15,8 +15,7 @@ import { OfferModal } from '@/components/OfferModal'
 import { PlatformsList } from '@/components/profile/PlatformsList'
 import { VerificationTooltip } from '@/components/VerificationTooltip'
 import { useQuery } from '@tanstack/react-query'
-
-const FAVORITES_CACHE_KEY = '__favorites_cache_v1'
+import { useFavorites } from '@/context/FavoritesContext'
 
 export default function BloggerDetailsPage() {
   const params = useParams() as { id?: string }
@@ -36,28 +35,10 @@ export default function BloggerDetailsPage() {
   const [editForm, setEditForm] = useState<any>({})
   const [noteText, setNoteText] = useState('')
   
-  // Favorites state
-  const [isFavorite, setIsFavorite] = useState(() => {
-    if (typeof window === 'undefined' || !params?.id) return false
-    try {
-      const raw = sessionStorage.getItem(FAVORITES_CACHE_KEY)
-      if (!raw) return false
-      const cache = JSON.parse(raw)
-      return !!cache[params.id]
-    } catch {
-      return false
-    }
-  })
-  const [favoriteLoading, setFavoriteLoading] = useState(false)
-  const persistFavoriteState = useCallback((bloggerId: string, value: boolean) => {
-    if (typeof window === 'undefined') return
-    try {
-      const raw = sessionStorage.getItem(FAVORITES_CACHE_KEY)
-      const cache = raw ? JSON.parse(raw) : {}
-      cache[bloggerId] = value
-      sessionStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(cache))
-    } catch {}
-  }, [])
+  // Favorites context
+  const { checkFavorite, toggleFavorite, loadingIds } = useFavorites()
+  const isFavorite = params?.id ? checkFavorite(params.id) : false
+  const favoriteLoading = params?.id ? !!loadingIds[params.id] : false
 
   // ID пользователя для загрузки платформ (после загрузки профиля)
   const userIdForPlatforms = (data?.user?.id || data?.id) as string | undefined
@@ -84,52 +65,13 @@ export default function BloggerDetailsPage() {
     if (!user || !params?.id) return
     ;(async () => { 
       await loadBlogger(params.id!)
-      // Проверяем, в избранном ли блогер
-      try {
-        const res = await favoritesApi.check(params.id!)
-        setIsFavorite(res.isFavorite)
-        persistFavoriteState(params.id!, res.isFavorite)
-      } catch {}
     })()
-  }, [user, params?.id, persistFavoriteState])
-
-  // Слушаем обновления избранного из списка
-  useEffect(() => {
-    if (typeof window === 'undefined' || !params?.id) return
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ bloggerId: string; isFavorite: boolean }>).detail
-      if (!detail || detail.bloggerId !== params.id) return
-      setIsFavorite(detail.isFavorite)
-      persistFavoriteState(detail.bloggerId, detail.isFavorite)
-    }
-    window.addEventListener('favorites:update', handler as EventListener)
-    return () => window.removeEventListener('favorites:update', handler as EventListener)
-  }, [params?.id, persistFavoriteState])
+  }, [user, params?.id])
 
   // Переключение избранного
-  const toggleFavorite = async () => {
-    if (!params?.id || favoriteLoading) return
-    
-    setFavoriteLoading(true)
-    const wasFavorite = isFavorite
-    setIsFavorite(!wasFavorite) // Оптимистичный UI
-    if (params?.id) persistFavoriteState(params.id, !wasFavorite)
-    
-    try {
-      await favoritesApi.toggle(params.id)
-      window.dispatchEvent(new CustomEvent('favorites:update', {
-        detail: { bloggerId: params.id, isFavorite: !wasFavorite },
-      }))
-      // Haptic feedback
-      try { (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred?.('heavy') } catch {
-        try { navigator.vibrate?.(50) } catch {}
-      }
-    } catch (e) {
-      setIsFavorite(wasFavorite) // Откат при ошибке
-      if (params?.id) persistFavoriteState(params.id, wasFavorite)
-    } finally {
-      setFavoriteLoading(false)
-    }
+  const handleToggleFavorite = async () => {
+    if (!params?.id) return
+    await toggleFavorite(params.id)
   }
 
   // Трекинг просмотра профиля другим пользователем
@@ -247,7 +189,7 @@ export default function BloggerDetailsPage() {
         {/* Favorite Button */}
         {user && data && user.id !== (data.user?.id || data.userId || data.id) && (
           <button
-            onClick={toggleFavorite}
+            onClick={handleToggleFavorite}
             disabled={favoriteLoading}
             className={`absolute top-4 right-4 z-50 w-12 h-12 flex items-center justify-center transition-all active:scale-90 ${
               isFavorite 

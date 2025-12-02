@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { LoadingScreen } from './LoadingScreen'
 import { chatService } from '@/lib/chat.service'
+import { FavoritesProvider } from '@/context/FavoritesContext'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -110,8 +111,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <LoadingScreen />
-      {children}
+      <FavoritesProvider>
+        <LoadingScreen />
+        {children}
+      </FavoritesProvider>
     </QueryClientProvider>
   )
 }

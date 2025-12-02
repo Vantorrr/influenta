@@ -274,3 +274,4 @@ export interface ListingFilters {
   status?: ListingStatus
   search?: string
 }
+

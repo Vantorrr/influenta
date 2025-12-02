@@ -21,12 +21,13 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
 import { formatNumber, formatPrice, getCategoryLabel } from '@/lib/utils'
-import { bloggersApi, favoritesApi } from '@/lib/api'
+import { bloggersApi } from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
 import { useScrollRestoration } from '@/hooks/useScrollRestoration'
 import { BloggerFilters } from '@/types'
 import { FilterModal } from '@/components/bloggers/FilterModal'
 import { VerificationTooltip } from '@/components/VerificationTooltip'
+import { useFavorites } from '@/context/FavoritesContext'
 
 import { Layout } from '@/components/layout/Layout'
 
@@ -66,16 +67,7 @@ function BloggersPageContent() {
   const [error, setError] = useState<string | null>(null)
   const { user, isAdmin } = useAuth()
   const [showFilters, setShowFilters] = useState(false)
-  const [favorites, setFavorites] = useState<Record<string, boolean>>(() => {
-    if (typeof window === 'undefined') return {}
-    try {
-      const raw = sessionStorage.getItem(FAVORITES_CACHE_KEY)
-      return raw ? JSON.parse(raw) : {}
-    } catch {
-      return {}
-    }
-  })
-  const [favoritesCount, setFavoritesCount] = useState(0)
+  const { favorites, favoritesCount, toggleFavorite, checkFavorite } = useFavorites()
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(() => {
     if (typeof window === 'undefined') return false
     try {
@@ -86,38 +78,6 @@ function BloggersPageContent() {
       return false
     }
   })
-
-  const persistFavoriteState = useCallback((bloggerId: string, value: boolean) => {
-    if (typeof window === 'undefined') return
-    try {
-      const raw = sessionStorage.getItem(FAVORITES_CACHE_KEY)
-      const cache = raw ? JSON.parse(raw) : {}
-      cache[bloggerId] = value
-      sessionStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(cache))
-    } catch {}
-  }, [])
-
-  const persistFavoritesBatch = useCallback((batch: Record<string, boolean>) => {
-    if (typeof window === 'undefined') return
-    try {
-      const raw = sessionStorage.getItem(FAVORITES_CACHE_KEY)
-      const cache = raw ? JSON.parse(raw) : {}
-      Object.entries(batch).forEach(([id, value]) => {
-        cache[id] = value
-      })
-      sessionStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(cache))
-    } catch {}
-  }, [])
-
-  const refreshFavoritesCount = useCallback(async () => {
-    if (!user) return
-    try {
-      const countRes = await favoritesApi.getCount()
-      setFavoritesCount(countRes.count)
-    } catch (err) {
-      console.warn('Не удалось обновить счетчик избранных', err)
-    }
-  }, [user?.id])
 
   useScrollRestoration()
 
@@ -141,17 +101,6 @@ function BloggersPageContent() {
       const data = await bloggersApi.search(query, 1, 500)
       const items = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : [])
       setBloggers(items)
-
-      // Загружаем статус избранного для всех блогеров
-      if (user && items.length > 0) {
-        const bloggerIds = items.map((b: any) => b.id)
-        const favStatus = await favoritesApi.checkMany(bloggerIds)
-        setFavorites(favStatus)
-        persistFavoritesBatch(favStatus)
-        
-        // Обновляем счётчик
-        await refreshFavoritesCount()
-      }
     } catch (e: any) {
       const msg = e?.response?.data?.message || e?.message || 'Ошибка загрузки'
       setError(Array.isArray(msg) ? msg.join(', ') : String(msg))
@@ -161,34 +110,11 @@ function BloggersPageContent() {
   }
 
   // Переключение избранного
-  const toggleFavorite = async (e: React.MouseEvent, bloggerId: string) => {
+  const handleToggleFavorite = async (e: React.MouseEvent, bloggerId: string) => {
     e.preventDefault()
     e.stopPropagation()
-    
     if (!user) return
-    
-    // Оптимистичный UI
-    const wasFavorite = favorites[bloggerId]
-    setFavorites(prev => ({ ...prev, [bloggerId]: !wasFavorite }))
-    setFavoritesCount(prev => wasFavorite ? prev - 1 : prev + 1)
-    persistFavoriteState(bloggerId, !wasFavorite)
-    
-    try {
-      await favoritesApi.toggle(bloggerId)
-      window.dispatchEvent(new CustomEvent('favorites:update', {
-        detail: { bloggerId, isFavorite: !wasFavorite },
-      }))
-      await refreshFavoritesCount()
-      // Haptic feedback
-      try { (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred?.('heavy') } catch {
-        try { navigator.vibrate?.(50) } catch {}
-      }
-    } catch (e) {
-      // Откат при ошибке
-      setFavorites(prev => ({ ...prev, [bloggerId]: wasFavorite }))
-      setFavoritesCount(prev => wasFavorite ? prev + 1 : prev - 1)
-      persistFavoriteState(bloggerId, wasFavorite)
-    }
+    await toggleFavorite(bloggerId)
   }
 
   useEffect(() => {
@@ -197,20 +123,6 @@ function BloggersPageContent() {
     window.addEventListener('focus', onFocus)
     return () => window.removeEventListener('focus', onFocus)
   }, [search, filters])
-
-  // Синхронизация избранного между страницами
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ bloggerId: string; isFavorite: boolean }>).detail
-      if (!detail) return
-      setFavorites(prev => ({ ...prev, [detail.bloggerId]: detail.isFavorite }))
-      persistFavoriteState(detail.bloggerId, detail.isFavorite)
-      refreshFavoritesCount()
-    }
-    window.addEventListener('favorites:update', handler as EventListener)
-    return () => window.removeEventListener('favorites:update', handler as EventListener)
-  }, [refreshFavoritesCount, persistFavoriteState])
 
   // Скролл к последнему открытому блогеру
   useEffect(() => {
@@ -317,7 +229,7 @@ function BloggersPageContent() {
       {/* Bloggers Grid */}
       <div className="grid grid-cols-1 gap-4">
         {bloggers
-          .filter(blogger => !showOnlyFavorites || favorites[blogger.id])
+          .filter(blogger => !showOnlyFavorites || checkFavorite(blogger.id))
           .map((blogger, index) => (
           <div
             id={`blogger-${blogger.id}`}
@@ -341,20 +253,20 @@ function BloggersPageContent() {
                 {user && (
                   <button
                     type="button"
-                    onClick={(e) => toggleFavorite(e, blogger.id)}
+                    onClick={(e) => handleToggleFavorite(e, blogger.id)}
                     onTouchEnd={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
-                      toggleFavorite(e as any, blogger.id)
+                      handleToggleFavorite(e as any, blogger.id)
                     }}
                     className={`absolute top-3 right-3 z-20 w-10 h-10 flex items-center justify-center transition-all active:scale-90 ${
-                      favorites[blogger.id] 
+                      checkFavorite(blogger.id)
                         ? 'text-pink-500 drop-shadow-[0_0_10px_rgba(236,72,153,0.6)]' 
                         : 'text-white/50 hover:text-white drop-shadow-md'
                     }`}
                     style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                   >
-                    <Heart className={`w-5 h-5 transition-all ${favorites[blogger.id] ? 'fill-current scale-110' : ''}`} />
+                    <Heart className={`w-5 h-5 transition-all ${checkFavorite(blogger.id) ? 'fill-current scale-110' : ''}`} />
                   </button>
                 )}
                 
@@ -458,7 +370,7 @@ function BloggersPageContent() {
       </div>
 
       {/* Пустое состояние */}
-      {!isLoading && bloggers.filter(b => !showOnlyFavorites || favorites[b.id]).length === 0 && (
+      {!isLoading && bloggers.filter(b => !showOnlyFavorites || checkFavorite(b.id)).length === 0 && (
         <div className="text-center py-12 opacity-60">
           <div className="bg-telegram-bgSecondary w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
             {showOnlyFavorites ? (
