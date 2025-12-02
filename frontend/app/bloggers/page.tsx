@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, Suspense, useRef } from 'react'
-import { motion } from 'framer-motion'
+// motion removed - using native divs for better touch responsiveness
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { 
@@ -165,23 +165,27 @@ function BloggersPageContent() {
       {/* Bloggers Grid */}
       <div className="grid grid-cols-1 gap-4">
         {bloggers.map((blogger, index) => (
-          <motion.div
+          <div
             id={`blogger-${blogger.id}`}
             key={blogger.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
           >
             <Link
               href={`/bloggers/${blogger.id}`}
               scroll={false}
-              className="block touch-manipulation"
-              onClick={() => {
+              className="block"
+              style={{ touchAction: 'manipulation' }}
+              onClick={(e) => {
                 if (typeof window === 'undefined') return
                 sessionStorage.setItem('__bloggers_last_id', String(blogger.id))
               }}
+              onTouchEnd={(e) => {
+                e.preventDefault()
+                if (typeof window === 'undefined') return
+                sessionStorage.setItem('__bloggers_last_id', String(blogger.id))
+                router.push(`/bloggers/${blogger.id}`)
+              }}
             >
-              <Card className={`group relative overflow-hidden border-white/5 bg-[#1C1E20] active:scale-[0.98] transition-transform duration-100 ${blogger.isFeatured ? 'ring-1 ring-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)]' : ''}`}>
+              <Card className={`group relative overflow-hidden border-white/5 bg-[#1C1E20] active:scale-[0.98] transition-transform duration-100 ${blogger.isFeatured ? 'ring-1 ring-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)]' : ''}`} style={{ touchAction: 'manipulation' }}>
                 {/* Subtle highlight on hover (desktop only) */}
                 <div className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent opacity-0 md:group-hover:opacity-100 transition-opacity pointer-events-none ${blogger.isFeatured ? 'via-amber-500/10' : ''}`} />
                 
@@ -280,7 +284,7 @@ function BloggersPageContent() {
                 </CardContent>
               </Card>
             </Link>
-          </motion.div>
+          </div>
         ))}
       </div>
 
