@@ -9,21 +9,21 @@ export function LoadingScreen() {
   const [progress, setProgress] = useState(0)
   const [loadingText, setLoadingText] = useState('Запуск платформы...')
 
+  // Вибрация — отдельный эффект, зависит от isLoading
   useEffect(() => {
-    // Плавная вибрация: selectionChanged — самый мягкий тип
-    // Интервал 30мс создаёт ощущение непрерывности
+    if (!isLoading) return // Не вибрируем если загрузка закончилась
+    
     const haptic = (window as any).Telegram?.WebApp?.HapticFeedback
+    if (!haptic) return
     
-    let vibrationInterval: NodeJS.Timeout | null = null
+    const vibrationInterval = setInterval(() => {
+      haptic.selectionChanged()
+    }, 30)
     
-    if (haptic) {
-      vibrationInterval = setInterval(() => {
-        haptic.selectionChanged()
-      }, 30)
-    }
-    
-    const vibrationTimers: NodeJS.Timeout[] = []
+    return () => clearInterval(vibrationInterval)
+  }, [isLoading])
 
+  useEffect(() => {
     // Имитация загрузки с меняющимся текстом
     const interval = setInterval(() => {
       setProgress(prev => {
@@ -47,7 +47,6 @@ export function LoadingScreen() {
     return () => {
       clearTimeout(timer)
       clearInterval(interval)
-      if (vibrationInterval) clearInterval(vibrationInterval)
     }
   }, [])
 
