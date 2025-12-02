@@ -16,6 +16,7 @@ import { VerificationModal } from '@/components/VerificationModal'
 import { SocialPlatformsSection } from '@/components/profile/SocialPlatformsSection'
 import { getCategoryLabel, formatNumberInput, parseNumberInput } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
+import { VerificationTooltip } from '@/components/VerificationTooltip'
 
 export default function ProfilePage() {
   const { user, isLoading } = useAuth()
@@ -362,15 +363,10 @@ export default function ProfilePage() {
                 {user.isVerified && (
                   <div style={{
                     position: 'absolute',
-                    bottom: 0,
-                    right: 0,
-                    background: '#22c55e',
-                    borderRadius: '50%',
-                    padding: 4,
-                    border: '3px solid #1a1a2e',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                    bottom: -2,
+                    right: -2,
                   }}>
-                    <CheckCircle size={16} color="white" strokeWidth={3} />
+                    <VerificationTooltip />
                   </div>
                 )}
               </div>
