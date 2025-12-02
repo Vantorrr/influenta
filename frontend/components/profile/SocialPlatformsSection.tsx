@@ -328,9 +328,9 @@ export function SocialPlatformsSection() {
             style={{
               position: 'fixed',
               inset: 0,
-              background: 'rgba(0,0,0,0.8)',
-              backdropFilter: 'blur(5px)',
-              zIndex: 50,
+              background: 'rgba(0,0,0,0.85)',
+              backdropFilter: 'blur(10px)',
+              zIndex: 10001,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -346,7 +346,7 @@ export function SocialPlatformsSection() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
               style={{
-                background: '#1a1a2e',
+                background: '#1C1E20',
                 border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: 24,
                 padding: 24,
