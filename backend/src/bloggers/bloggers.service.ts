@@ -34,6 +34,8 @@ export class BloggersService implements OnModuleInit {
     const platform = (searchDto as any)?.platform as string | undefined;
     const { page = 1, limit = 20 } = paginationDto;
 
+    console.log('🔍 Search params:', { minViews30days, maxViews30days, minUniqueViewers30days, maxUniqueViewers30days, platform, verifiedOnly });
+
     const query = this.usersRepository
       .createQueryBuilder('user')
       .leftJoinAndMapOne('user.blogger', Blogger, 'blogger', 'blogger.userId = user.id')
