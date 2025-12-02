@@ -572,15 +572,37 @@ export default function BloggerDetailsPage() {
 
         {/* Action Bar (Fixed above navigation) */}
         {user?.role === 'advertiser' && (
-          <div className="fixed bottom-16 left-0 right-0 z-40 p-4 bg-[#1C1E20]/95 backdrop-blur-xl border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.3)]">
-            <Button
-              variant="primary"
-              className="w-full h-12 text-lg font-bold shadow-lg shadow-telegram-primary/20 bg-gradient-to-r from-telegram-primary to-telegram-accent border border-white/10 active:scale-[0.98] transition-transform"
+          <div 
+            className="fixed bottom-16 left-0 right-0 z-40"
+            style={{
+              padding: '12px 16px',
+              background: 'linear-gradient(to top, rgba(16,17,18,0.98), rgba(16,17,18,0.9))',
+              borderTop: '1px solid rgba(255,255,255,0.05)'
+            }}
+          >
+            <button
               onClick={() => setShowOfferModal(true)}
+              style={{
+                width: '100%',
+                padding: '14px 20px',
+                background: 'linear-gradient(135deg, #3390ec 0%, #2b7cd3 100%)',
+                border: 'none',
+                borderRadius: 14,
+                color: 'white',
+                fontSize: 15,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                boxShadow: '0 4px 20px rgba(51, 144, 236, 0.35)',
+                touchAction: 'manipulation'
+              }}
             >
-              <MessageSquare className="w-5 h-5 mr-2" />
+              <MessageSquare size={18} />
               Предложить сотрудничество
-            </Button>
+            </button>
           </div>
         )}
       </div>
