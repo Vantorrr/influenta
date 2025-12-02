@@ -418,7 +418,6 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
   const [formData, setFormData] = useState<Partial<SocialPlatform>>({
     platform: platform?.platform || PlatformType.INSTAGRAM,
     username: platform?.username || '',
-    url: platform?.url || '',
     subscribersCount: platform?.subscribersCount || 0,
     pricePerPost: platform?.pricePerPost || undefined,
     pricePerStory: platform?.pricePerStory || undefined,
@@ -479,7 +478,8 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
       const dataToSubmit: Partial<SocialPlatform> = {
         ...formData,
         username: (formData.username || '').trim().replace(/^@+/, ''),
-        url: formData.url && formData.url.trim().length > 0 ? formData.url.trim() : undefined,
+        // URL генерируется автоматически из username - не передаём для безопасности
+        url: undefined,
         subscribersCount: typeof formData.subscribersCount === 'string'
           ? (parseInt(formData.subscribersCount as any) || 0)
           : (formData.subscribersCount || 0),
@@ -567,16 +567,6 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
           onChange={(e) => setFormData({ ...formData, username: e.target.value })}
           placeholder="@username"
           required
-        />
-      </div>
-
-      <div style={{ marginBottom: 16 }}>
-        <label style={labelStyle}>Ссылка на профиль (опционально)</label>
-        <input
-          style={inputStyle}
-          value={formData.url || ''}
-          onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-          placeholder="https://..."
         />
       </div>
 
