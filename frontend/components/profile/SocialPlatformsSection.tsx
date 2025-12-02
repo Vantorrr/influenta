@@ -334,7 +334,7 @@ export function SocialPlatformsSection() {
         )}
       </div>
 
-      {/* Add/Edit Modal */}
+      {/* Add/Edit Modal - Portal to body */}
       <AnimatePresence>
         {(showAddModal || editingPlatform) && (
           <motion.div
@@ -343,14 +343,21 @@ export function SocialPlatformsSection() {
             exit={{ opacity: 0 }}
             style={{
               position: 'fixed',
-              inset: 0,
-              background: 'rgba(0,0,0,0.85)',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              height: '100vh',
+              background: 'rgba(0,0,0,0.95)',
               backdropFilter: 'blur(10px)',
-              zIndex: 10001,
+              zIndex: 99999,
               display: 'flex',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               justifyContent: 'center',
-              padding: 16
+              padding: 16,
+              paddingTop: 60,
+              overflowY: 'auto'
             }}
             onClick={() => {
               setShowAddModal(false)
@@ -366,11 +373,13 @@ export function SocialPlatformsSection() {
                 border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: 24,
                 padding: 24,
+                paddingBottom: 100,
                 width: '100%',
                 maxWidth: 480,
-                maxHeight: '90vh',
+                maxHeight: 'calc(100vh - 120px)',
                 overflowY: 'auto',
-                boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
+                boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+                marginBottom: 60
               }}
               onClick={(e) => e.stopPropagation()}
             >
