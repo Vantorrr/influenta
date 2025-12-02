@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Users, Eye, Shield, Ban, CheckCircle, Trash2, MessageSquare, Send, TrendingUp, Lock, Unlock, Edit, FileText, Star, Heart } from 'lucide-react'
@@ -15,6 +15,8 @@ import { OfferModal } from '@/components/OfferModal'
 import { PlatformsList } from '@/components/profile/PlatformsList'
 import { VerificationTooltip } from '@/components/VerificationTooltip'
 import { useQuery } from '@tanstack/react-query'
+
+const FAVORITES_CACHE_KEY = '__favorites_cache_v1'
 
 export default function BloggerDetailsPage() {
   const params = useParams() as { id?: string }
@@ -35,8 +37,27 @@ export default function BloggerDetailsPage() {
   const [noteText, setNoteText] = useState('')
   
   // Favorites state
-  const [isFavorite, setIsFavorite] = useState(false)
+  const [isFavorite, setIsFavorite] = useState(() => {
+    if (typeof window === 'undefined' || !params?.id) return false
+    try {
+      const raw = sessionStorage.getItem(FAVORITES_CACHE_KEY)
+      if (!raw) return false
+      const cache = JSON.parse(raw)
+      return !!cache[params.id]
+    } catch {
+      return false
+    }
+  })
   const [favoriteLoading, setFavoriteLoading] = useState(false)
+  const persistFavoriteState = useCallback((bloggerId: string, value: boolean) => {
+    if (typeof window === 'undefined') return
+    try {
+      const raw = sessionStorage.getItem(FAVORITES_CACHE_KEY)
+      const cache = raw ? JSON.parse(raw) : {}
+      cache[bloggerId] = value
+      sessionStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(cache))
+    } catch {}
+  }, [])
 
   // ID пользователя для загрузки платформ (после загрузки профиля)
   const userIdForPlatforms = (data?.user?.id || data?.id) as string | undefined
@@ -67,9 +88,10 @@ export default function BloggerDetailsPage() {
       try {
         const res = await favoritesApi.check(params.id!)
         setIsFavorite(res.isFavorite)
+        persistFavoriteState(params.id!, res.isFavorite)
       } catch {}
     })()
-  }, [user, params?.id])
+  }, [user, params?.id, persistFavoriteState])
 
   // Слушаем обновления избранного из списка
   useEffect(() => {
@@ -78,10 +100,11 @@ export default function BloggerDetailsPage() {
       const detail = (event as CustomEvent<{ bloggerId: string; isFavorite: boolean }>).detail
       if (!detail || detail.bloggerId !== params.id) return
       setIsFavorite(detail.isFavorite)
+      persistFavoriteState(detail.bloggerId, detail.isFavorite)
     }
     window.addEventListener('favorites:update', handler as EventListener)
     return () => window.removeEventListener('favorites:update', handler as EventListener)
-  }, [params?.id])
+  }, [params?.id, persistFavoriteState])
 
   // Переключение избранного
   const toggleFavorite = async () => {
@@ -90,6 +113,7 @@ export default function BloggerDetailsPage() {
     setFavoriteLoading(true)
     const wasFavorite = isFavorite
     setIsFavorite(!wasFavorite) // Оптимистичный UI
+    if (params?.id) persistFavoriteState(params.id, !wasFavorite)
     
     try {
       await favoritesApi.toggle(params.id)
@@ -102,6 +126,7 @@ export default function BloggerDetailsPage() {
       }
     } catch (e) {
       setIsFavorite(wasFavorite) // Откат при ошибке
+      if (params?.id) persistFavoriteState(params.id, wasFavorite)
     } finally {
       setFavoriteLoading(false)
     }

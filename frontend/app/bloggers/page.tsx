@@ -30,6 +30,9 @@ import { VerificationTooltip } from '@/components/VerificationTooltip'
 
 import { Layout } from '@/components/layout/Layout'
 
+const FILTER_STORAGE_KEY = '__bloggers_filters_v1'
+const FAVORITES_CACHE_KEY = '__favorites_cache_v1'
+
 // Компонент с контентом страницы (внутри Suspense)
 function BloggersPageContent() {
   const router = useRouter()
@@ -38,7 +41,7 @@ function BloggersPageContent() {
   const [search, setSearch] = useState(() => {
     if (typeof window === 'undefined') return ''
     try {
-      const raw = sessionStorage.getItem('__bloggers_filters_v1')
+      const raw = sessionStorage.getItem(FILTER_STORAGE_KEY)
       return raw ? (JSON.parse(raw).search || '') : ''
     } catch { return '' }
   })
@@ -47,7 +50,7 @@ function BloggersPageContent() {
   const [filters, setFilters] = useState<BloggerFilters>(() => {
     if (typeof window === 'undefined') return {}
     try {
-      const raw = sessionStorage.getItem('__bloggers_filters_v1')
+      const raw = sessionStorage.getItem(FILTER_STORAGE_KEY)
       if (raw) {
         const saved = JSON.parse(raw)
         const f = saved.filters || {}
@@ -63,9 +66,48 @@ function BloggersPageContent() {
   const [error, setError] = useState<string | null>(null)
   const { user, isAdmin } = useAuth()
   const [showFilters, setShowFilters] = useState(false)
-  const [favorites, setFavorites] = useState<Record<string, boolean>>({})
+  const [favorites, setFavorites] = useState<Record<string, boolean>>(() => {
+    if (typeof window === 'undefined') return {}
+    try {
+      const raw = sessionStorage.getItem(FAVORITES_CACHE_KEY)
+      return raw ? JSON.parse(raw) : {}
+    } catch {
+      return {}
+    }
+  })
   const [favoritesCount, setFavoritesCount] = useState(0)
-  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false)
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      const raw = sessionStorage.getItem(FILTER_STORAGE_KEY)
+      if (!raw) return false
+      return !!JSON.parse(raw).showOnlyFavorites
+    } catch {
+      return false
+    }
+  })
+
+  const persistFavoriteState = useCallback((bloggerId: string, value: boolean) => {
+    if (typeof window === 'undefined') return
+    try {
+      const raw = sessionStorage.getItem(FAVORITES_CACHE_KEY)
+      const cache = raw ? JSON.parse(raw) : {}
+      cache[bloggerId] = value
+      sessionStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(cache))
+    } catch {}
+  }, [])
+
+  const persistFavoritesBatch = useCallback((batch: Record<string, boolean>) => {
+    if (typeof window === 'undefined') return
+    try {
+      const raw = sessionStorage.getItem(FAVORITES_CACHE_KEY)
+      const cache = raw ? JSON.parse(raw) : {}
+      Object.entries(batch).forEach(([id, value]) => {
+        cache[id] = value
+      })
+      sessionStorage.setItem(FAVORITES_CACHE_KEY, JSON.stringify(cache))
+    } catch {}
+  }, [])
 
   const refreshFavoritesCount = useCallback(async () => {
     if (!user) return
@@ -84,11 +126,11 @@ function BloggersPageContent() {
     if (typeof window === 'undefined') return
     try {
       sessionStorage.setItem(
-        '__bloggers_filters_v1',
-        JSON.stringify({ search, filters }),
+        FILTER_STORAGE_KEY,
+        JSON.stringify({ search, filters, showOnlyFavorites }),
       )
     } catch {}
-  }, [search, filters])
+  }, [search, filters, showOnlyFavorites])
 
   const loadData = async () => {
     setIsLoading(true)
@@ -105,6 +147,7 @@ function BloggersPageContent() {
         const bloggerIds = items.map((b: any) => b.id)
         const favStatus = await favoritesApi.checkMany(bloggerIds)
         setFavorites(favStatus)
+        persistFavoritesBatch(favStatus)
         
         // Обновляем счётчик
         await refreshFavoritesCount()
@@ -128,6 +171,7 @@ function BloggersPageContent() {
     const wasFavorite = favorites[bloggerId]
     setFavorites(prev => ({ ...prev, [bloggerId]: !wasFavorite }))
     setFavoritesCount(prev => wasFavorite ? prev - 1 : prev + 1)
+    persistFavoriteState(bloggerId, !wasFavorite)
     
     try {
       await favoritesApi.toggle(bloggerId)
@@ -143,6 +187,7 @@ function BloggersPageContent() {
       // Откат при ошибке
       setFavorites(prev => ({ ...prev, [bloggerId]: wasFavorite }))
       setFavoritesCount(prev => wasFavorite ? prev + 1 : prev - 1)
+      persistFavoriteState(bloggerId, wasFavorite)
     }
   }
 
@@ -160,11 +205,12 @@ function BloggersPageContent() {
       const detail = (event as CustomEvent<{ bloggerId: string; isFavorite: boolean }>).detail
       if (!detail) return
       setFavorites(prev => ({ ...prev, [detail.bloggerId]: detail.isFavorite }))
+      persistFavoriteState(detail.bloggerId, detail.isFavorite)
       refreshFavoritesCount()
     }
     window.addEventListener('favorites:update', handler as EventListener)
     return () => window.removeEventListener('favorites:update', handler as EventListener)
-  }, [refreshFavoritesCount])
+  }, [refreshFavoritesCount, persistFavoriteState])
 
   // Скролл к последнему открытому блогеру
   useEffect(() => {
