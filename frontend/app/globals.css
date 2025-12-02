@@ -19,12 +19,19 @@
 @layer base {
   * {
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
   }
 
   html {
     height: 100%;
     height: 100vh;
     height: 100dvh; /* Dynamic viewport height for mobile */
+  }
+
+  /* Убираем задержку 300мс на всех интерактивных элементах */
+  a, button, input, select, textarea, [role="button"], [tabindex] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
@@ -45,6 +52,7 @@
     /* Убираем margins/padding */
     margin: 0 !important;
     padding: 0 !important;
+    touch-action: manipulation;
   }
 
   /* Контейнер приложения */

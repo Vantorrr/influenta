@@ -140,10 +140,10 @@ function BloggersPageContent() {
               className="pl-9 bg-telegram-bgSecondary border-white/5 focus:border-telegram-primary/50 transition-colors"
             />
           </div>
-          <Button 
-            variant={activeFiltersCount > 0 ? 'primary' : 'secondary'}
+          <button 
             onClick={() => setShowFilters(true)}
-            className="relative px-3"
+            className={`relative px-4 py-2 rounded-lg font-medium transition-colors touch-manipulation select-none ${activeFiltersCount > 0 ? 'bg-telegram-primary text-white' : 'bg-telegram-bgSecondary text-telegram-textSecondary'}`}
+            style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
           >
             <SlidersHorizontal className="w-4 h-4" />
             {activeFiltersCount > 0 && (
@@ -151,7 +151,7 @@ function BloggersPageContent() {
                 {activeFiltersCount}
               </span>
             )}
-          </Button>
+          </button>
         </div>
       </div>
 

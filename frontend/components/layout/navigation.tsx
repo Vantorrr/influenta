@@ -49,22 +49,35 @@ export function Navigation() {
   ]
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[9999] bg-telegram-bgSecondary/95 backdrop-blur-lg border-t border-white/5 pb-[env(safe-area-inset-bottom)]">
+    <nav 
+      className="fixed bottom-0 left-0 right-0 z-[9999] bg-telegram-bgSecondary/95 backdrop-blur-lg border-t border-white/5 pb-[env(safe-area-inset-bottom)]"
+      style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+    >
       <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             className={cn(
-              'flex flex-col items-center justify-center w-full h-full transition-colors duration-200 touch-manipulation active:scale-95 select-none',
+              'flex flex-col items-center justify-center w-full h-full select-none',
               item.active
                 ? 'text-telegram-primary'
-                : 'text-telegram-textSecondary hover:text-telegram-text'
+                : 'text-telegram-textSecondary'
             )}
+            style={{ 
+              touchAction: 'manipulation', 
+              WebkitTapHighlightColor: 'transparent',
+              cursor: 'pointer'
+            }}
+            onClick={(e) => {
+              // Принудительная навигация для надёжности
+              e.preventDefault()
+              router.push(item.href)
+            }}
           >
             <item.icon
               className={cn(
-                'w-6 h-6 mb-1 transition-transform duration-200',
+                'w-6 h-6 mb-1',
                 item.active && 'scale-110',
                 item.isSpecial && !item.active && 'text-telegram-accent'
               )}
@@ -74,7 +87,7 @@ export function Navigation() {
           </Link>
         ))}
       </div>
-    </div>
+    </nav>
   )
 }
 
