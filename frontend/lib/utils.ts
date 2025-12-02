@@ -27,6 +27,13 @@ export function formatNumber(num: number): string {
   return num.toString()
 }
 
+export function formatTime(date: Date | string | undefined | null): string {
+  if (!date) return ''
+  const d = new Date(date as any)
+  if (isNaN(d.getTime())) return ''
+  return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+}
+
 export function formatDate(date: Date | string | undefined | null): string {
   if (!date) return '—'
   const d = new Date(date as any)
@@ -93,18 +100,18 @@ export function pluralize(count: number, one: string, few: string, many: string)
 
 export function getCategoryLabel(category: string): string {
   const labels: Record<string, string> = {
-    humor: 'Юмор',
-    food: 'Еда',
-    fitness: 'Фитнес',
-    education: 'Образование', 
-    gaming: 'Игры',
-    tech: 'Технологии',
-    fashion: 'Мода/моделинг',
     lifestyle: 'Лайфстайл',
+    tech: 'Технологии',
     beauty: 'Бьюти',
-    business: 'Бизнес',
-    hobby: 'Хобби',
+    fashion: 'Мода',
+    food: 'Еда',
     travel: 'Путешествия',
+    fitness: 'Фитнес',
+    gaming: 'Игры',
+    education: 'Образование',
+    business: 'Бизнес',
+    entertainment: 'Развлечения',
+    humor: 'Юмор',
     other: 'Другое',
   }
   return labels[category.toLowerCase()] || category

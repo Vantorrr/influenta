@@ -77,11 +77,11 @@ export function FilterModal({ isOpen, onClose, filters, onApply }: FilterModalPr
     onClose()
   }
 
-  // Categories list - ideally imported, but hardcoded for safety if utils missing
+  // Категории синхронизированы с onboarding
   const categories = [
-    'lifestyle', 'beauty', 'fashion', 'tech', 'business', 
-    'entertainment', 'food', 'travel', 'fitness', 'education', 
-    'gaming', 'crypto', 'news', 'art'
+    'lifestyle', 'tech', 'beauty', 'fashion', 'food', 
+    'travel', 'fitness', 'gaming', 'education', 'business',
+    'entertainment', 'humor', 'other'
   ]
 
   if (!isOpen) return null
