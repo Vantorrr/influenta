@@ -71,6 +71,18 @@ export default function BloggerDetailsPage() {
     })()
   }, [user, params?.id])
 
+  // Слушаем обновления избранного из списка
+  useEffect(() => {
+    if (typeof window === 'undefined' || !params?.id) return
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ bloggerId: string; isFavorite: boolean }>).detail
+      if (!detail || detail.bloggerId !== params.id) return
+      setIsFavorite(detail.isFavorite)
+    }
+    window.addEventListener('favorites:update', handler as EventListener)
+    return () => window.removeEventListener('favorites:update', handler as EventListener)
+  }, [params?.id])
+
   // Переключение избранного
   const toggleFavorite = async () => {
     if (!params?.id || favoriteLoading) return
@@ -81,8 +93,13 @@ export default function BloggerDetailsPage() {
     
     try {
       await favoritesApi.toggle(params.id)
+      window.dispatchEvent(new CustomEvent('favorites:update', {
+        detail: { bloggerId: params.id, isFavorite: !wasFavorite },
+      }))
       // Haptic feedback
-      try { (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred?.('light') } catch {}
+      try { (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred?.('heavy') } catch {
+        try { navigator.vibrate?.(50) } catch {}
+      }
     } catch (e) {
       setIsFavorite(wasFavorite) // Откат при ошибке
     } finally {
@@ -207,14 +224,14 @@ export default function BloggerDetailsPage() {
           <button
             onClick={toggleFavorite}
             disabled={favoriteLoading}
-            className={`absolute top-4 right-4 z-50 w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-90 ${
+            className={`absolute top-4 right-4 z-50 w-12 h-12 flex items-center justify-center transition-all active:scale-90 ${
               isFavorite 
-                ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/40' 
-                : 'bg-black/30 backdrop-blur-md text-white/80 hover:text-white border border-white/10'
+                ? 'text-pink-500 drop-shadow-[0_0_12px_rgba(236,72,153,0.6)]' 
+                : 'text-white/70 hover:text-white drop-shadow-md'
             }`}
-            style={{ touchAction: 'manipulation' }}
+            style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
           >
-            <Heart className={`w-6 h-6 transition-all ${isFavorite ? 'fill-current' : ''}`} />
+            <Heart className={`w-6 h-6 transition-all ${isFavorite ? 'fill-current scale-110' : ''}`} />
           </button>
         )}
       </div>

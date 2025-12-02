@@ -1,18 +1,39 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
 import { Favorite } from './entities/favorite.entity';
 import { User, UserRole } from '../users/entities/user.entity';
 import { Blogger } from '../bloggers/entities/blogger.entity';
 
 @Injectable()
-export class FavoritesService {
+export class FavoritesService implements OnModuleInit {
   constructor(
     @InjectRepository(Favorite)
     private favoritesRepository: Repository<Favorite>,
     @InjectRepository(User)
     private usersRepository: Repository<User>,
   ) {}
+
+  async onModuleInit() {
+    try {
+      await this.favoritesRepository.query(`
+        CREATE TABLE IF NOT EXISTS favorites (
+          "id" uuid PRIMARY KEY,
+          "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+          "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
+          "userId" uuid NOT NULL,
+          "bloggerId" uuid NOT NULL
+        );
+      `);
+      await this.favoritesRepository.query(`
+        CREATE UNIQUE INDEX IF NOT EXISTS favorites_user_blogger_idx
+        ON favorites("userId", "bloggerId");
+      `);
+    } catch (error) {
+      console.error('❌ Failed to ensure favorites table exists', error);
+    }
+  }
 
   // Добавить в избранное
   async add(userId: string, bloggerId: string): Promise<Favorite> {
@@ -26,6 +47,7 @@ export class FavoritesService {
     }
 
     const favorite = this.favoritesRepository.create({
+      id: uuidv4(),
       userId,
       bloggerId,
     });
@@ -56,7 +78,7 @@ export class FavoritesService {
       await this.favoritesRepository.remove(existing);
       return { isFavorite: false };
     } else {
-      const favorite = this.favoritesRepository.create({ userId, bloggerId });
+      const favorite = this.favoritesRepository.create({ id: uuidv4(), userId, bloggerId });
       await this.favoritesRepository.save(favorite);
       return { isFavorite: true };
     }

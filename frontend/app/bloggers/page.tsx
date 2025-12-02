@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense, useRef } from 'react'
+import { useEffect, useState, Suspense, useRef, useCallback } from 'react'
 // motion removed - using native divs for better touch responsiveness
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -67,6 +67,16 @@ function BloggersPageContent() {
   const [favoritesCount, setFavoritesCount] = useState(0)
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false)
 
+  const refreshFavoritesCount = useCallback(async () => {
+    if (!user) return
+    try {
+      const countRes = await favoritesApi.getCount()
+      setFavoritesCount(countRes.count)
+    } catch (err) {
+      console.warn('Не удалось обновить счетчик избранных', err)
+    }
+  }, [user?.id])
+
   useScrollRestoration()
 
   // Сохраняем фильтры и поиск при изменении
@@ -97,8 +107,7 @@ function BloggersPageContent() {
         setFavorites(favStatus)
         
         // Обновляем счётчик
-        const countRes = await favoritesApi.getCount()
-        setFavoritesCount(countRes.count)
+        await refreshFavoritesCount()
       }
     } catch (e: any) {
       const msg = e?.response?.data?.message || e?.message || 'Ошибка загрузки'
@@ -122,8 +131,14 @@ function BloggersPageContent() {
     
     try {
       await favoritesApi.toggle(bloggerId)
+      window.dispatchEvent(new CustomEvent('favorites:update', {
+        detail: { bloggerId, isFavorite: !wasFavorite },
+      }))
+      await refreshFavoritesCount()
       // Haptic feedback
-      try { (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred?.('light') } catch {}
+      try { (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred?.('heavy') } catch {
+        try { navigator.vibrate?.(50) } catch {}
+      }
     } catch (e) {
       // Откат при ошибке
       setFavorites(prev => ({ ...prev, [bloggerId]: wasFavorite }))
@@ -137,6 +152,19 @@ function BloggersPageContent() {
     window.addEventListener('focus', onFocus)
     return () => window.removeEventListener('focus', onFocus)
   }, [search, filters])
+
+  // Синхронизация избранного между страницами
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ bloggerId: string; isFavorite: boolean }>).detail
+      if (!detail) return
+      setFavorites(prev => ({ ...prev, [detail.bloggerId]: detail.isFavorite }))
+      refreshFavoritesCount()
+    }
+    window.addEventListener('favorites:update', handler as EventListener)
+    return () => window.removeEventListener('favorites:update', handler as EventListener)
+  }, [refreshFavoritesCount])
 
   // Скролл к последнему открытому блогеру
   useEffect(() => {
@@ -273,10 +301,10 @@ function BloggersPageContent() {
                       e.stopPropagation()
                       toggleFavorite(e as any, blogger.id)
                     }}
-                    className={`absolute top-3 right-3 z-20 w-10 h-10 flex items-center justify-center rounded-full transition-all active:scale-90 ${
+                    className={`absolute top-3 right-3 z-20 w-10 h-10 flex items-center justify-center transition-all active:scale-90 ${
                       favorites[blogger.id] 
-                        ? 'bg-pink-500/20 text-pink-500' 
-                        : 'bg-black/40 text-white/60 hover:text-white'
+                        ? 'text-pink-500 drop-shadow-[0_0_10px_rgba(236,72,153,0.6)]' 
+                        : 'text-white/50 hover:text-white drop-shadow-md'
                     }`}
                     style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                   >
@@ -308,7 +336,7 @@ function BloggersPageContent() {
                     <div className="flex-1 min-w-0 space-y-2">
                       {/* Name & Username */}
                       <div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between pr-8">
                           <h3 className="font-bold text-white truncate pr-2 text-[17px]">
                             {blogger.user?.firstName} {blogger.user?.lastName}
                           </h3>
