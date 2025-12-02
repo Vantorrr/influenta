@@ -6,8 +6,37 @@ import { Eye, ExternalLink, Send, BarChart2, Users } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatNumber, formatPrice } from '@/lib/utils'
-import { SocialPlatform } from '@/types'
+import { SocialPlatform, PlatformType } from '@/types'
 import { getPlatformIcon, platformLabels } from '@/components/icons/PlatformIcons'
+
+// Генерация URL по платформе и username
+function getPlatformUrl(platform: PlatformType, username: string): string | null {
+  const cleanUsername = username.replace(/^@/, '').trim()
+  if (!cleanUsername) return null
+  
+  switch (platform) {
+    case PlatformType.INSTAGRAM:
+      return `https://instagram.com/${cleanUsername}`
+    case PlatformType.TELEGRAM:
+      return `https://t.me/${cleanUsername}`
+    case PlatformType.YOUTUBE:
+      return `https://youtube.com/@${cleanUsername}`
+    case PlatformType.TIKTOK:
+      return `https://tiktok.com/@${cleanUsername}`
+    case PlatformType.VK:
+      return `https://vk.com/${cleanUsername}`
+    case PlatformType.TWITTER:
+      return `https://twitter.com/${cleanUsername}`
+    case PlatformType.FACEBOOK:
+      return `https://facebook.com/${cleanUsername}`
+    case PlatformType.TWITCH:
+      return `https://twitch.tv/${cleanUsername}`
+    case PlatformType.LINKEDIN:
+      return `https://linkedin.com/in/${cleanUsername}`
+    default:
+      return null
+  }
+}
 
 interface PlatformsListProps {
   platforms: SocialPlatform[]
@@ -46,16 +75,18 @@ export function PlatformsList({ platforms, isAdmin, telegramUsername }: Platform
         </Button>
       )}
       
-      {platforms.map((platform, index) => (
-        <motion.div
+      {platforms.map((platform, index) => {
+        // Определяем URL: либо указанный, либо генерируем автоматически
+        const platformUrl = platform.url || getPlatformUrl(platform.platform, platform.username)
+        
+        return (
+        <div
           key={platform.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.05 }}
-          className="border border-telegram-border rounded-lg p-4 cursor-pointer hover:border-telegram-primary/50 hover:bg-telegram-bg/50 transition-all"
+          className="border border-telegram-border rounded-lg p-4 cursor-pointer hover:border-telegram-primary/50 hover:bg-telegram-bg/50 transition-all active:scale-[0.98]"
+          style={{ touchAction: 'manipulation' }}
           onClick={() => {
-            if (platform.url) {
-              window.open(platform.url, '_blank')
+            if (platformUrl) {
+              window.open(platformUrl, '_blank')
             }
           }}
         >
@@ -73,8 +104,8 @@ export function PlatformsList({ platforms, isAdmin, telegramUsername }: Platform
                     Основная
                   </Badge>
                 )}
-                {platform.url && (
-                  <ExternalLink className="w-4 h-4 text-telegram-textSecondary ml-auto" />
+                {platformUrl && (
+                  <ExternalLink className="w-4 h-4 text-telegram-primary ml-auto" />
                 )}
               </div>
               <p className="text-sm text-telegram-textSecondary mb-2">
@@ -141,13 +172,12 @@ export function PlatformsList({ platforms, isAdmin, telegramUsername }: Platform
               )}
             </div>
           </div>
-        </motion.div>
-      ))}
+        </div>
+        )
+      })}
     </div>
   )
 }
 
  
 
-
- 
