@@ -153,7 +153,7 @@ export default function BloggerDetailsPage() {
   const targetUserId = blogger.user?.id || blogger.userId || blogger.id
 
   return (
-    <div className="min-h-screen bg-telegram-bg pb-40">
+    <div className="min-h-screen bg-telegram-bg pb-20">
       {/* Header Image / Pattern */}
       <div className="h-32 bg-gradient-to-br from-telegram-primary/20 via-blue-900/20 to-telegram-bg relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10" />
@@ -570,37 +570,30 @@ export default function BloggerDetailsPage() {
            </motion.div>
         )}
 
-        {/* Action Bar (Fixed above navigation) */}
+        {/* CTA Button - inside content, scrolls with page */}
         {user?.role === 'advertiser' && (
-          <div 
-            className="fixed bottom-16 left-0 right-0 z-40"
-            style={{
-              padding: '12px 16px',
-              background: 'linear-gradient(to top, rgba(16,17,18,0.98), rgba(16,17,18,0.9))',
-              borderTop: '1px solid rgba(255,255,255,0.05)'
-            }}
-          >
+          <div style={{ marginTop: 24, marginBottom: 32 }}>
             <button
               onClick={() => setShowOfferModal(true)}
               style={{
                 width: '100%',
-                padding: '14px 20px',
+                padding: '16px 24px',
                 background: 'linear-gradient(135deg, #3390ec 0%, #2b7cd3 100%)',
                 border: 'none',
-                borderRadius: 14,
+                borderRadius: 16,
                 color: 'white',
-                fontSize: 15,
+                fontSize: 16,
                 fontWeight: 600,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 8,
-                boxShadow: '0 4px 20px rgba(51, 144, 236, 0.35)',
+                gap: 10,
+                boxShadow: '0 6px 24px rgba(51, 144, 236, 0.4)',
                 touchAction: 'manipulation'
               }}
             >
-              <MessageSquare size={18} />
+              <MessageSquare size={20} />
               Предложить сотрудничество
             </button>
           </div>
