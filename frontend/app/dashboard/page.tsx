@@ -347,7 +347,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* 5. Minimal Support Link */}
-        <div className="flex justify-center pt-2 pb-6">
+        <div className="flex justify-center pt-2">
           <a
             href="https://t.me/polina_khristya"
             target="_blank"
@@ -358,6 +358,13 @@ export default function DashboardPage() {
             <span>Поддержка и помощь</span>
             <ExternalLink className="w-3 h-3 opacity-50" />
           </a>
+        </div>
+
+        {/* Creator Signature */}
+        <div className="flex justify-center pb-8">
+          <span className="text-[11px] font-medium tracking-wide text-white/15">
+            🪚 by <span className="text-white/25 font-semibold">YNCHQ</span>
+          </span>
         </div>
       </div>
     </Layout>

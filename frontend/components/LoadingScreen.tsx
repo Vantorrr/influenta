@@ -155,6 +155,18 @@ export function LoadingScreen() {
               {loadingText}
             </motion.p>
           </div>
+
+          {/* Подпись создателя */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.2, duration: 0.8 }}
+            className="absolute bottom-8 left-0 right-0 flex justify-center"
+          >
+            <span className="text-[11px] font-medium tracking-wide text-white/20">
+              🪚 by <span className="text-white/30 font-semibold">YNCHQ</span>
+            </span>
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
