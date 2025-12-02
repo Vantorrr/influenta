@@ -100,6 +100,25 @@ function BloggersPageContent() {
     return () => window.removeEventListener('focus', onFocus)
   }, [search, filters])
 
+  // Скролл к последнему открытому блогеру
+  useEffect(() => {
+    if (typeof window === 'undefined' || isLoading || bloggers.length === 0) return
+    
+    const lastId = sessionStorage.getItem('__bloggers_last_id')
+    if (lastId) {
+      // Множественные попытки найти элемент
+      const intervals = [50, 150, 300, 500, 800]
+      intervals.forEach(delay => {
+        setTimeout(() => {
+          const el = document.getElementById(`blogger-${lastId}`)
+          if (el) {
+            el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+          }
+        }, delay)
+      })
+    }
+  }, [bloggers, isLoading])
+
   const activeFiltersCount = Object.keys(filters).filter(k => {
     const val = filters[k as keyof BloggerFilters]
     return Array.isArray(val) ? val.length > 0 : val !== undefined
