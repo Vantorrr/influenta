@@ -289,12 +289,15 @@ export default function CreateListingPage() {
               
               <div className="mt-2">
                 <label className="label">Дедлайн</label>
-                <Input
-                  type="date"
-                  value={formData.deadline}
-                  onChange={(e) => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
-                  min={new Date().toISOString().split('T')[0]}
-                />
+                <div className="relative">
+                  <Input
+                    type="date"
+                    value={formData.deadline}
+                    onChange={(e) => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full block appearance-none"
+                  />
+                </div>
                 <p className="text-xs text-telegram-textSecondary mt-1">
                   Необязательно. До какого числа нужно выполнить задание
                 </p>
