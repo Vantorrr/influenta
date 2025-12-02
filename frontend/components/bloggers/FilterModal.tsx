@@ -91,7 +91,7 @@ export function FilterModal({ isOpen, onClose, filters, onApply }: FilterModalPr
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 z-[100]">
+        <div className="fixed inset-0 z-[10001]">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -309,7 +309,7 @@ export function FilterModal({ isOpen, onClose, filters, onApply }: FilterModalPr
             </div>
 
             {/* Footer Actions */}
-            <div className="p-6 border-t border-white/5 bg-[#1C1E20] pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+            <div className="p-6 border-t border-white/5 bg-[#1C1E20] pb-[calc(3rem+env(safe-area-inset-bottom))]">
               <Button 
                 onClick={handleApply} 
                 className="w-full py-6 text-lg font-semibold bg-telegram-primary hover:bg-telegram-primary/90 text-white shadow-lg shadow-telegram-primary/20"
