@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Eye, ExternalLink, Send } from 'lucide-react'
+import { Eye, ExternalLink, Send, BarChart2, Users } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatNumber, formatPrice } from '@/lib/utils'
@@ -82,25 +82,39 @@ export function PlatformsList({ platforms, isAdmin, telegramUsername }: Platform
               </p>
               <div className="flex flex-wrap gap-4 text-sm">
                 <div className="flex items-center gap-1">
-                  <Eye className="w-4 h-4 text-telegram-textSecondary" />
-                  <span>{formatNumber(platform.subscribersCount)} подписчиков</span>
+                  <Users className="w-4 h-4 text-telegram-textSecondary" />
+                  <span>{formatNumber(platform.subscribersCount)} подп.</span>
                 </div>
+                {platform.additionalInfo?.views30days && (
+                  <div className="flex items-center gap-1 text-telegram-primary">
+                    <BarChart2 className="w-4 h-4" />
+                    <span>{formatNumber(platform.additionalInfo.views30days)} просм./30д</span>
+                  </div>
+                )}
+                {platform.additionalInfo?.uniqueViewers30days && (
+                  <div className="flex items-center gap-1 text-purple-400">
+                    <Eye className="w-4 h-4" />
+                    <span>{formatNumber(platform.additionalInfo.uniqueViewers30days)} уник./30д</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-4 text-sm mt-2">
                 {(platform.pricePerPost || platform.pricePerPost === -1) && (
                   <div>
                     <span className="text-telegram-textSecondary">Пост: </span>
-                    <span className="font-medium">{formatPrice(platform.pricePerPost)}</span>
+                    <span className="font-medium text-green-400">{formatPrice(platform.pricePerPost)}</span>
                   </div>
                 )}
                 {(platform.pricePerStory || platform.pricePerStory === -1) && (
                   <div>
                     <span className="text-telegram-textSecondary">Сторис: </span>
-                    <span className="font-medium">{formatPrice(platform.pricePerStory)}</span>
+                    <span className="font-medium text-purple-400">{formatPrice(platform.pricePerStory)}</span>
                   </div>
                 )}
                 {(platform.pricePerReel || platform.pricePerReel === -1) && (
                   <div>
                     <span className="text-telegram-textSecondary">Reels: </span>
-                    <span className="font-medium">{formatPrice(platform.pricePerReel)}</span>
+                    <span className="font-medium text-pink-400">{formatPrice(platform.pricePerReel)}</span>
                   </div>
                 )}
               </div>
