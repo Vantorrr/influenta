@@ -178,12 +178,6 @@ function BloggersPageContent() {
                 if (typeof window === 'undefined') return
                 sessionStorage.setItem('__bloggers_last_id', String(blogger.id))
               }}
-              onTouchEnd={(e) => {
-                e.preventDefault()
-                if (typeof window === 'undefined') return
-                sessionStorage.setItem('__bloggers_last_id', String(blogger.id))
-                router.push(`/bloggers/${blogger.id}`)
-              }}
             >
               <Card className={`group relative overflow-hidden border-white/5 bg-[#1C1E20] active:scale-[0.98] transition-transform duration-100 ${blogger.isFeatured ? 'ring-1 ring-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)]' : ''}`} style={{ touchAction: 'manipulation' }}>
                 {/* Subtle highlight on hover (desktop only) */}
