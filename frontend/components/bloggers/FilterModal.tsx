@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X, Check, RotateCcw } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Button } from '@/components/ui/button'
+// Button removed - using native buttons for better touch responsiveness
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { BloggerFilters, BLOGGER_CATEGORIES } from '@/types' // Assuming these exist, if not I'll define them locally or fix imports
@@ -91,14 +91,16 @@ export function FilterModal({ isOpen, onClose, filters, onApply }: FilterModalPr
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[10001]">
+        <div 
+          className="fixed inset-0 z-[99999]"
+          style={{ touchAction: 'manipulation' }}
+        >
           {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          <div
+            className="absolute inset-0 bg-black/80"
             onClick={onClose}
+            onTouchEnd={(e) => { e.preventDefault(); onClose(); }}
+            style={{ touchAction: 'manipulation' }}
           />
 
           {/* Drawer/Modal */}
@@ -108,9 +110,15 @@ export function FilterModal({ isOpen, onClose, filters, onApply }: FilterModalPr
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="absolute bottom-0 left-0 right-0 bg-[#1C1E20] rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl border-t border-white/10"
+            style={{ touchAction: 'manipulation' }}
           >
             {/* Handle bar for visual cue */}
-            <div className="w-full flex justify-center pt-3 pb-1" onClick={onClose}>
+            <div 
+              className="w-full flex justify-center pt-3 pb-1" 
+              onClick={onClose}
+              onTouchEnd={(e) => { e.preventDefault(); onClose(); }}
+              style={{ touchAction: 'manipulation' }}
+            >
               <div className="w-12 h-1.5 bg-white/10 rounded-full" />
             </div>
 
@@ -118,22 +126,24 @@ export function FilterModal({ isOpen, onClose, filters, onApply }: FilterModalPr
             <div className="px-6 pb-4 flex items-center justify-between border-b border-white/5">
               <h2 className="text-xl font-bold text-white">Фильтры</h2>
               <div className="flex gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <button 
+                  type="button"
                   onClick={handleReset}
-                  className="text-telegram-textSecondary hover:text-white"
+                  onTouchEnd={(e) => { e.preventDefault(); handleReset(); }}
+                  className="p-2 text-telegram-textSecondary active:text-white"
+                  style={{ touchAction: 'manipulation' }}
                 >
                   <RotateCcw className="w-4 h-4" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                </button>
+                <button 
+                  type="button"
                   onClick={onClose}
-                  className="rounded-full w-8 h-8 p-0"
+                  onTouchEnd={(e) => { e.preventDefault(); onClose(); }}
+                  className="rounded-full w-8 h-8 p-0 flex items-center justify-center text-white active:bg-white/10"
+                  style={{ touchAction: 'manipulation' }}
                 >
                   <X className="w-5 h-5" />
-                </Button>
+                </button>
               </div>
             </div>
 
@@ -338,12 +348,15 @@ export function FilterModal({ isOpen, onClose, filters, onApply }: FilterModalPr
 
             {/* Footer Actions */}
             <div className="p-6 border-t border-white/5 bg-[#1C1E20] pb-[calc(3rem+env(safe-area-inset-bottom))]">
-              <Button 
-                onClick={handleApply} 
-                className="w-full py-6 text-lg font-semibold bg-telegram-primary hover:bg-telegram-primary/90 text-white shadow-lg shadow-telegram-primary/20"
+              <button 
+                type="button"
+                onClick={handleApply}
+                onTouchEnd={(e) => { e.preventDefault(); handleApply(); }}
+                className="w-full py-4 text-lg font-semibold bg-telegram-primary active:bg-telegram-primary/80 text-white rounded-xl shadow-lg"
+                style={{ touchAction: 'manipulation', minHeight: 56 }}
               >
                 Показать результаты
-              </Button>
+              </button>
             </div>
           </motion.div>
         </div>
