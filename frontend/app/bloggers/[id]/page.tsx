@@ -282,7 +282,7 @@ export default function BloggerDetailsPage() {
               {/* Bio */}
               {blogger.bio && (
                 <div className="mt-6 p-4 bg-white/5 rounded-xl border border-white/5">
-                  <p className="text-telegram-text leading-relaxed italic">
+                  <p className="text-telegram-text leading-relaxed italic break-words whitespace-pre-wrap">
                     "{blogger.bio}"
                   </p>
                 </div>
@@ -570,12 +570,12 @@ export default function BloggerDetailsPage() {
            </motion.div>
         )}
 
-        {/* Action Button */}
+        {/* Action Bar (Fixed above navigation) */}
         {user?.role === 'advertiser' && (
-          <div className="fixed bottom-20 left-4 right-4 z-20">
+          <div className="fixed bottom-16 left-0 right-0 z-40 p-4 bg-[#1C1E20]/95 backdrop-blur-xl border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.3)]">
             <Button
               variant="primary"
-              className="w-full h-14 text-lg font-bold shadow-2xl shadow-telegram-primary/40 bg-gradient-to-r from-telegram-primary to-telegram-accent border border-white/20"
+              className="w-full h-12 text-lg font-bold shadow-lg shadow-telegram-primary/20 bg-gradient-to-r from-telegram-primary to-telegram-accent border border-white/10 active:scale-[0.98] transition-transform"
               onClick={() => setShowOfferModal(true)}
             >
               <MessageSquare className="w-5 h-5 mr-2" />
