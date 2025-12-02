@@ -347,16 +347,12 @@ export function SocialPlatformsSection() {
               left: 0,
               right: 0,
               bottom: 0,
-              width: '100vw',
-              height: '100vh',
               background: 'rgba(0,0,0,0.95)',
-              backdropFilter: 'blur(10px)',
               zIndex: 99999,
               display: 'flex',
-              alignItems: 'flex-start',
+              alignItems: 'center',
               justifyContent: 'center',
-              padding: 16,
-              paddingTop: 60,
+              padding: 20,
               overflowY: 'auto'
             }}
             onClick={() => {
@@ -373,13 +369,13 @@ export function SocialPlatformsSection() {
                 border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: 24,
                 padding: 24,
-                paddingBottom: 100,
+                paddingBottom: 40,
                 width: '100%',
-                maxWidth: 480,
-                maxHeight: 'calc(100vh - 120px)',
+                maxWidth: 500,
+                maxHeight: '85vh',
                 overflowY: 'auto',
                 boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
-                marginBottom: 60
+                margin: 'auto'
               }}
               onClick={(e) => e.stopPropagation()}
             >
