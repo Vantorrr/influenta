@@ -10,46 +10,26 @@ export function LoadingScreen() {
   const [loadingText, setLoadingText] = useState('Запуск платформы...')
 
   useEffect(() => {
-    // Нарастающая вибрация во время загрузки (как в Технопарке)
-    let vibrationStep = 0
+    // Мягкая нарастающая вибрация во время загрузки
+    // Меньше импульсов, более плавные интервалы, только soft/light
     const vibrationPattern = [
-      { delay: 0, duration: 5 },      // Лёгкий старт
-      { delay: 200, duration: 8 },
-      { delay: 350, duration: 12 },
-      { delay: 500, duration: 15 },
-      { delay: 650, duration: 20 },
-      { delay: 800, duration: 25 },
-      { delay: 950, duration: 30 },
-      { delay: 1100, duration: 35 },
-      { delay: 1250, duration: 40 },
-      { delay: 1400, duration: 50 },   // Нарастает
-      { delay: 1550, duration: 60 },
-      { delay: 1700, duration: 70 },
-      { delay: 1850, duration: 80 },
-      { delay: 2000, duration: 100 },  // Финальный "удар"
+      { delay: 300, style: 'soft' as const },
+      { delay: 700, style: 'soft' as const },
+      { delay: 1100, style: 'light' as const },
+      { delay: 1500, style: 'light' as const },
+      { delay: 1900, style: 'medium' as const },  // Лёгкое усиление в конце
     ]
 
     const vibrationTimers: NodeJS.Timeout[] = []
-    
-    // Telegram Haptic Feedback (более плавный)
     const haptic = (window as any).Telegram?.WebApp?.HapticFeedback
     
-    vibrationPattern.forEach(({ delay, duration }, index) => {
+    vibrationPattern.forEach(({ delay, style }) => {
       const timer = setTimeout(() => {
-        // Telegram haptic — усиливаем по мере прогресса
         if (haptic) {
-          if (index < 4) {
-            haptic.impactOccurred('light')
-          } else if (index < 8) {
-            haptic.impactOccurred('medium')
-          } else if (index < 12) {
-            haptic.impactOccurred('heavy')
-          } else {
-            haptic.impactOccurred('rigid')
-          }
+          haptic.impactOccurred(style)
         }
-        // Fallback для обычного браузера
-        try { navigator.vibrate?.(duration) } catch {}
+        // Fallback — очень короткая вибрация
+        try { navigator.vibrate?.(style === 'soft' ? 3 : style === 'light' ? 5 : 8) } catch {}
       }, delay)
       vibrationTimers.push(timer)
     })
