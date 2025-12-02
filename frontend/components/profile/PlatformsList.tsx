@@ -1,8 +1,7 @@
 'use client'
 
-import React from 'react'
-import { motion } from 'framer-motion'
-import { Eye, ExternalLink, Send, BarChart2, Users } from 'lucide-react'
+import React, { useState } from 'react'
+import { Eye, ExternalLink, Send, BarChart2, Users, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatNumber, formatPrice } from '@/lib/utils'
@@ -45,6 +44,28 @@ interface PlatformsListProps {
 }
 
 export function PlatformsList({ platforms, isAdmin, telegramUsername }: PlatformsListProps) {
+  const [viewerOpen, setViewerOpen] = useState(false)
+  const [viewerImages, setViewerImages] = useState<string[]>([])
+  const [viewerIndex, setViewerIndex] = useState(0)
+
+  const openViewer = (images: string[], startIndex: number) => {
+    setViewerImages(images)
+    setViewerIndex(startIndex)
+    setViewerOpen(true)
+  }
+
+  const closeViewer = () => {
+    setViewerOpen(false)
+  }
+
+  const nextImage = () => {
+    setViewerIndex((prev) => (prev + 1) % viewerImages.length)
+  }
+
+  const prevImage = () => {
+    setViewerIndex((prev) => (prev - 1 + viewerImages.length) % viewerImages.length)
+  }
+
   if (!platforms || platforms.length === 0) {
     return (
       <div className="text-center py-8 text-telegram-textSecondary">
@@ -156,15 +177,21 @@ export function PlatformsList({ platforms, isAdmin, telegramUsername }: Platform
                       key={i}
                       src={url}
                       alt={`Stats ${i + 1}`}
-                      className="w-12 h-12 object-cover rounded border border-telegram-border"
+                      className="w-12 h-12 object-cover rounded border border-telegram-border cursor-zoom-in"
                       onClick={(e) => {
                         e.stopPropagation()
-                        window.open(url, '_blank')
+                        openViewer(platform.statisticsScreenshots!, i)
                       }}
                     />
                   ))}
                   {platform.statisticsScreenshots.length > 3 && (
-                    <div className="w-12 h-12 rounded border border-telegram-border bg-telegram-bg flex items-center justify-center text-xs">
+                    <div 
+                      className="w-12 h-12 rounded border border-telegram-border bg-telegram-bg flex items-center justify-center text-xs cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        openViewer(platform.statisticsScreenshots!, 3)
+                      }}
+                    >
                       +{platform.statisticsScreenshots.length - 3}
                     </div>
                   )}
@@ -175,6 +202,112 @@ export function PlatformsList({ platforms, isAdmin, telegramUsername }: Platform
         </div>
         )
       })}
+
+      {/* Image Viewer Modal */}
+      {viewerOpen && viewerImages.length > 0 && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.95)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            touchAction: 'manipulation'
+          }}
+          onClick={closeViewer}
+        >
+          {/* Close button */}
+          <button
+            onClick={closeViewer}
+            style={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              padding: 12,
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: 'none',
+              borderRadius: 12,
+              color: 'white',
+              cursor: 'pointer',
+              zIndex: 10
+            }}
+          >
+            <X size={24} />
+          </button>
+
+          {/* Counter */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 20,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              color: 'rgba(255, 255, 255, 0.7)',
+              fontSize: 14,
+              fontWeight: 500
+            }}
+          >
+            {viewerIndex + 1} / {viewerImages.length}
+          </div>
+
+          {/* Previous button */}
+          {viewerImages.length > 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); prevImage(); }}
+              style={{
+                position: 'absolute',
+                left: 16,
+                padding: 12,
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: 'none',
+                borderRadius: 12,
+                color: 'white',
+                cursor: 'pointer'
+              }}
+            >
+              <ChevronLeft size={28} />
+            </button>
+          )}
+
+          {/* Image */}
+          <img
+            src={viewerImages[viewerIndex]}
+            alt="Statistics"
+            style={{
+              maxWidth: '90vw',
+              maxHeight: '80vh',
+              objectFit: 'contain',
+              borderRadius: 12,
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          {/* Next button */}
+          {viewerImages.length > 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); nextImage(); }}
+              style={{
+                position: 'absolute',
+                right: 16,
+                padding: 12,
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: 'none',
+                borderRadius: 12,
+                color: 'white',
+                cursor: 'pointer'
+              }}
+            >
+              <ChevronRight size={28} />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
