@@ -510,7 +510,7 @@ export default function ListingDetailsPage() {
       {/* Edit Modal */}
       {showEdit && (
         <div style={modalOverlayStyle} onClick={() => setShowEdit(false)}>
-          <div style={modalContentStyle} onClick={e => e.stopPropagation()}>
+          <div style={{ ...modalContentStyle, paddingBottom: 100 }} onClick={e => e.stopPropagation()}>
             <h3 style={{ fontSize: 20, fontWeight: 700, color: 'white', marginBottom: 24 }}>Редактирование</h3>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -553,6 +553,46 @@ export default function ListingDetailsPage() {
                 finally { setEditLoading(false) }
               }} style={buttonPrimaryStyle}>
                 Сохранить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div style={modalOverlayStyle} onClick={() => setShowDeleteConfirm(false)}>
+          <div style={{ ...modalContentStyle, paddingBottom: 100 }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ fontSize: 20, fontWeight: 700, color: 'white', marginBottom: 16 }}>Удалить объявление?</h3>
+            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.6)', marginBottom: 24 }}>
+              Это действие нельзя отменить. Все отклики на это объявление также будут удалены.
+            </p>
+            
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button 
+                onClick={() => setShowDeleteConfirm(false)} 
+                style={buttonSecondaryStyle}
+              >
+                Отмена
+              </button>
+              <button 
+                onClick={async () => {
+                  setDeleteLoading(true)
+                  try {
+                    await listingsApi.delete(params.id!)
+                    router.push('/listings')
+                  } catch (e: any) {
+                    console.error('Delete error:', e)
+                    setShowDeleteConfirm(false)
+                  } finally {
+                    setDeleteLoading(false)
+                  }
+                }} 
+                disabled={deleteLoading}
+                style={{ ...buttonDangerStyle, opacity: deleteLoading ? 0.6 : 1 }}
+              >
+                <Trash2 size={18} /> 
+                {deleteLoading ? 'Удаление...' : 'Удалить'}
               </button>
             </div>
           </div>
