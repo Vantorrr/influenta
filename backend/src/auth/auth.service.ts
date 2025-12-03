@@ -60,8 +60,23 @@ export class AuthService {
         user.isActive = true;
         user.isVerified = false;
 
-        user = await this.usersRepository.save(user);
-        console.log('🟢 Created new user:', { id: user.id, username: user.username, firstName: user.firstName });
+        try {
+          user = await this.usersRepository.save(user);
+          console.log('🟢 Created new user:', { id: user.id, username: user.username, firstName: user.firstName });
+        } catch (saveError: any) {
+          // Race condition: пользователь был создан другим запросом, ищем его
+          if (saveError.code === '23505') {
+            console.log('⚠️ User already exists (race condition), fetching...');
+            user = await this.usersRepository.findOne({
+              where: { telegramId: telegramUser.id.toString() }
+            });
+            if (!user) {
+              throw new BadRequestException('Failed to create or find user');
+            }
+          } else {
+            throw saveError;
+          }
+        }
       } else {
         console.log('🟡 Existing user before update:', { id: user.id, username: user.username, firstName: user.firstName });
         // Обновляем данные существующего пользователя: приоритет свежим данным из API
