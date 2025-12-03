@@ -49,38 +49,33 @@ export default function AdminDashboardPage() {
     }
   }
 
-  // Вычисляем процент верификации
-  const verificationRate = stats && stats.totalUsers > 0 
-    ? Math.round((stats.verifiedUsers / stats.totalUsers) * 100) 
-    : 0
-  
   // Преобразуем данные API в формат для отображения
   const currentStats = stats ? [
     {
       title: 'Всего пользователей',
       value: stats.totalUsers || 0,
-      change: stats.totalUsers > 0 ? 15 : 0, // Рост пользователей
+      change: stats.userGrowth || 0, // Реальный рост за 7 дней
       icon: Users,
       color: 'from-blue-500 to-cyan-500',
     },
     {
       title: 'Верифицированных',
       value: stats.verifiedUsers || 0,
-      change: verificationRate, // Процент верификации
+      change: stats.verificationRate || 0, // Процент верификации
       icon: UserCheck,
       color: 'from-purple-500 to-pink-500',
     },
     {
       title: 'Активных объявлений',
       value: stats.activeListings || 0,
-      change: stats.activeListings > 0 ? 8 : 0, // Рост объявлений
+      change: stats.listingGrowth || 0, // Реальный рост за 7 дней
       icon: FileText,
       color: 'from-orange-500 to-red-500',
     },
     {
       title: 'Комиссия платформы',
       value: stats.platformCommission || 0,
-      change: stats.platformCommission > 0 ? 12 : 0, // Рост комиссии
+      change: 0, // Комиссия пока статичная
       icon: RubIcon,
       color: 'from-green-500 to-emerald-500',
     },

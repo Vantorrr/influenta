@@ -23,13 +23,44 @@ export class AdminService {
   ) {}
 
   async getPlatformStats() {
-    const [totalUsers, totalBloggers, totalAdvertisers, activeListings, verifiedUsers] = await Promise.all([
+    // Дата 7 дней назад для сравнения
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const [
+      totalUsers, 
+      totalBloggers, 
+      totalAdvertisers, 
+      activeListings, 
+      verifiedUsers,
+      // Новые за последние 7 дней
+      newUsersWeek,
+      newListingsWeek,
+      newVerifiedWeek
+    ] = await Promise.all([
       this.usersRepository.count(),
       this.bloggersRepository.count().catch(() => 0),
       this.advertisersRepository.count().catch(() => 0),
       this.listingsRepository.count({ where: { status: ListingStatus.ACTIVE } }).catch(() => 0),
       this.usersRepository.count({ where: { isVerified: true } }),
+      // Считаем новых за неделю
+      this.usersRepository.createQueryBuilder('user')
+        .where('user.createdAt > :date', { date: sevenDaysAgo })
+        .getCount().catch(() => 0),
+      this.listingsRepository.createQueryBuilder('listing')
+        .where('listing.createdAt > :date', { date: sevenDaysAgo })
+        .andWhere('listing.status = :status', { status: ListingStatus.ACTIVE })
+        .getCount().catch(() => 0),
+      this.usersRepository.createQueryBuilder('user')
+        .where('user.isVerified = true')
+        .andWhere('user.updatedAt > :date', { date: sevenDaysAgo })
+        .getCount().catch(() => 0)
     ]);
+
+    // Вычисляем проценты роста
+    const userGrowth = totalUsers > 0 ? Math.round((newUsersWeek / totalUsers) * 100) : 0;
+    const listingGrowth = activeListings > 0 ? Math.round((newListingsWeek / activeListings) * 100) : 0;
+    const verificationRate = totalUsers > 0 ? Math.round((verifiedUsers / totalUsers) * 100) : 0;
 
     return {
       totalUsers,
@@ -38,6 +69,12 @@ export class AdminService {
       activeListings,
       verifiedUsers,
       platformCommission: this.configService.get('app.platform.commission') ?? 0,
+      // Добавляем данные для графиков роста
+      userGrowth,           // Процент новых пользователей за неделю
+      listingGrowth,        // Процент новых объявлений за неделю
+      verificationRate,     // Процент верифицированных от всех
+      newUsersWeek,         // Количество новых за неделю
+      newListingsWeek,      // Количество новых объявлений за неделю
     };
   }
 
