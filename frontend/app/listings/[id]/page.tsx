@@ -137,6 +137,10 @@ export default function ListingDetailsPage() {
   const [editError, setEditError] = useState<string | null>(null)
   const [editData, setEditData] = useState<{ title: string; description: string; budget: string; format: string }>({ title: '', description: '', budget: '', format: 'post' })
 
+  // Delete confirmation state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+
   useEffect(() => {
     if (!user || !params?.id) return
     ;(async () => {
@@ -371,13 +375,7 @@ export default function ListingDetailsPage() {
                 <Edit size={18} /> Редактировать
               </button>
               <button 
-                onClick={async () => {
-                  if (!confirm('Удалить объявление?')) return
-                  try {
-                    await listingsApi.delete(params.id!)
-                    router.push('/listings')
-                  } catch (e) { alert('Ошибка') }
-                }} 
+                onClick={() => setShowDeleteConfirm(true)} 
                 style={buttonDangerStyle}
               >
                 <Trash2 size={18} /> Удалить

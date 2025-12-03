@@ -190,6 +190,12 @@ export class ListingsService {
       throw new ForbiddenException('You can only delete your own listings');
     }
 
+    // Сначала удаляем все связанные отклики
+    await this.listingsRepository.manager.query(
+      `DELETE FROM responses WHERE "listingId" = $1`,
+      [id]
+    );
+
     await this.listingsRepository.remove(listing);
     return { success: true };
   }

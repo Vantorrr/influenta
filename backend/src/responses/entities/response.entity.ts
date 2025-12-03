@@ -12,7 +12,7 @@ export enum ResponseStatus {
 
 @Entity('responses')
 export class Response extends BaseEntity {
-  @ManyToOne(() => Listing)
+  @ManyToOne(() => Listing, { onDelete: 'CASCADE' })
   @JoinColumn()
   listing: Listing;
 
