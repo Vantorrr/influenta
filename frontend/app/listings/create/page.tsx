@@ -290,12 +290,46 @@ export default function CreateListingPage() {
               <div className="mt-2">
                 <label className="label">Дедлайн</label>
                 <div className="relative">
-                  <Input
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const input = document.getElementById('deadline-input') as HTMLInputElement
+                      if (input) input.showPicker?.() || input.click()
+                    }}
+                    className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-[#1C1E20] border border-white/10 text-left transition-colors hover:bg-white/5 active:bg-white/10"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-5 h-5 text-blue-400" />
+                      <span className={formData.deadline ? 'text-white' : 'text-white/40'}>
+                        {formData.deadline 
+                          ? new Date(formData.deadline).toLocaleDateString('ru-RU', { 
+                              day: 'numeric', 
+                              month: 'long', 
+                              year: 'numeric' 
+                            })
+                          : 'Выбрать дату'
+                        }
+                      </span>
+                    </div>
+                    {formData.deadline && (
+                      <span 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setFormData(prev => ({ ...prev, deadline: '' }))
+                        }}
+                        className="text-white/40 hover:text-white/60 text-sm"
+                      >
+                        ✕
+                      </span>
+                    )}
+                  </button>
+                  <input
+                    id="deadline-input"
                     type="date"
                     value={formData.deadline}
                     onChange={(e) => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
                     min={new Date().toISOString().split('T')[0]}
-                    className="w-full block appearance-none"
+                    className="absolute opacity-0 pointer-events-none w-0 h-0"
                   />
                 </div>
                 <p className="text-xs text-telegram-textSecondary mt-1">

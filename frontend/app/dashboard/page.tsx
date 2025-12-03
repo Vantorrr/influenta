@@ -107,7 +107,8 @@ export default function DashboardPage() {
       icon: Briefcase,
       color: 'text-blue-400',
       bg: 'bg-blue-500/10',
-      border: 'border-blue-500/20'
+      border: 'border-blue-500/20',
+      action: () => router.push('/listings')
     },
     {
       title: 'Отклики',

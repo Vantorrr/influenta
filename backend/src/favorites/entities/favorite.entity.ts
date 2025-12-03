@@ -19,3 +19,4 @@ export class Favorite extends BaseEntity {
   bloggerId: string; // Кого добавили (блогер)
 }
 
+
