@@ -254,8 +254,8 @@ ${isAdmin ? '• 🛠 Управлять платформой (админ пан
 
   async sendMessageWithButton(chatId: string | number, text: string, buttonText: string, appPath: string) {
     try {
-      const botUsername = process.env.TELEGRAM_BOT_USERNAME || 'influentaa_bot';
-      const webAppUrl = `https://t.me/${botUsername}/app?startapp=${appPath.replace(/\//g, '-')}`;
+      const frontendUrl = process.env.FRONTEND_URL || 'https://influentaa.vercel.app';
+      const webAppUrl = `${frontendUrl}/${appPath}`;
       
       console.log('📨 sendMessageWithButton called with:', {
         chatId,
@@ -273,7 +273,7 @@ ${isAdmin ? '• 🛠 Управлять платформой (админ пан
           inline_keyboard: [[
             {
               text: buttonText,
-              url: webAppUrl
+              web_app: { url: webAppUrl }
             }
           ]]
         }
