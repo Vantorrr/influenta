@@ -1,6 +1,5 @@
 import { Entity, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, PrimaryGeneratedColumn } from 'typeorm';
 import { Advertiser } from '@/advertisers/entities/advertiser.entity';
-import { Blogger } from '@/bloggers/entities/blogger.entity';
 import { User } from '@/users/entities/user.entity';
 
 export enum OfferStatus {
@@ -22,9 +21,9 @@ export class Offer {
   @Column()
   advertiserId: string;
 
-  @ManyToOne(() => Blogger, { eager: true })
+  @ManyToOne(() => User, { eager: true })
   @JoinColumn({ name: 'bloggerId' })
-  blogger: Blogger;
+  blogger: User;
 
   @Column()
   bloggerId: string;

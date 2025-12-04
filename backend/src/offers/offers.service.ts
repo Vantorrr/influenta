@@ -136,7 +136,7 @@ ${createOfferDto.message || 'Без сообщения'}`;
 
     const [offers, total] = await this.offersRepository.findAndCount({
       where: { advertiserId: advertiser.id },
-      relations: ['blogger', 'blogger.user'],
+      relations: ['blogger'], // blogger теперь User напрямую
       order: { createdAt: 'DESC' },
     });
 
@@ -146,16 +146,16 @@ ${createOfferDto.message || 'Без сообщения'}`;
   async findOne(id: string, user: User) {
     const offer = await this.offersRepository.findOne({
       where: { id },
-      relations: ['advertiser', 'advertiser.user', 'blogger', 'blogger.user'],
+      relations: ['advertiser', 'advertiser.user', 'blogger'],
     });
 
     if (!offer) {
       throw new NotFoundException('Предложение не найдено');
     }
 
-    // Проверяем доступ
+    // Проверяем доступ (blogger теперь это User напрямую)
     const canAccess = 
-      (user.role === 'blogger' && offer.blogger?.userId === user.id) ||
+      (user.role === 'blogger' && offer.blogger?.id === user.id) ||
       (user.role === 'advertiser' && offer.advertiser?.userId === user.id);
 
     if (!canAccess) {
@@ -168,8 +168,8 @@ ${createOfferDto.message || 'Без сообщения'}`;
   async respond(id: string, respondDto: RespondOfferDto, user: User) {
     const offer = await this.findOne(id, user);
 
-    // Только блогер может отвечать на предложение
-    if (user.role !== 'blogger' || offer.blogger?.userId !== user.id) {
+    // Только блогер может отвечать на предложение (blogger теперь User напрямую)
+    if (user.role !== 'blogger' || offer.blogger?.id !== user.id) {
       throw new ForbiddenException('Только блогер может отвечать на предложение');
     }
 
@@ -185,7 +185,7 @@ ${createOfferDto.message || 'Без сообщения'}`;
       try {
         const chat = await this.messagesService.createChat(
           offer.advertiser.userId,
-          offer.blogger.userId,
+          offer.blogger.id, // blogger теперь User, используем id
           `Предложение: ${offer.projectTitle || 'Сотрудничество'}`
         );
 
@@ -211,8 +211,8 @@ ${createOfferDto.message || 'Без сообщения'}`;
     if (advertiserUser?.telegramId) {
       try {
         const message = respondDto.accept
-          ? `✅ <b>Ваше предложение принято!</b>\n\nБлогер ${offer.blogger?.user?.firstName || 'Блогер'} принял ваше предложение.\nОткройте приложение для общения.`
-          : `❌ <b>Предложение отклонено</b>\n\nБлогер ${offer.blogger?.user?.firstName || 'Блогер'} отклонил ваше предложение.\n${respondDto.rejectionReason ? `Причина: ${respondDto.rejectionReason}` : ''}`;
+          ? `✅ <b>Ваше предложение принято!</b>\n\nБлогер ${offer.blogger?.firstName || 'Блогер'} принял ваше предложение.\nОткройте приложение для общения.`
+          : `❌ <b>Предложение отклонено</b>\n\nБлогер ${offer.blogger?.firstName || 'Блогер'} отклонил ваше предложение.\n${respondDto.rejectionReason ? `Причина: ${respondDto.rejectionReason}` : ''}`;
 
         await this.telegramService.sendMessage(advertiserUser.telegramId, message);
       } catch (error) {
