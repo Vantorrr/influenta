@@ -290,14 +290,15 @@ export default function CreateListingPage() {
               <div className="mt-2">
                 <label className="label">Дедлайн</label>
                 <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const input = document.getElementById('deadline-input') as HTMLInputElement
-                      if (input) input.showPicker?.() || input.click()
-                    }}
-                    className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-[#1C1E20] border border-white/10 text-left transition-colors hover:bg-white/5 active:bg-white/10"
-                  >
+                  <input
+                    id="deadline-input"
+                    type="date"
+                    value={formData.deadline}
+                    onChange={(e) => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-[#1C1E20] border border-white/10 text-left transition-colors pointer-events-none">
                     <div className="flex items-center gap-3">
                       <Calendar className="w-5 h-5 text-blue-400" />
                       <span className={formData.deadline ? 'text-white' : 'text-white/40'}>
@@ -312,25 +313,19 @@ export default function CreateListingPage() {
                       </span>
                     </div>
                     {formData.deadline && (
-                      <span 
+                      <button
+                        type="button"
                         onClick={(e) => {
+                          e.preventDefault()
                           e.stopPropagation()
                           setFormData(prev => ({ ...prev, deadline: '' }))
                         }}
-                        className="text-white/40 hover:text-white/60 text-sm"
+                        className="text-white/40 hover:text-white/60 text-sm pointer-events-auto z-20 relative"
                       >
                         ✕
-                      </span>
+                      </button>
                     )}
-                  </button>
-                  <input
-                    id="deadline-input"
-                    type="date"
-                    value={formData.deadline}
-                    onChange={(e) => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="absolute opacity-0 pointer-events-none w-0 h-0"
-                  />
+                  </div>
                 </div>
                 <p className="text-xs text-telegram-textSecondary mt-1">
                   Необязательно. До какого числа нужно выполнить задание
