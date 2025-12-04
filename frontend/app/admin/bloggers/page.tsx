@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { 
   Search as SearchIcon, 
@@ -32,10 +31,13 @@ export default function AdminBloggersPage() {
   // Восстановление скролла на списке админских блогеров
   useScrollRestoration()
 
+  // Debounced search
   useEffect(() => {
     if (!user) return
-    ;(async () => {
+    
+    const timer = setTimeout(async () => {
       try {
+        setIsLoading(true)
         const filters: any = {}
         if (search && search.trim().length > 0) filters.search = search.trim()
         const data = await bloggersApi.search(filters, 1, 500)
@@ -52,8 +54,10 @@ export default function AdminBloggersPage() {
       } finally {
         setIsLoading(false)
       }
-    })()
-  }, [user])
+    }, 300) // 300ms debounce
+    
+    return () => clearTimeout(timer)
+  }, [user, search])
 
   const stats = {
     total: bloggers.length,
@@ -140,9 +144,9 @@ export default function AdminBloggersPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           icon={<SearchIcon className="w-4 h-4" />}
-          className="flex-1"
+          className="flex-1 touch-manipulation"
         />
-        <Button variant="secondary">
+        <Button variant="secondary" className="touch-manipulation">
           <SlidersHorizontal className="w-4 h-4 mr-2" />
           Фильтры
         </Button>
@@ -150,15 +154,14 @@ export default function AdminBloggersPage() {
 
       {/* Bloggers List */}
       <div className="space-y-4">
-        {bloggers.map((blogger, index) => (
-          <motion.div
-            key={blogger.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
+        {bloggers.map((blogger) => (
+          <Link 
+            key={blogger.id} 
+            href={`/bloggers/${blogger.id}`} 
+            scroll={false}
+            className="block touch-manipulation"
           >
-            <Link href={`/bloggers/${blogger.id}`} scroll={false}>
-              <Card hover className="cursor-pointer">
+            <Card hover className="cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4 min-w-0">
                   <Avatar
@@ -228,8 +231,7 @@ export default function AdminBloggersPage() {
                 </div>
               </CardContent>
             </Card>
-            </Link>
-          </motion.div>
+          </Link>
         ))}
       </div>
     </div>
