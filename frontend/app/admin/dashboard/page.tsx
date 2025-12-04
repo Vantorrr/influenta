@@ -21,9 +21,20 @@ import { Badge } from '@/components/ui/badge'
 import { formatNumber, formatPrice, getRelativeTime } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 
+interface AdminStats {
+  totalUsers: number
+  verifiedUsers: number
+  activeListings: number
+  platformCommission: number
+  totalRevenue?: number
+  userGrowth?: number
+  verificationRate?: number
+  listingGrowth?: number
+}
+
 export default function AdminDashboardPage() {
   const { user, isAdmin, isSuperAdmin } = useAuth()
-  const [stats, setStats] = useState(null)
+  const [stats, setStats] = useState<AdminStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -204,7 +215,7 @@ export default function AdminDashboardPage() {
                 Telegram ID: {user.telegramId}
               </p>
             </div>
-            <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+            <Badge variant="default" className="bg-white/20 text-white border-white/30">
               {isSuperAdmin ? 'Супер Админ #1' : 'Админ #2'}
             </Badge>
           </div>
