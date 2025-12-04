@@ -72,13 +72,12 @@ export class OffersService {
     const bloggerUser = blogger.user as any;
     console.log('🔍 Sending offer notification to blogger:', {
       bloggerId: blogger.id,
-      userId: bloggerUser?.id,
+      telegramId: bloggerUser?.telegramId,
       firstName: bloggerUser?.firstName,
-      lastName: bloggerUser?.lastName,
     });
     
-    // Используем id вместо telegramId, так как в User entity id и есть telegramId
-    if (bloggerUser?.id) {
+    // Используем telegramId для отправки уведомлений
+    if (bloggerUser?.telegramId) {
       try {
         const message = `🎯 <b>Новое предложение о сотрудничестве!</b>
 
@@ -87,13 +86,13 @@ export class OffersService {
 ${createOfferDto.projectTitle ? `\nПроект: ${createOfferDto.projectTitle}` : ''}
 
 Сообщение:
-${createOfferDto.message}`;
+${createOfferDto.message || 'Без сообщения'}`;
 
-        console.log('📤 Attempting to send message to Telegram ID:', bloggerUser.id);
+        console.log('📤 Attempting to send message to Telegram ID:', bloggerUser.telegramId);
         
         // Отправляем сообщение с кнопкой
         await this.telegramService.sendMessageWithButton(
-          bloggerUser.id,
+          bloggerUser.telegramId,
           message,
           'Посмотреть предложение',
           `offers/${savedOffer.id}`
@@ -108,7 +107,7 @@ ${createOfferDto.message}`;
         });
       }
     } else {
-      console.warn('⚠️ No Telegram ID found for blogger');
+      console.warn('⚠️ No Telegram ID found for blogger:', bloggerUser);
     }
 
     return savedOffer;
@@ -156,8 +155,8 @@ ${createOfferDto.message}`;
 
     // Проверяем доступ
     const canAccess = 
-      (user.role === 'blogger' && offer.blogger.userId === user.id) ||
-      (user.role === 'advertiser' && offer.advertiser.userId === user.id);
+      (user.role === 'blogger' && offer.blogger?.userId === user.id) ||
+      (user.role === 'advertiser' && offer.advertiser?.userId === user.id);
 
     if (!canAccess) {
       throw new ForbiddenException('Нет доступа к этому предложению');
@@ -170,7 +169,7 @@ ${createOfferDto.message}`;
     const offer = await this.findOne(id, user);
 
     // Только блогер может отвечать на предложение
-    if (user.role !== 'blogger' || offer.bloggerId !== user.id) {
+    if (user.role !== 'blogger' || offer.blogger?.userId !== user.id) {
       throw new ForbiddenException('Только блогер может отвечать на предложение');
     }
 
@@ -208,14 +207,14 @@ ${createOfferDto.message}`;
     await this.offersRepository.save(offer);
 
     // Уведомляем рекламодателя
-    const advertiserUser = offer.advertiser.user as any;
-      if (advertiserUser?.id) {
+    const advertiserUser = offer.advertiser?.user as any;
+    if (advertiserUser?.telegramId) {
       try {
         const message = respondDto.accept
-          ? `✅ <b>Ваше предложение принято!</b>\n\nБлогер ${offer.blogger.user.firstName} принял ваше предложение.\nОткройте приложение для общения.`
-          : `❌ <b>Предложение отклонено</b>\n\nБлогер ${offer.blogger.user.firstName} отклонил ваше предложение.\n${respondDto.rejectionReason ? `Причина: ${respondDto.rejectionReason}` : ''}`;
+          ? `✅ <b>Ваше предложение принято!</b>\n\nБлогер ${offer.blogger?.user?.firstName || 'Блогер'} принял ваше предложение.\nОткройте приложение для общения.`
+          : `❌ <b>Предложение отклонено</b>\n\nБлогер ${offer.blogger?.user?.firstName || 'Блогер'} отклонил ваше предложение.\n${respondDto.rejectionReason ? `Причина: ${respondDto.rejectionReason}` : ''}`;
 
-        await this.telegramService.sendMessage(advertiserUser.id, message);
+        await this.telegramService.sendMessage(advertiserUser.telegramId, message);
       } catch (error) {
         console.error('Failed to send Telegram notification:', error);
       }
