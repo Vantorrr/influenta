@@ -59,9 +59,10 @@ export class OffersService {
       throw new BadRequestException('У вас уже есть активное предложение этому блогеру');
     }
 
-    // Создаем предложение
+    // Создаем предложение (message не может быть null в БД)
     const offer = this.offersRepository.create({
       ...createOfferDto,
+      message: createOfferDto.message || '', // Пустая строка если не указано
       advertiserId: advertiser.id,
       status: OfferStatus.PENDING,
     });
