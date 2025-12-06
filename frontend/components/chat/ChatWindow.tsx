@@ -67,7 +67,7 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isTyping, setIsTyping] = useState(false)
-  const [showProposal, setShowProposal] = useState(true)
+  const [isProposalExpanded, setIsProposalExpanded] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const typingTimer = useRef<NodeJS.Timeout | null>(null)
 
@@ -410,17 +410,22 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
           </div>
         </div>
 
-        {/* Плашка с предложением */}
-        {showProposal && proposal && (proposal.message || proposal.proposedPrice > 0) && (
-          <div style={{
-            margin: '0 16px',
-            marginTop: 12,
-            padding: '12px 14px',
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: 12,
-            position: 'relative'
-          }}>
+        {/* Плашка с предложением - сворачиваемая */}
+        {proposal && (proposal.message || proposal.proposedPrice > 0) && (
+          <div 
+            onClick={() => !isProposalExpanded && setIsProposalExpanded(true)}
+            style={{
+              margin: '0 16px',
+              marginTop: 12,
+              padding: isProposalExpanded ? '12px 14px' : '10px 14px',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 12,
+              position: 'relative',
+              cursor: isProposalExpanded ? 'default' : 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
             {/* Тонкая линия сверху */}
             <div style={{
               position: 'absolute',
@@ -428,78 +433,122 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
               left: 12,
               right: 12,
               height: 1,
-              background: 'linear-gradient(90deg, transparent, rgba(59,130,246,0.4), transparent)'
+              background: 'linear-gradient(90deg, transparent, rgba(59,130,246,0.4), transparent)',
+              opacity: isProposalExpanded ? 1 : 0.5
             }} />
 
-            {/* Заголовок */}
-            <div style={{
-              fontSize: 11,
-              fontWeight: 500,
-              color: 'rgba(255,255,255,0.5)',
-              marginBottom: 10,
-              textTransform: 'uppercase',
-              letterSpacing: '0.8px'
-            }}>
-              Условия предложения
-            </div>
-
-            {/* Цена и бюджет */}
-            {proposal.proposedPrice > 0 && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'baseline',
-                gap: 8,
-                marginBottom: proposal.message ? 10 : 0
-              }}>
-                <span style={{
-                  fontSize: 20,
-                  fontWeight: 700,
-                  color: 'white'
+            {isProposalExpanded ? (
+              <>
+                {/* Развернутый режим */}
+                <div style={{
+                  fontSize: 11,
+                  fontWeight: 500,
+                  color: 'rgba(255,255,255,0.5)',
+                  marginBottom: 10,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.8px'
                 }}>
-                  {formatPrice(proposal.proposedPrice)}
-                </span>
-                {proposal.listingBudget > 0 && (
-                  <span style={{ 
-                    fontSize: 13, 
-                    color: 'rgba(255,255,255,0.35)'
+                  Условия предложения
+                </div>
+
+                {proposal.proposedPrice > 0 && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: 8,
+                    marginBottom: proposal.message ? 10 : 0
                   }}>
-                    / {formatPrice(proposal.listingBudget)}
-                  </span>
+                    <span style={{
+                      fontSize: 20,
+                      fontWeight: 700,
+                      color: 'white'
+                    }}>
+                      {formatPrice(proposal.proposedPrice)}
+                    </span>
+                    {proposal.listingBudget > 0 && (
+                      <span style={{ 
+                        fontSize: 13, 
+                        color: 'rgba(255,255,255,0.35)'
+                      }}>
+                        / {formatPrice(proposal.listingBudget)}
+                      </span>
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
 
-            {/* Сообщение */}
-            {proposal.message && (
-              <div style={{
-                fontSize: 14,
-                color: 'rgba(255,255,255,0.7)',
-                lineHeight: 1.5
-              }}>
-                {proposal.message}
-              </div>
-            )}
+                {proposal.message && (
+                  <div style={{
+                    fontSize: 14,
+                    color: 'rgba(255,255,255,0.7)',
+                    lineHeight: 1.5
+                  }}>
+                    {proposal.message}
+                  </div>
+                )}
 
-            {/* Кнопка скрыть - минималистичная */}
-            <button 
-              onClick={() => setShowProposal(false)}
-              style={{
-                position: 'absolute',
-                top: 10,
-                right: 10,
-                width: 20,
-                height: 20,
-                background: 'transparent',
-                border: 'none',
-                color: 'rgba(255,255,255,0.3)',
-                cursor: 'pointer',
-                fontSize: 18,
-                lineHeight: '20px',
-                padding: 0
-              }}
-            >
-              ×
-            </button>
+                {/* Кнопка свернуть */}
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsProposalExpanded(false)
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: 10,
+                    right: 10,
+                    width: 20,
+                    height: 20,
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'rgba(255,255,255,0.3)',
+                    cursor: 'pointer',
+                    fontSize: 16,
+                    lineHeight: '20px',
+                    padding: 0
+                  }}
+                >
+                  ▼
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Свернутый режим - компактная строка */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10
+                }}>
+                  <span style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: 'rgba(255,255,255,0.5)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Условия
+                  </span>
+                  <div style={{
+                    width: 1,
+                    height: 12,
+                    background: 'rgba(255,255,255,0.1)'
+                  }} />
+                  <span style={{
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: 'white'
+                  }}>
+                    {formatPrice(proposal.proposedPrice)}
+                  </span>
+                  <span style={{
+                    fontSize: 16,
+                    marginLeft: 'auto',
+                    color: 'rgba(255,255,255,0.3)'
+                  }}>
+                    ▶
+                  </span>
+                </div>
+              </>
+            )}
           </div>
         )}
 
