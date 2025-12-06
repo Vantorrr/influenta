@@ -173,7 +173,9 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
       const onTypingEvent = (data: { responseId: string; userId: string }) => {
         if (!data || data.responseId !== responseId || data.userId === currentUserId) return
         setIsTyping(true)
-        if (typingTimer.current) clearTimeout(typingTimer.current)
+        if (typingTimer.current !== null) {
+          clearTimeout(typingTimer.current)
+        }
         typingTimer.current = setTimeout(() => setIsTyping(false), 1500)
       }
 
