@@ -82,18 +82,17 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end justify-center"
+        className="fixed inset-0 z-50 bg-black/50 flex items-end md:items-center justify-center"
         onClick={onClose}
       >
         <motion.div
-          initial={{ y: '100%' }}
-          animate={{ y: 0 }}
-          exit={{ y: '100%' }}
-          transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-          className="w-full h-[95vh]"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.9 }}
+          className="w-full max-w-2xl"
           onClick={(e) => e.stopPropagation()}
         >
-          <Card className="h-full flex flex-col rounded-t-3xl rounded-b-none border-t border-white/10">
+          <Card className="mx-4 mb-4 md:mb-0 max-h-[90vh] flex flex-col">
             <div className="p-6 border-b border-telegram-border flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div>
@@ -113,7 +112,7 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
               </div>
             </div>
 
-            <div className="p-6 pb-[320px] overflow-y-auto flex-1 min-h-0 overscroll-contain">
+            <div className="p-6 pb-8 overflow-y-auto flex-1 min-h-0 overscroll-contain">
               <div className="space-y-5">
                 {/* Название проекта */}
                 <div>
@@ -193,43 +192,13 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
                       Дедлайн
                     </span>
                   </label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      value={deadline}
-                      onChange={(e) => setDeadline(e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    />
-                    <div className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-[#1C1E20] border border-white/10 text-left transition-colors pointer-events-none">
-                      <div className="flex items-center gap-3">
-                        <Calendar className="w-5 h-5 text-blue-400" />
-                        <span className={deadline ? 'text-white' : 'text-white/40'}>
-                          {deadline 
-                            ? new Date(deadline).toLocaleDateString('ru-RU', { 
-                                day: 'numeric', 
-                                month: 'long', 
-                                year: 'numeric' 
-                              })
-                            : 'Выбрать дату'
-                          }
-                        </span>
-                      </div>
-                      {deadline && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            setDeadline('')
-                          }}
-                          className="text-white/40 hover:text-white/60 text-sm pointer-events-auto z-20 relative"
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  <Input
+                    type="date"
+                    value={deadline}
+                    onChange={(e) => setDeadline(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full"
+                  />
                   <p className="text-xs text-telegram-textSecondary mt-1">
                     Когда должен быть опубликован контент
                   </p>
@@ -281,7 +250,7 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
               </div>
             </div>
 
-            <div className="p-6 border-t border-telegram-border grid grid-cols-1 sm:grid-cols-2 gap-3 flex-shrink-0 bg-telegram-bg pb-8">
+            <div className="p-6 border-t border-telegram-border grid grid-cols-1 sm:grid-cols-2 gap-3 flex-shrink-0 bg-telegram-bg pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
               <Button
                 variant="secondary"
                 onClick={onClose}
