@@ -496,18 +496,29 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
                     position: 'absolute',
                     top: 10,
                     right: 10,
-                    width: 20,
-                    height: 20,
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'rgba(255,255,255,0.3)',
+                    width: 24,
+                    height: 24,
+                    borderRadius: 6,
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: 'rgba(255,255,255,0.5)',
                     cursor: 'pointer',
-                    fontSize: 16,
-                    lineHeight: '20px',
-                    padding: 0
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 10,
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.1)'
+                    e.currentTarget.style.borderColor = 'rgba(59,130,246,0.3)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)'
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'
                   }}
                 >
-                  ▼
+                  ▲
                 </button>
               </>
             ) : (
@@ -539,13 +550,21 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
                   }}>
                     {formatPrice(proposal.proposedPrice)}
                   </span>
-                  <span style={{
-                    fontSize: 16,
+                  <div style={{
                     marginLeft: 'auto',
-                    color: 'rgba(255,255,255,0.3)'
+                    width: 24,
+                    height: 24,
+                    borderRadius: 6,
+                    background: 'rgba(59,130,246,0.1)',
+                    border: '1px solid rgba(59,130,246,0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 10,
+                    color: 'rgba(59,130,246,0.8)'
                   }}>
-                    ▶
-                  </span>
+                    ▼
+                  </div>
                 </div>
               </>
             )}
