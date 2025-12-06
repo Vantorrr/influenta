@@ -46,6 +46,11 @@ interface Chat {
   }
   unreadCount: number
   status: 'active' | 'accepted' | 'rejected'
+  proposal?: {
+    message: string
+    proposedPrice: number
+    listingBudget: number
+  }
 }
 
 export default function MessagesPage() {
@@ -136,6 +141,11 @@ function MessagesPageContent() {
               },
               unreadCount: Number(row.unreadCount) || 0,
               status: 'active',
+              proposal: row.response ? {
+                message: String(row.response.message || ''),
+                proposedPrice: Number(row.response.proposedPrice) || 0,
+                listingBudget: Number(row.response.listing?.budget) || 0,
+              } : undefined,
             }
           })
         setChats(normalized)

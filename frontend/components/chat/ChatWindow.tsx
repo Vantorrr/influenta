@@ -34,10 +34,31 @@ interface Message {
   isRead: boolean
 }
 
+interface ProposalInfo {
+  message: string
+  proposedPrice: number
+  listingBudget: number
+}
+
 interface ChatWindowProps {
-  chat: any
+  chat: {
+    responseId: string
+    listingTitle: string
+    otherUser: {
+      firstName: string
+      lastName: string
+      photoUrl?: string
+    }
+    status?: string
+    proposal?: ProposalInfo
+  }
   currentUserId: string
   onBack: () => void
+}
+
+function formatPrice(price: number): string {
+  if (!price) return '0 ₽'
+  return price.toLocaleString('ru-RU') + ' ₽'
 }
 
 export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
@@ -46,27 +67,17 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isTyping, setIsTyping] = useState(false)
+  const [showProposal, setShowProposal] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const typingTimer = useRef<any>(null)
+  const typingTimer = useRef<NodeJS.Timeout | null>(null)
 
-  // Безопасное получение данных
-  let responseId = ''
-  let otherFirstName = 'Пользователь'
-  let otherLastName = ''
-  let otherPhotoUrl = ''
-  let listingTitle = 'Объявление'
-  let chatStatus = ''
-  
-  try {
-    responseId = chat?.responseId ? String(chat.responseId) : ''
-    otherFirstName = chat?.otherUser?.firstName ? String(chat.otherUser.firstName) : 'Пользователь'
-    otherLastName = chat?.otherUser?.lastName ? String(chat.otherUser.lastName) : ''
-    otherPhotoUrl = chat?.otherUser?.photoUrl ? String(chat.otherUser.photoUrl) : ''
-    listingTitle = chat?.listingTitle ? String(chat.listingTitle) : 'Объявление'
-    chatStatus = chat?.status ? String(chat.status) : ''
-  } catch (e) {
-    console.error('Error parsing chat data:', e)
-  }
+  const responseId = chat.responseId
+  const otherFirstName = chat.otherUser.firstName
+  const otherLastName = chat.otherUser.lastName
+  const otherPhotoUrl = chat.otherUser.photoUrl
+  const listingTitle = chat.listingTitle
+  const chatStatus = chat.status || ''
+  const proposal = chat.proposal
 
   useEffect(() => {
     if (!responseId) {
@@ -159,10 +170,10 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
         }
       }
 
-      const onTypingEvent = (data: any) => {
+      const onTypingEvent = (data: { responseId: string; userId: string }) => {
         if (!data || data.responseId !== responseId || data.userId === currentUserId) return
         setIsTyping(true)
-        clearTimeout(typingTimer.current)
+        if (typingTimer.current) clearTimeout(typingTimer.current)
         typingTimer.current = setTimeout(() => setIsTyping(false), 1500)
       }
 
@@ -396,6 +407,100 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
             </div>
           </div>
         </div>
+
+        {/* Плашка с предложением */}
+        {showProposal && proposal && (proposal.message || proposal.proposedPrice > 0) && (
+          <div style={{
+            margin: '12px 16px 0',
+            padding: '12px 16px',
+            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15))',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            borderRadius: 16,
+            position: 'relative'
+          }}>
+            <button 
+              onClick={() => setShowProposal(false)}
+              style={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                width: 24,
+                height: 24,
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.1)',
+                border: 'none',
+                color: 'rgba(255,255,255,0.5)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 14
+              }}
+            >
+              ✕
+            </button>
+
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              marginBottom: 8
+            }}>
+              <span style={{ fontSize: 16 }}>📋</span>
+              <span style={{ 
+                fontSize: 12, 
+                fontWeight: 600, 
+                color: '#60a5fa',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                Предложение
+              </span>
+            </div>
+
+            {proposal.proposedPrice > 0 && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                marginBottom: proposal.message ? 10 : 0
+              }}>
+                <div style={{
+                  padding: '6px 12px',
+                  background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                  borderRadius: 20,
+                  color: 'white',
+                  fontWeight: 700,
+                  fontSize: 15
+                }}>
+                  {formatPrice(proposal.proposedPrice)}
+                </div>
+                {proposal.listingBudget > 0 && (
+                  <span style={{ 
+                    fontSize: 12, 
+                    color: 'rgba(255,255,255,0.4)' 
+                  }}>
+                    из бюджета {formatPrice(proposal.listingBudget)}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {proposal.message && (
+              <div style={{
+                fontSize: 14,
+                color: 'rgba(255,255,255,0.8)',
+                lineHeight: 1.5,
+                padding: '8px 12px',
+                background: 'rgba(0,0,0,0.2)',
+                borderRadius: 10,
+                borderLeft: '3px solid #60a5fa'
+              }}>
+                {proposal.message}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Сообщения */}
         <div style={{ 
