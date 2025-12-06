@@ -413,94 +413,93 @@ export function ChatWindow({ chat, currentUserId, onBack }: ChatWindowProps) {
         {/* Плашка с предложением */}
         {showProposal && proposal && (proposal.message || proposal.proposedPrice > 0) && (
           <div style={{
-            margin: '12px 16px 0',
-            padding: '12px 16px',
-            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15))',
-            border: '1px solid rgba(59, 130, 246, 0.3)',
-            borderRadius: 16,
+            margin: '0 16px',
+            marginTop: 12,
+            padding: '12px 14px',
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 12,
             position: 'relative'
           }}>
-            <button 
-              onClick={() => setShowProposal(false)}
-              style={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                width: 24,
-                height: 24,
-                borderRadius: '50%',
-                background: 'rgba(255,255,255,0.1)',
-                border: 'none',
-                color: 'rgba(255,255,255,0.5)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 14
-              }}
-            >
-              ✕
-            </button>
-
+            {/* Тонкая линия сверху */}
             <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              marginBottom: 8
+              position: 'absolute',
+              top: 0,
+              left: 12,
+              right: 12,
+              height: 1,
+              background: 'linear-gradient(90deg, transparent, rgba(59,130,246,0.4), transparent)'
+            }} />
+
+            {/* Заголовок */}
+            <div style={{
+              fontSize: 11,
+              fontWeight: 500,
+              color: 'rgba(255,255,255,0.5)',
+              marginBottom: 10,
+              textTransform: 'uppercase',
+              letterSpacing: '0.8px'
             }}>
-              <span style={{ fontSize: 16 }}>📋</span>
-              <span style={{ 
-                fontSize: 12, 
-                fontWeight: 600, 
-                color: '#60a5fa',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px'
-              }}>
-                Предложение
-              </span>
+              Условия предложения
             </div>
 
+            {/* Цена и бюджет */}
             {proposal.proposedPrice > 0 && (
               <div style={{
                 display: 'flex',
-                alignItems: 'center',
-                gap: 12,
+                alignItems: 'baseline',
+                gap: 8,
                 marginBottom: proposal.message ? 10 : 0
               }}>
-                <div style={{
-                  padding: '6px 12px',
-                  background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-                  borderRadius: 20,
-                  color: 'white',
+                <span style={{
+                  fontSize: 20,
                   fontWeight: 700,
-                  fontSize: 15
+                  color: 'white'
                 }}>
                   {formatPrice(proposal.proposedPrice)}
-                </div>
+                </span>
                 {proposal.listingBudget > 0 && (
                   <span style={{ 
-                    fontSize: 12, 
-                    color: 'rgba(255,255,255,0.4)' 
+                    fontSize: 13, 
+                    color: 'rgba(255,255,255,0.35)'
                   }}>
-                    из бюджета {formatPrice(proposal.listingBudget)}
+                    / {formatPrice(proposal.listingBudget)}
                   </span>
                 )}
               </div>
             )}
 
+            {/* Сообщение */}
             {proposal.message && (
               <div style={{
                 fontSize: 14,
-                color: 'rgba(255,255,255,0.8)',
-                lineHeight: 1.5,
-                padding: '8px 12px',
-                background: 'rgba(0,0,0,0.2)',
-                borderRadius: 10,
-                borderLeft: '3px solid #60a5fa'
+                color: 'rgba(255,255,255,0.7)',
+                lineHeight: 1.5
               }}>
                 {proposal.message}
               </div>
             )}
+
+            {/* Кнопка скрыть - минималистичная */}
+            <button 
+              onClick={() => setShowProposal(false)}
+              style={{
+                position: 'absolute',
+                top: 10,
+                right: 10,
+                width: 20,
+                height: 20,
+                background: 'transparent',
+                border: 'none',
+                color: 'rgba(255,255,255,0.3)',
+                cursor: 'pointer',
+                fontSize: 18,
+                lineHeight: '20px',
+                padding: 0
+              }}
+            >
+              ×
+            </button>
           </div>
         )}
 
