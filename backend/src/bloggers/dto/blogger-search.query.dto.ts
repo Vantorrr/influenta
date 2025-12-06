@@ -85,8 +85,8 @@ export class BloggerSearchQueryDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(500)
-  limit?: number = 500;
+  @Max(5000)
+  limit?: number = 2000;
 }
 
 

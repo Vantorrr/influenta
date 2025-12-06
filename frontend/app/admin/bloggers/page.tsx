@@ -40,7 +40,7 @@ export default function AdminBloggersPage() {
         setIsLoading(true)
         const filters: any = {}
         if (search && search.trim().length > 0) filters.search = search.trim()
-        const data = await bloggersApi.search(filters, 1, 500)
+        const data = await bloggersApi.search(filters, 1, 2000)
         const items = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : [])
         const sorted = [...items].sort((a: any, b: any) => {
           const aCreated = new Date(a?.user?.createdAt || a?.createdAt || 0).getTime()

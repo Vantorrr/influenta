@@ -98,7 +98,7 @@ function BloggersPageContent() {
       const query: any = { ...filters }
       if (search && search.trim().length > 0) query.search = search.trim()
       
-      const data = await bloggersApi.search(query, 1, 500)
+      const data = await bloggersApi.search(query, 1, 2000)
       const items = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : [])
       setBloggers(items)
     } catch (e: any) {
