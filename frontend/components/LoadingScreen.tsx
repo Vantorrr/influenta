@@ -14,6 +14,11 @@ export function LoadingScreen() {
   useEffect(() => {
     if (!isLoading) return // Не вибрируем если загрузка закончилась
     
+    // Звук Йо-хо-хо (если есть файл)
+    const audio = new Audio('/hohoho.mp3')
+    audio.volume = 0.6
+    audio.play().catch(() => {}) // Игнорируем ошибку автовоспроизведения
+
     const haptic = (window as any).Telegram?.WebApp?.HapticFeedback
     if (!haptic) return
     
