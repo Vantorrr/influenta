@@ -93,7 +93,7 @@ export class TelegramService {
         await this.sendMessage(chatId, text, {
           inline_keyboard: [
             [{ text: '🚀 Открыть Influenta', web_app: { url: frontendUrl } }],
-            [{ text: '🆘 Техподдержка', url: 'https://t.me/polina_khristya' }]
+            [{ text: '🆘 Техподдержка', url: 'https://t.me/influenta_support_bot' }]
           ]
         });
         success++;
@@ -198,7 +198,7 @@ ${isAdmin ? '• 🛠 Управлять платформой (админ пан
 
     // Direct support button
     keyboard.push([
-      { text: '🆘 Техподдержка', url: 'https://t.me/polina_khristya' }
+      { text: '🆘 Техподдержка', url: 'https://t.me/influenta_support_bot' }
     ]);
 
     return {
@@ -222,7 +222,7 @@ ${isAdmin ? '• 🛠 Управлять платформой (админ пан
 4. Выбирайте подходящих исполнителей
 
 <b>📞 Поддержка:</b>
-Пишите напрямую: <a href="https://t.me/polina_khristya">@polina_khristya</a>. Ответим быстро.`;
+Пишите нам: <a href="https://t.me/influenta_support_bot">@influenta_support_bot</a>. Ответим быстро.`;
   }
 
   async getStatsMessage() {
