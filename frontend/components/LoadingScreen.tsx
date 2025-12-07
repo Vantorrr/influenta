@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import Image from 'next/image'
+import { Snowfall } from './ui/Snowfall'
 
 export function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(true)
   const [progress, setProgress] = useState(0)
-  const [loadingText, setLoadingText] = useState('Запуск платформы...')
+  const [loadingText, setLoadingText] = useState('Хо-хо-хо! 🎅 Загружаем подарки...')
 
   // Вибрация — отдельный эффект, зависит от isLoading
   useEffect(() => {
@@ -71,6 +71,10 @@ export function LoadingScreen() {
             }} 
           />
 
+          <div className="fixed inset-0 z-0">
+            <Snowfall />
+          </div>
+
           <div className="relative z-10 flex flex-col items-center w-full max-w-xs">
             {/* Логотип */}
             <motion.div
@@ -98,6 +102,17 @@ export function LoadingScreen() {
                   priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-50" />
+              </motion.div>
+              
+              {/* Шапка Деда Мороза */}
+              <motion.div 
+                initial={{ opacity: 0, y: -20, rotate: -10 }}
+                animate={{ opacity: 1, y: 0, rotate: 12 }}
+                transition={{ delay: 0.5, type: "spring" }}
+                className="absolute -top-10 -right-8 text-[70px] z-20 drop-shadow-2xl filter"
+                style={{ textShadow: '0 4px 8px rgba(0,0,0,0.5)' }}
+              >
+                🎅
               </motion.div>
             </motion.div>
 
