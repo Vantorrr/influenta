@@ -350,7 +350,7 @@ export default function DashboardPage() {
         {/* 5. Minimal Support Link */}
         <div className="flex justify-center pt-2">
           <a
-            href="https://t.me/polina_khristya"
+            href="https://t.me/influenta_support_bot"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-xs text-white/30 hover:text-white/60 transition-colors"

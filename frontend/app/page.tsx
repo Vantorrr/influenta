@@ -366,7 +366,7 @@ export default function HomePage() {
                   Мы оперативно отвечаем в Telegram. Напишите Полине — она поможет решить любой вопрос.
                 </p>
                 <a
-                  href="https://t.me/polina_khristya"
+                  href="https://t.me/influenta_support_bot"
           target="_blank"
           rel="noopener noreferrer"
                   className="inline-flex items-center gap-3 bg-telegram-primary text-white px-6 py-3 rounded-xl font-semibold hover:bg-telegram-primary/90 transition-colors"
