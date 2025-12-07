@@ -89,6 +89,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
             window.location.href = `/listings/${listingId}?source=bot&focus=response`
           }
         }
+        
+        // Формат: blogger_<id>
+        if (startParam && startParam.startsWith('blogger_')) {
+          const bloggerId = startParam.replace('blogger_', '')
+          if (bloggerId) {
+            // Откроем профиль блогера
+            window.location.href = `/bloggers/${bloggerId}`
+          }
+        }
       } catch {}
       
       // Cleanup
