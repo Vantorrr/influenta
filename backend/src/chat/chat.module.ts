@@ -7,11 +7,13 @@ import { ChatService } from './chat.service';
 import { ChatController } from './chat.controller';
 import { Message } from './entities/message.entity';
 import { Response } from '../responses/entities/response.entity';
+import { Chat } from './entities/chat.entity';
+import { Offer } from '../offers/entities/offer.entity';
 import { TelegramModule } from '../telegram/telegram.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Message, Response]),
+    TypeOrmModule.forFeature([Message, Response, Chat, Offer]),
     TelegramModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

@@ -96,15 +96,68 @@ function MessagesPageContent() {
         }
         
         const normalized: Chat[] = rows
-          .filter((row: any) => row && row.responseId) // Фильтруем невалидные записи
+          .filter((row: any) => row && (row.responseId || row.offerId)) // Фильтруем невалидные записи
           .map((row: any) => {
-            // Определяем, кто я: блогер (автор отклика) или рекламодатель (владелец объявления)
-            const iAmBlogger = user.role === 'blogger'
-            const otherUserData = iAmBlogger
-              ? row.response?.listing?.advertiser?.user // Я блогер → собеседник рекламодатель
-              : row.response?.blogger?.user // Я рекламодатель → собеседник блогер
+            // Определяем тип чата: response (отклик) или offer (оффер)
+            const isOffer = !!row.offerId;
             
-            // Безопасное извлечение content (бэкенд может вернуть text или content)
+            // Для response-чатов
+            if (!isOffer && row.responseId) {
+              const iAmBlogger = user.role === 'blogger'
+              const otherUserData = iAmBlogger
+                ? row.response?.listing?.advertiser?.user // Я блогер → собеседник рекламодатель
+                : row.response?.blogger?.user // Я рекламодатель → собеседник блогер
+              
+              // Безопасное извлечение content
+              let messageContent = 'Нет сообщений'
+              const rawContent = row.lastMessage?.text || row.lastMessage?.content
+              if (rawContent) {
+                if (typeof rawContent === 'object') {
+                  messageContent = JSON.stringify(rawContent)
+                } else {
+                  messageContent = String(rawContent)
+                }
+              }
+              
+              return {
+                id: String(row.responseId),
+                responseId: String(row.responseId),
+                listingTitle: String(row.response?.listing?.title || 'Объявление'),
+                otherUser: {
+                  id: otherUserData?.id ? String(otherUserData.id) : undefined,
+                  firstName: String(otherUserData?.firstName || 'Пользователь'),
+                  lastName: String(otherUserData?.lastName || ''),
+                  username: String(otherUserData?.username || ''),
+                  photoUrl: otherUserData?.photoUrl,
+                  role: iAmBlogger ? 'advertiser' : 'blogger',
+                },
+                lastMessage: row.lastMessage ? {
+                  content: messageContent,
+                  createdAt: new Date(row.lastMessage.createdAt || Date.now()),
+                  isRead: !!row.lastMessage.isRead,
+                  senderId: String(row.lastMessage.userId || row.lastMessage.senderId || ''),
+                } : {
+                  content: 'Нет сообщений',
+                  createdAt: new Date(),
+                  isRead: true,
+                  senderId: '',
+                },
+                unreadCount: Number(row.unreadCount) || 0,
+                status: 'active',
+                proposal: row.response ? {
+                  message: String(row.response.message || ''),
+                  proposedPrice: Number(row.response.proposedPrice) || 0,
+                  listingBudget: Number(row.response.listing?.budget) || 0,
+                } : undefined,
+              }
+            }
+            
+            // Для offer-чатов (коллаборации)
+            const iAmAdvertiser = row.offer?.advertiser?.userId === user.id;
+            const otherUserData = iAmAdvertiser
+              ? row.offer?.blogger // Я отправитель → собеседник блогер
+              : row.offer?.advertiser?.user; // Я получатель → собеседник отправитель
+            
             let messageContent = 'Нет сообщений'
             const rawContent = row.lastMessage?.text || row.lastMessage?.content
             if (rawContent) {
@@ -116,22 +169,21 @@ function MessagesPageContent() {
             }
             
             return {
-              id: String(row.responseId),
-              responseId: String(row.responseId),
-              listingTitle: String(row.response?.listing?.title || 'Объявление'),
+              id: String(row.offerId),
+              responseId: String(row.offerId), // Для совместимости
+              listingTitle: String(row.offer?.projectTitle || 'Коллаборация'),
               otherUser: {
                 id: otherUserData?.id ? String(otherUserData.id) : undefined,
                 firstName: String(otherUserData?.firstName || 'Пользователь'),
                 lastName: String(otherUserData?.lastName || ''),
                 username: String(otherUserData?.username || ''),
                 photoUrl: otherUserData?.photoUrl,
-                role: iAmBlogger ? 'advertiser' : 'blogger',
+                role: iAmAdvertiser ? 'blogger' : 'advertiser',
               },
               lastMessage: row.lastMessage ? {
                 content: messageContent,
                 createdAt: new Date(row.lastMessage.createdAt || Date.now()),
                 isRead: !!row.lastMessage.isRead,
-                // Бэкенд может вернуть userId или senderId
                 senderId: String(row.lastMessage.userId || row.lastMessage.senderId || ''),
               } : {
                 content: 'Нет сообщений',
@@ -141,10 +193,10 @@ function MessagesPageContent() {
               },
               unreadCount: Number(row.unreadCount) || 0,
               status: 'active',
-              proposal: row.response ? {
-                message: String(row.response.message || ''),
-                proposedPrice: Number(row.response.proposedPrice) || 0,
-                listingBudget: Number(row.response.listing?.budget) || 0,
+              proposal: row.offer ? {
+                message: String(row.offer.message || ''),
+                proposedPrice: Number(row.offer.proposedBudget) || 0,
+                listingBudget: Number(row.offer.proposedBudget) || 0,
               } : undefined,
             }
           })

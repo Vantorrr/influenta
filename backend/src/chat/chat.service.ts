@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not } from 'typeorm';
 import { Message } from './entities/message.entity';
 import { Response } from '../responses/entities/response.entity';
+import { Chat } from './entities/chat.entity';
+import { Offer } from '../offers/entities/offer.entity';
 import { TelegramService } from '../telegram/telegram.service';
 import { ConfigService } from '@nestjs/config';
 
@@ -13,6 +15,10 @@ export class ChatService {
     private messageRepository: Repository<Message>,
     @InjectRepository(Response)
     private responseRepository: Repository<Response>,
+    @InjectRepository(Chat)
+    private chatRepository: Repository<Chat>,
+    @InjectRepository(Offer)
+    private offerRepository: Repository<Offer>,
     private readonly telegramService: TelegramService,
     private readonly configService: ConfigService,
   ) {}
@@ -125,7 +131,7 @@ export class ChatService {
   }
 
   async getChatList(userId: string) {
-    // Получаем все отклики пользователя
+    // 1. Получаем все отклики пользователя (СТАРАЯ ЛОГИКА - НЕ ТРОГАЕМ!)
     const responses = await this.responseRepository
       .createQueryBuilder('response')
       .leftJoinAndSelect('response.blogger', 'blogger')
@@ -137,7 +143,7 @@ export class ChatService {
       .getMany();
 
     // Для каждого отклика получаем последнее сообщение
-    const chats = await Promise.all(
+    const responseChats = await Promise.all(
       responses.map(async (response) => {
         const lastMessage = await this.messageRepository.findOne({
           where: { responseId: response.id },
@@ -162,12 +168,65 @@ export class ChatService {
       }),
     );
 
-    // Сортируем по дате последнего сообщения
-    return chats.sort((a, b) => {
-      if (!a.lastMessage) return 1;
-      if (!b.lastMessage) return -1;
-      return b.lastMessage.createdAt.getTime() - a.lastMessage.createdAt.getTime();
-    });
+    // 2. Получаем все офферы пользователя (НОВАЯ ЛОГИКА)
+    try {
+      const offers = await this.offerRepository
+        .createQueryBuilder('offer')
+        .leftJoinAndSelect('offer.advertiser', 'advertiser')
+        .leftJoinAndSelect('advertiser.user', 'advertiserUser')
+        .leftJoinAndSelect('offer.blogger', 'blogger')
+        .where('blogger.id = :userId OR advertiser.userId = :userId', { userId })
+        .andWhere('offer.status = :status', { status: 'accepted' })
+        .getMany();
+
+      const offerChats = await Promise.all(
+        offers.map(async (offer) => {
+          // Находим чат, связанный с этим оффером
+          const chat = await this.chatRepository.findOne({
+            where: { offerId: offer.id },
+            relations: ['messages', 'messages.sender'],
+          });
+
+          if (!chat) return null;
+
+          const lastMessage = chat.messages?.length > 0 
+            ? chat.messages[chat.messages.length - 1] 
+            : null;
+
+          const unreadCount = chat.messages?.filter(
+            m => m.senderId !== userId && !m.isRead
+          ).length || 0;
+
+          return {
+            offerId: offer.id,
+            offer,
+            lastMessage,
+            unreadCount,
+          };
+        }),
+      );
+
+      // Фильтруем null (офферы без чатов)
+      const validOfferChats = offerChats.filter(c => c !== null);
+
+      // 3. Объединяем responses и offers
+      const allChats = [...responseChats, ...validOfferChats];
+
+      // Сортируем по дате последнего сообщения
+      return allChats.sort((a, b) => {
+        if (!a.lastMessage) return 1;
+        if (!b.lastMessage) return -1;
+        return b.lastMessage.createdAt.getTime() - a.lastMessage.createdAt.getTime();
+      });
+    } catch (error) {
+      console.error('Error fetching offer chats:', error);
+      // Если что-то пошло не так с офферами, возвращаем только responses
+      return responseChats.sort((a, b) => {
+        if (!a.lastMessage) return 1;
+        if (!b.lastMessage) return -1;
+        return b.lastMessage.createdAt.getTime() - a.lastMessage.createdAt.getTime();
+      });
+    }
   }
 }
 
