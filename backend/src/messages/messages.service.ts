@@ -14,20 +14,23 @@ export class MessagesService {
   ) {}
 
   async createChat(userId1: string, userId2: string, title?: string, offerId?: string): Promise<Chat> {
+    console.log('🔧 createChat called:', { userId1, userId2, title, offerId });
+    
     // Проверяем, есть ли уже чат для этого оффера
     if (offerId) {
       const existingChat = await this.chatRepository.findOne({
         where: { offerId },
       });
       if (existingChat) {
+        console.log('📌 Existing chat found:', existingChat.id);
         return existingChat;
       }
     }
 
-    // Создаём новый чат
+    // Создаём новый чат с явными ID колонками
     const chatData: Partial<Chat> = {
-      advertiser: { id: userId1 } as any, // Отправитель
-      blogger: { id: userId2 } as any,    // Получатель
+      advertiserId: userId1,  // Отправитель (ID пользователя)
+      bloggerId: userId2,     // Получатель (ID пользователя)
       messages: [],
       unreadCount: 0,
     };
@@ -36,8 +39,12 @@ export class MessagesService {
       chatData.offerId = offerId;
     }
 
+    console.log('📝 Creating chat with data:', chatData);
+
     const chat = this.chatRepository.create(chatData);
     const savedChat = await this.chatRepository.save(chat);
+    
+    console.log('✅ Chat created:', Array.isArray(savedChat) ? savedChat[0]?.id : savedChat.id);
     
     // save возвращает один объект, когда передан один объект
     return Array.isArray(savedChat) ? savedChat[0] : savedChat;

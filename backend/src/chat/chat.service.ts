@@ -168,55 +168,49 @@ export class ChatService {
       }),
     );
 
-    // 2. Получаем все офферы пользователя (НОВАЯ ЛОГИКА)
+    // 2. Получаем все чаты по офферам напрямую из таблицы chats
     try {
-      const offers = await this.offerRepository
-        .createQueryBuilder('offer')
-        .leftJoinAndSelect('offer.advertiser', 'advertiser')
-        .leftJoinAndSelect('advertiser.user', 'advertiserUser')
-        .leftJoinAndSelect('offer.blogger', 'blogger')
-        .where('blogger.id = :userId OR advertiser.userId = :userId', { userId })
-        .andWhere('offer.status = :status', { status: 'accepted' })
+      console.log('🔍 Looking for offer chats for userId:', userId);
+      
+      // Ищем чаты где пользователь - блогер или рекламодатель
+      const offerChatsRaw = await this.chatRepository
+        .createQueryBuilder('chat')
+        .leftJoinAndSelect('chat.blogger', 'blogger')
+        .leftJoinAndSelect('chat.advertiser', 'advertiser')
+        .leftJoinAndSelect('chat.offer', 'offer')
+        .where('chat.offerId IS NOT NULL')
+        .andWhere('(chat.bloggerId = :userId OR chat.advertiserId = :userId)', { userId })
         .getMany();
 
-      const offerChats = await Promise.all(
-        offers.map(async (offer) => {
-          // Находим чат, связанный с этим оффером
-          const chat = await this.chatRepository.findOne({
-            where: { offerId: offer.id },
-            relations: ['messages', 'messages.sender'],
-          });
+      console.log('📋 Found offer chats:', offerChatsRaw.length);
 
-          if (!chat) return null;
+      const offerChats = offerChatsRaw.map((chat) => {
+        // messages - это JSONB, не relation
+        const lastMessage = chat.messages?.length > 0 
+          ? chat.messages[chat.messages.length - 1] 
+          : null;
 
-          const lastMessage = chat.messages?.length > 0 
-            ? chat.messages[chat.messages.length - 1] 
-            : null;
+        const unreadCount = chat.messages?.filter(
+          (m: any) => m.senderId !== userId && !m.isRead
+        ).length || 0;
 
-          const unreadCount = chat.messages?.filter(
-            m => m.senderId !== userId && !m.isRead
-          ).length || 0;
-
-          return {
-            offerId: offer.id,
-            offer,
-            lastMessage,
-            unreadCount,
-          };
-        }),
-      );
-
-      // Фильтруем null (офферы без чатов)
-      const validOfferChats = offerChats.filter(c => c !== null);
+        return {
+          offerId: chat.offerId,
+          offer: chat.offer,
+          chat,
+          lastMessage,
+          unreadCount,
+        };
+      });
 
       // 3. Объединяем responses и offers
-      const allChats = [...responseChats, ...validOfferChats];
+      const allChats = [...responseChats, ...offerChats];
 
-      // Сортируем по дате последнего сообщения
+      // Сортируем по дате последнего сообщения или создания чата
       return allChats.sort((a, b) => {
-        if (!a.lastMessage) return 1;
-        if (!b.lastMessage) return -1;
-        return b.lastMessage.createdAt.getTime() - a.lastMessage.createdAt.getTime();
+        const dateA = a.lastMessage?.createdAt || (a as any).chat?.createdAt || new Date(0);
+        const dateB = b.lastMessage?.createdAt || (b as any).chat?.createdAt || new Date(0);
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
       });
     } catch (error) {
       console.error('Error fetching offer chats:', error);

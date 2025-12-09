@@ -8,13 +8,25 @@ export class Chat {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User)
+  @Column({ nullable: true })
+  bloggerId?: string;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'bloggerId' })
   blogger: User;
 
-  @ManyToOne(() => User)
+  @Column({ nullable: true })
+  advertiserId?: string;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'advertiserId' })
   advertiser: User;
 
+  @Column({ nullable: true })
+  listingId?: string;
+
   @ManyToOne(() => Listing, { nullable: true })
+  @JoinColumn({ name: 'listingId' })
   listing: Listing;
 
   @Column({ nullable: true })
