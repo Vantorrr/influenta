@@ -18,7 +18,7 @@ export class Chat {
   listing: Listing;
 
   @Column({ nullable: true })
-  offerId: string;
+  offerId?: string;
 
   @ManyToOne(() => Offer, { nullable: true })
   @JoinColumn({ name: 'offerId' })

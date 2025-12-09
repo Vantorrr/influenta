@@ -22,12 +22,17 @@ export class OffersService {
   ) {}
 
   async create(createOfferDto: CreateOfferDto, user: User) {
-    // Проверяем что пользователь - рекламодатель
-    if (user.role !== 'advertiser') {
-      throw new BadRequestException('Только рекламодатели могут отправлять предложения');
+    // Разрешаем и рекламодателям, и блогерам отправлять предложения
+    if (user.role !== 'advertiser' && user.role !== 'blogger') {
+      throw new BadRequestException('Только зарегистрированные пользователи могут отправлять предложения');
     }
 
-    // Получаем рекламодателя
+    // Блогер не может отправить предложение сам себе
+    if (user.role === 'blogger' && user.id === createOfferDto.bloggerId) {
+      throw new BadRequestException('Нельзя отправить предложение самому себе');
+    }
+
+    // Получаем или создаём рекламодателя (для блогеров тоже создаём виртуальный профиль)
     const advertiser = await this.advertisersService.findOrCreateByUserId(user.id);
     if (!advertiser) {
       throw new BadRequestException('Профиль рекламодателя не найден');
@@ -80,7 +85,17 @@ export class OffersService {
     // Используем telegramId для отправки уведомлений
     if (bloggerUser?.telegramId) {
       try {
-        const message = `🎯 <b>Новое предложение о сотрудничестве!</b>
+        const isCollaboration = user.role === 'blogger';
+        const message = isCollaboration 
+          ? `🤝 <b>Новое предложение о коллаборации!</b>
+
+От блогера: ${user.firstName} ${user.lastName || ''}
+Бюджет: ${createOfferDto.proposedBudget}₽
+${createOfferDto.projectTitle ? `\nПроект: ${createOfferDto.projectTitle}` : ''}
+
+Сообщение:
+${createOfferDto.message || 'Без сообщения'}`
+          : `🎯 <b>Новое предложение о сотрудничестве!</b>
 
 От: ${user.firstName} ${user.lastName || ''} ${user.companyName ? `(${user.companyName})` : ''}
 Бюджет: ${createOfferDto.proposedBudget}₽

@@ -227,11 +227,11 @@ export default function DashboardPage() {
               </Button>
               <Button 
                 variant="secondary" 
-                onClick={() => router.push('/profile')}
+                onClick={() => router.push('/bloggers')}
                 className="h-12 bg-[#1C1E20] hover:bg-white/5 border border-white/5 justify-start px-4 text-sm font-medium gap-3 shadow-lg"
               >
-                <User className="w-4 h-4 text-purple-400" />
-                <span className="text-white/90">Профиль</span>
+                <Users className="w-4 h-4 text-pink-400" />
+                <span className="text-white/90">🤝 Коллаборации</span>
               </Button>
             </>
           ) : (

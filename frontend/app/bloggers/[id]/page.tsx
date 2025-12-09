@@ -601,7 +601,7 @@ export default function BloggerDetailsPage() {
         )}
 
         {/* CTA Button - inside content, scrolls with page */}
-        {user?.role === 'advertiser' && (
+        {(user?.role === 'advertiser' || (user?.role === 'blogger' && user?.id !== data?.user?.id)) && (
           <div style={{ marginTop: 40, marginBottom: 40, padding: '0 16px' }}>
             <button
               onClick={() => setShowOfferModal(true)}

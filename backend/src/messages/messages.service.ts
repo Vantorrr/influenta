@@ -25,16 +25,22 @@ export class MessagesService {
     }
 
     // Создаём новый чат
-    const chat = this.chatRepository.create({
+    const chatData: Partial<Chat> = {
       advertiser: { id: userId1 } as any, // Отправитель
       blogger: { id: userId2 } as any,    // Получатель
-      offerId: offerId || null,
       messages: [],
       unreadCount: 0,
-    });
+    };
+    
+    if (offerId) {
+      chatData.offerId = offerId;
+    }
 
+    const chat = this.chatRepository.create(chatData);
     const savedChat = await this.chatRepository.save(chat);
-    return savedChat as Chat; // Явный каст к Chat
+    
+    // save возвращает один объект, когда передан один объект
+    return Array.isArray(savedChat) ? savedChat[0] : savedChat;
   }
 
   async sendMessage(userId: string, chatId: string, text: string) {
