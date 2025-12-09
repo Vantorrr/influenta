@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, JoinColumn } from 'typeorm';
 import { User } from '@/users/entities/user.entity';
 import { Listing } from '@/listings/entities/listing.entity';
+import { Offer } from '@/offers/entities/offer.entity';
 
 @Entity('chats')
 export class Chat {
@@ -13,8 +14,15 @@ export class Chat {
   @ManyToOne(() => User)
   advertiser: User;
 
-  @ManyToOne(() => Listing)
+  @ManyToOne(() => Listing, { nullable: true })
   listing: Listing;
+
+  @Column({ nullable: true })
+  offerId: string;
+
+  @ManyToOne(() => Offer, { nullable: true })
+  @JoinColumn({ name: 'offerId' })
+  offer: Offer;
 
   @Column({ type: 'jsonb', default: [] })
   messages: any[];

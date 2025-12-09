@@ -2,18 +2,38 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Message } from './entities/message.entity';
+import { Chat } from '@/chat/entities/chat.entity';
 
 @Injectable()
 export class MessagesService {
   constructor(
     @InjectRepository(Message)
     private messagesRepository: Repository<Message>,
+    @InjectRepository(Chat)
+    private chatRepository: Repository<Chat>,
   ) {}
 
-  async createChat(userId1: string, userId2: string, title?: string) {
-    // В реальном приложении здесь будет логика создания чата
-    // Пока просто возвращаем объект с id
-    return { id: `chat-${userId1}-${userId2}`, title };
+  async createChat(userId1: string, userId2: string, title?: string, offerId?: string) {
+    // Проверяем, есть ли уже чат для этого оффера
+    if (offerId) {
+      const existingChat = await this.chatRepository.findOne({
+        where: { offerId },
+      });
+      if (existingChat) {
+        return existingChat;
+      }
+    }
+
+    // Создаём новый чат
+    const chat = this.chatRepository.create({
+      advertiser: { id: userId1 } as any, // Отправитель
+      blogger: { id: userId2 } as any,    // Получатель
+      offerId: offerId || null,
+      messages: [],
+      unreadCount: 0,
+    });
+
+    return await this.chatRepository.save(chat);
   }
 
   async sendMessage(userId: string, chatId: string, text: string) {
