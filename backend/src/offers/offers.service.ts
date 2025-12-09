@@ -187,7 +187,8 @@ ${createOfferDto.message || 'Без сообщения'}`;
         const chat = await this.messagesService.createChat(
           offer.advertiser.userId,
           offer.blogger.id, // blogger теперь User, используем id
-          `Предложение: ${offer.projectTitle || 'Сотрудничество'}`
+          `Предложение: ${offer.projectTitle || 'Сотрудничество'}`,
+          offer.id // Передаём ID оффера для привязки чата
         );
 
         // Отправляем приветственное сообщение

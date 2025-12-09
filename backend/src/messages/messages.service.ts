@@ -13,7 +13,7 @@ export class MessagesService {
     private chatRepository: Repository<Chat>,
   ) {}
 
-  async createChat(userId1: string, userId2: string, title?: string, offerId?: string) {
+  async createChat(userId1: string, userId2: string, title?: string, offerId?: string): Promise<Chat> {
     // Проверяем, есть ли уже чат для этого оффера
     if (offerId) {
       const existingChat = await this.chatRepository.findOne({
@@ -33,7 +33,8 @@ export class MessagesService {
       unreadCount: 0,
     });
 
-    return await this.chatRepository.save(chat);
+    const savedChat = await this.chatRepository.save(chat);
+    return savedChat as Chat; // Явный каст к Chat
   }
 
   async sendMessage(userId: string, chatId: string, text: string) {
