@@ -88,8 +88,9 @@ export default function AdminModerationPage() {
       ) : (
         requests.map((r, i) => {
           const docs: string[] = Array.isArray(r?.verificationData?.documents) ? r.verificationData.documents : []
-          const proofs: string[] = Array.isArray(r?.verificationData?.socialProofs) ? r.verificationData.socialProofs : []
+          const proofs: { platform: string; url: string; followers?: number }[] = Array.isArray(r?.verificationData?.socialProofs) ? r.verificationData.socialProofs : []
           const msg: string | undefined = r?.verificationData?.message
+          const verificationCode: string | undefined = r?.verificationData?.verificationCode
 
           return (
             <Card key={r.id}>
@@ -110,6 +111,17 @@ export default function AdminModerationPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                {/* Код верификации */}
+                {verificationCode && (
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                    <p className="text-xs text-amber-500 font-medium mb-1">🔑 Код верификации</p>
+                    <p className="font-mono text-lg select-all">{verificationCode}</p>
+                    <p className="text-xs text-telegram-textSecondary mt-1">
+                      Проверьте, что этот код есть в описании профиля соцсети
+                    </p>
+                  </div>
+                )}
+
                 {msg && (
                   <div>
                     <p className="text-xs text-telegram-textSecondary mb-1">Сообщение</p>
@@ -119,7 +131,7 @@ export default function AdminModerationPage() {
 
                 {docs.length > 0 && (
                   <div>
-                    <p className="text-xs text-telegram-textSecondary mb-2">Документы</p>
+                    <p className="text-xs text-telegram-textSecondary mb-2">📎 Документы (паспорт)</p>
                     <div className="flex flex-wrap gap-2">
                       {docs.map((url, idx) => (
                         <Button key={idx} size="sm" variant="secondary" onClick={() => openLink(url)}>
@@ -132,12 +144,22 @@ export default function AdminModerationPage() {
 
                 {proofs.length > 0 && (
                   <div>
-                    <p className="text-xs text-telegram-textSecondary mb-2">Соц. доказательства</p>
-                    <div className="flex flex-wrap gap-2">
-                      {proofs.map((url, idx) => (
-                        <Button key={idx} size="sm" variant="secondary" onClick={() => openLink(url)}>
-                          Ссылка {idx + 1}
-                        </Button>
+                    <p className="text-xs text-telegram-textSecondary mb-2">📱 Соцсети</p>
+                    <div className="space-y-2">
+                      {proofs.map((proof, idx) => (
+                        <div key={idx} className="flex items-center gap-2 p-2 bg-telegram-bgSecondary rounded-lg">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm">{typeof proof === 'string' ? 'Ссылка' : proof.platform}</div>
+                            {typeof proof !== 'string' && proof.followers && (
+                              <div className={`text-xs ${proof.followers >= 100000 ? 'text-green-500 font-medium' : 'text-telegram-textSecondary'}`}>
+                                {proof.followers.toLocaleString('ru-RU')} подписчиков {proof.followers >= 100000 ? '✓' : '⚠️ менее 100к'}
+                              </div>
+                            )}
+                          </div>
+                          <Button size="sm" variant="secondary" onClick={() => openLink(typeof proof === 'string' ? proof : proof.url)}>
+                            Открыть
+                          </Button>
+                        </div>
                       ))}
                     </div>
                   </div>

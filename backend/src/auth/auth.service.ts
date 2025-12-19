@@ -244,6 +244,7 @@ export class AuthService {
       followers?: number;
     }[];
     message?: string;
+    verificationCode?: string;
   }) {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) throw new Error('User not found');
@@ -256,9 +257,21 @@ export class AuthService {
       throw new BadRequestException('Заявка на верификацию уже отправлена');
     }
     
-    // Проверяем что предоставлены доказательства
-    if (!data.documents?.length && !data.socialProofs?.length) {
-      throw new BadRequestException('Необходимо предоставить документы или ссылки на социальные сети');
+    // Проверяем паспорт
+    if (!data.documents?.length) {
+      throw new BadRequestException('Необходимо загрузить документ (паспорт)');
+    }
+    
+    // Проверяем соцсети с 100к+ подписчиков
+    const MIN_FOLLOWERS = 100000;
+    const hasEnoughFollowers = data.socialProofs?.some(p => p.followers && p.followers >= MIN_FOLLOWERS);
+    if (!hasEnoughFollowers) {
+      throw new BadRequestException(`Необходим аккаунт с минимум ${MIN_FOLLOWERS.toLocaleString()} подписчиков`);
+    }
+    
+    // Проверяем код верификации
+    if (!data.verificationCode) {
+      throw new BadRequestException('Необходимо добавить код верификации в описание профиля');
     }
     
     user.verificationRequested = true;
@@ -267,6 +280,7 @@ export class AuthService {
       documents: data.documents || [],
       socialProofs: data.socialProofs || [],
       message: data.message,
+      verificationCode: data.verificationCode,
       rejectionReason: undefined // Сбрасываем предыдущий отказ
     };
     await this.usersRepository.save(user);
@@ -277,14 +291,25 @@ export class AuthService {
       const frontendUrl = this.configService.get('app.frontendUrl') || 'https://influentaa.vercel.app'
       const fullName = `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}`.trim()
       const username = user.username ? `@${user.username}` : ''
+      // Собираем информацию о соцсетях
+      const socialInfo = data.socialProofs?.map(p => 
+        `  • ${p.platform}: ${p.followers?.toLocaleString() || '?'} подписчиков`
+      ).join('\n') || ''
+      
       const adminText = [
         '🆕 <b>Новая заявка на верификацию</b>',
         '',
         `👤 <b>Пользователь:</b> ${fullName} ${username}`.trim(),
         `🆔 <b>ID:</b> ${user.telegramId}`,
+        '',
+        `🔑 <b>Код верификации:</b> <code>${data.verificationCode}</code>`,
+        '',
+        (data.socialProofs?.length || 0) > 0 ? `📱 <b>Соцсети:</b>\n${socialInfo}` : '',
+        '',
+        `📎 Документов: ${data.documents?.length || 0}`,
         data.message ? `📝 <b>Сообщение:</b> ${data.message}` : '',
-        (data.documents?.length || 0) > 0 ? `📎 Документов: ${data.documents!.length}` : '',
-        (data.socialProofs?.length || 0) > 0 ? `🔗 Ссылок: ${data.socialProofs!.length}` : ''
+        '',
+        '⚠️ <b>Проверьте:</b> код должен быть в описании профиля соцсети'
       ].filter(Boolean).join('\n')
 
       const keyboard: any = {

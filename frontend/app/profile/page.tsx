@@ -180,6 +180,7 @@ export default function ProfilePage() {
     documents: string[]
     socialProofs: { platform: string; url: string; followers?: number }[]
     message: string
+    verificationCode: string
   }) => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/request-verification`, {
@@ -749,6 +750,7 @@ export default function ProfilePage() {
           isOpen={showVerificationModal}
           onClose={() => setShowVerificationModal(false)}
           onSubmit={handleVerificationSubmit}
+          userId={user?.id}
         />
       </div>
     </Layout>

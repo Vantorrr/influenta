@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Upload, Link as LinkIcon, Plus, Trash2, Check } from 'lucide-react'
+import { X, Upload, Link as LinkIcon, Plus, Trash2, Check, AlertCircle, Copy, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
@@ -21,7 +21,9 @@ interface VerificationModalProps {
     documents: string[]
     socialProofs: SocialProof[]
     message: string
+    verificationCode: string
   }) => void
+  userId?: string
 }
 
 const SOCIAL_PLATFORMS = [
@@ -35,7 +37,16 @@ const SOCIAL_PLATFORMS = [
   'Другое'
 ]
 
-export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationModalProps) {
+const MIN_FOLLOWERS = 100000
+
+// Генерируем уникальный код верификации
+function generateVerificationCode(userId?: string): string {
+  const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase()
+  const timestamp = Date.now().toString(36).toUpperCase().slice(-4)
+  return `INFLUENTA-${randomPart}${timestamp}`
+}
+
+export function VerificationModal({ isOpen, onClose, onSubmit, userId }: VerificationModalProps) {
   const [documents, setDocuments] = useState<string[]>([])
   const [documentUrl, setDocumentUrl] = useState('')
   const [documentUrlError, setDocumentUrlError] = useState<string | null>(null)
@@ -45,6 +56,18 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [verificationCode, setVerificationCode] = useState('')
+  const [codeCopied, setCodeCopied] = useState(false)
+  const [codeConfirmed, setCodeConfirmed] = useState(false)
+
+  // Генерируем код при открытии модалки
+  useEffect(() => {
+    if (isOpen) {
+      setVerificationCode(generateVerificationCode(userId))
+      setCodeCopied(false)
+      setCodeConfirmed(false)
+    }
+  }, [isOpen, userId])
 
   const normalizeUrl = (url: string) => {
     const trimmed = url.trim()
@@ -89,16 +112,55 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
       setNewProofUrlError('Введите корректный URL (http/https)')
       return
     }
+    if (!newProof.followers || newProof.followers < MIN_FOLLOWERS) {
+      setNewProofUrlError(`Минимум ${MIN_FOLLOWERS.toLocaleString('ru-RU')} подписчиков`)
+      return
+    }
     setSocialProofs([...socialProofs, { ...newProof, url: candidate }])
     setNewProof({ platform: 'Telegram', url: '', followers: undefined })
     setNewProofUrlError(null)
   }
 
+  const handleCopyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(verificationCode)
+      setCodeCopied(true)
+      setTimeout(() => setCodeCopied(false), 3000)
+    } catch {
+      // Fallback для старых браузеров
+      const textArea = document.createElement('textarea')
+      textArea.value = verificationCode
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      setCodeCopied(true)
+      setTimeout(() => setCodeCopied(false), 3000)
+    }
+  }
+
+  // Проверяем есть ли хотя бы один аккаунт с 100к+
+  const hasEnoughFollowers = socialProofs.some(p => p.followers && p.followers >= MIN_FOLLOWERS)
+
   const handleSubmit = async () => {
-    if (documents.length === 0 && socialProofs.length === 0) {
-      alert('Добавьте хотя бы один документ или ссылку на социальную сеть')
+    // Проверка паспорта
+    if (documents.length === 0) {
+      alert('Загрузите документ (паспорт)')
       return
     }
+
+    // Проверка соцсетей с 100к+
+    if (!hasEnoughFollowers) {
+      alert(`Добавьте хотя бы одну социальную сеть с ${MIN_FOLLOWERS.toLocaleString('ru-RU')}+ подписчиков`)
+      return
+    }
+
+    // Проверка подтверждения кода
+    if (!codeConfirmed) {
+      alert('Подтвердите, что вы добавили код верификации в описание профиля')
+      return
+    }
+
     const allDocsValid = documents.every((d) => validateUrl(d))
     const allProofsValid = socialProofs.every((p) => validateUrl(p.url))
     if (!allDocsValid || !allProofsValid) {
@@ -107,9 +169,11 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
     }
 
     setIsSubmitting(true)
-    await onSubmit({ documents, socialProofs, message })
+    await onSubmit({ documents, socialProofs, message, verificationCode })
     setIsSubmitting(false)
   }
+
+  const canSubmit = documents.length > 0 && hasEnoughFollowers && codeConfirmed && !isSubmitting
 
   return (
     <AnimatePresence>
@@ -145,14 +209,77 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
                   </Button>
                 </div>
                 <p className="text-sm text-telegram-textSecondary mt-2">
-                  Предоставьте доказательства владения аккаунтами и каналами
+                  Подтвердите владение аккаунтами для получения синей галочки
                 </p>
               </div>
 
               <div className="p-6 pb-8 space-y-6 overflow-y-auto flex-1 min-h-0 overscroll-contain">
-                {/* Документы/Скриншоты */}
+                {/* Важное уведомление */}
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                  <div className="flex gap-3">
+                    <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-amber-500">Требования для верификации</p>
+                      <ul className="mt-2 text-sm text-telegram-textSecondary space-y-1">
+                        <li>• Минимум <span className="font-semibold text-telegram-text">100 000 подписчиков</span> в любой социальной сети</li>
+                        <li>• Документ, удостоверяющий личность (паспорт)</li>
+                        <li>• Код верификации в описании вашего профиля</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Шаг 1: Код верификации */}
+                <div className="p-4 rounded-xl bg-telegram-primary/10 border border-telegram-primary/30">
+                  <h3 className="font-medium mb-2 flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-telegram-primary text-white text-sm flex items-center justify-center">1</span>
+                    Код верификации
+                  </h3>
+                  <p className="text-sm text-telegram-textSecondary mb-3">
+                    Скопируйте этот код и добавьте его в описание (bio) вашего основного аккаунта. 
+                    После проверки модератором вы сможете его удалить.
+                  </p>
+                  
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-1 font-mono text-lg bg-telegram-bgSecondary px-4 py-3 rounded-lg border border-telegram-border select-all">
+                      {verificationCode}
+                    </div>
+                    <Button 
+                      onClick={handleCopyCode} 
+                      variant={codeCopied ? "primary" : "secondary"}
+                      className="flex-shrink-0"
+                    >
+                      {codeCopied ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 mr-2" />
+                          Скопировано
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4 mr-2" />
+                          Копировать
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  <label className="flex items-center gap-2 mt-4 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={codeConfirmed}
+                      onChange={(e) => setCodeConfirmed(e.target.checked)}
+                      className="w-5 h-5 rounded border-telegram-border accent-telegram-primary"
+                    />
+                    <span className="text-sm">
+                      Я добавил(а) код в описание профиля
+                    </span>
+                  </label>
+                </div>
+
+                {/* Шаг 2: Паспорт */}
                 <div>
-                  <h3 className="font-medium mb-3">
+                  <h3 className="font-medium mb-2 flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-telegram-primary text-white text-sm flex items-center justify-center">2</span>
                     Документ, удостоверяющий личность
                   </h3>
                   <p className="text-sm text-telegram-textSecondary mb-3">
@@ -172,8 +299,8 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
                     <Button onClick={handleAddDocument} size="sm">
                       <Plus className="w-4 h-4" />
                     </Button>
-                    <label className="inline-flex items-center px-3 py-2 bg-telegram-bg rounded-lg border border-telegram-border cursor-pointer text-sm">
-                      <Upload className="w-4 h-4 mr-2" /> {isUploading ? 'Загрузка...' : 'Загрузить файл'}
+                    <label className="inline-flex items-center px-3 py-2 bg-telegram-bg rounded-lg border border-telegram-border cursor-pointer text-sm hover:bg-telegram-bgSecondary transition-colors">
+                      <Upload className="w-4 h-4 mr-2" /> {isUploading ? 'Загрузка...' : 'Файл'}
                       <input type="file" accept="image/*,.pdf" className="hidden" onChange={(e) => e.target.files && handleUploadFile(e.target.files[0])} disabled={isUploading} />
                     </label>
                   </div>
@@ -181,8 +308,8 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
                   {documents.length > 0 && (
                     <div className="space-y-2">
                       {documents.map((doc, index) => (
-                        <div key={index} className="flex items-center gap-2 p-2 bg-telegram-bgSecondary rounded">
-                          <Upload className="w-4 h-4 text-telegram-textSecondary" />
+                        <div key={index} className="flex items-center gap-2 p-2 bg-green-500/10 border border-green-500/30 rounded">
+                          <CheckCircle2 className="w-4 h-4 text-green-500" />
                           <a href={doc} target="_blank" rel="noopener noreferrer" 
                              className="text-sm text-telegram-primary hover:underline truncate flex-1">
                             {doc}
@@ -198,15 +325,24 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
                       ))}
                     </div>
                   )}
+
+                  {documents.length === 0 && (
+                    <div className="text-sm text-telegram-danger flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" />
+                      Обязательно загрузите документ
+                    </div>
+                  )}
                 </div>
 
-                {/* Социальные сети */}
+                {/* Шаг 3: Социальные сети */}
                 <div>
-                  <h3 className="font-medium mb-3">
-                    Социальные сети и каналы
+                  <h3 className="font-medium mb-2 flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-telegram-primary text-white text-sm flex items-center justify-center">3</span>
+                    Социальные сети (от 100 000 подписчиков)
                   </h3>
                   <p className="text-sm text-telegram-textSecondary mb-3">
-                    Добавьте ссылки на ваши официальные аккаунты
+                    Добавьте ссылку на аккаунт, где вы разместили код верификации. 
+                    <span className="text-telegram-danger font-medium"> Минимум 100 000 подписчиков.</span>
                   </p>
 
                   <div className="space-y-3 mb-3">
@@ -225,18 +361,28 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
                       value={newProof.url}
                       onChange={(e) => { setNewProof({ ...newProof, url: e.target.value }); setNewProofUrlError(null) }}
                     />
-                    {newProofUrlError && (
-                      <div className="text-xs text-telegram-danger">{newProofUrlError}</div>
-                    )}
                     
                     <Input
                       type="number"
-                      placeholder="Количество подписчиков (необязательно)"
+                      placeholder="Количество подписчиков (обязательно, от 100 000)"
                       value={newProof.followers || ''}
                       onChange={(e) => setNewProof({ ...newProof, followers: e.target.value ? parseInt(e.target.value) : undefined })}
+                      min={MIN_FOLLOWERS}
                     />
                     
-                    <Button onClick={handleAddSocialProof} fullWidth variant="secondary" disabled={!newProof.url.trim()}>
+                    {newProofUrlError && (
+                      <div className="text-xs text-telegram-danger flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {newProofUrlError}
+                      </div>
+                    )}
+                    
+                    <Button 
+                      onClick={handleAddSocialProof} 
+                      fullWidth 
+                      variant="secondary" 
+                      disabled={!newProof.url.trim() || !newProof.followers}
+                    >
                       <Plus className="w-4 h-4 mr-2" />
                       Добавить
                     </Button>
@@ -245,17 +391,17 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
                   {socialProofs.length > 0 && (
                     <div className="space-y-2">
                       {socialProofs.map((proof, index) => (
-                        <div key={index} className="flex items-center gap-2 p-3 bg-telegram-bgSecondary rounded">
-                          <LinkIcon className="w-4 h-4 text-telegram-textSecondary" />
-                          <div className="flex-1">
+                        <div key={index} className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/30 rounded">
+                          <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
                             <div className="font-medium text-sm">{proof.platform}</div>
                             <a href={proof.url} target="_blank" rel="noopener noreferrer"
-                               className="text-xs text-telegram-primary hover:underline">
+                               className="text-xs text-telegram-primary hover:underline truncate block">
                               {proof.url}
                             </a>
                             {proof.followers && (
-                              <div className="text-xs text-telegram-textSecondary">
-                                {proof.followers.toLocaleString('ru-RU')} подписчиков
+                              <div className="text-xs text-green-600 font-medium">
+                                {proof.followers.toLocaleString('ru-RU')} подписчиков ✓
                               </div>
                             )}
                           </div>
@@ -270,19 +416,26 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
                       ))}
                     </div>
                   )}
+
+                  {!hasEnoughFollowers && (
+                    <div className="text-sm text-telegram-danger flex items-center gap-2 mt-2">
+                      <AlertCircle className="w-4 h-4" />
+                      Добавьте аккаунт с 100 000+ подписчиков
+                    </div>
+                  )}
                 </div>
 
-                {/* Сообщение */}
+                {/* Дополнительная информация */}
                 <div className="pb-4">
                   <h3 className="font-medium mb-3">
-                    Дополнительная информация
+                    Дополнительная информация (опционально)
                   </h3>
                   <textarea
                     placeholder="Расскажите о себе, вашем опыте, достижениях..."
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    rows={4}
-                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg resize-y min-h-[100px] max-h-[200px]"
+                    rows={3}
+                    className="w-full px-3 py-2 border border-telegram-border rounded-lg bg-telegram-bg resize-y min-h-[80px] max-h-[150px]"
                   />
                 </div>
               </div>
@@ -299,7 +452,7 @@ export function VerificationModal({ isOpen, onClose, onSubmit }: VerificationMod
                 <Button
                   variant="primary"
                   onClick={handleSubmit}
-                  disabled={isSubmitting || (documents.length === 0 && socialProofs.length === 0)}
+                  disabled={!canSubmit}
                   fullWidth
                 >
                   {isSubmitting ? 'Отправка...' : (

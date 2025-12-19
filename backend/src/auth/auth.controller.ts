@@ -89,6 +89,7 @@ export class AuthController {
         followers?: number;
       }[];
       message?: string;
+      verificationCode?: string;
     }
   ) {
     return this.authService.requestVerification(user.id, data)
