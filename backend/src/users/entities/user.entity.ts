@@ -109,6 +109,7 @@ export class User extends BaseEntity {
       followers?: number;
     }[];
     message?: string;
+    verificationCode?: string; // Код для вставки в описание соцсети
     rejectionReason?: string;
   };
 
