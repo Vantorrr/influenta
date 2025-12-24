@@ -14,7 +14,10 @@ import {
   PlusCircle,
   Shield,
   ArrowRight,
-  ExternalLink
+  ExternalLink,
+  Scale,
+  FileText,
+  ScrollText
 } from 'lucide-react'
 import { Layout } from '@/components/layout/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -25,6 +28,7 @@ import { statsApi, analyticsApi } from '@/lib/api'
 import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
+import { LegalModal } from '@/components/legal/LegalModal'
 
 // Compact Role Icons
 const BloggerIcon = () => (
@@ -55,6 +59,8 @@ export default function DashboardPage() {
     enabled: !!user,
   })
   const [activeIdx, setActiveIdx] = useState<number | null>(null)
+  const [legalModalOpen, setLegalModalOpen] = useState(false)
+  const [legalTab, setLegalTab] = useState<'privacy' | 'offer' | 'rules'>('privacy')
 
   // Colors for chart
   const colorBySeries: Record<string, { dot: string }> = {
@@ -347,18 +353,59 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* 5. Minimal Support Link */}
-        <div className="flex justify-center pt-2">
-          <a
-            href="https://t.me/influenta_support_bot"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-xs text-white/30 hover:text-white/60 transition-colors"
-          >
-            <Shield className="w-3 h-3" />
-            <span>Поддержка и помощь</span>
-            <ExternalLink className="w-3 h-3 opacity-50" />
-          </a>
+        {/* 5. Support & Legal Section */}
+        <div className="mt-6 pt-6 border-t border-white/5">
+          {/* Support Link */}
+          <div className="flex justify-center mb-4">
+            <a
+              href="https://t.me/influenta_support_bot"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white/50 hover:text-white/80 hover:bg-white/10 transition-all"
+            >
+              <Shield className="w-3.5 h-3.5" />
+              <span>Поддержка и помощь</span>
+              <ExternalLink className="w-3 h-3 opacity-50" />
+            </a>
+          </div>
+
+          {/* Legal Links */}
+          <div className="flex flex-wrap justify-center gap-3 mb-4">
+            <button
+              onClick={() => { setLegalTab('privacy'); setLegalModalOpen(true); }}
+              className="inline-flex items-center gap-1.5 text-[11px] text-white/30 hover:text-white/60 transition-colors"
+            >
+              <Shield className="w-3 h-3" />
+              Конфиденциальность
+            </button>
+            <span className="text-white/10">•</span>
+            <button
+              onClick={() => { setLegalTab('offer'); setLegalModalOpen(true); }}
+              className="inline-flex items-center gap-1.5 text-[11px] text-white/30 hover:text-white/60 transition-colors"
+            >
+              <FileText className="w-3 h-3" />
+              Оферта
+            </button>
+            <span className="text-white/10">•</span>
+            <button
+              onClick={() => { setLegalTab('rules'); setLegalModalOpen(true); }}
+              className="inline-flex items-center gap-1.5 text-[11px] text-white/30 hover:text-white/60 transition-colors"
+            >
+              <ScrollText className="w-3 h-3" />
+              Правила
+            </button>
+          </div>
+
+          {/* Legal Button (Alternative) */}
+          <div className="flex justify-center mb-4">
+            <button
+              onClick={() => setLegalModalOpen(true)}
+              className="inline-flex items-center gap-2 text-[11px] text-white/25 hover:text-white/50 transition-colors"
+            >
+              <Scale className="w-3 h-3" />
+              Правовая информация
+            </button>
+          </div>
         </div>
 
         {/* Creator Signature */}
@@ -368,6 +415,13 @@ export default function DashboardPage() {
           </span>
         </div>
       </div>
+
+      {/* Legal Modal */}
+      <LegalModal 
+        isOpen={legalModalOpen} 
+        onClose={() => setLegalModalOpen(false)}
+        initialTab={legalTab}
+      />
     </Layout>
   )
 }
