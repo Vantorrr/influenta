@@ -354,58 +354,27 @@ export default function DashboardPage() {
         </Card>
 
         {/* 5. Support & Legal Section */}
-        <div className="mt-6 pt-6 border-t border-white/5">
+        <div className="mt-6 pt-6 border-t border-white/5 flex flex-col items-center gap-3">
           {/* Support Link */}
-          <div className="flex justify-center mb-4">
-            <a
-              href="https://t.me/influenta_support_bot"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white/50 hover:text-white/80 hover:bg-white/10 transition-all"
-            >
-              <Shield className="w-3.5 h-3.5" />
-              <span>Поддержка и помощь</span>
-              <ExternalLink className="w-3 h-3 opacity-50" />
-            </a>
-          </div>
+          <a
+            href="https://t.me/influenta_support_bot"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white/50 hover:text-white/80 hover:bg-white/10 transition-all w-full justify-center max-w-xs"
+          >
+            <Shield className="w-3.5 h-3.5" />
+            <span>Поддержка и помощь</span>
+            <ExternalLink className="w-3 h-3 opacity-50 ml-auto" />
+          </a>
 
-          {/* Legal Links */}
-          <div className="flex flex-wrap justify-center gap-3 mb-4">
-            <button
-              onClick={() => { setLegalTab('privacy'); setLegalModalOpen(true); }}
-              className="inline-flex items-center gap-1.5 text-[11px] text-white/30 hover:text-white/60 transition-colors"
-            >
-              <Shield className="w-3 h-3" />
-              Конфиденциальность
-            </button>
-            <span className="text-white/10">•</span>
-            <button
-              onClick={() => { setLegalTab('offer'); setLegalModalOpen(true); }}
-              className="inline-flex items-center gap-1.5 text-[11px] text-white/30 hover:text-white/60 transition-colors"
-            >
-              <FileText className="w-3 h-3" />
-              Оферта
-            </button>
-            <span className="text-white/10">•</span>
-            <button
-              onClick={() => { setLegalTab('rules'); setLegalModalOpen(true); }}
-              className="inline-flex items-center gap-1.5 text-[11px] text-white/30 hover:text-white/60 transition-colors"
-            >
-              <ScrollText className="w-3 h-3" />
-              Правила
-            </button>
-          </div>
-
-          {/* Legal Button (Alternative) */}
-          <div className="flex justify-center mb-4">
-            <button
-              onClick={() => setLegalModalOpen(true)}
-              className="inline-flex items-center gap-2 text-[11px] text-white/25 hover:text-white/50 transition-colors"
-            >
-              <Scale className="w-3 h-3" />
-              Правовая информация
-            </button>
-          </div>
+          {/* Legal Button - Clean & Minimal */}
+          <button
+            onClick={() => { setLegalTab('privacy'); setLegalModalOpen(true); }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs text-white/30 hover:text-white/60 hover:bg-white/5 transition-all w-full justify-center max-w-xs"
+          >
+            <Scale className="w-3.5 h-3.5" />
+            <span>Правовая информация</span>
+          </button>
         </div>
 
         {/* Creator Signature */}
