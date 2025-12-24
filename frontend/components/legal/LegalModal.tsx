@@ -222,13 +222,13 @@ function OfferContent() {
 
       <Section title="3. Стоимость услуг">
         <p className="text-telegram-textSecondary">
-          <strong className="text-telegram-text">3.1.</strong> Базовый функционал платформы предоставляется бесплатно.
+          <strong className="text-telegram-text">3.1.</strong> Платформа полностью бесплатна для всех пользователей.
         </p>
         <p className="text-telegram-textSecondary mt-2">
-          <strong className="text-telegram-text">3.2.</strong> Комиссия платформы за успешные сделки составляет <strong className="text-telegram-primary">10%</strong> от суммы сделки.
+          <strong className="text-telegram-text">3.2.</strong> Комиссия за сделки не взимается.
         </p>
         <p className="text-telegram-textSecondary mt-2">
-          <strong className="text-telegram-text">3.3.</strong> Дополнительные платные услуги (продвижение профиля, верификация) оплачиваются отдельно.
+          <strong className="text-telegram-text">3.3.</strong> Верификация блогеров проводится бесплатно.
         </p>
       </Section>
 
@@ -259,7 +259,24 @@ function OfferContent() {
         </p>
       </Section>
 
-      <Section title="6. Срок действия и расторжение">
+      <Section title="6. Верификация блогеров">
+        <p className="text-telegram-textSecondary">
+          <strong className="text-telegram-text">6.1.</strong> Верификация подтверждает личность блогера и повышает доверие рекламодателей.
+        </p>
+        <p className="text-telegram-textSecondary mt-2">
+          <strong className="text-telegram-text">6.2.</strong> Требования для верификации:
+        </p>
+        <ul className="list-disc pl-5 space-y-1 text-telegram-textSecondary mt-2">
+          <li>Минимум 100 000 подписчиков в социальных сетях</li>
+          <li>Фото паспорта РФ (для подтверждения личности)</li>
+          <li>Размещение проверочного кода в описании профиля</li>
+        </ul>
+        <p className="text-telegram-textSecondary mt-2">
+          <strong className="text-telegram-text">6.3.</strong> Верификация бесплатна. Данные паспорта хранятся в зашифрованном виде и не передаются третьим лицам.
+        </p>
+      </Section>
+
+      <Section title="7. Срок действия и расторжение">
         <p className="text-telegram-textSecondary">
           Договор действует с момента регистрации. Любая сторона может расторгнуть договор, уведомив 
           другую сторону за 7 дней. При расторжении начатые сделки должны быть завершены.
@@ -297,7 +314,7 @@ function RulesContent() {
           <li>Выполняйте взятые обязательства в срок</li>
           <li>Не завышайте цены искусственно</li>
           <li>Отвечайте на предложения в течение 48 часов</li>
-          <li>Для верификации требуется от 100 000 подписчиков</li>
+          <li>Для верификации требуется от 100 000 подписчиков и паспорт РФ</li>
         </ul>
       </Section>
 
