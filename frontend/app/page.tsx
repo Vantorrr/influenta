@@ -2,18 +2,21 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Search, Users, Briefcase, TrendingUp, Star, ArrowRight, Shield, ChevronDown } from 'lucide-react'
+import { Search, Users, Briefcase, TrendingUp, Star, ArrowRight, Shield, ChevronDown, FileText, ScrollText, Scale, Mail, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { LegalModal } from '@/components/legal/LegalModal'
 
 export default function HomePage() {
   const router = useRouter()
   const { user, isAdmin, isSuperAdmin } = useAuth()
   const [userRole, setUserRole] = useState<'blogger' | 'advertiser' | null>(null)
   const [showScrollArrow, setShowScrollArrow] = useState(true)
+  const [legalModalOpen, setLegalModalOpen] = useState(false)
+  const [legalTab, setLegalTab] = useState<'privacy' | 'offer' | 'rules'>('privacy')
 
   useEffect(() => {
     // Если пользователь уже авторизован — редирект на дашборд
@@ -409,6 +412,118 @@ export default function HomePage() {
           </motion.div>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="relative z-10 border-t border-telegram-border/50 bg-telegram-bg/80 backdrop-blur-xl">
+        <div className="container py-12">
+          <div className="grid md:grid-cols-4 gap-8">
+            {/* Logo & Description */}
+            <div className="md:col-span-2">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-telegram-primary to-telegram-accent flex items-center justify-center">
+                  <span className="text-xl font-bold text-white">I</span>
+                </div>
+                <span className="text-xl font-bold bg-gradient-to-r from-telegram-primary to-telegram-accent bg-clip-text text-transparent">
+                  Influenta
+                </span>
+              </div>
+              <p className="text-telegram-textSecondary mb-4 max-w-md">
+                Платформа для прозрачного сотрудничества блогеров и рекламодателей. 
+                Без посредников, без скрытых комиссий.
+              </p>
+              <div className="flex items-center gap-4">
+                <a 
+                  href="https://t.me/influenta_support_bot" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-telegram-textSecondary hover:text-telegram-primary transition-colors"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  <span>Поддержка</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Legal Links */}
+            <div>
+              <h4 className="font-semibold text-telegram-text mb-4 flex items-center gap-2">
+                <Scale className="w-4 h-4 text-telegram-primary" />
+                Правовая информация
+              </h4>
+              <ul className="space-y-3">
+                <li>
+                  <button 
+                    onClick={() => { setLegalTab('privacy'); setLegalModalOpen(true); }}
+                    className="flex items-center gap-2 text-telegram-textSecondary hover:text-telegram-primary transition-colors group"
+                  >
+                    <Shield className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                    Политика конфиденциальности
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => { setLegalTab('offer'); setLegalModalOpen(true); }}
+                    className="flex items-center gap-2 text-telegram-textSecondary hover:text-telegram-primary transition-colors group"
+                  >
+                    <FileText className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                    Публичная оферта
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => { setLegalTab('rules'); setLegalModalOpen(true); }}
+                    className="flex items-center gap-2 text-telegram-textSecondary hover:text-telegram-primary transition-colors group"
+                  >
+                    <ScrollText className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                    Правила сервиса
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <h4 className="font-semibold text-telegram-text mb-4">Контакты</h4>
+              <div className="space-y-3 text-telegram-textSecondary">
+                <p className="text-sm">ИП Галанте Павел Витальевич</p>
+                <p className="text-sm">ИНН: 772855508850</p>
+                <a 
+                  href="mailto:support@influenta.io"
+                  className="flex items-center gap-2 text-sm hover:text-telegram-primary transition-colors"
+                >
+                  <Mail className="w-4 h-4" />
+                  support@influenta.io
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="mt-10 pt-6 border-t border-telegram-border/50">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <p className="text-sm text-telegram-textSecondary">
+                © 2024 Influenta. Все права защищены.
+              </p>
+              <div className="flex items-center gap-6">
+                <button 
+                  onClick={() => setLegalModalOpen(true)}
+                  className="text-sm text-telegram-textSecondary hover:text-telegram-primary transition-colors flex items-center gap-2"
+                >
+                  <Scale className="w-4 h-4" />
+                  Правовая информация
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* Legal Modal */}
+      <LegalModal 
+        isOpen={legalModalOpen} 
+        onClose={() => setLegalModalOpen(false)}
+        initialTab={legalTab}
+      />
     </div>
   )
 }
