@@ -485,14 +485,21 @@ export default function HomePage() {
             <div>
               <h4 className="font-semibold text-telegram-text mb-4">Контакты</h4>
               <div className="space-y-3 text-telegram-textSecondary">
-                <p className="text-sm">ИП Галанте Павел Витальевич</p>
-                <p className="text-sm">ИНН: 772855508850</p>
                 <a 
                   href="mailto:support@influenta.io"
                   className="flex items-center gap-2 text-sm hover:text-telegram-primary transition-colors"
                 >
                   <Mail className="w-4 h-4" />
                   support@influenta.io
+                </a>
+                <a 
+                  href="https://t.me/influenta_support_bot"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm hover:text-telegram-primary transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Telegram Support
                 </a>
               </div>
             </div>

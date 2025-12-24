@@ -100,7 +100,7 @@ export function LegalModal({ isOpen, onClose, initialTab = 'privacy' }: LegalMod
             {/* Footer */}
             <div className="p-4 border-t border-telegram-border bg-telegram-bgSecondary/30">
               <p className="text-center text-sm text-telegram-textSecondary">
-                Последнее обновление: 24 декабря 2024 г. · ИП Галанте П.В. · ИНН 772855508850
+                Последнее обновление: 24 декабря 2024 г. · Influenta Platform
               </p>
             </div>
           </motion.div>
@@ -197,7 +197,7 @@ function OfferContent() {
 
       <Section title="1. Общие положения">
         <p className="text-telegram-textSecondary">
-          <strong className="text-telegram-text">1.1.</strong> Исполнитель: ИП Галанте Павел Витальевич, ИНН 772855508850
+          <strong className="text-telegram-text">1.1.</strong> Исполнитель: Платформа Influenta
         </p>
         <p className="text-telegram-textSecondary mt-2">
           <strong className="text-telegram-text">1.2.</strong> Принятие (акцепт) оферты осуществляется путём регистрации на платформе через Telegram.
