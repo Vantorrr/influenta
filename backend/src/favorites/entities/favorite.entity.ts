@@ -22,3 +22,5 @@ export class Favorite extends BaseEntity {
 
 
 
+
+

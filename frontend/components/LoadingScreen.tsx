@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
-import { Snowfall } from './ui/Snowfall'
 
 export function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(true)
@@ -76,10 +75,6 @@ export function LoadingScreen() {
               backgroundSize: '40px 40px' 
             }} 
           />
-
-          <div className="fixed inset-0 z-0">
-            <Snowfall />
-          </div>
 
           <div className="relative z-10 flex flex-col items-center w-full max-w-xs">
             {/* Логотип */}

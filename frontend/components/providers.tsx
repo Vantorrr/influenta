@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { LoadingScreen } from './LoadingScreen'
 import { chatService } from '@/lib/chat.service'
 import { FavoritesProvider } from '@/context/FavoritesContext'
-import { Snowfall } from './ui/Snowfall'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -122,7 +121,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <FavoritesProvider>
-        <Snowfall />
         <LoadingScreen />
         {children}
       </FavoritesProvider>
