@@ -7,17 +7,12 @@ import Image from 'next/image'
 export function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(true)
   const [progress, setProgress] = useState(0)
-  const [loadingText, setLoadingText] = useState('Хо-хо-хо! 🎅 Загружаем подарки...')
+  const [loadingText, setLoadingText] = useState('Загружаем Influenta...')
 
   // Вибрация — отдельный эффект, зависит от isLoading
   useEffect(() => {
     if (!isLoading) return // Не вибрируем если загрузка закончилась
     
-    // Звук Йо-хо-хо (если есть файл)
-    const audio = new Audio('/hohoho.mp3')
-    audio.volume = 0.6
-    audio.play().catch(() => {}) // Игнорируем ошибку автовоспроизведения
-
     const haptic = (window as any).Telegram?.WebApp?.HapticFeedback
     if (!haptic) return
     
@@ -103,17 +98,6 @@ export function LoadingScreen() {
                   priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-50" />
-              </motion.div>
-              
-              {/* Шапка Деда Мороза */}
-              <motion.div 
-                initial={{ opacity: 0, y: -20, rotate: -10 }}
-                animate={{ opacity: 1, y: 0, rotate: 12 }}
-                transition={{ delay: 0.5, type: "spring" }}
-                className="absolute -top-10 -right-8 text-[70px] z-20 drop-shadow-2xl filter"
-                style={{ textShadow: '0 4px 8px rgba(0,0,0,0.5)' }}
-              >
-                🎅
               </motion.div>
             </motion.div>
 
