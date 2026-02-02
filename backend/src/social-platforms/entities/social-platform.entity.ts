@@ -18,7 +18,7 @@ export enum PlatformType {
 @Entity('social_platforms')
 @Index(['userId', 'platform'], { unique: true }) // One platform type per user
 export class SocialPlatform extends BaseEntity {
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.socialPlatforms, { onDelete: 'CASCADE' })
   @JoinColumn()
   user: User;
 
