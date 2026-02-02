@@ -588,32 +588,7 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* Stats Grid for Bloggers */}
-          {user.role === UserRole.BLOGGER && !isEditing && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 20 }}>
-              {[
-                { label: 'Подписчики', value: (user as any).subscribersCount || '0', color: '#3390ec' },
-                { label: 'За пост', value: (user as any).pricePerPost ? `${(user as any).pricePerPost}₽` : '-', color: '#22c55e' },
-                { label: 'За сторис', value: (user as any).pricePerStory ? `${(user as any).pricePerStory}₽` : '-', color: '#a665ff' }
-              ].map((stat, i) => (
-                <div key={i} style={{ 
-                  background: 'rgba(30, 30, 46, 0.6)',
-                  backdropFilter: 'blur(12px)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: 20,
-                  padding: '16px 8px',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: stat.color, marginBottom: 4 }}>
-                    {stat.value}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
-                    {stat.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {/* Stats Grid for Bloggers - REMOVED per user request */}
 
           {/* Categories for Bloggers */}
           {user.role === UserRole.BLOGGER && !isEditing && (

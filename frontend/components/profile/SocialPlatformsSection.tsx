@@ -245,7 +245,7 @@ export function SocialPlatformsSection() {
                   </div>
                   
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, fontSize: 13, marginTop: 8 }}>
-                    {(platform.pricePerPost || platform.pricePerPost === -1) && (
+                    {(platform.pricePerPost !== undefined && platform.pricePerPost !== null) && (
                       <div style={{ color: 'rgba(255,255,255,0.7)' }}>
                         Пост: <span style={{ color: '#22c55e', fontWeight: 600 }}>
                           {platform.pricePerPost === -1 ? 'Договорная' : formatPrice(platform.pricePerPost)}
@@ -253,7 +253,7 @@ export function SocialPlatformsSection() {
                       </div>
                     )}
                     
-                    {(platform.pricePerStory || platform.pricePerStory === -1) && (
+                    {(platform.pricePerStory !== undefined && platform.pricePerStory !== null) && (
                       <div style={{ color: 'rgba(255,255,255,0.7)' }}>
                         Сторис: <span style={{ color: '#a665ff', fontWeight: 600 }}>
                           {platform.pricePerStory === -1 ? 'Договорная' : formatPrice(platform.pricePerStory)}

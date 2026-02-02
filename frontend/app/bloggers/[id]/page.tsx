@@ -264,50 +264,11 @@ export default function BloggerDetailsPage() {
                     ))}
                   </div>
 
-                  {/* Price Badge - Compact & Aligned */}
-                  {(blogger.pricePerPost > 0 || blogger.pricePerStory > 0) && (
-                    <div className="flex flex-wrap gap-2 pt-0.5">
-                      {blogger.pricePerPost > 0 && (
-                        <div className="inline-flex items-baseline gap-1.5 bg-telegram-accent/10 border border-telegram-accent/20 px-2.5 py-1 rounded-lg">
-                          <span className="text-[10px] text-telegram-accent/80 uppercase font-bold tracking-wider">Пост</span>
-                          <span className="text-sm md:text-base font-bold text-telegram-accent">{formatPrice(blogger.pricePerPost)}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  {/* Price Badge - REMOVED per user request */}
                 </div>
               </div>
 
-              {/* Stats Grid */}
-              <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-white/5">
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-2 text-telegram-textSecondary mb-1">
-                    <Users className="w-4 h-4" />
-                    <span className="text-sm">Подписчики</span>
-                  </div>
-                  <p className="text-xl md:text-2xl font-bold text-white">
-                    {formatNumber(blogger.subscribersCount || 0)}
-                  </p>
-                </div>
-                <div className="text-center border-l border-white/5">
-                  <div className="flex items-center justify-center gap-2 text-telegram-textSecondary mb-1">
-                    <Eye className="w-4 h-4" />
-                    <span className="text-sm">Просмотры</span>
-                  </div>
-                  <p className="text-xl md:text-2xl font-bold text-white">
-                    {formatNumber(blogger.averageViews || 0)}
-                  </p>
-                </div>
-                <div className="text-center border-l border-white/5">
-                  <div className="flex items-center justify-center gap-2 text-telegram-textSecondary mb-1">
-                    <MessageSquare className="w-4 h-4" />
-                    <span className="text-sm">ER</span>
-                  </div>
-                  <p className="text-xl md:text-2xl font-bold text-telegram-accent">
-                    {blogger.engagementRate || 0}%
-                  </p>
-                </div>
-              </div>
+              {/* Stats Grid - REMOVED per user request */}
 
               {/* Bio */}
               {blogger.bio && (
