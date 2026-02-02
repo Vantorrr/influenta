@@ -1,6 +1,7 @@
 import { Entity, Column, OneToOne, OneToMany, ValueTransformer, Index } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { BaseEntity } from '../../common/entities/base.entity';
+import { SocialPlatform } from '../../social-platforms/entities/social-platform.entity';
 
 export enum UserRole {
   BLOGGER = 'blogger',
@@ -118,5 +119,8 @@ export class User extends BaseEntity {
 
   @Column({ type: 'jsonb', nullable: true })
   telegramData?: Record<string, any>;
+
+  @OneToMany(() => SocialPlatform, (platform) => platform.user)
+  socialPlatforms: SocialPlatform[];
 }
 

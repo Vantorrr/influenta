@@ -39,6 +39,7 @@ export class BloggersService implements OnModuleInit {
     const query = this.usersRepository
       .createQueryBuilder('user')
       .leftJoinAndMapOne('user.blogger', Blogger, 'blogger', 'blogger.userId = user.id')
+      .leftJoinAndSelect('user.socialPlatforms', 'socialPlatforms', 'socialPlatforms.isActive = :spActive', { spActive: true })
       .where('user.isActive = :isActive', { isActive: true })
       .andWhere('user.role = :role', { role: UserRole.BLOGGER });
 
@@ -152,27 +153,43 @@ export class BloggersService implements OnModuleInit {
     });
 
     // Преобразуем пользователей в блогеров с реальными данными
-    const bloggers = data.map(user => ({
-      id: user.id,
-      user: {
+    const bloggers = data.map(user => {
+      // Считаем общую статистику по всем активным платформам
+      const platforms = user.socialPlatforms || [];
+      const totalSubscribers = platforms.reduce((sum, p) => sum + (p.subscribersCount || 0), 0);
+      const totalViews = platforms.reduce((sum, p) => sum + (p.additionalInfo?.views30days || 0), 0);
+      
+      // Если платформ нет, берем старые данные (fallback)
+      const finalSubscribers = totalSubscribers > 0 ? totalSubscribers : (user.subscribersCount || 0);
+      const finalViews = totalViews > 0 ? totalViews : Math.floor(finalSubscribers * 0.35);
+
+      return {
         id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName || '',
-        username: user.username || '',
-        photoUrl: user.photoUrl,
+        user: {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName || '',
+          username: user.username || '',
+          photoUrl: user.photoUrl,
+          isVerified: user.isVerified,
+          createdAt: user.createdAt,
+        },
+        bio: user.bio || '',
+        categories: user.categories ? user.categories.split(',').filter(Boolean) : [],
+        subscribersCount: finalSubscribers,
+        averageViews: finalViews, 
+        pricePerPost: user.pricePerPost || 0,
+        pricePerStory: user.pricePerStory || 0,
         isVerified: user.isVerified,
+        isFeatured: (user as any).blogger?.isFeatured || false,
         createdAt: user.createdAt,
-      },
-      bio: user.bio || '',
-      categories: user.categories ? user.categories.split(',').filter(Boolean) : [],
-      subscribersCount: user.subscribersCount || 0,
-      averageViews: Math.floor((user.subscribersCount || 0) * 0.35), // ~35% от подписчиков
-      pricePerPost: user.pricePerPost || 0,
-      pricePerStory: user.pricePerStory || 0,
-      isVerified: user.isVerified,
-      isFeatured: (user as any).blogger?.isFeatured || false,
-      createdAt: user.createdAt,
-    }));
+        socialPlatforms: platforms.map(p => ({
+          platform: p.platform,
+          username: p.username,
+          subscribersCount: p.subscribersCount
+        }))
+      };
+    });
 
     return {
       data: bloggers,
@@ -188,6 +205,7 @@ export class BloggersService implements OnModuleInit {
   async findOne(id: string) {
     const user = await this.usersRepository.createQueryBuilder('user')
       .leftJoinAndMapOne('user.blogger', Blogger, 'blogger', 'blogger.userId = user.id')
+      .leftJoinAndSelect('user.socialPlatforms', 'socialPlatforms', 'socialPlatforms.isActive = :spActive', { spActive: true })
       .where('user.id = :id', { id })
       .andWhere('user.isActive = :isActive', { isActive: true })
       .andWhere('user.role = :role', { role: UserRole.BLOGGER })
@@ -196,6 +214,14 @@ export class BloggersService implements OnModuleInit {
     if (!user) {
       throw new NotFoundException('Blogger not found');
     }
+
+    // Считаем общую статистику
+    const platforms = user.socialPlatforms || [];
+    const totalSubscribers = platforms.reduce((sum, p) => sum + (p.subscribersCount || 0), 0);
+    const totalViews = platforms.reduce((sum, p) => sum + (p.additionalInfo?.views30days || 0), 0);
+    
+    const finalSubscribers = totalSubscribers > 0 ? totalSubscribers : (user.subscribersCount || 0);
+    const finalViews = totalViews > 0 ? totalViews : Math.floor(finalSubscribers * 0.35);
 
     // Преобразуем пользователя в блогера с реальными данными
     return {
@@ -211,13 +237,18 @@ export class BloggersService implements OnModuleInit {
       },
       bio: user.bio || '',
       categories: user.categories ? user.categories.split(',').filter(Boolean) : [],
-      subscribersCount: user.subscribersCount || 0,
-      averageViews: Math.floor((user.subscribersCount || 0) * 0.35), // ~35% от подписчиков
+      subscribersCount: finalSubscribers,
+      averageViews: finalViews,
       pricePerPost: user.pricePerPost || 0,
       pricePerStory: user.pricePerStory || 0,
       isVerified: user.isVerified,
       isFeatured: (user as any).blogger?.isFeatured || false,
       adminNotes: (user as any).blogger?.adminNotes,
+      socialPlatforms: platforms.map(p => ({
+        platform: p.platform,
+        username: p.username,
+        subscribersCount: p.subscribersCount
+      }))
     };
   }
 

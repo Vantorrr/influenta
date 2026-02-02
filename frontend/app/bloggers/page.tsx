@@ -28,6 +28,7 @@ import { BloggerFilters } from '@/types'
 import { FilterModal } from '@/components/bloggers/FilterModal'
 import { VerificationTooltip } from '@/components/VerificationTooltip'
 import { useFavorites } from '@/context/FavoritesContext'
+import { getPlatformIcon } from '@/components/icons/PlatformIcons'
 
 import { Layout } from '@/components/layout/Layout'
 
@@ -311,6 +312,17 @@ function BloggersPageContent() {
                           </p>
                         )}
                       </div>
+
+                      {/* Social Platforms Icons */}
+                      {blogger.socialPlatforms && blogger.socialPlatforms.length > 0 && (
+                        <div className="flex gap-1.5 pt-1">
+                          {blogger.socialPlatforms.map((p: any) => (
+                            <div key={p.platform} className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center border border-white/5">
+                              {getPlatformIcon(p.platform, { size: 14 })}
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
                       {/* Stats Grid */}
                       <div className="grid grid-cols-3 gap-2 py-2 border-t border-white/5 border-b mb-2">
