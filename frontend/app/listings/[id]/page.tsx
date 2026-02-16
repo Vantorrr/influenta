@@ -103,7 +103,7 @@ const modalContentStyle = {
   borderRight: '1px solid rgba(255,255,255,0.1)',
   borderTopLeftRadius: 24,
   borderTopRightRadius: 24,
-  padding: '24px 24px 48px 24px', // Большой паддинг снизу
+  padding: '24px 24px 100px 24px', // Большой паддинг снизу для навигации
   width: '100%',
   maxWidth: 600,
   maxHeight: '90vh',
