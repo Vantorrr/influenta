@@ -29,6 +29,7 @@ export default function AdminBloggersPage() {
   const [error, setError] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState<BloggerFilters>({})
+  const [totalCount, setTotalCount] = useState(0)
   const { user } = useAuth()
 
   useScrollRestoration()
@@ -41,14 +42,16 @@ export default function AdminBloggersPage() {
         setIsLoading(true)
         const apiFilters: any = { ...filters }
         if (search && search.trim().length > 0) apiFilters.search = search.trim()
-        const data = await bloggersApi.search(apiFilters, 1, 2000)
+        const data = await bloggersApi.search(apiFilters, 1, 50000)
         const items = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : [])
+        const total = data?.meta?.total ?? items.length
         const sorted = [...items].sort((a: any, b: any) => {
           const aCreated = new Date(a?.user?.createdAt || a?.createdAt || 0).getTime()
           const bCreated = new Date(b?.user?.createdAt || b?.createdAt || 0).getTime()
           return bCreated - aCreated
         })
         setBloggers(sorted)
+        setTotalCount(total)
       } catch (e: any) {
         const msg = e?.response?.data?.message || e?.message || 'Ошибка загрузки'
         setError(Array.isArray(msg) ? msg.join(', ') : String(msg))
@@ -61,7 +64,7 @@ export default function AdminBloggersPage() {
   }, [user, search, filters])
 
   const stats = {
-    total: bloggers.length,
+    total: totalCount || bloggers.length,
     verified: bloggers.filter(b => !!b.isVerified).length,
     active: bloggers.filter(b => (b.subscribersCount || 0) > 0).length,
   }
