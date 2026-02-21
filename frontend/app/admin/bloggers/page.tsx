@@ -10,37 +10,38 @@ import {
   Shield,
   TrendingUp
 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
 import { formatNumber, formatPrice, getCategoryLabel } from '@/lib/utils'
-import { BloggerCategory } from '@/types'
+import { BloggerFilters } from '@/types'
 import { bloggersApi } from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
 import { useScrollRestoration } from '@/hooks/useScrollRestoration'
+import { FilterModal } from '@/components/bloggers/FilterModal'
 
 export default function AdminBloggersPage() {
   const [search, setSearch] = useState('')
   const [bloggers, setBloggers] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
+  const [filters, setFilters] = useState<BloggerFilters>({})
   const { user } = useAuth()
 
-  // Восстановление скролла на списке админских блогеров
   useScrollRestoration()
 
-  // Debounced search
   useEffect(() => {
     if (!user) return
     
     const timer = setTimeout(async () => {
       try {
         setIsLoading(true)
-        const filters: any = {}
-        if (search && search.trim().length > 0) filters.search = search.trim()
-        const data = await bloggersApi.search(filters, 1, 2000)
+        const apiFilters: any = { ...filters }
+        if (search && search.trim().length > 0) apiFilters.search = search.trim()
+        const data = await bloggersApi.search(apiFilters, 1, 2000)
         const items = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : [])
         const sorted = [...items].sort((a: any, b: any) => {
           const aCreated = new Date(a?.user?.createdAt || a?.createdAt || 0).getTime()
@@ -54,16 +55,18 @@ export default function AdminBloggersPage() {
       } finally {
         setIsLoading(false)
       }
-    }, 300) // 300ms debounce
+    }, 300)
     
     return () => clearTimeout(timer)
-  }, [user, search])
+  }, [user, search, filters])
 
   const stats = {
     total: bloggers.length,
     verified: bloggers.filter(b => !!b.isVerified).length,
     active: bloggers.filter(b => (b.subscribersCount || 0) > 0).length,
   }
+
+  const activeFiltersCount = Object.values(filters).filter(v => v !== undefined && v !== '' && !(Array.isArray(v) && v.length === 0)).length
 
   if (isLoading) {
     return (
@@ -89,7 +92,6 @@ export default function AdminBloggersPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
       <div>
         <h1 className="text-3xl font-bold mb-2">Управление блогерами</h1>
         <p className="text-telegram-textSecondary">
@@ -97,8 +99,7 @@ export default function AdminBloggersPage() {
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -136,8 +137,7 @@ export default function AdminBloggersPage() {
         </Card>
       </div>
 
-      {/* Search */}
-      <div className="flex gap-4">
+      <div className="flex gap-3">
         <Input
           type="search"
           placeholder="Поиск блогеров..."
@@ -146,14 +146,33 @@ export default function AdminBloggersPage() {
           icon={<SearchIcon className="w-4 h-4" />}
           className="flex-1 touch-manipulation"
         />
-        <Button variant="secondary" className="touch-manipulation">
-          <SlidersHorizontal className="w-4 h-4 mr-2" />
-          Фильтры
-        </Button>
+        <button
+          type="button"
+          onClick={() => setShowFilters(true)}
+          onTouchEnd={(e) => {
+            e.preventDefault()
+            setShowFilters(true)
+          }}
+          className={`relative z-50 min-w-[48px] min-h-[48px] flex items-center justify-center rounded-xl font-medium select-none active:opacity-70 ${activeFiltersCount > 0 ? 'bg-telegram-primary text-white' : 'bg-telegram-bgSecondary text-telegram-textSecondary'}`}
+          style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+        >
+          <SlidersHorizontal className="w-5 h-5 pointer-events-none" />
+          {activeFiltersCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+              {activeFiltersCount}
+            </span>
+          )}
+        </button>
       </div>
 
-      {/* Bloggers List */}
       <div className="space-y-4">
+        {bloggers.length === 0 && (
+          <Card>
+            <CardContent className="p-6 text-center text-telegram-textSecondary">
+              {search || activeFiltersCount > 0 ? 'Ничего не найдено' : 'Нет блогеров'}
+            </CardContent>
+          </Card>
+        )}
         {bloggers.map((blogger) => (
           <Link 
             key={blogger.id} 
@@ -162,9 +181,10 @@ export default function AdminBloggersPage() {
             className="block touch-manipulation"
           >
             <Card hover className="cursor-pointer">
-              <CardContent className="p-6">
+              <CardContent className="p-4 md:p-6">
                 <div className="flex items-start gap-4 min-w-0">
                   <Avatar
+                    src={blogger.user?.photoUrl}
                     firstName={blogger.user?.firstName || ''}
                     lastName={blogger.user?.lastName || ''}
                     size="lg"
@@ -182,10 +202,9 @@ export default function AdminBloggersPage() {
                           )}
                         </h3>
                         <p className="text-telegram-textSecondary truncate">
-                          {blogger.user?.username || ''}
+                          {blogger.user?.username ? `@${blogger.user.username}` : ''}
                         </p>
                       </div>
-                      
                     </div>
                     
                     <div className="flex flex-wrap gap-2 mb-3">
@@ -234,20 +253,13 @@ export default function AdminBloggersPage() {
           </Link>
         ))}
       </div>
+
+      <FilterModal
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        filters={filters}
+        onApply={setFilters}
+      />
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

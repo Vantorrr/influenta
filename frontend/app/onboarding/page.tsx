@@ -10,6 +10,7 @@ import {
   Briefcase, 
   Camera, 
   Target, 
+  DollarSign, 
   Building,
   Link as LinkIcon,
   CheckCircle,
@@ -20,7 +21,6 @@ import {
 } from 'lucide-react'
 import { CATEGORY_LABELS } from '@/lib/constants'
 import { authApi, analyticsApi } from '@/lib/api'
-import { RubIcon } from '@/components/ui/ruble-icon'
 import { UserRole } from '@/types'
 
 // Branded minimal icons (no external deps)
@@ -103,7 +103,7 @@ function OnboardingInner() {
   const categories = [
     'lifestyle', 'tech', 'beauty', 'fashion', 'food', 
     'travel', 'fitness', 'gaming', 'education', 'business',
-    'entertainment', 'humor', 'other'
+    'entertainment', 'other'
   ]
 
   const bloggerSteps = [
@@ -125,7 +125,7 @@ function OnboardingInner() {
     {
       title: 'Стоимость',
       description: 'Установите цены на рекламу',
-      icon: RubIcon,
+      icon: DollarSign,
     },
   ]
 
@@ -218,87 +218,31 @@ function OnboardingInner() {
     console.log('Onboarding complete:', data)
     
     try {
-      // Вспомогательные функции для устойчивой авторизации перед сохранением профиля
-      const waitForTelegramReady = async (timeoutMs = 8000) => {
-        const start = Date.now()
-        while (Date.now() - start < timeoutMs) {
-          const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : undefined
-          if (tg?.initDataUnsafe?.user?.id && tg?.initData && tg.initData.length > 10) return
-          await new Promise(r => setTimeout(r, 150))
-        }
-      }
-
-      const reauthenticateWithTelegram = async (): Promise<string | null> => {
-        try {
-          const tg = (window as any).Telegram?.WebApp
-          if (!tg) return null
-          try { tg.ready?.() } catch {}
-          await waitForTelegramReady()
-          const initData = tg.initData || ''
-          const user = tg.initDataUnsafe?.user
-          if (!user?.id || !initData) return null
-          const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/telegram`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Telegram-Init-Data': initData,
-            },
-            body: JSON.stringify({ initData, user }),
-          })
-          if (!resp.ok) return null
-          const authData = await resp.json()
-          if (!authData?.token) return null
-          localStorage.setItem('influenta_token', authData.token)
-          if (authData?.user) localStorage.setItem('influenta_user', JSON.stringify(authData.user))
-          return authData.token as string
-        } catch {
-          return null
-        }
-      }
-
-      const ensureAuthToken = async (): Promise<string> => {
-        let token = localStorage.getItem('influenta_token') || ''
-        if (token && token.length > 0) return token
-        // до 3 попыток ре-авторизации через Telegram
-        for (let i = 0; i < 3; i++) {
-          const newToken = await reauthenticateWithTelegram()
-          if (newToken) return newToken
-          await new Promise(r => setTimeout(r, 500))
-        }
-        throw new Error('Токен авторизации не найден. Пожалуйста, перезапустите приложение.')
-      }
-
       // Подготавливаем данные для сохранения
       const profileData: any = {
-        // Для блогера роль по умолчанию уже blogger на сервере, лишний раз не шлём
-        // Для рекламодателя — явно выставляем роль
-        ...(data.role === 'advertiser' ? { role: UserRole.ADVERTISER } : {}),
+        role: data.role === 'blogger' ? UserRole.BLOGGER : UserRole.ADVERTISER,
         onboardingCompleted: true,
       }
 
       // Добавляем данные для блогеров
       if (data.role === 'blogger') {
         profileData.bio = data.bio || ''
-        if (data.categories && data.categories.length > 0) {
-          profileData.categories = data.categories.join(',')
-        }
+        profileData.categories = data.categories?.join(',') || ''
         
-        // Обрабатываем подписчиков (оставляем только цифры)
+        // Обрабатываем подписчиков
         if (data.subscribersCount) {
-          const digits = data.subscribersCount.toString().replace(/[^0-9]/g, '')
-          if (digits) profileData.subscribersCount = parseInt(digits, 10)
+          profileData.subscribersCount = parseInt(data.subscribersCount.replace(/\./g, '')) || 0
         }
         
         // Обрабатываем цены только если есть выбранные платформы
         if (data.socialPlatforms && data.socialPlatforms.length > 0) {
+          // Берём первую платформу для основных цен (для совместимости)
           const firstPlatform = data.socialPlatforms[0]
           if (firstPlatform.pricePost) {
-            const digits = firstPlatform.pricePost.toString().replace(/[^0-9]/g, '')
-            if (digits) profileData.pricePerPost = parseInt(digits, 10)
+            profileData.pricePerPost = parseInt(firstPlatform.pricePost) || 0
           }
           if (firstPlatform.priceStory) {
-            const digits = firstPlatform.priceStory.toString().replace(/[^0-9]/g, '')
-            if (digits) profileData.pricePerStory = parseInt(digits, 10)
+            profileData.pricePerStory = parseInt(firstPlatform.priceStory) || 0
           }
         }
       }
@@ -312,31 +256,10 @@ function OnboardingInner() {
         }
       }
 
-      // Удаляем undefined/NaN значения, чтобы не падать на валидации
-      Object.keys(profileData).forEach((k) => {
-        const v = (profileData as any)[k]
-        if (v === undefined || (typeof v === 'number' && Number.isNaN(v))) {
-          delete (profileData as any)[k]
-        }
-      })
       console.log('Saving profile data:', profileData)
       
-      // Гарантируем наличие токена (с ретраями и ре-логином через Telegram при необходимости)
-      const token = await ensureAuthToken()
-      
       // Сохраняем через API
-      let response
-      try {
-        response = await authApi.updateProfile(profileData)
-      } catch (err: any) {
-        // Если вдруг сессия протухла — переавторизуемся и повторим один раз
-        if (err?.response?.status === 401) {
-          await ensureAuthToken()
-          response = await authApi.updateProfile(profileData)
-        } else {
-          throw err
-        }
-      }
+      const response = await authApi.updateProfile(profileData)
       console.log('Profile saved:', response)
       
       // Подтягиваем свежий профиль с сервера

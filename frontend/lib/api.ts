@@ -387,7 +387,11 @@ export const adminApi = {
   async updateBlogger(id: string, data: Partial<any>): Promise<ApiResponse<Blogger>> {
     const response = await api.patch(`/admin/bloggers/${id}`, data)
     return response.data
-  }
+  },
+  async getAdvertisers(): Promise<any[]> {
+    const response = await api.get('/admin/advertisers')
+    return response.data
+  },
 }
 
 // Favorites API (Избранное)
