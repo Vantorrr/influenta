@@ -42,7 +42,7 @@ export default function AdminBloggersPage() {
         setIsLoading(true)
         const apiFilters: any = { ...filters }
         if (search && search.trim().length > 0) apiFilters.search = search.trim()
-        const data = await bloggersApi.search(apiFilters, 1, 50000)
+        const data = await bloggersApi.search(apiFilters, 1, 5000)
         const items = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : [])
         const total = data?.meta?.total ?? items.length
         const sorted = [...items].sort((a: any, b: any) => {
