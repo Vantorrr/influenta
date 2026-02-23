@@ -212,28 +212,43 @@ export class AuthService {
   async updateProfile(userId: string, dto: UpdateProfileDto) {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) {
-      throw new Error('User not found');
+      throw new BadRequestException('Пользователь не найден');
     }
-    if (dto.firstName !== undefined) user.firstName = dto.firstName;
-    if (dto.lastName !== undefined) user.lastName = dto.lastName;
-    if (dto.username !== undefined) user.username = dto.username;
-    if (dto.photoUrl !== undefined) user.photoUrl = dto.photoUrl;
-    if (dto.email !== undefined) user.email = dto.email || null as any;
-    if (dto.bio !== undefined) user.bio = dto.bio;
-    if (dto.role !== undefined) user.role = dto.role;
-    if (dto.phone !== undefined) user.phone = dto.phone;
-    if (dto.website !== undefined) user.website = dto.website;
-    if (dto.telegramLink !== undefined) user.telegramLink = dto.telegramLink;
-    if (dto.instagramLink !== undefined) user.instagramLink = dto.instagramLink;
-    if (dto.subscribersCount !== undefined) user.subscribersCount = dto.subscribersCount;
-    if (dto.pricePerPost !== undefined) user.pricePerPost = dto.pricePerPost;
-    if (dto.pricePerStory !== undefined) user.pricePerStory = dto.pricePerStory;
-    if (dto.categories !== undefined) user.categories = dto.categories;
-    if (dto.companyName !== undefined) user.companyName = dto.companyName;
-    if (dto.description !== undefined) user.description = dto.description;
-        if (dto.onboardingCompleted !== undefined) user.onboardingCompleted = !!dto.onboardingCompleted;
-    await this.usersRepository.save(user);
-    return this.getProfile(userId);
+
+    try {
+      if (dto.firstName !== undefined) user.firstName = dto.firstName;
+      if (dto.lastName !== undefined) user.lastName = dto.lastName;
+      if (dto.username !== undefined) user.username = dto.username;
+      if (dto.photoUrl !== undefined) user.photoUrl = dto.photoUrl;
+      if (dto.email !== undefined) user.email = dto.email || null as any;
+      if (dto.bio !== undefined) user.bio = dto.bio;
+      if (dto.role !== undefined) user.role = dto.role;
+      if (dto.phone !== undefined) user.phone = dto.phone;
+      if (dto.website !== undefined) user.website = dto.website;
+      if (dto.telegramLink !== undefined) user.telegramLink = dto.telegramLink;
+      if (dto.instagramLink !== undefined) user.instagramLink = dto.instagramLink;
+      if (dto.subscribersCount !== undefined) user.subscribersCount = dto.subscribersCount;
+      if (dto.pricePerPost !== undefined) user.pricePerPost = dto.pricePerPost;
+      if (dto.pricePerStory !== undefined) user.pricePerStory = dto.pricePerStory;
+      if (dto.categories !== undefined) user.categories = dto.categories;
+      if (dto.companyName !== undefined) user.companyName = dto.companyName;
+      if (dto.description !== undefined) user.description = dto.description;
+      if (dto.onboardingCompleted !== undefined) user.onboardingCompleted = !!dto.onboardingCompleted;
+
+      await this.usersRepository.save(user);
+      return this.getProfile(userId);
+    } catch (error: any) {
+      console.error('❌ updateProfile save error:', {
+        userId,
+        dto,
+        errorMessage: error?.message,
+        errorCode: error?.code,
+        errorDetail: error?.detail,
+      });
+      throw new BadRequestException(
+        error?.detail || error?.message || 'Ошибка сохранения профиля'
+      );
+    }
   }
 
   async requestVerification(userId: string, data: {

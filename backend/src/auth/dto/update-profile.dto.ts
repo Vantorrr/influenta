@@ -1,4 +1,5 @@
-import { IsOptional, IsString, IsUrl, IsEmail, IsEnum } from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsNumber, IsBoolean } from 'class-validator';
+import { Type } from 'class-transformer';
 import { UserRole } from '../../users/entities/user.entity';
 
 export class UpdateProfileDto {
@@ -15,11 +16,11 @@ export class UpdateProfileDto {
   username?: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsString()
   photoUrl?: string;
 
   @IsOptional()
-  @IsEmail()
+  @IsString()
   email?: string | null;
 
   @IsOptional()
@@ -46,21 +47,25 @@ export class UpdateProfileDto {
   @IsString()
   instagramLink?: string;
 
-  // Поля для блогеров
   @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
   subscribersCount?: number;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
   pricePerPost?: number;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
   pricePerStory?: number;
 
   @IsOptional()
   @IsString()
   categories?: string;
 
-  // Поля для рекламодателей
   @IsOptional()
   @IsString()
   companyName?: string;
@@ -70,15 +75,6 @@ export class UpdateProfileDto {
   description?: string;
 
   @IsOptional()
+  @IsBoolean()
   onboardingCompleted?: boolean;
 }
-
-
-
-
-
-
-
-
-
-

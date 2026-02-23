@@ -214,29 +214,27 @@ function OnboardingInner() {
     }
   }
 
+  const [saving, setSaving] = useState(false)
+
   const handleComplete = async () => {
-    console.log('Onboarding complete:', data)
+    if (saving) return
+    setSaving(true)
     
     try {
-      // Подготавливаем данные для сохранения
       const profileData: any = {
         role: data.role === 'blogger' ? UserRole.BLOGGER : UserRole.ADVERTISER,
         onboardingCompleted: true,
       }
 
-      // Добавляем данные для блогеров
       if (data.role === 'blogger') {
         profileData.bio = data.bio || ''
         profileData.categories = data.categories?.join(',') || ''
         
-        // Обрабатываем подписчиков
         if (data.subscribersCount) {
           profileData.subscribersCount = parseInt(data.subscribersCount.replace(/\./g, '')) || 0
         }
         
-        // Обрабатываем цены только если есть выбранные платформы
         if (data.socialPlatforms && data.socialPlatforms.length > 0) {
-          // Берём первую платформу для основных цен (для совместимости)
           const firstPlatform = data.socialPlatforms[0]
           if (firstPlatform.pricePost) {
             profileData.pricePerPost = parseInt(firstPlatform.pricePost) || 0
@@ -247,7 +245,6 @@ function OnboardingInner() {
         }
       }
 
-      // Добавляем данные для рекламодателей  
       if (data.role === 'advertiser') {
         profileData.companyName = data.companyName || ''
         profileData.description = data.description || ''
@@ -256,13 +253,26 @@ function OnboardingInner() {
         }
       }
 
-      console.log('Saving profile data:', profileData)
+      // Retry logic: 2 attempts with delay
+      let lastError: any = null
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          await authApi.updateProfile(profileData)
+          lastError = null
+          break
+        } catch (e: any) {
+          lastError = e
+          console.error(`Save attempt ${attempt + 1} failed:`, e?.response?.data || e?.message)
+          if (attempt < 1) {
+            await new Promise(r => setTimeout(r, 1500))
+          }
+        }
+      }
+
+      if (lastError) {
+        throw lastError
+      }
       
-      // Сохраняем через API
-      const response = await authApi.updateProfile(profileData)
-      console.log('Profile saved:', response)
-      
-      // Подтягиваем свежий профиль с сервера
       try {
         const me = await authApi.getCurrentUser()
         const userData = (me as any)?.user || me
@@ -270,29 +280,28 @@ function OnboardingInner() {
           localStorage.setItem('influenta_user', JSON.stringify(userData))
           localStorage.setItem('onboarding_completed', 'true')
         } else {
-          // fallback: обновим частично
           const currentUser = JSON.parse(localStorage.getItem('influenta_user') || '{}')
           const updatedUser = { ...currentUser, ...profileData }
           localStorage.setItem('influenta_user', JSON.stringify(updatedUser))
           localStorage.setItem('onboarding_completed', 'true')
         }
       } catch (e) {
-        console.warn('Failed to fetch /auth/me after onboarding, fallback to local merge')
         const currentUser = JSON.parse(localStorage.getItem('influenta_user') || '{}')
         const updatedUser = { ...currentUser, ...profileData }
         localStorage.setItem('influenta_user', JSON.stringify(updatedUser))
         localStorage.setItem('onboarding_completed', 'true')
       }
       
-      // Переходим в профиль
       try { analyticsApi.track('onboarding_complete') } catch {}
       router.push('/profile')
       
     } catch (error: any) {
-      console.error('Error saving profile:', error)
-      const msg = error?.response?.data?.message || error?.message || 'Неизвестная ошибка'
-      alert(`Ошибка сохранения профиля: ${msg}`)
-      return
+      console.error('Error saving profile:', error?.response?.data || error)
+      const rawMsg = error?.response?.data?.message || error?.message || 'Неизвестная ошибка'
+      const msg = Array.isArray(rawMsg) ? rawMsg.join(', ') : String(rawMsg)
+      alert(`Не удалось сохранить профиль: ${msg}. Попробуйте ещё раз.`)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -817,13 +826,15 @@ function OnboardingInner() {
               </motion.button>
               
               <motion.button
-                whileHover={isStepValid() ? { scale: 1.05 } : {}}
-                whileTap={isStepValid() ? { scale: 0.95 } : {}}
+                whileHover={isStepValid() && !saving ? { scale: 1.05 } : {}}
+                whileTap={isStepValid() && !saving ? { scale: 0.95 } : {}}
                 onClick={handleNext}
-                disabled={!isStepValid()}
+                disabled={!isStepValid() || saving}
                 className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {currentStep === totalSteps - 1 ? (
+                {saving ? (
+                  'Сохранение...'
+                ) : currentStep === totalSteps - 1 ? (
                   <>
                     Завершить
                     <CheckCircle className="w-4 h-4" />
