@@ -212,13 +212,16 @@ export class AdminService {
   }
 
   async broadcastMaintenance(message?: string) {
-    try {
-      const result = await this.telegramService.broadcastMaintenance(message);
-      // Используем 'ok', чтобы не конфликтовать с полем 'success' внутри result (число успешных отправок)
-      return { ok: true, ...result };
-    } catch (e: any) {
-      return { ok: false, error: e?.message || 'broadcast failed' };
-    }
+    // Fire-and-forget: start broadcast in background, return immediately
+    this.telegramService.broadcastMaintenance(message)
+      .then(result => {
+        console.log('✅ Broadcast completed:', result);
+      })
+      .catch(e => {
+        console.error('❌ Broadcast failed:', e?.message);
+      });
+
+    return { ok: true, message: 'Рассылка запущена в фоновом режиме' };
   }
 
   async getAdvertisersList() {
