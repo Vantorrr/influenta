@@ -37,7 +37,11 @@ export default function AdminSettingsPage() {
         return
       }
       const data = await resp.json()
-      alert(`Готово! Отправлено: ${data.success ? data.success : data.success === false ? 0 : data.success}\nВсего адресатов: ${data.total ?? '-'}\nУспешно: ${data.success ?? '-'}\nОшибок: ${data.failed ?? '-'}`)
+      if (data.total !== undefined) {
+        alert(`Готово!\nВсего адресатов: ${data.total}\nУспешно: ${data.success ?? 0}\nОшибок: ${data.failed ?? 0}`)
+      } else {
+        alert(data.message || 'Рассылка запущена! Сообщения отправляются в фоне.')
+      }
     } catch (e: any) {
       alert(`Сбой: ${e?.message || 'неизвестная ошибка'}`)
     } finally {
