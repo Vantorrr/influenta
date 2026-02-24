@@ -20,7 +20,7 @@ import {
   X
 } from 'lucide-react'
 import { CATEGORY_LABELS } from '@/lib/constants'
-import { authApi, analyticsApi } from '@/lib/api'
+import { authApi, analyticsApi, setSuppress401 } from '@/lib/api'
 import { UserRole } from '@/types'
 
 // Branded minimal icons (no external deps)
@@ -253,23 +253,41 @@ function OnboardingInner() {
         }
       }
 
-      // Retry logic: 2 attempts with delay
+      // Suppress 401 redirects during save
+      setSuppress401(true)
+
+      let saveSuccess = false
       let lastError: any = null
-      for (let attempt = 0; attempt < 2; attempt++) {
+      for (let attempt = 0; attempt < 3; attempt++) {
         try {
           await authApi.updateProfile(profileData)
-          lastError = null
+          saveSuccess = true
           break
         } catch (e: any) {
           lastError = e
-          console.error(`Save attempt ${attempt + 1} failed:`, e?.response?.data || e?.message)
-          if (attempt < 1) {
-            await new Promise(r => setTimeout(r, 1500))
+          console.error(`Save attempt ${attempt + 1} failed:`, e?.response?.status, e?.response?.data || e?.message)
+          if (attempt < 2) {
+            await new Promise(r => setTimeout(r, 1000 * (attempt + 1)))
           }
         }
       }
 
-      if (lastError) {
+      // Fallback: try saving just the critical fields
+      if (!saveSuccess) {
+        try {
+          await authApi.updateProfile({
+            role: profileData.role,
+            onboardingCompleted: true,
+          } as any)
+          saveSuccess = true
+        } catch (e: any) {
+          console.error('Fallback save failed:', e?.response?.data || e?.message)
+        }
+      }
+
+      setSuppress401(false)
+
+      if (!saveSuccess) {
         throw lastError
       }
       

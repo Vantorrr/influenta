@@ -42,12 +42,15 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// Flag to suppress 401 redirect during critical operations (onboarding, etc.)
+let suppress401Redirect = false
+export function setSuppress401(val: boolean) { suppress401Redirect = val }
+
 // Handle responses
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiResponse<any>>) => {
-    if (typeof window !== 'undefined' && error.response?.status === 401) {
-      // Сбрасываем сессию корректно
+    if (typeof window !== 'undefined' && error.response?.status === 401 && !suppress401Redirect) {
       localStorage.removeItem('influenta_token')
       localStorage.removeItem('influenta_user')
       window.location.href = '/'

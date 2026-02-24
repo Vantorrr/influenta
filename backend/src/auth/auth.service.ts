@@ -64,8 +64,8 @@ export class AuthService {
           user = await this.usersRepository.save(user);
           console.log('🟢 Created new user:', { id: user.id, username: user.username, firstName: user.firstName });
         } catch (saveError: any) {
-          // Race condition: пользователь был создан другим запросом, ищем его
-          if (saveError.code === '23505') {
+          const pgCode = saveError?.code || saveError?.driverError?.code;
+          if (pgCode === '23505') {
             console.log('⚠️ User already exists (race condition), fetching...');
             user = await this.usersRepository.findOne({
               where: { telegramId: telegramUser.id.toString() }
@@ -74,6 +74,7 @@ export class AuthService {
               throw new BadRequestException('Failed to create or find user');
             }
           } else {
+            console.error('❌ User creation failed:', { code: pgCode, message: saveError?.message });
             throw saveError;
           }
         }
