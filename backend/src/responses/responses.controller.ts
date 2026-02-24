@@ -12,6 +12,7 @@ import { Advertiser } from '@/advertisers/entities/advertiser.entity';
 import { Listing } from '@/listings/entities/listing.entity';
 import { TelegramService } from '@/telegram/telegram.service';
 import { ConfigService } from '@nestjs/config';
+import { Message } from '@/chat/entities/message.entity';
 
 @Controller('responses')
 @UseGuards(JwtAuthGuard)
@@ -21,6 +22,7 @@ export class ResponsesController {
     @InjectRepository(Blogger) private readonly bloggersRepo: Repository<Blogger>,
     @InjectRepository(Advertiser) private readonly advertisersRepo: Repository<Advertiser>,
     @InjectRepository(Listing) private readonly listingsRepo: Repository<Listing>,
+    @InjectRepository(Message) private readonly messagesRepo: Repository<Message>,
     private readonly listingsService: ListingsService,
     private readonly telegramService: TelegramService,
     private readonly configService: ConfigService,
@@ -168,11 +170,27 @@ export class ResponsesController {
     resp.acceptedAt = new Date()
     await this.responsesRepo.save(resp)
 
-    // notify blogger
+    // Auto-create initial message so the chat appears in both users' message lists
+    try {
+      const bloggerName = [(resp as any)?.blogger?.user?.firstName, (resp as any)?.blogger?.user?.lastName].filter(Boolean).join(' ') || 'Блогер'
+      const listingTitle = (resp as any)?.listing?.title || 'объявление'
+      await this.messagesRepo.save(this.messagesRepo.create({
+        responseId: resp.id,
+        senderId: user.id,
+        content: `✅ Отклик принят! Привет, ${bloggerName}! Давайте обсудим детали сотрудничества по «${listingTitle}».`,
+      }))
+    } catch (e) {
+      console.error('Failed to create initial chat message:', e)
+    }
+
+    // notify blogger via Telegram
     try {
       const tgId = (resp as any)?.blogger?.user?.telegramId
       if (tgId) {
-        await this.telegramService.sendMessage(parseInt(String(tgId), 10), '✅ Ваш отклик принят. Перейдите в Сообщения, чтобы обсудить детали.')
+        const frontendUrl = this.configService.get('app.frontendUrl') || 'https://influentaa.vercel.app'
+        await this.telegramService.sendMessage(parseInt(String(tgId), 10), '✅ Ваш отклик принят! Перейдите в Сообщения, чтобы обсудить детали.', {
+          inline_keyboard: [[{ text: '💬 Открыть чат', web_app: { url: `${frontendUrl}/messages?responseId=${resp.id}` } }]],
+        })
       }
     } catch {}
 

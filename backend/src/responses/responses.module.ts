@@ -7,9 +7,10 @@ import { Blogger } from '@/bloggers/entities/blogger.entity';
 import { Advertiser } from '@/advertisers/entities/advertiser.entity';
 import { Listing } from '@/listings/entities/listing.entity';
 import { TelegramModule } from '@/telegram/telegram.module';
+import { Message } from '@/chat/entities/message.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Response, Blogger, Advertiser, Listing]), ListingsModule, TelegramModule],
+  imports: [TypeOrmModule.forFeature([Response, Blogger, Advertiser, Listing, Message]), ListingsModule, TelegramModule],
   controllers: [ResponsesController],
   exports: [TypeOrmModule],
 })

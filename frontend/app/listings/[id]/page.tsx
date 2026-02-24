@@ -392,13 +392,20 @@ export default function ListingDetailsPage() {
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {receivedResponses.map((r: any) => (
-                <div key={r.id} style={{ ...cardStyle, marginBottom: 0, padding: 16 }}>
+                <div key={r.id} style={{ 
+                  ...cardStyle, 
+                  marginBottom: 0, 
+                  padding: 16,
+                  borderColor: r.status === 'accepted' ? 'rgba(34, 197, 94, 0.3)' : r.status === 'rejected' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.08)',
+                }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 12 }}>
                     <div 
                       style={{ fontWeight: 600, color: 'white', cursor: 'pointer' }}
                       onClick={() => window.location.href = `/bloggers/${r.blogger?.user?.id}`}
                     >
                       {r.blogger?.user?.firstName} {r.blogger?.user?.lastName}
+                      {r.status === 'accepted' && <span style={{ fontSize: 12, color: '#22c55e', marginLeft: 8 }}>✅ Принят</span>}
+                      {r.status === 'rejected' && <span style={{ fontSize: 12, color: '#ef4444', marginLeft: 8 }}>❌ Отклонён</span>}
                       <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 400 }}>@{r.blogger?.user?.username}</div>
                     </div>
                     {r.proposedPrice && (
@@ -413,12 +420,6 @@ export default function ListingDetailsPage() {
                   </p>
 
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button 
-                      onClick={() => { window.location.href = `/messages?responseId=${r.id}` }}
-                      style={{ ...buttonSecondaryStyle, padding: '8px', fontSize: 13 }}
-                    >
-                      Написать
-                    </button>
                     {r.status === 'pending' && (
                       <>
                         <button 
@@ -426,25 +427,43 @@ export default function ListingDetailsPage() {
                             try {
                               setRespActionLoading(r.id)
                               await responsesApi.accept(r.id)
-                              window.location.reload()
+                              setReceivedResponses(prev => prev.map(item => item.id === r.id ? { ...item, status: 'accepted' } : item))
                             } catch(e) { alert('Ошибка') }
+                            finally { setRespActionLoading(null) }
                           }}
-                          style={{ ...buttonPrimaryStyle, flex: 1, padding: '8px', fontSize: 13 }}
+                          disabled={respActionLoading === r.id}
+                          style={{ ...buttonPrimaryStyle, flex: 1, padding: '8px', fontSize: 13, opacity: respActionLoading === r.id ? 0.6 : 1 }}
                         >
-                          Принять
+                          {respActionLoading === r.id ? '...' : '✅ Принять'}
                         </button>
                         <button 
                           onClick={async () => {
                             try {
+                              setRespActionLoading(r.id)
                               await responsesApi.reject(r.id, 'Отказ')
-                              window.location.reload()
+                              setReceivedResponses(prev => prev.map(item => item.id === r.id ? { ...item, status: 'rejected' } : item))
                             } catch(e) { alert('Ошибка') }
+                            finally { setRespActionLoading(null) }
                           }}
+                          disabled={respActionLoading === r.id}
                           style={{ ...buttonDangerStyle, padding: '8px', fontSize: 13 }}
                         >
                           <X size={16} />
                         </button>
                       </>
+                    )}
+                    {r.status === 'accepted' && (
+                      <button 
+                        onClick={() => { window.location.href = `/messages?responseId=${r.id}` }}
+                        style={{ ...buttonPrimaryStyle, flex: 1, padding: '8px', fontSize: 13 }}
+                      >
+                        💬 Написать
+                      </button>
+                    )}
+                    {r.status === 'rejected' && (
+                      <div style={{ fontSize: 13, color: 'rgba(239, 68, 68, 0.8)', padding: '8px', textAlign: 'center', width: '100%' }}>
+                        Отклонён
+                      </div>
                     )}
                   </div>
                 </div>
