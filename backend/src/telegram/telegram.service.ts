@@ -68,14 +68,20 @@ export class TelegramService {
     const text = this.getMaintenanceMessage(customText);
     const frontendUrl = this.configService.get('app.frontendUrl') || 'https://influentaa.vercel.app';
 
-    // Собираем все телеграм-ид пользователей (только у кого он задан)
-    const users = await this.usersRepo
-      .createQueryBuilder('user')
-      .select(['user.telegramId'])
-      .where('user.telegramId IS NOT NULL')
-      .andWhere("user.telegramId <> ''")
-      .getMany()
-      .catch(() => []);
+    console.log('📢 BROADCAST START, botToken present:', !!this.botToken, 'botToken length:', this.botToken?.length);
+
+    let users: User[] = [];
+    try {
+      users = await this.usersRepo
+        .createQueryBuilder('user')
+        .select(['user.telegramId'])
+        .where('user.telegramId IS NOT NULL')
+        .andWhere("user.telegramId <> ''")
+        .getMany();
+    } catch (e: any) {
+      console.error('📢 BROADCAST: Failed to fetch users:', e?.message);
+      return { total: 0, success: 0, failed: 0, failedSamples: [] };
+    }
 
     const chatIds = users
       .map(u => {
@@ -83,29 +89,47 @@ export class TelegramService {
       })
       .filter(id => Number.isFinite(id));
 
+    console.log('📢 BROADCAST: Found', chatIds.length, 'users to message');
+
+    if (chatIds.length === 0) {
+      console.warn('📢 BROADCAST: No users found!');
+      return { total: 0, success: 0, failed: 0, failedSamples: [] };
+    }
+
     let success = 0;
     const failed: Array<{ chatId: number, reason: string }> = [];
 
-    // Разошлём с лёгким троттлингом
     for (let i = 0; i < chatIds.length; i++) {
       const chatId = chatIds[i] as number;
       try {
-        await this.sendMessage(chatId, text, {
+        const result = await this.sendMessage(chatId, text, {
           inline_keyboard: [
             [{ text: '🚀 Открыть Influenta', web_app: { url: frontendUrl } }],
             [{ text: '🆘 Техподдержка', url: 'https://t.me/influenta_support_bot' }]
           ]
         });
-        success++;
+        if (result?.ok) {
+          success++;
+        } else {
+          failed.push({ chatId, reason: result?.description || 'API returned not ok' });
+        }
       } catch (e: any) {
         failed.push({ chatId, reason: e?.message || 'send failed' });
       }
-      // Каждые 20 сообщений — пауза, чтобы не уткнуться в лимиты Telegram
       if ((i + 1) % 20 === 0) {
         await this.sleep(700);
       } else {
         await this.sleep(80);
       }
+      // Progress log every 100 messages
+      if ((i + 1) % 100 === 0) {
+        console.log(`📢 BROADCAST progress: ${i + 1}/${chatIds.length}, success: ${success}, failed: ${failed.length}`);
+      }
+    }
+
+    console.log(`📢 BROADCAST DONE: total=${chatIds.length}, success=${success}, failed=${failed.length}`);
+    if (failed.length > 0) {
+      console.log('📢 BROADCAST failed samples:', JSON.stringify(failed.slice(0, 10)));
     }
 
     return {
