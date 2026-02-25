@@ -78,6 +78,23 @@ export class AuthService {
             throw saveError;
           }
         }
+      } else if (!user.isActive) {
+        // Аккаунт был удалён — очищаем старый telegramId и создаём новый аккаунт с нуля
+        console.log('🗑️ Found deleted account, creating fresh one for telegramId:', telegramUser.id);
+        user.telegramId = `deleted_${user.telegramId}_${Date.now()}`;
+        await this.usersRepository.save(user);
+
+        const newUser = new User();
+        newUser.telegramId = telegramUser.id.toString();
+        newUser.firstName = freshTgData?.first_name || telegramUser.first_name;
+        newUser.lastName = freshTgData?.last_name || telegramUser.last_name;
+        newUser.username = freshTgData?.username || telegramUser.username;
+        newUser.photoUrl = telegramUser.photo_url;
+        newUser.languageCode = telegramUser.language_code || 'ru';
+        newUser.isActive = true;
+        newUser.isVerified = false;
+        user = await this.usersRepository.save(newUser);
+        console.log('🟢 Created fresh account after deletion:', { id: user.id });
       } else {
         console.log('🟡 Existing user before update:', { id: user.id, username: user.username, firstName: user.firstName });
         // Обновляем данные существующего пользователя: приоритет свежим данным из API
