@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, UseGuards, Patch, Headers } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Patch, Delete, Headers } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { IsNumber, IsOptional, IsString } from 'class-validator';
 import { AuthService } from './auth.service';
@@ -74,6 +74,13 @@ export class AuthController {
       hasInitHeader: !!initHeader,
       initHeaderLength: initHeader?.length || 0,
     }
+  }
+
+  @Delete('account')
+  @ApiOperation({ summary: 'Delete (anonymize) current user account' })
+  @UseGuards(JwtAuthGuard)
+  async deleteAccount(@CurrentUser() user: User) {
+    return this.authService.deleteAccount(user.id);
   }
 
   @Post('request-verification')

@@ -252,6 +252,35 @@ export class AuthService {
     }
   }
 
+  async deleteAccount(userId: string) {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) throw new BadRequestException('Пользователь не найден');
+
+    // Anonymize personal data (GDPR-style soft delete)
+    user.firstName = 'Удалённый';
+    user.lastName = 'аккаунт';
+    user.username = undefined;
+    user.photoUrl = undefined;
+    user.email = undefined;
+    user.bio = undefined;
+    user.phone = undefined;
+    user.website = undefined;
+    user.telegramLink = undefined;
+    user.instagramLink = undefined;
+    user.companyName = undefined;
+    user.description = undefined;
+    user.telegramData = undefined;
+    user.verificationData = undefined;
+    user.isActive = false;
+    user.isVerified = false;
+    user.onboardingCompleted = false;
+
+    await this.usersRepository.save(user);
+    console.log('🗑️ Account deleted (anonymized):', userId);
+
+    return { success: true, message: 'Аккаунт удалён' };
+  }
+
   async requestVerification(userId: string, data: {
     documents?: string[];
     socialProofs?: {

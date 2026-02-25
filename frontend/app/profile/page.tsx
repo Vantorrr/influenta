@@ -11,6 +11,7 @@ import { RubIcon } from '@/components/ui/ruble-icon'
 import { Avatar } from '@/components/ui/avatar'
 import { useAuth } from '@/hooks/useAuth'
 import { authApi, analyticsApi } from '@/lib/api'
+import api from '@/lib/api'
 import { UserRole, BloggerCategory } from '@/types'
 import { VerificationModal } from '@/components/VerificationModal'
 import { SocialPlatformsSection } from '@/components/profile/SocialPlatformsSection'
@@ -25,6 +26,9 @@ export default function ProfilePage() {
   const [avatarUploading, setAvatarUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [showVerificationModal, setShowVerificationModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -170,6 +174,20 @@ export default function ProfilePage() {
         }
       }
     })
+  }
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'УДАЛИТЬ') return
+    setIsDeleting(true)
+    try {
+      await api.delete('/auth/account')
+      localStorage.removeItem('influenta_token')
+      localStorage.removeItem('influenta_user')
+      window.location.href = '/'
+    } catch (e: any) {
+      alert(e?.response?.data?.message || 'Ошибка удаления аккаунта')
+      setIsDeleting(false)
+    }
   }
 
   const handleRequestVerification = () => {
@@ -727,7 +745,132 @@ export default function ProfilePage() {
           onSubmit={handleVerificationSubmit}
           userId={user?.id}
         />
+
+        {/* Delete Account Button */}
+        {!isEditing && (
+          <div style={{ padding: '0 0 40px' }}>
+            <button
+              onClick={() => { setShowDeleteModal(true); setDeleteConfirmText('') }}
+              style={{
+                width: '100%',
+                padding: '14px',
+                background: 'transparent',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                borderRadius: 14,
+                color: 'rgba(239, 68, 68, 0.7)',
+                fontWeight: 500,
+                fontSize: 14,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              }}
+            >
+              🗑 Удалить аккаунт
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 200,
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'center',
+        }}>
+          <div style={{
+            background: '#1a1a2e',
+            borderTop: '1px solid rgba(255,255,255,0.1)',
+            borderLeft: '1px solid rgba(255,255,255,0.1)',
+            borderRight: '1px solid rgba(255,255,255,0.1)',
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            padding: '24px 24px 48px',
+            width: '100%',
+            maxWidth: 600,
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>⚠️</div>
+              <h3 style={{ fontSize: 20, fontWeight: 700, color: 'white', marginBottom: 8 }}>
+                Удалить аккаунт?
+              </h3>
+              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
+                Все ваши данные будут безвозвратно удалены: профиль, отклики, история чатов.
+                Это действие нельзя отменить.
+              </p>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 8, textAlign: 'center' }}>
+                Введите <strong style={{ color: '#ef4444' }}>УДАЛИТЬ</strong> для подтверждения
+              </p>
+              <input
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: 'rgba(0,0,0,0.3)',
+                  border: deleteConfirmText === 'УДАЛИТЬ' ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 12,
+                  color: 'white',
+                  fontSize: 15,
+                  outline: 'none',
+                  textAlign: 'center',
+                  fontWeight: 600,
+                  letterSpacing: 2,
+                  boxSizing: 'border-box',
+                }}
+                value={deleteConfirmText}
+                onChange={e => setDeleteConfirmText(e.target.value.toUpperCase())}
+                placeholder="УДАЛИТЬ"
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => { setShowDeleteModal(false); setDeleteConfirmText('') }}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 14,
+                  color: 'white',
+                  fontWeight: 600,
+                  fontSize: 15,
+                  cursor: 'pointer',
+                }}
+              >
+                Отмена
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText !== 'УДАЛИТЬ' || isDeleting}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  background: deleteConfirmText === 'УДАЛИТЬ' ? '#ef4444' : 'rgba(239, 68, 68, 0.2)',
+                  border: 'none',
+                  borderRadius: 14,
+                  color: deleteConfirmText === 'УДАЛИТЬ' ? 'white' : 'rgba(239, 68, 68, 0.5)',
+                  fontWeight: 600,
+                  fontSize: 15,
+                  cursor: deleteConfirmText === 'УДАЛИТЬ' ? 'pointer' : 'not-allowed',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {isDeleting ? 'Удаление...' : 'Удалить'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   )
 }
