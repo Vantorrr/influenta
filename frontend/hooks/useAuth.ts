@@ -261,8 +261,7 @@ export function useAuth() {
               // Если пользователь новый - отправляем на онбординг только один раз
               const storedUser = JSON.parse(localStorage.getItem('influenta_user') || 'null')
               const completed = storedUser?.onboardingCompleted || authData.user.onboardingCompleted || onboardingLocal
-              const role = storedUser?.role || authData.user.role
-              const isNewUser = (!completed && role === 'blogger')
+              const isNewUser = !completed
               
               // Проверяем pendingDeepLink
               const pendingDeepLink = localStorage.getItem('pendingDeepLink')

@@ -183,6 +183,7 @@ export default function ProfilePage() {
       await api.delete('/auth/account')
       localStorage.removeItem('influenta_token')
       localStorage.removeItem('influenta_user')
+      localStorage.removeItem('onboarding_completed')
       window.location.href = '/'
     } catch (e: any) {
       alert(e?.response?.data?.message || 'Ошибка удаления аккаунта')
