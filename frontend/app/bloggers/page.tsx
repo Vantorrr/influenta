@@ -108,7 +108,7 @@ function BloggersPageContent() {
 
       const data = await bloggersApi.search(query, page, PAGE_SIZE)
       const items = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : [])
-      const total = data?.total ?? items.length
+      const total = data?.meta?.total ?? data?.total ?? items.length
 
       if (append) {
         setBloggers(prev => [...prev, ...items])
@@ -117,7 +117,7 @@ function BloggersPageContent() {
       }
       setTotalCount(total)
       setCurrentPage(page)
-      setHasMore(items.length === PAGE_SIZE && bloggers.length + items.length < total)
+      setHasMore(items.length === PAGE_SIZE)
     } catch (e: any) {
       const msg = e?.response?.data?.message || e?.message || 'Ошибка загрузки'
       setError(Array.isArray(msg) ? msg.join(', ') : String(msg))
