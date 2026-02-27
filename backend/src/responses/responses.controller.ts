@@ -12,7 +12,6 @@ import { Advertiser } from '@/advertisers/entities/advertiser.entity';
 import { Listing } from '@/listings/entities/listing.entity';
 import { TelegramService } from '@/telegram/telegram.service';
 import { ConfigService } from '@nestjs/config';
-import { Message } from '@/chat/entities/message.entity';
 
 @Controller('responses')
 @UseGuards(JwtAuthGuard)
@@ -22,7 +21,6 @@ export class ResponsesController {
     @InjectRepository(Blogger) private readonly bloggersRepo: Repository<Blogger>,
     @InjectRepository(Advertiser) private readonly advertisersRepo: Repository<Advertiser>,
     @InjectRepository(Listing) private readonly listingsRepo: Repository<Listing>,
-    @InjectRepository(Message) private readonly messagesRepo: Repository<Message>,
     private readonly listingsService: ListingsService,
     private readonly telegramService: TelegramService,
     private readonly configService: ConfigService,

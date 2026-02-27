@@ -26,9 +26,6 @@ export default function ProfilePage() {
   const [avatarUploading, setAvatarUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [showVerificationModal, setShowVerificationModal] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [deleteConfirmText, setDeleteConfirmText] = useState('')
-  const [isDeleting, setIsDeleting] = useState(false)
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -183,7 +180,6 @@ export default function ProfilePage() {
       await api.delete('/auth/account')
       localStorage.removeItem('influenta_token')
       localStorage.removeItem('influenta_user')
-      localStorage.removeItem('onboarding_completed')
       window.location.href = '/'
     } catch (e: any) {
       alert(e?.response?.data?.message || 'Ошибка удаления аккаунта')
@@ -776,122 +772,97 @@ export default function ProfilePage() {
 
       {/* Delete Account Modal */}
       {showDeleteModal && (
-        <div
-          onClick={() => { setShowDeleteModal(false); setDeleteConfirmText('') }}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.7)',
-            backdropFilter: 'blur(10px)',
-            zIndex: 200,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px 16px',
-          }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              background: 'linear-gradient(145deg, #1e1e32, #16162a)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: 28,
-              padding: '32px 24px 28px',
-              width: '100%',
-              maxWidth: 360,
-              boxShadow: '0 24px 60px rgba(0,0,0,0.6)',
-            }}
-          >
-            {/* Icon */}
-            <div style={{
-              width: 64,
-              height: 64,
-              borderRadius: '50%',
-              background: 'rgba(239, 68, 68, 0.12)',
-              border: '1px solid rgba(239, 68, 68, 0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px',
-              fontSize: 28,
-            }}>
-              🗑️
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 200,
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'center',
+        }}>
+          <div style={{
+            background: '#1a1a2e',
+            borderTop: '1px solid rgba(255,255,255,0.1)',
+            borderLeft: '1px solid rgba(255,255,255,0.1)',
+            borderRight: '1px solid rgba(255,255,255,0.1)',
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            padding: '24px 24px 48px',
+            width: '100%',
+            maxWidth: 600,
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>⚠️</div>
+              <h3 style={{ fontSize: 20, fontWeight: 700, color: 'white', marginBottom: 8 }}>
+                Удалить аккаунт?
+              </h3>
+              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
+                Все ваши данные будут безвозвратно удалены: профиль, отклики, история чатов.
+                Это действие нельзя отменить.
+              </p>
             </div>
 
-            {/* Title & description */}
-            <h3 style={{ fontSize: 20, fontWeight: 700, color: 'white', textAlign: 'center', marginBottom: 8 }}>
-              Удалить аккаунт?
-            </h3>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, textAlign: 'center', marginBottom: 24 }}>
-              Все данные будут безвозвратно удалены. Это действие нельзя отменить.
-            </p>
-
-            {/* Input */}
             <div style={{ marginBottom: 20 }}>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 10, textAlign: 'center' }}>
-                Введите <span style={{ color: '#ef4444', fontWeight: 600 }}>УДАЛИТЬ</span> для подтверждения
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 8, textAlign: 'center' }}>
+                Введите <strong style={{ color: '#ef4444' }}>УДАЛИТЬ</strong> для подтверждения
               </p>
               <input
-                autoFocus
                 style={{
                   width: '100%',
-                  padding: '13px 16px',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: `1px solid ${deleteConfirmText === 'УДАЛИТЬ' ? 'rgba(239,68,68,0.6)' : 'rgba(255,255,255,0.1)'}`,
-                  borderRadius: 14,
-                  color: deleteConfirmText === 'УДАЛИТЬ' ? '#ef4444' : 'white',
-                  fontSize: 14,
-                  fontWeight: 600,
-                  letterSpacing: 3,
+                  padding: '12px 16px',
+                  background: 'rgba(0,0,0,0.3)',
+                  border: deleteConfirmText === 'УДАЛИТЬ' ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 12,
+                  color: 'white',
+                  fontSize: 15,
                   outline: 'none',
                   textAlign: 'center',
+                  fontWeight: 600,
+                  letterSpacing: 2,
                   boxSizing: 'border-box',
-                  transition: 'border-color 0.2s, color 0.2s',
                 }}
                 value={deleteConfirmText}
                 onChange={e => setDeleteConfirmText(e.target.value.toUpperCase())}
-                placeholder="···········"
+                placeholder="УДАЛИТЬ"
               />
             </div>
 
-            {/* Buttons */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button
-                onClick={handleDeleteAccount}
-                disabled={deleteConfirmText !== 'УДАЛИТЬ' || isDeleting}
-                style={{
-                  width: '100%',
-                  padding: '15px',
-                  background: deleteConfirmText === 'УДАЛИТЬ'
-                    ? 'linear-gradient(135deg, #ef4444, #dc2626)'
-                    : 'rgba(239, 68, 68, 0.1)',
-                  border: `1px solid ${deleteConfirmText === 'УДАЛИТЬ' ? 'transparent' : 'rgba(239,68,68,0.2)'}`,
-                  borderRadius: 16,
-                  color: deleteConfirmText === 'УДАЛИТЬ' ? 'white' : 'rgba(239, 68, 68, 0.4)',
-                  fontWeight: 700,
-                  fontSize: 15,
-                  cursor: deleteConfirmText === 'УДАЛИТЬ' && !isDeleting ? 'pointer' : 'not-allowed',
-                  transition: 'all 0.25s',
-                  boxShadow: deleteConfirmText === 'УДАЛИТЬ' ? '0 4px 16px rgba(239,68,68,0.35)' : 'none',
-                }}
-              >
-                {isDeleting ? '⏳ Удаление...' : 'Удалить аккаунт'}
-              </button>
+            <div style={{ display: 'flex', gap: 12 }}>
               <button
                 onClick={() => { setShowDeleteModal(false); setDeleteConfirmText('') }}
                 style={{
-                  width: '100%',
-                  padding: '15px',
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: 16,
-                  color: 'rgba(255,255,255,0.7)',
+                  flex: 1,
+                  padding: '14px',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 14,
+                  color: 'white',
                   fontWeight: 600,
                   fontSize: 15,
                   cursor: 'pointer',
                 }}
               >
                 Отмена
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText !== 'УДАЛИТЬ' || isDeleting}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  background: deleteConfirmText === 'УДАЛИТЬ' ? '#ef4444' : 'rgba(239, 68, 68, 0.2)',
+                  border: 'none',
+                  borderRadius: 14,
+                  color: deleteConfirmText === 'УДАЛИТЬ' ? 'white' : 'rgba(239, 68, 68, 0.5)',
+                  fontWeight: 600,
+                  fontSize: 15,
+                  cursor: deleteConfirmText === 'УДАЛИТЬ' ? 'pointer' : 'not-allowed',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {isDeleting ? 'Удаление...' : 'Удалить'}
               </button>
             </div>
           </div>

@@ -420,6 +420,12 @@ export default function ListingDetailsPage() {
                   </p>
 
                   <div style={{ display: 'flex', gap: 8 }}>
+                    <button 
+                      onClick={() => { window.location.href = `/messages?responseId=${r.id}` }}
+                      style={{ ...buttonSecondaryStyle, padding: '8px', fontSize: 13 }}
+                    >
+                      Написать
+                    </button>
                     {r.status === 'pending' && (
                       <>
                         <button 
@@ -427,43 +433,25 @@ export default function ListingDetailsPage() {
                             try {
                               setRespActionLoading(r.id)
                               await responsesApi.accept(r.id)
-                              setReceivedResponses(prev => prev.map(item => item.id === r.id ? { ...item, status: 'accepted' } : item))
+                              window.location.reload()
                             } catch(e) { alert('Ошибка') }
-                            finally { setRespActionLoading(null) }
                           }}
-                          disabled={respActionLoading === r.id}
-                          style={{ ...buttonPrimaryStyle, flex: 1, padding: '8px', fontSize: 13, opacity: respActionLoading === r.id ? 0.6 : 1 }}
+                          style={{ ...buttonPrimaryStyle, flex: 1, padding: '8px', fontSize: 13 }}
                         >
-                          {respActionLoading === r.id ? '...' : '✅ Принять'}
+                          Принять
                         </button>
                         <button 
                           onClick={async () => {
                             try {
-                              setRespActionLoading(r.id)
                               await responsesApi.reject(r.id, 'Отказ')
-                              setReceivedResponses(prev => prev.map(item => item.id === r.id ? { ...item, status: 'rejected' } : item))
+                              window.location.reload()
                             } catch(e) { alert('Ошибка') }
-                            finally { setRespActionLoading(null) }
                           }}
-                          disabled={respActionLoading === r.id}
                           style={{ ...buttonDangerStyle, padding: '8px', fontSize: 13 }}
                         >
                           <X size={16} />
                         </button>
                       </>
-                    )}
-                    {r.status === 'accepted' && (
-                      <button 
-                        onClick={() => { window.location.href = `/messages?responseId=${r.id}` }}
-                        style={{ ...buttonPrimaryStyle, flex: 1, padding: '8px', fontSize: 13 }}
-                      >
-                        💬 Написать
-                      </button>
-                    )}
-                    {r.status === 'rejected' && (
-                      <div style={{ fontSize: 13, color: 'rgba(239, 68, 68, 0.8)', padding: '8px', textAlign: 'center', width: '100%' }}>
-                        Отклонён
-                      </div>
                     )}
                   </div>
                 </div>

@@ -64,8 +64,14 @@ function BloggersPageContent() {
   })
 
   const [bloggers, setBloggers] = useState<any[]>([])
+  const [totalCount, setTotalCount] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const PAGE_SIZE = 50
+  const loaderRef = useRef<HTMLDivElement | null>(null)
   const { user, isAdmin } = useAuth()
   const [showFilters, setShowFilters] = useState(false)
   const { favorites, favoritesCount, toggleFavorite, checkFavorite } = useFavorites()
@@ -93,22 +99,38 @@ function BloggersPageContent() {
     } catch {}
   }, [search, filters, showOnlyFavorites])
 
-  const loadData = async () => {
-    setIsLoading(true)
+  const loadData = async (page = 1, append = false) => {
+    if (page === 1) setIsLoading(true)
+    else setIsLoadingMore(true)
     try {
       const query: any = { ...filters }
       if (search && search.trim().length > 0) query.search = search.trim()
-      
-      const data = await bloggersApi.search(query, 1, 2000)
+
+      const data = await bloggersApi.search(query, page, PAGE_SIZE)
       const items = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : [])
-      setBloggers(items)
+      const total = data?.total ?? items.length
+
+      if (append) {
+        setBloggers(prev => [...prev, ...items])
+      } else {
+        setBloggers(items)
+      }
+      setTotalCount(total)
+      setCurrentPage(page)
+      setHasMore(items.length === PAGE_SIZE && bloggers.length + items.length < total)
     } catch (e: any) {
       const msg = e?.response?.data?.message || e?.message || 'Ошибка загрузки'
       setError(Array.isArray(msg) ? msg.join(', ') : String(msg))
     } finally {
       setIsLoading(false)
+      setIsLoadingMore(false)
     }
   }
+
+  const loadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return
+    await loadData(currentPage + 1, true)
+  }, [isLoadingMore, hasMore, currentPage, filters, search])
 
   // Переключение избранного
   const handleToggleFavorite = async (e: React.MouseEvent, bloggerId: string) => {
@@ -119,11 +141,24 @@ function BloggersPageContent() {
   }
 
   useEffect(() => {
-    loadData()
-    const onFocus = () => loadData()
+    setCurrentPage(1)
+    setHasMore(true)
+    loadData(1, false)
+    const onFocus = () => loadData(1, false)
     window.addEventListener('focus', onFocus)
     return () => window.removeEventListener('focus', onFocus)
   }, [search, filters])
+
+  // Infinite scroll через IntersectionObserver
+  useEffect(() => {
+    if (!loaderRef.current) return
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadMore() },
+      { threshold: 0.1 }
+    )
+    observer.observe(loaderRef.current)
+    return () => observer.disconnect()
+  }, [loadMore])
 
   // Скролл к последнему открытому блогеру
   useEffect(() => {
@@ -168,7 +203,7 @@ function BloggersPageContent() {
           <div>
             <h1 className="text-2xl font-bold text-white">Блогеры</h1>
             <p className="text-sm text-telegram-textSecondary">
-              {bloggers.length} {bloggers.length === 1 ? 'блогер' : 'блогеров'} найдено
+              {totalCount > 0 ? `${bloggers.length} из ${totalCount}` : `${bloggers.length}`} блогеров
             </p>
           </div>
         </div>
@@ -379,6 +414,16 @@ function BloggersPageContent() {
             </Link>
           </div>
         ))}
+      </div>
+
+      {/* Infinite scroll loader */}
+      <div ref={loaderRef} style={{ height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {isLoadingMore && (
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-telegram-primary" />
+        )}
+        {!hasMore && bloggers.length > 0 && !showOnlyFavorites && (
+          <p className="text-xs text-telegram-textSecondary">Все {totalCount} блогеров загружены</p>
+        )}
       </div>
 
       {/* Пустое состояние */}
