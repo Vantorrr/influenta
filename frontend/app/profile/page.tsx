@@ -26,6 +26,9 @@ export default function ProfilePage() {
   const [avatarUploading, setAvatarUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [showVerificationModal, setShowVerificationModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',

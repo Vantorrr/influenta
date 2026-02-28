@@ -248,6 +248,12 @@ export interface PaginatedResponse<T> {
   page: number
   limit: number
   hasMore: boolean
+  meta?: {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }
 }
 
 // Filter types
