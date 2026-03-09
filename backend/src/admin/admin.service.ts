@@ -23,58 +23,85 @@ export class AdminService {
   ) {}
 
   async getPlatformStats() {
-    // Дата 7 дней назад для сравнения
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const now = new Date();
+    const day1 = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000);
+    const day7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const day30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     const [
-      totalUsers, 
-      totalBloggers, 
-      totalAdvertisers, 
-      activeListings, 
+      totalUsers,
+      activeUsers,
+      onboardedUsers,
+      totalBloggers,
+      totalAdvertisers,
       verifiedUsers,
-      // Новые за последние 7 дней
+      newToday,
       newUsersWeek,
+      newUsersMonth,
+      activeListings,
+      totalListings,
       newListingsWeek,
-      newVerifiedWeek
+      totalResponses,
+      responsesWeek,
+      totalMessages,
+      messagesWeek,
+      totalOffers,
+      offersWeek,
     ] = await Promise.all([
       this.usersRepository.count(),
-      this.bloggersRepository.count().catch(() => 0),
-      this.advertisersRepository.count().catch(() => 0),
-      this.listingsRepository.count({ where: { status: ListingStatus.ACTIVE } }).catch(() => 0),
+      this.usersRepository.count({ where: { isActive: true } }),
+      this.usersRepository.count({ where: { isActive: true, onboardingCompleted: true } }),
+      this.usersRepository.count({ where: { role: 'blogger' as any, isActive: true } }),
+      this.usersRepository.count({ where: { role: 'advertiser' as any, isActive: true } }),
       this.usersRepository.count({ where: { isVerified: true } }),
-      // Считаем новых за неделю
-      this.usersRepository.createQueryBuilder('user')
-        .where('user.createdAt > :date', { date: sevenDaysAgo })
-        .getCount().catch(() => 0),
-      this.listingsRepository.createQueryBuilder('listing')
-        .where('listing.createdAt > :date', { date: sevenDaysAgo })
-        .andWhere('listing.status = :status', { status: ListingStatus.ACTIVE })
-        .getCount().catch(() => 0),
-      this.usersRepository.createQueryBuilder('user')
-        .where('user.isVerified = true')
-        .andWhere('user.updatedAt > :date', { date: sevenDaysAgo })
-        .getCount().catch(() => 0)
+      this.usersRepository.createQueryBuilder('u').where('u.createdAt > :d', { d: day1 }).getCount().catch(() => 0),
+      this.usersRepository.createQueryBuilder('u').where('u.createdAt > :d', { d: day7 }).getCount().catch(() => 0),
+      this.usersRepository.createQueryBuilder('u').where('u.createdAt > :d', { d: day30 }).getCount().catch(() => 0),
+      this.listingsRepository.count({ where: { status: ListingStatus.ACTIVE } }).catch(() => 0),
+      this.listingsRepository.count().catch(() => 0),
+      this.listingsRepository.createQueryBuilder('l').where('l.createdAt > :d', { d: day7 }).getCount().catch(() => 0),
+      this.responsesRepository.count().catch(() => 0),
+      this.responsesRepository.createQueryBuilder('r').where('r.createdAt > :d', { d: day7 }).getCount().catch(() => 0),
+      // messages и offers через raw query чтобы не тащить лишние репозитории
+      this.usersRepository.query('SELECT COUNT(*) FROM messages').then(r => parseInt(r[0].count)).catch(() => 0),
+      this.usersRepository.query('SELECT COUNT(*) FROM messages WHERE "createdAt" > $1', [day7]).then(r => parseInt(r[0].count)).catch(() => 0),
+      this.usersRepository.query('SELECT COUNT(*) FROM offers').then(r => parseInt(r[0].count)).catch(() => 0),
+      this.usersRepository.query('SELECT COUNT(*) FROM offers WHERE "createdAt" > $1', [day7]).then(r => parseInt(r[0].count)).catch(() => 0),
     ]);
 
-    // Вычисляем проценты роста
     const userGrowth = totalUsers > 0 ? Math.round((newUsersWeek / totalUsers) * 100) : 0;
     const listingGrowth = activeListings > 0 ? Math.round((newListingsWeek / activeListings) * 100) : 0;
     const verificationRate = totalUsers > 0 ? Math.round((verifiedUsers / totalUsers) * 100) : 0;
+    const onboardingRate = activeUsers > 0 ? Math.round((onboardedUsers / activeUsers) * 100) : 0;
 
     return {
+      // Пользователи
       totalUsers,
+      activeUsers,
+      onboardedUsers,
+      onboardingRate,
       totalBloggers,
       totalAdvertisers,
-      activeListings,
       verifiedUsers,
+      verificationRate,
+      // Прирост
+      newToday,
+      newUsersWeek,
+      newUsersMonth,
+      userGrowth,
+      // Объявления
+      totalListings,
+      activeListings,
+      newListingsWeek,
+      listingGrowth,
+      // Активность
+      totalResponses,
+      responsesWeek,
+      totalMessages,
+      messagesWeek,
+      totalOffers,
+      offersWeek,
       platformCommission: this.configService.get('app.platform.commission') ?? 0,
-      // Добавляем данные для графиков роста
-      userGrowth,           // Процент новых пользователей за неделю
-      listingGrowth,        // Процент новых объявлений за неделю
-      verificationRate,     // Процент верифицированных от всех
-      newUsersWeek,         // Количество новых за неделю
-      newListingsWeek,      // Количество новых объявлений за неделю
     };
   }
 

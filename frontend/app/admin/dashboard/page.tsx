@@ -3,387 +3,164 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { 
-  Users, 
-  UserCheck, 
-  Briefcase, 
-  FileText,
-  TrendingUp,
-  Activity,
-  Eye,
-  ArrowUp,
-  ArrowDown,
-  Shield,
-  Crown
+  Users, UserCheck, Briefcase, FileText, TrendingUp,
+  MessageSquare, Shield, Crown, Send, RefreshCw, Activity
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { RubIcon } from '@/components/ui/ruble-icon'
-import { Badge } from '@/components/ui/badge'
-import { formatNumber, formatPrice, getRelativeTime } from '@/lib/utils'
+import { formatNumber } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 
 interface AdminStats {
   totalUsers: number
+  activeUsers: number
+  onboardedUsers: number
+  onboardingRate: number
+  totalBloggers: number
+  totalAdvertisers: number
   verifiedUsers: number
+  verificationRate: number
+  newToday: number
+  newUsersWeek: number
+  newUsersMonth: number
+  userGrowth: number
+  totalListings: number
   activeListings: number
+  newListingsWeek: number
+  listingGrowth: number
+  totalResponses: number
+  responsesWeek: number
+  totalMessages: number
+  messagesWeek: number
+  totalOffers: number
+  offersWeek: number
   platformCommission: number
-  totalRevenue?: number
-  userGrowth?: number
-  verificationRate?: number
-  listingGrowth?: number
+}
+
+function StatCard({ title, value, sub, icon: Icon, color, delay = 0 }: {
+  title: string
+  value: string | number
+  sub?: string
+  icon: any
+  color: string
+  delay?: number
+}) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}>
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center flex-shrink-0`}>
+              <Icon className="w-4 h-4 text-white" />
+            </div>
+            <p className="text-xs text-telegram-textSecondary leading-tight">{title}</p>
+          </div>
+          <p className="text-2xl font-bold text-white">{typeof value === 'number' ? formatNumber(value) : value}</p>
+          {sub && <p className="text-xs text-telegram-textSecondary mt-0.5">{sub}</p>}
+        </CardContent>
+      </Card>
+    </motion.div>
+  )
 }
 
 export default function AdminDashboardPage() {
-  const { user, isAdmin, isSuperAdmin } = useAuth()
+  const { user, isSuperAdmin } = useAuth()
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
-  useEffect(() => {
-    fetchAdminStats()
-  }, [])
-
-  const fetchAdminStats = async () => {
+  const fetchStats = async () => {
+    setIsLoading(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/stats`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('influenta_token')}`
-        }
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/stats`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` }
       })
-      
-      if (response.ok) {
-        const data = await response.json()
-        setStats(data)
+      if (res.ok) {
+        setStats(await res.json())
+        setLastUpdated(new Date())
       }
-    } catch (error) {
-      console.error('Error fetching admin stats:', error)
-    } finally {
-      setIsLoading(false)
-    }
+    } catch {}
+    finally { setIsLoading(false) }
   }
 
-  // Преобразуем данные API в формат для отображения
-  const currentStats = stats ? [
-    {
-      title: 'Всего пользователей',
-      value: stats.totalUsers || 0,
-      change: stats.userGrowth || 0, // Реальный рост за 7 дней
-      icon: Users,
-      color: 'from-blue-500 to-cyan-500',
-    },
-    {
-      title: 'Верифицированных',
-      value: stats.verifiedUsers || 0,
-      change: stats.verificationRate || 0, // Процент верификации
-      icon: UserCheck,
-      color: 'from-purple-500 to-pink-500',
-    },
-    {
-      title: 'Активных объявлений',
-      value: stats.activeListings || 0,
-      change: stats.listingGrowth || 0, // Реальный рост за 7 дней
-      icon: FileText,
-      color: 'from-orange-500 to-red-500',
-    },
-    {
-      title: 'Комиссия платформы',
-      value: stats.platformCommission || 0,
-      change: 0, // Комиссия пока статичная
-      icon: RubIcon,
-      color: 'from-green-500 to-emerald-500',
-    },
-  ] : [
-    {
-      title: 'Всего пользователей',
-      value: 0,
-      change: 0,
-      icon: Users,
-      color: 'from-blue-500 to-cyan-500',
-    },
-    {
-      title: 'Верифицированных',
-      value: 0,
-      change: 0,
-      icon: UserCheck,
-      color: 'from-purple-500 to-pink-500',
-    },
-    {
-      title: 'Активных объявлений',
-      value: 0,
-      change: 0,
-      icon: FileText,
-      color: 'from-orange-500 to-red-500',
-    },
-    {
-      title: 'Комиссия платформы',
-      value: 0,
-      change: 0,
-      icon: RubIcon,
-      color: 'from-green-500 to-emerald-500',
-    },
-  ]
-  const revenueStats = {
-    total: stats?.totalRevenue || 0,
-    commission: stats?.platformCommission || 0,
-    growth: 23.5, // TODO: Calculate real growth
-  }
+  useEffect(() => { fetchStats() }, [])
 
-  const [recentActivity, setRecentActivity] = useState<any[]>([])
-
-  const [topBloggers, setTopBloggers] = useState<any[]>([])
-
-  useEffect(() => {
-    ;(async () => {
-      try {
-        const [ra, tb] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/recent-activity`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` }
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/top-bloggers`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('influenta_token')}` }
-          })
-        ])
-        if (ra.ok) {
-          const data = await ra.json()
-          const normalized = Array.isArray(data)
-            ? data.map((i: any) => ({
-                id: i.id,
-                type: i.type,
-                title: i.title || '',
-                time: i.time ? new Date(i.time) : new Date(),
-                status: i.status,
-                amount: i.amount,
-              }))
-            : []
-          setRecentActivity(normalized)
-        }
-        if (tb.ok) {
-          const data = await tb.json()
-          const normalized = Array.isArray(data)
-            ? data.map((b: any) => ({
-                id: b.id,
-                name: b.name || '',
-                username: b.username || '',
-                subscribers: Number(b.subscribers || 0),
-                earnings: Number(b.earnings || 0),
-                campaigns: Number(b.campaigns || 0),
-              }))
-            : []
-          setTopBloggers(normalized)
-        }
-      } catch (e) {
-        // no-op
-      }
-    })()
-  }, [])
-
-  if (isLoading) {
+  if (isLoading && !stats) {
     return (
-      <div className="min-h-screen bg-telegram-bg flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-telegram-primary mx-auto mb-4"></div>
-          <p className="text-telegram-textSecondary">Загрузка статистики...</p>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-telegram-primary mx-auto mb-3" />
+          <p className="text-telegram-textSecondary text-sm">Загружаем данные...</p>
         </div>
       </div>
     )
   }
 
+  const s = stats
+
   return (
-    <div className="space-y-6">
-      {/* Admin Welcome Card */}
-      {user && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-telegram-primary to-telegram-accent rounded-xl p-6 text-white"
-        >
-          <div className="flex items-start justify-between">
-            <div>
-              <h2 className="text-2xl font-bold mb-2 flex items-center gap-3">
-                Добро пожаловать, {user.firstName}!
-                {isSuperAdmin ? (
-                  <Crown className="w-7 h-7" />
-                ) : (
-                  <Shield className="w-7 h-7" />
-                )}
-              </h2>
-              <p className="opacity-90 mb-1">
-                {isSuperAdmin 
-                  ? 'Вы имеете полный доступ ко всем функциям платформы'
-                  : 'Вы вошли как администратор платформы'
-                }
-              </p>
-              <p className="text-sm opacity-75">
-                Telegram ID: {user.telegramId}
-              </p>
-            </div>
-            <Badge variant="default" className="bg-white/20 text-white border-white/30">
-              {isSuperAdmin ? 'Супер Админ #1' : 'Админ #2'}
-            </Badge>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Дашборд</h1>
-        <p className="text-telegram-textSecondary">
-          Обзор ключевых метрик платформы
-        </p>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {currentStats.map((stat, index) => (
-          <motion.div
-            key={stat.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${stat.color} flex items-center justify-center`}>
-                    <stat.icon className="w-6 h-6 text-white" />
-                  </div>
-                  <div className={`flex items-center gap-1 text-sm ${
-                    stat.change > 0 ? 'text-telegram-success' : 'text-telegram-danger'
-                  }`}>
-                    {stat.change > 0 ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
-                    {Math.abs(stat.change)}%
-                  </div>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{formatNumber(stat.value)}</p>
-                  <p className="text-sm text-telegram-textSecondary">{stat.title}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Revenue Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
+    <div className="space-y-5 pb-10">
+      {/* Welcome */}
+      <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
+        className="bg-gradient-to-r from-telegram-primary to-telegram-accent rounded-xl p-5 text-white"
       >
-        <Card className="bg-gradient-to-r from-telegram-primary to-telegram-accent text-white">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-white/80 mb-2">Общий оборот платформы</p>
-                <p className="text-4xl font-bold mb-1">{formatPrice(revenueStats.total)}</p>
-                <p className="text-white/80">
-                  Комиссия: {formatPrice(revenueStats.commission)}
-                </p>
-              </div>
-              <div className="text-right">
-                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-2">
-                  <RubIcon className="text-3xl text-white" />
-                </div>
-                <div className="flex items-center gap-1 text-sm">
-                  <ArrowUp className="w-4 h-4" />
-                  {revenueStats.growth}%
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              {user?.firstName} {isSuperAdmin ? <Crown className="w-5 h-5" /> : <Shield className="w-5 h-5" />}
+            </h2>
+            <p className="text-sm opacity-80 mt-0.5">Дашборд платформы Influenta</p>
+          </div>
+          <button onClick={fetchStats} className="opacity-70 hover:opacity-100 transition-opacity mt-1">
+            <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+        {lastUpdated && (
+          <p className="text-xs opacity-60 mt-2">
+            Обновлено: {lastUpdated.toLocaleTimeString('ru-RU')}
+          </p>
+        )}
       </motion.div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Последняя активность</CardTitle>
-            <Activity className="w-5 h-5 text-telegram-textSecondary" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentActivity.map((activity) => (
-                <motion.div
-                  key={activity.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  whileHover={{ x: 5 }}
-                  className="flex items-start gap-3 cursor-pointer"
-                >
-                  <div className="w-2 h-2 rounded-full bg-telegram-primary mt-2" />
-                  <div className="flex-1">
-                    <p className="text-sm">{activity.title}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <p className="text-xs text-telegram-textSecondary">
-                        {getRelativeTime(activity.time)}
-                      </p>
-                      {activity.amount && (
-                        <Badge variant="default" className="text-xs">
-                          {formatPrice(activity.amount)}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  {activity.status === 'pending' && (
-                    <Badge variant="warning">Ожидает</Badge>
-                  )}
-                  {activity.status === 'complaint' && (
-                    <Badge variant="danger">Жалоба</Badge>
-                  )}
-                </motion.div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Top Bloggers */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Топ блогеры</CardTitle>
-            <TrendingUp className="w-5 h-5 text-telegram-textSecondary" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {topBloggers.map((blogger, index) => (
-                <div key={blogger.id} className="flex items-center gap-4">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-telegram-primary/20 text-telegram-primary font-bold">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium">{blogger.name}</p>
-                    <p className="text-sm text-telegram-textSecondary">
-                      {blogger.username} • {formatNumber(blogger.subscribers)} подписчиков
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">{formatPrice(blogger.earnings)}</p>
-                    <p className="text-xs text-telegram-textSecondary">
-                      {blogger.campaigns} кампаний
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Прирост сегодня / неделя / месяц */}
+      <div>
+        <h3 className="text-sm font-semibold text-telegram-textSecondary uppercase tracking-wider mb-3">📈 Прирост пользователей</h3>
+        <div className="grid grid-cols-3 gap-3">
+          <StatCard title="За сегодня" value={s?.newToday ?? 0} icon={TrendingUp} color="from-green-500 to-emerald-500" delay={0.05} />
+          <StatCard title="За 7 дней" value={s?.newUsersWeek ?? 0} icon={TrendingUp} color="from-blue-500 to-cyan-500" delay={0.1} />
+          <StatCard title="За 30 дней" value={s?.newUsersMonth ?? 0} icon={TrendingUp} color="from-violet-500 to-purple-500" delay={0.15} />
+        </div>
       </div>
 
-      {/* Chart Placeholder */}
-      <Card>
-        <CardHeader>
-          <CardTitle>График активности</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-64 bg-telegram-bg rounded-lg flex items-center justify-center">
-            <div className="text-center">
-              <TrendingUp className="w-12 h-12 text-telegram-textSecondary mx-auto mb-3" />
-              <p className="text-telegram-textSecondary">
-                График будет доступен в следующей версии
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Пользователи */}
+      <div>
+        <h3 className="text-sm font-semibold text-telegram-textSecondary uppercase tracking-wider mb-3">👥 Аудитория</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <StatCard title="Всего зарегистрировано" value={s?.totalUsers ?? 0} icon={Users} color="from-blue-500 to-cyan-500" delay={0.1} />
+          <StatCard title="Заполнили профиль" value={s?.onboardedUsers ?? 0} sub={`${s?.onboardingRate ?? 0}% от активных`} icon={UserCheck} color="from-green-500 to-teal-500" delay={0.15} />
+          <StatCard title="Блогеров" value={s?.totalBloggers ?? 0} icon={Users} color="from-pink-500 to-rose-500" delay={0.2} />
+          <StatCard title="Рекламодателей" value={s?.totalAdvertisers ?? 0} icon={Briefcase} color="from-orange-500 to-amber-500" delay={0.25} />
+        </div>
+      </div>
+
+      {/* Активность */}
+      <div>
+        <h3 className="text-sm font-semibold text-telegram-textSecondary uppercase tracking-wider mb-3">💬 Реальная активность</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <StatCard title="Откликов всего" value={s?.totalResponses ?? 0} sub={`+${s?.responsesWeek ?? 0} за 7 дней`} icon={Activity} color="from-blue-500 to-indigo-500" delay={0.1} />
+          <StatCard title="Сообщений в чатах" value={s?.totalMessages ?? 0} sub={`+${s?.messagesWeek ?? 0} за 7 дней`} icon={MessageSquare} color="from-cyan-500 to-sky-500" delay={0.15} />
+          <StatCard title="Прямых офферов" value={s?.totalOffers ?? 0} sub={`+${s?.offersWeek ?? 0} за 7 дней`} icon={Send} color="from-violet-500 to-purple-500" delay={0.2} />
+          <StatCard title="Объявлений активных" value={s?.activeListings ?? 0} sub={`+${s?.newListingsWeek ?? 0} за 7 дней`} icon={FileText} color="from-orange-500 to-red-500" delay={0.25} />
+        </div>
+      </div>
+
+      {/* Качество */}
+      <div>
+        <h3 className="text-sm font-semibold text-telegram-textSecondary uppercase tracking-wider mb-3">✅ Качество</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <StatCard title="Верифицировано" value={s?.verifiedUsers ?? 0} sub={`${s?.verificationRate ?? 0}% от всех`} icon={Shield} color="from-yellow-500 to-amber-500" delay={0.1} />
+          <StatCard title="Всего объявлений" value={s?.totalListings ?? 0} icon={FileText} color="from-slate-500 to-gray-500" delay={0.15} />
+        </div>
+      </div>
     </div>
   )
 }
-
