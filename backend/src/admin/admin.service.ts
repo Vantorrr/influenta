@@ -329,21 +329,38 @@ export class AdminService {
   }
 
   async getTopBloggers() {
-    const bloggers = await this.usersRepository
-      .createQueryBuilder('user')
-      .where('user.isActive = :isActive', { isActive: true })
-      .orderBy('user.subscribersCount', 'DESC')
+    const bloggers = await this.bloggersRepository
+      .createQueryBuilder('b')
+      .leftJoinAndSelect('b.user', 'u')
+      .leftJoin(
+        qb => qb
+          .select('r."bloggerId"', 'bloggerId')
+          .addSelect('COUNT(*)', 'cnt')
+          .from('responses', 'r')
+          .where("r.status = 'accepted'")
+          .groupBy('r."bloggerId"'),
+        'acc',
+        'acc."bloggerId" = b.id',
+      )
+      .addSelect('COALESCE(acc.cnt, 0)', 'campaigns')
+      .where('u.isActive = true')
+      .orderBy('b.subscribersCount', 'DESC')
       .limit(5)
-      .getMany();
-    return bloggers.map((u, i) => ({
-      id: u.id,
-      name: `${u.firstName}${u.lastName ? ' ' + u.lastName : ''}`.trim(),
-      username: u.username ? `@${u.username}` : '',
-      subscribers: Number(u.subscribersCount || 0),
-      earnings: 0,
-      campaigns: 0,
-      rank: i + 1,
-    }));
+      .getRawAndEntities();
+
+    return bloggers.entities.map((b, i) => {
+      const raw = bloggers.raw[i];
+      const u = b.user as any;
+      return {
+        id: b.id,
+        name: u ? `${u.firstName || ''}${u.lastName ? ' ' + u.lastName : ''}`.trim() : '',
+        username: u?.username ? `@${u.username}` : '',
+        subscribers: Number(b.subscribersCount || 0),
+        earnings: 0,
+        campaigns: Number(raw?.campaigns || 0),
+        rank: i + 1,
+      };
+    });
   }
 
   // Admin: list all listings with basic info and counters
