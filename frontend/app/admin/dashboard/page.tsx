@@ -144,16 +144,16 @@ export default function AdminDashboardPage() {
       {/* Аудитория */}
       <div>
         <p className="text-xs font-semibold text-telegram-textSecondary uppercase tracking-wider mb-3">👥 Аудитория</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 items-stretch">
           {[
-            { label: 'Зарегистрировано', value: s?.totalUsers ?? 0, sub: null, icon: Users, color: '#3b82f6' },
+            { label: 'Зарегистрировано', value: s?.totalUsers ?? 0, sub: ' ', icon: Users, color: '#3b82f6' },
             { label: 'Заполнили профиль', value: s?.onboardedUsers ?? 0, sub: `${s?.onboardingRate ?? 0}% от активных`, icon: UserCheck, color: '#10b981' },
-            { label: 'Блогеров', value: s?.totalBloggers ?? 0, sub: null, icon: Users, color: '#ec4899' },
-            { label: 'Рекламодателей', value: s?.totalAdvertisers ?? 0, sub: null, icon: Briefcase, color: '#f97316' },
+            { label: 'Блогеров', value: s?.totalBloggers ?? 0, sub: ' ', icon: Users, color: '#ec4899' },
+            { label: 'Рекламодателей', value: s?.totalAdvertisers ?? 0, sub: ' ', icon: Briefcase, color: '#f97316' },
           ].map((item, i) => (
-            <motion.div key={item.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 + i * 0.05 }}>
-              <Card>
-                <CardContent className="p-4">
+            <motion.div key={item.label} className="h-full" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 + i * 0.05 }}>
+              <Card className="h-full">
+                <CardContent className="p-4 flex flex-col justify-between h-full">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: item.color + '22' }}>
                       <item.icon className="w-4 h-4" style={{ color: item.color }} />
@@ -161,7 +161,7 @@ export default function AdminDashboardPage() {
                     <p className="text-xs text-telegram-textSecondary">{item.label}</p>
                   </div>
                   <p className="text-2xl font-bold">{formatNumber(item.value)}</p>
-                  {item.sub && <p className="text-xs text-telegram-textSecondary mt-0.5">{item.sub}</p>}
+                  <p className="text-xs text-telegram-textSecondary mt-0.5">{item.sub}</p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -172,16 +172,16 @@ export default function AdminDashboardPage() {
       {/* Реальная активность */}
       <div>
         <p className="text-xs font-semibold text-telegram-textSecondary uppercase tracking-wider mb-3">💬 Реальная активность</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 items-stretch">
           {[
             { label: 'Откликов', value: s?.totalResponses ?? 0, sub: `+${s?.responsesWeek ?? 0} за 7 дн.`, icon: Activity, color: '#6366f1' },
             { label: 'Сообщений', value: s?.totalMessages ?? 0, sub: `+${s?.messagesWeek ?? 0} за 7 дн.`, icon: MessageSquare, color: '#0ea5e9' },
             { label: 'Прямых офферов', value: s?.totalOffers ?? 0, sub: `+${s?.offersWeek ?? 0} за 7 дн.`, icon: Send, color: '#8b5cf6' },
             { label: 'Объявлений', value: s?.activeListings ?? 0, sub: `+${s?.newListingsWeek ?? 0} за 7 дн.`, icon: FileText, color: '#f97316' },
           ].map((item, i) => (
-            <motion.div key={item.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}>
-              <Card>
-                <CardContent className="p-4">
+            <motion.div key={item.label} className="h-full" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}>
+              <Card className="h-full">
+                <CardContent className="p-4 flex flex-col justify-between h-full">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: item.color + '22' }}>
                       <item.icon className="w-4 h-4" style={{ color: item.color }} />
@@ -200,14 +200,14 @@ export default function AdminDashboardPage() {
       {/* Верификация */}
       <div>
         <p className="text-xs font-semibold text-telegram-textSecondary uppercase tracking-wider mb-3">✅ Качество</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 items-stretch">
           {[
             { label: 'Верифицировано', value: s?.verifiedUsers ?? 0, sub: `${s?.verificationRate ?? 0}% от всех`, icon: Shield, color: '#eab308' },
-            { label: 'Объявлений всего', value: s?.totalListings ?? 0, sub: null, icon: FileText, color: '#6b7280' },
+            { label: 'Объявлений всего', value: s?.totalListings ?? 0, sub: ' ', icon: FileText, color: '#6b7280' },
           ].map((item, i) => (
-            <motion.div key={item.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}>
-              <Card>
-                <CardContent className="p-4">
+            <motion.div key={item.label} className="h-full" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}>
+              <Card className="h-full">
+                <CardContent className="p-4 flex flex-col justify-between h-full">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: item.color + '22' }}>
                       <item.icon className="w-4 h-4" style={{ color: item.color }} />
@@ -215,7 +215,7 @@ export default function AdminDashboardPage() {
                     <p className="text-xs text-telegram-textSecondary">{item.label}</p>
                   </div>
                   <p className="text-2xl font-bold">{formatNumber(item.value)}</p>
-                  {item.sub && <p className="text-xs text-telegram-textSecondary mt-0.5">{item.sub}</p>}
+                  <p className="text-xs text-telegram-textSecondary mt-0.5">{item.sub}</p>
                 </CardContent>
               </Card>
             </motion.div>
