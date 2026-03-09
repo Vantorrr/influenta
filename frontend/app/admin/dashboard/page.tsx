@@ -272,11 +272,13 @@ export default function AdminDashboardPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{blogger.name}</p>
-                      <p className="text-xs text-telegram-textSecondary">{blogger.username} · {formatNumber(blogger.subscribers)} подп.</p>
+                      <p className="text-xs text-telegram-textSecondary truncate">{blogger.username}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="text-sm font-medium">{formatPrice(blogger.earnings)}</p>
-                      <p className="text-xs text-telegram-textSecondary">{blogger.campaigns} кампаний</p>
+                      <p className="text-sm font-medium">{formatNumber(blogger.subscribers)} подп.</p>
+                      {blogger.campaigns > 0 && (
+                        <p className="text-xs text-telegram-textSecondary">{blogger.campaigns} кампаний</p>
+                      )}
                     </div>
                   </div>
                 ))}
