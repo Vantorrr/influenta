@@ -329,28 +329,32 @@ export class AdminService {
   }
 
   async getTopBloggers() {
-    // subscribersCount хранится в таблице users, а не bloggers
+    // subscribersCount хранится в users, не все блогеры имеют строку в таблице bloggers
     const rows = await this.usersRepository.query(`
       SELECT
-        b.id            AS "bloggerId",
-        u.id            AS "userId",
+        u.id,
         u."firstName",
         u."lastName",
         u.username,
         u."subscribersCount",
-        COUNT(r.id) FILTER (WHERE r.status = 'accepted') AS campaigns
-      FROM bloggers b
-      JOIN users u ON b."userId" = u.id
-      LEFT JOIN responses r ON r."bloggerId" = b.id
+        COALESCE(
+          (SELECT COUNT(r.id) FROM responses r
+           JOIN bloggers b ON r."bloggerId" = b.id
+           WHERE b."userId" = u.id AND r.status = 'accepted'),
+          0
+        ) AS campaigns
+      FROM users u
       WHERE u."isActive" = true
         AND u."onboardingCompleted" = true
-      GROUP BY b.id, u.id, u."firstName", u."lastName", u.username, u."subscribersCount"
+        AND u.role = 'blogger'
+        AND u."subscribersCount" IS NOT NULL
+        AND u."subscribersCount" > 0
       ORDER BY u."subscribersCount" DESC
       LIMIT 5
     `);
 
     return rows.map((row: any, i: number) => ({
-      id: row.bloggerId,
+      id: row.id,
       name: `${row.firstName || ''}${row.lastName ? ' ' + row.lastName : ''}`.trim(),
       username: row.username ? `@${row.username}` : '',
       subscribers: Number(row.subscribersCount || 0),
