@@ -18,6 +18,21 @@ export class AuthService {
     private telegramService: TelegramService,
   ) {}
 
+  private withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> {
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => resolve(fallback), timeoutMs);
+      promise
+        .then((value) => {
+          clearTimeout(timer);
+          resolve(value);
+        })
+        .catch(() => {
+          clearTimeout(timer);
+          resolve(fallback);
+        });
+    });
+  }
+
   async authenticateWithTelegram(authData: any) {
     try {
       console.log('🔴 Auth request received:', { 
@@ -39,8 +54,13 @@ export class AuthService {
       console.log('🔴 Using telegram user from request:', telegramUser);
       console.log('🔴 TG username field:', telegramUser.username, 'first_name:', telegramUser.first_name);
       
-      // Пытаемся получить актуальные данные напрямую из Telegram API
-      const freshTgData = await this.telegramService.getUserInfo(telegramUser.id).catch(() => null);
+      // Не блокируем аутентификацию внешним API Telegram:
+      // если Telegram тормозит/лимитит, продолжаем с данными из initData.
+      const freshTgData = await this.withTimeout(
+        this.telegramService.getUserInfo(telegramUser.id),
+        1200,
+        null,
+      );
       console.log('🔴 Fresh data from Telegram API:', freshTgData);
 
       // Ищем или создаем пользователя

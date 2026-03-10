@@ -418,10 +418,10 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
   const [formData, setFormData] = useState<Partial<SocialPlatform>>({
     platform: platform?.platform || PlatformType.INSTAGRAM,
     username: platform?.username || '',
-    subscribersCount: platform?.subscribersCount || 0,
-    pricePerPost: platform?.pricePerPost || undefined,
-    pricePerStory: platform?.pricePerStory || undefined,
-    pricePerReel: platform?.pricePerReel || undefined,
+    subscribersCount: platform?.subscribersCount ?? 0,
+    pricePerPost: platform?.pricePerPost ?? undefined,
+    pricePerStory: platform?.pricePerStory ?? undefined,
+    pricePerReel: platform?.pricePerReel ?? undefined,
     isPrimary: platform?.isPrimary || false,
     statisticsScreenshots: platform?.statisticsScreenshots || [],
     additionalInfo: platform?.additionalInfo || {},
@@ -474,6 +474,13 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
     e.preventDefault()
     try {
       setIsSubmitting(true)
+
+      const normalizePrice = (value: unknown): number | undefined => {
+        if (value === -1) return -1
+        if (value === '' || value === null || value === undefined) return undefined
+        const parsed = Number(value)
+        return Number.isFinite(parsed) ? parsed : undefined
+      }
       
       const dataToSubmit: Partial<SocialPlatform> = {
         ...formData,
@@ -482,16 +489,10 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
         url: undefined,
         subscribersCount: typeof formData.subscribersCount === 'string'
           ? (parseInt(formData.subscribersCount as any) || 0)
-          : (formData.subscribersCount || 0),
-        pricePerPost: formData.pricePerPost === -1 
-          ? -1 
-          : (formData.pricePerPost && formData.pricePerPost !== ('' as any) ? Number(formData.pricePerPost) : undefined),
-        pricePerStory: formData.pricePerStory === -1 
-          ? -1 
-          : (formData.pricePerStory && formData.pricePerStory !== ('' as any) ? Number(formData.pricePerStory) : undefined),
-        pricePerReel: formData.pricePerReel === -1 
-          ? -1 
-          : (formData.pricePerReel && formData.pricePerReel !== ('' as any) ? Number(formData.pricePerReel) : undefined),
+          : (formData.subscribersCount ?? 0),
+        pricePerPost: normalizePrice(formData.pricePerPost),
+        pricePerStory: normalizePrice(formData.pricePerStory),
+        pricePerReel: normalizePrice(formData.pricePerReel),
       }
       
       if (!dataToSubmit.username || dataToSubmit.username.trim() === '') {
@@ -576,7 +577,7 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
           style={inputStyle}
           type="text"
           inputMode="numeric"
-          value={formData.subscribersCount ? formData.subscribersCount.toLocaleString('ru-RU') : ''}
+          value={formData.subscribersCount !== undefined && formData.subscribersCount !== null ? formData.subscribersCount.toLocaleString('ru-RU') : ''}
           onChange={(e) => {
             const digits = e.target.value.replace(/\D/g, '')
             setFormData({ ...formData, subscribersCount: digits ? parseInt(digits) : 0 })
@@ -649,7 +650,13 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
               style={inputStyle}
               type="text"
               inputMode="numeric"
-              value={formData.pricePerPost === -1 ? '' : (formData.pricePerPost ? formData.pricePerPost.toLocaleString('ru-RU') : '')}
+              value={
+                formData.pricePerPost === -1
+                  ? ''
+                  : (formData.pricePerPost !== undefined && formData.pricePerPost !== null
+                      ? formData.pricePerPost.toLocaleString('ru-RU')
+                      : '')
+              }
               onChange={(e) => {
                 const digits = e.target.value.replace(/\D/g, '')
                 setFormData({ ...formData, pricePerPost: digits ? parseFloat(digits) : undefined })
@@ -674,7 +681,13 @@ function PlatformForm({ platform, onSubmit, onCancel }: PlatformFormProps) {
               style={inputStyle}
               type="text"
               inputMode="numeric"
-              value={formData.pricePerStory === -1 ? '' : (formData.pricePerStory ? formData.pricePerStory.toLocaleString('ru-RU') : '')}
+              value={
+                formData.pricePerStory === -1
+                  ? ''
+                  : (formData.pricePerStory !== undefined && formData.pricePerStory !== null
+                      ? formData.pricePerStory.toLocaleString('ru-RU')
+                      : '')
+              }
               onChange={(e) => {
                 const digits = e.target.value.replace(/\D/g, '')
                 setFormData({ ...formData, pricePerStory: digits ? parseFloat(digits) : undefined })

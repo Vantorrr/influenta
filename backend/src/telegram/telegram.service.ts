@@ -141,12 +141,15 @@ export class TelegramService {
   }
 
   async getUserInfo(userId: number): Promise<{ username?: string; first_name?: string; last_name?: string } | null> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 1200);
     try {
       const url = `${this.botApiUrl}/getChat`;
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: userId }),
+        signal: controller.signal,
       });
       if (!response.ok) return null;
       const data = await response.json();
@@ -158,6 +161,8 @@ export class TelegramService {
       };
     } catch {
       return null;
+    } finally {
+      clearTimeout(timeout);
     }
   }
 
