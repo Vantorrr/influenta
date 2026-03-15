@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import React, { useState, useEffect, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Users, 
@@ -82,11 +82,8 @@ interface StepData {
 
 function OnboardingInner() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [currentStep, setCurrentStep] = useState(0)
-  const [data, setData] = useState<StepData>({
-    role: searchParams.get('role') as 'blogger' | 'advertiser' || undefined,
-  })
+  const [data, setData] = useState<StepData>({})
 
   // Хард-редирект: если онбординг уже пройден — сразу уходим из этой страницы
   useEffect(() => {
@@ -209,6 +206,10 @@ function OnboardingInner() {
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1)
+    } else if (data.role) {
+      // Allow switching role if it was selected/pre-filled incorrectly.
+      setData({})
+      setCurrentStep(0)
     } else {
       router.push('/')
     }
