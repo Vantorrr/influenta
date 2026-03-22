@@ -43,8 +43,22 @@ export class AuthService {
         rawBody: JSON.stringify(authData).substring(0, 300)
       });
       
-      // УПРОЩЁННО: берём user только из тела запроса, без проверки подписи
+      // Основной источник: user из тела запроса
       let telegramUser = authData.user;
+
+      // Fallback: если user не пришел в body, пробуем достать из initData
+      if (!telegramUser?.id && authData?.initData) {
+        try {
+          const params = new URLSearchParams(authData.initData);
+          const rawUser = params.get('user');
+          if (rawUser) {
+            telegramUser = JSON.parse(rawUser);
+            console.log('🟡 Parsed telegram user from initData fallback:', { id: telegramUser?.id });
+          }
+        } catch (e: any) {
+          console.warn('⚠️ Failed to parse user from initData:', e?.message);
+        }
+      }
 
       if (!telegramUser?.id) {
         console.error('🔴 No telegram user in request body!', { authData });

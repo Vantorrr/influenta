@@ -217,6 +217,34 @@ function OnboardingInner() {
 
   const [saving, setSaving] = useState(false)
 
+  const reAuthViaTelegram = async (): Promise<boolean> => {
+    try {
+      const tg = window.Telegram?.WebApp
+      const initData = tg?.initData
+      const telegramUser = tg?.initDataUnsafe?.user
+      if (!initData || !telegramUser?.id) return false
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/telegram`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Telegram-Init-Data': initData,
+        },
+        body: JSON.stringify({ initData, user: telegramUser }),
+      })
+
+      if (!response.ok) return false
+      const authData = await response.json()
+      if (!authData?.token || !authData?.user?.id) return false
+
+      localStorage.setItem('influenta_token', authData.token)
+      localStorage.setItem('influenta_user', JSON.stringify(authData.user))
+      return true
+    } catch {
+      return false
+    }
+  }
+
   const handleComplete = async () => {
     if (saving) return
     setSaving(true)
@@ -267,6 +295,23 @@ function OnboardingInner() {
         } catch (e: any) {
           lastError = e
           console.error(`Save attempt ${attempt + 1} failed:`, e?.response?.status, e?.response?.data || e?.message)
+
+          // Частый кейс в миниаппе: токен протух/слетел во время онбординга.
+          // Мягко переавторизуемся и сразу повторяем сохранение.
+          if (e?.response?.status === 401) {
+            const reAuthed = await reAuthViaTelegram()
+            if (reAuthed) {
+              try {
+                await authApi.updateProfile(profileData)
+                saveSuccess = true
+                break
+              } catch (retryErr: any) {
+                lastError = retryErr
+                console.error('Retry after re-auth failed:', retryErr?.response?.status, retryErr?.response?.data || retryErr?.message)
+              }
+            }
+          }
+
           if (attempt < 2) {
             await new Promise(r => setTimeout(r, 1000 * (attempt + 1)))
           }
