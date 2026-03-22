@@ -120,15 +120,18 @@ export function useAuth() {
       }
 
       const effectiveUser = localStorage.getItem('influenta_user')
+      const hasTelegramWebApp = typeof window !== 'undefined' && !!window.Telegram?.WebApp
+      const currentTelegramId = hasTelegramWebApp
+        ? String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || '')
+        : ''
 
       // Защита от "перемешивания" аккаунтов в Telegram mini-app:
       // если в localStorage лежит токен другого telegramId — сбрасываем сессию и логиним текущего пользователя.
-      if (savedToken && effectiveUser && typeof window !== 'undefined' && window.Telegram?.WebApp) {
+      if (savedToken && effectiveUser && hasTelegramWebApp) {
         try {
-          const currentTgId = String(window.Telegram.WebApp.initDataUnsafe?.user?.id || '')
           const cachedUser = JSON.parse(effectiveUser)
           const cachedTgId = String(cachedUser?.telegramId || '')
-          if (currentTgId && cachedTgId && currentTgId !== cachedTgId) {
+          if (currentTelegramId && cachedTgId && currentTelegramId !== cachedTgId) {
             console.warn('⚠️ Telegram user mismatch with cached session, resetting local auth state')
             localStorage.removeItem('influenta_token')
             localStorage.removeItem('influenta_user')
@@ -139,7 +142,10 @@ export function useAuth() {
 
       const effectiveToken = localStorage.getItem('influenta_token')
       const effectiveUserAfterCheck = localStorage.getItem('influenta_user')
-      if (effectiveToken && effectiveUserAfterCheck) {
+      // В Telegram не используем кеш-сессию, пока не знаем current Telegram user id.
+      // Иначе при шаринге устройства/кеша можно открыть чужой аккаунт.
+      const canUseCachedSession = !hasTelegramWebApp || !!currentTelegramId
+      if (effectiveToken && effectiveUserAfterCheck && canUseCachedSession) {
         const cachedUser = JSON.parse(effectiveUserAfterCheck)
         if (cachedUser?.onboardingCompleted) {
           localStorage.setItem('onboarding_completed', 'true')
