@@ -78,6 +78,12 @@ export function useAuth() {
       console.log('🔵 InitAuth started')
       console.log('🔵 Telegram WebApp available:', !!window.Telegram?.WebApp)
       console.log('🔵 Telegram user:', window.Telegram?.WebApp?.initDataUnsafe?.user)
+
+      // Сначала даём Telegram шанс инициализировать user/initData, чтобы не взять чужой кеш.
+      if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+        try { window.Telegram.WebApp.ready() } catch {}
+        await waitForTelegramReady(1500)
+      }
       
       // Проверяем startapp параметр для навигации
       const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param
@@ -114,8 +120,27 @@ export function useAuth() {
       }
 
       const effectiveUser = localStorage.getItem('influenta_user')
-      if (savedToken && effectiveUser) {
-        const cachedUser = JSON.parse(effectiveUser)
+
+      // Защита от "перемешивания" аккаунтов в Telegram mini-app:
+      // если в localStorage лежит токен другого telegramId — сбрасываем сессию и логиним текущего пользователя.
+      if (savedToken && effectiveUser && typeof window !== 'undefined' && window.Telegram?.WebApp) {
+        try {
+          const currentTgId = String(window.Telegram.WebApp.initDataUnsafe?.user?.id || '')
+          const cachedUser = JSON.parse(effectiveUser)
+          const cachedTgId = String(cachedUser?.telegramId || '')
+          if (currentTgId && cachedTgId && currentTgId !== cachedTgId) {
+            console.warn('⚠️ Telegram user mismatch with cached session, resetting local auth state')
+            localStorage.removeItem('influenta_token')
+            localStorage.removeItem('influenta_user')
+            localStorage.removeItem('onboarding_completed')
+          }
+        } catch {}
+      }
+
+      const effectiveToken = localStorage.getItem('influenta_token')
+      const effectiveUserAfterCheck = localStorage.getItem('influenta_user')
+      if (effectiveToken && effectiveUserAfterCheck) {
+        const cachedUser = JSON.parse(effectiveUserAfterCheck)
         if (cachedUser?.onboardingCompleted) {
           localStorage.setItem('onboarding_completed', 'true')
         }
@@ -128,14 +153,14 @@ export function useAuth() {
           isLoading: false,
           isAdmin: cachedIsAdmin,
           isSuperAdmin: cachedIsSuper,
-          token: savedToken,
+          token: effectiveToken,
         })
 
         // Асинхронно подтянуть свежий профиль (чтобы увиделся статус верификации после решения админа)
         ;(async () => {
           try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-              headers: { Authorization: `Bearer ${savedToken}` },
+              headers: { Authorization: `Bearer ${effectiveToken}` },
             })
             if (res.ok) {
               const me = await res.json()
@@ -290,14 +315,11 @@ export function useAuth() {
           }
         }
 
-        let ok = await attemptAuth()
-        if (!ok) {
-          // Даем Телеграму время заполнить user и обновить initData
-          await new Promise(r => setTimeout(r, 700))
+        let ok = false
+        for (let i = 0; i < 4; i++) {
           ok = await attemptAuth()
           if (ok) return
-        } else {
-          return
+          await new Promise(r => setTimeout(r, 400 * (i + 1)))
         }
 
         // Если авторизация не удалась

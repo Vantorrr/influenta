@@ -68,13 +68,14 @@ export class AuthService {
       console.log('🔴 Using telegram user from request:', telegramUser);
       console.log('🔴 TG username field:', telegramUser.username, 'first_name:', telegramUser.first_name);
       
-      // Не блокируем аутентификацию внешним API Telegram:
-      // если Telegram тормозит/лимитит, продолжаем с данными из initData.
-      const freshTgData = await this.withTimeout(
-        this.telegramService.getUserInfo(telegramUser.id),
-        1200,
-        null,
-      );
+      // Важно для стабильности: не зависим от внешнего Telegram API в критическом пути логина.
+      // Enrichment можно включить флагом AUTH_TELEGRAM_ENRICH=true, но по умолчанию он выключен.
+      const shouldEnrichFromTelegram =
+        (this.configService.get<string>('AUTH_TELEGRAM_ENRICH') || process.env.AUTH_TELEGRAM_ENRICH) === 'true';
+
+      const freshTgData = shouldEnrichFromTelegram
+        ? await this.withTimeout(this.telegramService.getUserInfo(telegramUser.id), 1200, null)
+        : null;
       console.log('🔴 Fresh data from Telegram API:', freshTgData);
 
       // Ищем или создаем пользователя
