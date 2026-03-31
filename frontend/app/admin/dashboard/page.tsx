@@ -21,8 +21,10 @@ interface AdminStats {
   verifiedUsers: number
   verificationRate: number
   newToday: number
+  newUsersLast24h: number
   newUsersWeek: number
   newUsersMonth: number
+  activeToday: number
   userGrowth: number
   totalListings: number
   activeListings: number
@@ -124,12 +126,14 @@ export default function AdminDashboardPage() {
 
       {/* Прирост */}
       <div>
-        <p className="text-xs font-semibold text-telegram-textSecondary uppercase tracking-wider mb-3">📈 Прирост пользователей</p>
-        <div className="grid grid-cols-3 gap-2">
+        <p className="text-xs font-semibold text-telegram-textSecondary uppercase tracking-wider mb-1">📈 Прирост пользователей</p>
+        <p className="text-xs text-telegram-textSecondary mb-3">Сегодня считается по Москве. Отдельно показываем регистрации и активные входы.</p>
+        <div className="grid grid-cols-2 gap-2">
           {[
-            { label: 'За сегодня', value: s?.newToday ?? 0, color: 'from-green-500 to-emerald-500' },
-            { label: 'За 7 дней', value: s?.newUsersWeek ?? 0, color: 'from-blue-500 to-cyan-500' },
-            { label: 'За 30 дней', value: s?.newUsersMonth ?? 0, color: 'from-violet-500 to-purple-500' },
+            { label: 'Новых сегодня', value: s?.newToday ?? 0, color: 'from-green-500 to-emerald-500' },
+            { label: 'Активных сегодня', value: s?.activeToday ?? 0, color: 'from-cyan-500 to-sky-500' },
+            { label: 'За 24 часа', value: s?.newUsersLast24h ?? 0, color: 'from-blue-500 to-indigo-500' },
+            { label: 'За 7 дней', value: s?.newUsersWeek ?? 0, color: 'from-violet-500 to-purple-500' },
           ].map((item, i) => (
             <motion.div key={item.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
               <div className={`bg-gradient-to-br ${item.color} rounded-xl p-3 text-white`}>
@@ -138,6 +142,12 @@ export default function AdminDashboardPage() {
               </div>
             </motion.div>
           ))}
+        </div>
+        <div className="grid grid-cols-1 gap-2 mt-2">
+          <div className="bg-white/[0.04] rounded-xl p-3 border border-white/[0.06]">
+            <p className="text-xs text-telegram-textSecondary mb-1">Новых за 30 дней</p>
+            <p className="text-xl font-bold">{formatNumber(s?.newUsersMonth ?? 0)}</p>
+          </div>
         </div>
       </div>
 

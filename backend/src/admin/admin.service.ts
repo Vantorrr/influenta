@@ -27,6 +27,10 @@ export class AdminService {
     const day1 = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000);
     const day7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const day30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const moscowOffsetMs = 3 * 60 * 60 * 1000;
+    const moscowShifted = new Date(now.getTime() + moscowOffsetMs);
+    moscowShifted.setUTCHours(0, 0, 0, 0);
+    const dayStartMoscow = new Date(moscowShifted.getTime() - moscowOffsetMs);
 
     const [
       totalUsers,
@@ -36,8 +40,10 @@ export class AdminService {
       totalAdvertisers,
       verifiedUsers,
       newToday,
+      newUsersLast24h,
       newUsersWeek,
       newUsersMonth,
+      activeToday,
       activeListings,
       totalListings,
       newListingsWeek,
@@ -54,9 +60,14 @@ export class AdminService {
       this.usersRepository.count({ where: { role: 'blogger' as any, isActive: true } }),
       this.usersRepository.count({ where: { role: 'advertiser' as any, isActive: true } }),
       this.usersRepository.count({ where: { isVerified: true } }),
+      this.usersRepository.createQueryBuilder('u').where('u.createdAt >= :d', { d: dayStartMoscow }).getCount().catch(() => 0),
       this.usersRepository.createQueryBuilder('u').where('u.createdAt > :d', { d: day1 }).getCount().catch(() => 0),
       this.usersRepository.createQueryBuilder('u').where('u.createdAt > :d', { d: day7 }).getCount().catch(() => 0),
       this.usersRepository.createQueryBuilder('u').where('u.createdAt > :d', { d: day30 }).getCount().catch(() => 0),
+      this.usersRepository.query(
+        'SELECT COUNT(*)::int AS count FROM users WHERE COALESCE("lastLoginAt", "createdAt") >= $1',
+        [dayStartMoscow],
+      ).then(r => parseInt(r[0]?.count ?? '0', 10)).catch(() => 0),
       this.listingsRepository.count({ where: { status: ListingStatus.ACTIVE } }).catch(() => 0),
       this.listingsRepository.count().catch(() => 0),
       this.listingsRepository.createQueryBuilder('l').where('l.createdAt > :d', { d: day7 }).getCount().catch(() => 0),
@@ -86,8 +97,10 @@ export class AdminService {
       verificationRate,
       // Прирост
       newToday,
+      newUsersLast24h,
       newUsersWeek,
       newUsersMonth,
+      activeToday,
       userGrowth,
       // Объявления
       totalListings,
