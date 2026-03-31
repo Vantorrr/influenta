@@ -328,10 +328,28 @@ export class AdminService {
   }
 
   async getRecentActivity() {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const [latestUsers, latestListings, latestVerifs] = await Promise.all([
-      this.usersRepository.find({ order: { createdAt: 'DESC' }, take: 5 }),
-      this.listingsRepository.find({ order: { createdAt: 'DESC' }, take: 5, relations: ['advertiser'] }),
-      this.usersRepository.find({ where: { verificationRequested: true }, order: { verificationRequestedAt: 'DESC' }, take: 5 }),
+      this.usersRepository
+        .createQueryBuilder('u')
+        .where('u.createdAt >= :d', { d: sevenDaysAgo })
+        .orderBy('u.createdAt', 'DESC')
+        .limit(5)
+        .getMany(),
+      this.listingsRepository
+        .createQueryBuilder('l')
+        .leftJoinAndSelect('l.advertiser', 'advertiser')
+        .where('l.createdAt >= :d', { d: sevenDaysAgo })
+        .orderBy('l.createdAt', 'DESC')
+        .limit(5)
+        .getMany(),
+      this.usersRepository
+        .createQueryBuilder('u')
+        .where('u.verificationRequested = true')
+        .andWhere('COALESCE(u.verificationRequestedAt, u.updatedAt) >= :d', { d: sevenDaysAgo })
+        .orderBy('u.verificationRequestedAt', 'DESC')
+        .limit(5)
+        .getMany(),
     ]);
 
     const items: any[] = [];

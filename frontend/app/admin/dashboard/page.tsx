@@ -242,6 +242,7 @@ export default function AdminDashboardPage() {
               <Activity className="w-4 h-4 text-telegram-textSecondary" />
             </CardHeader>
             <CardContent>
+              <p className="text-xs text-telegram-textSecondary mb-3">Показываются события только за последние 7 дней.</p>
               <div className="space-y-3">
                 {recentActivity.map((activity) => (
                   <div key={activity.id} className="flex items-start gap-3">
