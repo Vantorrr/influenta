@@ -124,16 +124,16 @@ export default function AdminDashboardPage() {
         </div>
       </motion.div>
 
-      {/* Прирост */}
+      {/* Трафик и регистрации */}
       <div>
-        <p className="text-xs font-semibold text-telegram-textSecondary uppercase tracking-wider mb-1">📈 Прирост пользователей</p>
-        <p className="text-xs text-telegram-textSecondary mb-3">Сегодня считается по Москве. Отдельно показываем регистрации и активные входы.</p>
+        <p className="text-xs font-semibold text-telegram-textSecondary uppercase tracking-wider mb-1">📈 Трафик и регистрации</p>
+        <p className="text-xs text-telegram-textSecondary mb-3">Без двусмысленности: отдельно новые аккаунты, отдельно живые заходы, отдельно окно последних 24 часов.</p>
         <div className="grid grid-cols-2 gap-2">
           {[
-            { label: 'Новых сегодня', value: s?.newToday ?? 0, color: 'from-green-500 to-emerald-500' },
-            { label: 'Активных сегодня', value: s?.activeToday ?? 0, color: 'from-cyan-500 to-sky-500' },
-            { label: 'За 24 часа', value: s?.newUsersLast24h ?? 0, color: 'from-blue-500 to-indigo-500' },
-            { label: 'За 7 дней', value: s?.newUsersWeek ?? 0, color: 'from-violet-500 to-purple-500' },
+            { label: 'Новые аккаунты сегодня', value: s?.newToday ?? 0, color: 'from-green-500 to-emerald-500' },
+            { label: 'Живых заходов сегодня', value: s?.activeToday ?? 0, color: 'from-cyan-500 to-sky-500' },
+            { label: 'Новых за 24 часа', value: s?.newUsersLast24h ?? 0, color: 'from-blue-500 to-indigo-500' },
+            { label: 'Новых за 7 дней', value: s?.newUsersWeek ?? 0, color: 'from-violet-500 to-purple-500' },
           ].map((item, i) => (
             <motion.div key={item.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
               <div className={`bg-gradient-to-br ${item.color} rounded-xl p-3 text-white`}>
@@ -148,6 +148,17 @@ export default function AdminDashboardPage() {
             <p className="text-xs text-telegram-textSecondary mb-1">Новых за 30 дней</p>
             <p className="text-xl font-bold">{formatNumber(s?.newUsersMonth ?? 0)}</p>
           </div>
+        </div>
+        <div className="mt-2 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
+          <p className="text-xs text-telegram-textSecondary">
+            `Новые аккаунты сегодня` = регистрации с 00:00 по Москве.
+          </p>
+          <p className="text-xs text-telegram-textSecondary mt-1">
+            `Живых заходов сегодня` = пользователи, которые сегодня зашли или зарегистрировались.
+          </p>
+          <p className="text-xs text-telegram-textSecondary mt-1">
+            `Новых за 24 часа` = скользящее окно, поэтому число может быть больше, чем сегодня.
+          </p>
         </div>
       </div>
 
@@ -238,11 +249,11 @@ export default function AdminDashboardPage() {
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-base">Последняя активность</CardTitle>
+              <CardTitle className="text-base">Последние события</CardTitle>
               <Activity className="w-4 h-4 text-telegram-textSecondary" />
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-telegram-textSecondary mb-3">Показываются события только за последние 7 дней.</p>
+              <p className="text-xs text-telegram-textSecondary mb-3">Только свежие события за последние 7 дней, без старых записей из прошлых недель.</p>
               <div className="space-y-3">
                 {recentActivity.map((activity) => (
                   <div key={activity.id} className="flex items-start gap-3">
