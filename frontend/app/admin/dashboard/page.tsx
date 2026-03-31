@@ -124,14 +124,13 @@ export default function AdminDashboardPage() {
         </div>
       </motion.div>
 
-      {/* Трафик и регистрации */}
+      {/* Рост */}
       <div>
-        <p className="text-xs font-semibold text-telegram-textSecondary uppercase tracking-wider mb-1">📈 Трафик и регистрации</p>
-        <p className="text-xs text-telegram-textSecondary mb-3">Без двусмысленности: отдельно новые аккаунты, отдельно живые заходы, отдельно окно последних 24 часов.</p>
+        <p className="text-xs font-semibold text-telegram-textSecondary uppercase tracking-wider mb-3">📈 Рост</p>
         <div className="grid grid-cols-2 gap-2">
           {[
-            { label: 'Новые аккаунты сегодня', value: s?.newToday ?? 0, color: 'from-green-500 to-emerald-500' },
-            { label: 'Живых заходов сегодня', value: s?.activeToday ?? 0, color: 'from-cyan-500 to-sky-500' },
+            { label: 'Новых сегодня', value: s?.newToday ?? 0, color: 'from-green-500 to-emerald-500' },
+            { label: 'Активных сегодня', value: s?.activeToday ?? 0, color: 'from-cyan-500 to-sky-500' },
             { label: 'Новых за 24 часа', value: s?.newUsersLast24h ?? 0, color: 'from-blue-500 to-indigo-500' },
             { label: 'Новых за 7 дней', value: s?.newUsersWeek ?? 0, color: 'from-violet-500 to-purple-500' },
           ].map((item, i) => (
@@ -148,17 +147,6 @@ export default function AdminDashboardPage() {
             <p className="text-xs text-telegram-textSecondary mb-1">Новых за 30 дней</p>
             <p className="text-xl font-bold">{formatNumber(s?.newUsersMonth ?? 0)}</p>
           </div>
-        </div>
-        <div className="mt-2 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
-          <p className="text-xs text-telegram-textSecondary">
-            `Новые аккаунты сегодня` = регистрации с 00:00 по Москве.
-          </p>
-          <p className="text-xs text-telegram-textSecondary mt-1">
-            `Живых заходов сегодня` = пользователи, которые сегодня зашли или зарегистрировались.
-          </p>
-          <p className="text-xs text-telegram-textSecondary mt-1">
-            `Новых за 24 часа` = скользящее окно, поэтому число может быть больше, чем сегодня.
-          </p>
         </div>
       </div>
 
