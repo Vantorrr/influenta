@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { CATEGORY_LABELS } from '@/lib/constants'
 import { authApi, analyticsApi, setSuppress401 } from '@/lib/api'
+import { useAuth } from '@/hooks/useAuth'
 import { UserRole } from '@/types'
 
 // Branded minimal icons (no external deps)
@@ -82,20 +83,19 @@ interface StepData {
 
 function OnboardingInner() {
   const router = useRouter()
+  const { user, isAuthenticated, isLoading: authLoading, reauth, refresh } = useAuth()
   const [currentStep, setCurrentStep] = useState(0)
   const [data, setData] = useState<StepData>({})
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   // Хард-редирект: если онбординг уже пройден — сразу уходим из этой страницы
   useEffect(() => {
-    const localCompleted = localStorage.getItem('onboarding_completed') === 'true'
-    const savedUserRaw = localStorage.getItem('influenta_user')
-    const savedUser = savedUserRaw ? JSON.parse(savedUserRaw) : null
-    const serverCompleted = !!savedUser?.onboardingCompleted
+    const localCompleted = typeof window !== 'undefined' && localStorage.getItem('onboarding_completed') === 'true'
+    const serverCompleted = !!user?.onboardingCompleted
     if (localCompleted || serverCompleted) {
       router.replace('/dashboard')
-      return
     }
-  }, [])
+  }, [user?.onboardingCompleted, router])
 
   const categories = [
     'lifestyle', 'tech', 'beauty', 'fashion', 'food', 
@@ -195,7 +195,7 @@ function OnboardingInner() {
     if (!isStepValid()) {
       return // Не переходим дальше если шаг не валиден
     }
-    
+    setSaveError(null)
     if (currentStep < totalSteps - 1) {
       setCurrentStep(currentStep + 1)
     } else {
@@ -204,6 +204,7 @@ function OnboardingInner() {
   }
 
   const handleBack = () => {
+    setSaveError(null)
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1)
     } else if (data.role) {
@@ -217,160 +218,179 @@ function OnboardingInner() {
 
   const [saving, setSaving] = useState(false)
 
-  const reAuthViaTelegram = async (): Promise<boolean> => {
-    try {
-      const tg = window.Telegram?.WebApp
-      const initData = tg?.initData
-      const telegramUser = tg?.initDataUnsafe?.user
-      if (!initData || !telegramUser?.id) return false
+  /** Парсит число из строки с разделителями (точки/пробелы). Возвращает 0 при пустоте. */
+  const parseNumeric = (value?: string): number => {
+    if (!value) return 0
+    const cleaned = String(value).replace(/[^\d]/g, '')
+    if (!cleaned) return 0
+    const num = parseInt(cleaned, 10)
+    return Number.isFinite(num) ? num : 0
+  }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/telegram`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Telegram-Init-Data': initData,
-        },
-        body: JSON.stringify({ initData, user: telegramUser }),
-      })
+  /**
+   * Собирает финальный payload и валидирует его на клиенте,
+   * чтобы не нарваться на ошибку валидации сервера.
+   */
+  const buildProfilePayload = (): { ok: true; payload: any } | { ok: false; error: string } => {
+    if (!data.role) return { ok: false, error: 'Не выбрана роль' }
 
-      if (!response.ok) return false
-      const authData = await response.json()
-      if (!authData?.token || !authData?.user?.id) return false
-
-      localStorage.setItem('influenta_token', authData.token)
-      localStorage.setItem('influenta_user', JSON.stringify(authData.user))
-      return true
-    } catch {
-      return false
+    const payload: any = {
+      role: data.role === 'blogger' ? UserRole.BLOGGER : UserRole.ADVERTISER,
+      onboardingCompleted: true,
     }
+
+    if (data.role === 'blogger') {
+      const bio = (data.bio || '').trim()
+      if (bio.length < 10) return { ok: false, error: 'Расскажите о блоге (минимум 10 символов)' }
+      if (bio.length > 500) return { ok: false, error: 'Описание не может быть длиннее 500 символов' }
+      payload.bio = bio
+
+      const categories = (data.categories || []).map((c) => c.trim()).filter(Boolean)
+      if (categories.length === 0) return { ok: false, error: 'Выберите хотя бы одну тематику' }
+      payload.categories = categories.join(',')
+
+      let subscribers = 0
+      if (data.useRange) {
+        const min = parseNumeric(data.subscribersMin)
+        const max = parseNumeric(data.subscribersMax)
+        if (!min || !max) return { ok: false, error: 'Укажите диапазон подписчиков' }
+        if (min > max) return { ok: false, error: 'Минимум подписчиков больше максимума' }
+        subscribers = Math.round((min + max) / 2)
+      } else {
+        subscribers = parseNumeric(data.subscribersCount)
+      }
+      if (!subscribers || subscribers < 1) {
+        return { ok: false, error: 'Укажите количество подписчиков' }
+      }
+      payload.subscribersCount = subscribers
+
+      const platforms = data.socialPlatforms || []
+      if (platforms.length === 0) return { ok: false, error: 'Выберите хотя бы одну социальную сеть' }
+
+      const firstWithPrice = platforms.find((p) => p.pricePost || p.priceStory || p.priceReel)
+      if (!firstWithPrice) return { ok: false, error: 'Укажите цену хотя бы для одной площадки' }
+
+      const price = parseNumeric(firstWithPrice.pricePost) || parseNumeric(firstWithPrice.priceReel)
+      const story = parseNumeric(firstWithPrice.priceStory)
+      if (price > 0) payload.pricePerPost = price
+      if (story > 0) payload.pricePerStory = story
+    } else {
+      const companyName = (data.companyName || '').trim()
+      if (companyName.length < 2) return { ok: false, error: 'Введите название компании' }
+      payload.companyName = companyName
+
+      const description = (data.description || '').trim()
+      if (description.length < 10) return { ok: false, error: 'Опишите компанию (минимум 10 символов)' }
+      payload.description = description
+
+      const website = (data.website || '').trim()
+      if (website) {
+        // Лёгкая проверка URL — пропускаем «домен.ру», но обрезаем явный мусор
+        if (website.length > 512) return { ok: false, error: 'Слишком длинная ссылка на сайт' }
+        payload.website = website
+      }
+    }
+
+    return { ok: true, payload }
   }
 
   const handleComplete = async () => {
     if (saving) return
+
+    const built = buildProfilePayload()
+    if (!built.ok) {
+      setSaveError(built.error)
+      return
+    }
+
     setSaving(true)
-    
-    try {
-      const profileData: any = {
-        role: data.role === 'blogger' ? UserRole.BLOGGER : UserRole.ADVERTISER,
-        onboardingCompleted: true,
-      }
+    setSaveError(null)
 
-      if (data.role === 'blogger') {
-        profileData.bio = data.bio || ''
-        profileData.categories = data.categories?.join(',') || ''
-        
-        if (data.subscribersCount) {
-          profileData.subscribersCount = parseInt(data.subscribersCount.replace(/\./g, '')) || 0
-        }
-        
-        if (data.socialPlatforms && data.socialPlatforms.length > 0) {
-          const firstPlatform = data.socialPlatforms[0]
-          if (firstPlatform.pricePost) {
-            profileData.pricePerPost = parseInt(firstPlatform.pricePost) || 0
-          }
-          if (firstPlatform.priceStory) {
-            profileData.pricePerStory = parseInt(firstPlatform.priceStory) || 0
-          }
-        }
-      }
+    // Подавляем глобальный 401-redirect: сами обработаем его попыткой переавторизации
+    setSuppress401(true)
 
-      if (data.role === 'advertiser') {
-        profileData.companyName = data.companyName || ''
-        profileData.description = data.description || ''
-        if (data.website) {
-          profileData.website = data.website
-        }
-      }
-
-      // Suppress 401 redirects during save
-      setSuppress401(true)
-
-      let saveSuccess = false
-      let lastError: any = null
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          await authApi.updateProfile(profileData)
-          saveSuccess = true
-          break
-        } catch (e: any) {
-          lastError = e
-          console.error(`Save attempt ${attempt + 1} failed:`, e?.response?.status, e?.response?.data || e?.message)
-
-          // Частый кейс в миниаппе: токен протух/слетел во время онбординга.
-          // Мягко переавторизуемся и сразу повторяем сохранение.
-          if (e?.response?.status === 401) {
-            const reAuthed = await reAuthViaTelegram()
-            if (reAuthed) {
-              try {
-                await authApi.updateProfile(profileData)
-                saveSuccess = true
-                break
-              } catch (retryErr: any) {
-                lastError = retryErr
-                console.error('Retry after re-auth failed:', retryErr?.response?.status, retryErr?.response?.data || retryErr?.message)
-              }
-            }
-          }
-
-          if (attempt < 2) {
-            await new Promise(r => setTimeout(r, 1000 * (attempt + 1)))
-          }
-        }
-      }
-
-      // Fallback: try saving just the critical fields
-      if (!saveSuccess) {
-        try {
-          await authApi.updateProfile({
-            role: profileData.role,
-            onboardingCompleted: true,
-          } as any)
-          saveSuccess = true
-        } catch (e: any) {
-          console.error('Fallback save failed:', e?.response?.data || e?.message)
-        }
-      }
-
-      setSuppress401(false)
-
-      if (!saveSuccess) {
-        throw lastError
-      }
-      
+    const trySave = async (payload: any): Promise<{ ok: true } | { ok: false; status?: number; message?: string }> => {
       try {
-        const me = await authApi.getCurrentUser()
-        const userData = (me as any)?.user || me
-        if (userData?.id) {
-          localStorage.setItem('influenta_user', JSON.stringify(userData))
-          localStorage.setItem('onboarding_completed', 'true')
-        } else {
-          const currentUser = JSON.parse(localStorage.getItem('influenta_user') || '{}')
-          const updatedUser = { ...currentUser, ...profileData }
-          localStorage.setItem('influenta_user', JSON.stringify(updatedUser))
-          localStorage.setItem('onboarding_completed', 'true')
+        await authApi.updateProfile(payload)
+        return { ok: true }
+      } catch (err: any) {
+        return {
+          ok: false,
+          status: err?.response?.status,
+          message:
+            err?.response?.data?.message ||
+            err?.message ||
+            'Не удалось связаться с сервером',
         }
-      } catch (e) {
-        const currentUser = JSON.parse(localStorage.getItem('influenta_user') || '{}')
-        const updatedUser = { ...currentUser, ...profileData }
-        localStorage.setItem('influenta_user', JSON.stringify(updatedUser))
-        localStorage.setItem('onboarding_completed', 'true')
       }
-      
-      try { analyticsApi.track('onboarding_complete') } catch {}
+    }
+
+    try {
+      // 1) Если нет токена — сначала авторизуемся
+      if (!isAuthenticated || !user?.id) {
+        const reauthed = await reauth()
+        if (!reauthed) {
+          setSaveError('Не удалось авторизоваться. Перезапустите мини-приложение через бота.')
+          return
+        }
+      }
+
+      // 2) Несколько попыток сохранения с экспоненциальной задержкой и переавторизацией на 401
+      let result = await trySave(built.payload)
+      let attempt = 0
+      const maxAttempts = 3
+      while (!result.ok && attempt < maxAttempts) {
+        attempt += 1
+        if (result.status === 401) {
+          const reauthed = await reauth()
+          if (!reauthed) break
+        } else if (result.status && result.status >= 400 && result.status < 500) {
+          // Бизнес-валидация на бэке — повтор не поможет
+          break
+        } else {
+          await new Promise((r) => setTimeout(r, 700 * attempt))
+        }
+        result = await trySave(built.payload)
+      }
+
+      if (!result.ok) {
+        const message =
+          result.status === 401
+            ? 'Сессия истекла. Закройте и снова откройте мини-приложение через бота.'
+            : Array.isArray(result.message)
+              ? (result.message as any).join(', ')
+              : (result.message as string) || 'Попробуйте позже'
+        setSaveError(`Не удалось сохранить профиль: ${message}`)
+        return
+      }
+
+      // 3) Подтянуть свежий профиль и пометить онбординг как завершённый
+      try {
+        await refresh()
+      } catch {
+        // не критично
+      }
+      try {
+        localStorage.setItem('onboarding_completed', 'true')
+      } catch {
+        // ignore
+      }
+
+      try {
+        analyticsApi.track('onboarding_complete')
+      } catch {
+        // ignore
+      }
       router.push('/profile')
-      
-    } catch (error: any) {
-      console.error('Error saving profile:', error?.response?.data || error)
-      const rawMsg = error?.response?.data?.message || error?.message || 'Неизвестная ошибка'
-      const msg = Array.isArray(rawMsg) ? rawMsg.join(', ') : String(rawMsg)
-      alert(`Не удалось сохранить профиль: ${msg}. Попробуйте ещё раз.`)
     } finally {
+      setSuppress401(false)
       setSaving(false)
     }
   }
 
   const updateData = (field: keyof StepData, value: any) => {
     setData(prev => ({ ...prev, [field]: value }))
+    if (saveError) setSaveError(null)
   }
 
   const renderStepContent = () => {
@@ -876,6 +896,15 @@ function OnboardingInner() {
             )}
 
             {renderStepContent()}
+
+            {saveError && (
+              <div
+                role="alert"
+                className="mt-6 rounded-xl border border-red-500/40 bg-red-500/10 text-red-200 px-4 py-3 text-sm"
+              >
+                {saveError}
+              </div>
+            )}
 
             {/* Navigation buttons */}
             <div className="flex gap-4 mt-8">

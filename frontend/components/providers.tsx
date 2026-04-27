@@ -1,10 +1,13 @@
 'use client'
 
 import { useEffect } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { LoadingScreen } from './LoadingScreen'
+import { OpenInTelegramScreen } from './OpenInTelegramScreen'
 import { chatService } from '@/lib/chat.service'
 import { FavoritesProvider } from '@/context/FavoritesContext'
+import { AuthProvider, useAuthContext } from '@/context/AuthContext'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -107,25 +110,78 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // Подключение WebSocket чата при наличии токена
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('influenta_token')
-      if (token) {
-        chatService.connect(token)
-      }
-      return () => chatService.disconnect()
-    }
-  }, [])
-
   return (
     <QueryClientProvider client={queryClient}>
-      <FavoritesProvider>
-        <LoadingScreen />
-        {children}
-      </FavoritesProvider>
+      <AuthProvider>
+        <FavoritesProvider>
+          <LoadingScreen />
+          <AuthGate>{children}</AuthGate>
+        </FavoritesProvider>
+      </AuthProvider>
     </QueryClientProvider>
   )
+}
+
+/**
+ * Гейт авторизации.
+ * 1) Если приложение открыли вне Telegram — показываем явный экран «Откройте через Telegram»
+ *    (вместо старой подмены на dev-user, которая приводила к петле 401).
+ * 2) Один раз после успешной авторизации направляет нового пользователя в /onboarding,
+ *    либо открывает накопившийся deep-link.
+ *
+ * Не блокирует /admin (для отладки) и /debug.
+ */
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const auth = useAuthContext()
+  const router = useRouter()
+  const pathname = usePathname() || '/'
+
+  const isExempt = pathname.startsWith('/debug') || pathname.startsWith('/admin')
+
+  // Поднять WebSocket чата при появлении токена; снять при разлогине.
+  useEffect(() => {
+    if (auth.token) {
+      chatService.connect(auth.token)
+      return () => chatService.disconnect()
+    }
+  }, [auth.token])
+
+  // После авторизации обработать deep-link / редирект новых пользователей
+  useEffect(() => {
+    if (!auth.isAuthenticated || !auth.user) return
+    if (typeof window === 'undefined') return
+
+    try {
+      const pendingDeepLink = localStorage.getItem('pendingDeepLink')
+      if (pendingDeepLink) {
+        localStorage.removeItem('pendingDeepLink')
+        const target = `/${pendingDeepLink}`.replace(/\/+/g, '/')
+        if (pathname !== target) router.replace(target)
+        return
+      }
+    } catch {
+      // ignore
+    }
+
+    const onboardingDone =
+      auth.user.onboardingCompleted ||
+      (typeof window !== 'undefined' && localStorage.getItem('onboarding_completed') === 'true')
+
+    if (!onboardingDone && !pathname.startsWith('/onboarding') && !isExempt) {
+      router.replace('/onboarding')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth.isAuthenticated, auth.user?.id, auth.user?.onboardingCompleted])
+
+  if (isExempt) {
+    return <>{children}</>
+  }
+
+  if (auth.isOutsideTelegram) {
+    return <OpenInTelegramScreen />
+  }
+
+  return <>{children}</>
 }
 
 // Типы для Telegram WebApp

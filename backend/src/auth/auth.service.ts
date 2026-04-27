@@ -1,22 +1,38 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
 import { TelegramService } from '../telegram/telegram.service';
 import { User } from '../users/entities/user.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import * as crypto from 'crypto';
+import { TelegramAuthDto, TelegramUserPayload } from './dto/telegram-auth.dto';
+
+const PG_UNIQUE_VIOLATION = '23505';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @InjectRepository(User)
-    private usersRepository: Repository<User>,
-    private jwtService: JwtService,
-    private configService: ConfigService,
-    private telegramService: TelegramService,
+    private readonly usersRepository: Repository<User>,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+    private readonly telegramService: TelegramService,
   ) {}
+
+  // -----------------------------------------------------------------------
+  // Утилиты
+  // -----------------------------------------------------------------------
 
   private withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> {
     return new Promise((resolve) => {
@@ -33,263 +49,326 @@ export class AuthService {
     });
   }
 
-  async authenticateWithTelegram(authData: any) {
-    try {
-      console.log('🔴 Auth request received:', { 
-        hasInitData: !!authData.initData, 
-        initDataLength: authData.initData?.length,
-        hasUser: !!authData.user,
-        userId: authData.user?.id,
-        rawBody: JSON.stringify(authData).substring(0, 300)
-      });
-      
-      // Основной источник: user из тела запроса
-      let telegramUser = authData.user;
-
-      // Fallback: если user не пришел в body, пробуем достать из initData
-      if (!telegramUser?.id && authData?.initData) {
-        try {
-          const params = new URLSearchParams(authData.initData);
-          const rawUser = params.get('user');
-          if (rawUser) {
-            telegramUser = JSON.parse(rawUser);
-            console.log('🟡 Parsed telegram user from initData fallback:', { id: telegramUser?.id });
-          }
-        } catch (e: any) {
-          console.warn('⚠️ Failed to parse user from initData:', e?.message);
-        }
-      }
-
-      if (!telegramUser?.id) {
-        console.error('🔴 No telegram user in request body!', { authData });
-        throw new BadRequestException('Telegram user data required in request body');
-      }
-
-      console.log('🔴 Using telegram user from request:', telegramUser);
-      console.log('🔴 TG username field:', telegramUser.username, 'first_name:', telegramUser.first_name);
-      
-      // Важно для стабильности: не зависим от внешнего Telegram API в критическом пути логина.
-      // Enrichment можно включить флагом AUTH_TELEGRAM_ENRICH=true, но по умолчанию он выключен.
-      const shouldEnrichFromTelegram =
-        (this.configService.get<string>('AUTH_TELEGRAM_ENRICH') || process.env.AUTH_TELEGRAM_ENRICH) === 'true';
-
-      const freshTgData = shouldEnrichFromTelegram
-        ? await this.withTimeout(this.telegramService.getUserInfo(telegramUser.id), 1200, null)
-        : null;
-      console.log('🔴 Fresh data from Telegram API:', freshTgData);
-
-      // Ищем или создаем пользователя
-      let user = await this.usersRepository.findOne({
-        where: { telegramId: telegramUser.id.toString() }
-      });
-
-      if (!user) {
-        // Создаем нового пользователя
-        user = new User();
-        user.telegramId = telegramUser.id.toString();
-        user.firstName = freshTgData?.first_name || telegramUser.first_name;
-        user.lastName = freshTgData?.last_name || telegramUser.last_name;
-        user.username = freshTgData?.username || telegramUser.username;
-        user.photoUrl = telegramUser.photo_url;
-        user.languageCode = telegramUser.language_code || 'ru';
-        user.isActive = true;
-        user.isVerified = false;
-
-        try {
-          user = await this.usersRepository.save(user);
-          console.log('🟢 Created new user:', { id: user.id, username: user.username, firstName: user.firstName });
-        } catch (saveError: any) {
-          const pgCode = saveError?.code || saveError?.driverError?.code;
-          if (pgCode === '23505') {
-            console.log('⚠️ User already exists (race condition), fetching...');
-            user = await this.usersRepository.findOne({
-              where: { telegramId: telegramUser.id.toString() }
-            });
-            if (!user) {
-              throw new BadRequestException('Failed to create or find user');
-            }
-          } else {
-            console.error('❌ User creation failed:', { code: pgCode, message: saveError?.message });
-            throw saveError;
-          }
-        }
-      } else {
-        console.log('🟡 Existing user before update:', { id: user.id, username: user.username, firstName: user.firstName });
-        // Обновляем данные существующего пользователя: приоритет свежим данным из API
-        user.firstName = freshTgData?.first_name || telegramUser.first_name || user.firstName;
-        user.lastName = freshTgData?.last_name || telegramUser.last_name || user.lastName;
-        
-        // ВАЖНО: явно обновляем username, даже если он null/undefined (означает что у пользователя нет username в Telegram)
-        if (freshTgData && 'username' in freshTgData) {
-          user.username = freshTgData.username || undefined;
-          console.log('🔵 Setting username from fresh API data:', freshTgData.username);
-        } else if ('username' in telegramUser) {
-          user.username = telegramUser.username || undefined;
-          console.log('🔵 Setting username from initData:', telegramUser.username);
-        }
-        
-        user.photoUrl = telegramUser.photo_url || user.photoUrl;
-        user.lastLoginAt = new Date();
-        
-        user = await this.usersRepository.save(user);
-        console.log('🟢 Updated user:', { id: user.id, username: user.username, firstName: user.firstName });
-      }
-
-      // Перезагружаем пользователя из БД, чтобы вернуть самые свежие данные
-      const freshUser = await this.usersRepository.findOne({ where: { id: user.id } }) || user;
-
-      // Создаем JWT токен
-      const payload = {
-        sub: freshUser.id,
-        telegramId: freshUser.telegramId,
-        username: freshUser.username || '',
-        role: freshUser.role,
-      };
-
-      const token = this.jwtService.sign(payload);
-
-      return {
-        success: true,
-        token,
-        user: {
-          id: freshUser.id,
-          telegramId: freshUser.telegramId,
-          firstName: freshUser.firstName,
-          lastName: freshUser.lastName || '',
-          username: freshUser.username || null,
-          photoUrl: freshUser.photoUrl || '',
-          isVerified: freshUser.isVerified,
-          onboardingCompleted: freshUser.onboardingCompleted,
-          role: freshUser.role,
-          email: freshUser.email || null,
-          bio: freshUser.bio || '',
-        },
-      };
-    } catch (error) {
-      console.error('Telegram auth error:', error);
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      throw new BadRequestException(error.message || 'Authentication failed');
-    }
+  /** Возвращает строку, обрезанную до length, или undefined если пусто. */
+  private safeString(value: unknown, maxLength = 255): string | undefined {
+    if (value === null || value === undefined) return undefined;
+    const str = String(value).trim();
+    if (!str) return undefined;
+    return str.length > maxLength ? str.slice(0, maxLength) : str;
   }
 
-  private verifyTelegramData(initData: string): boolean {
-    try {
-      const botToken = this.configService.get('app.telegram.botToken');
-      
-      if (!botToken) {
-        console.warn('Bot token not configured, skipping verification');
-        return true; // В dev режиме пропускаем проверку
+  private sanitizeUsername(value: unknown): string | undefined {
+    const str = this.safeString(value, 64);
+    if (!str) return undefined;
+    // Telegram username не содержит '@', но на всякий случай чистим
+    return str.replace(/^@+/, '').trim() || undefined;
+  }
+
+  /**
+   * Извлекает Telegram user из тела запроса или из подписанного initData.
+   * initData предпочтительнее, поскольку его подписывает Telegram (проверяемая аутентификация).
+   */
+  private extractTelegramUser(payload: TelegramAuthDto): TelegramUserPayload | null {
+    let user: TelegramUserPayload | null = null;
+
+    if (payload.initData) {
+      try {
+        const params = new URLSearchParams(payload.initData);
+        const rawUser = params.get('user');
+        if (rawUser) {
+          const parsed = JSON.parse(rawUser);
+          if (parsed && (parsed.id !== undefined && parsed.id !== null)) {
+            user = parsed as TelegramUserPayload;
+          }
+        }
+      } catch (err: any) {
+        this.logger.warn(`Failed to parse user from initData: ${err?.message}`);
       }
+    }
 
-      const urlParams = new URLSearchParams(initData);
-      const hash = urlParams.get('hash');
-      urlParams.delete('hash');
+    // Тело запроса используем как фолбэк, если в initData нет user (старые клиенты)
+    if (!user && payload.user && payload.user.id !== undefined && payload.user.id !== null) {
+      user = payload.user;
+    }
 
-      const dataCheckString = Array.from(urlParams.entries())
+    return user;
+  }
+
+  /**
+   * Проверяет подлинность initData по правилам Telegram WebApp.
+   * https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
+   */
+  private verifyTelegramInitData(initData: string | undefined, botToken: string): boolean {
+    if (!initData) return false;
+    try {
+      const params = new URLSearchParams(initData);
+      const hash = params.get('hash');
+      if (!hash) return false;
+      params.delete('hash');
+
+      const dataCheckString = Array.from(params.entries())
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([key, value]) => `${key}=${value}`)
         .join('\n');
 
-      // Правильный секрет: SHA256(botToken) как raw bytes
-      const secret = crypto.createHash('sha256').update(botToken).digest();
-      const calculatedHash = crypto.createHmac('sha256', secret).update(dataCheckString).digest('hex');
+      const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
+      const calculatedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
 
-      return calculatedHash === hash;
-    } catch (error) {
-      console.error('Telegram data verification error:', error);
-      return true; // В случае ошибки пропускаем проверку для dev
+      return crypto.timingSafeEqual(Buffer.from(calculatedHash, 'hex'), Buffer.from(hash, 'hex'));
+    } catch (err: any) {
+      this.logger.warn(`verifyTelegramInitData error: ${err?.message}`);
+      return false;
     }
   }
+
+  // -----------------------------------------------------------------------
+  // Авторизация / регистрация
+  // -----------------------------------------------------------------------
+
+  async authenticateWithTelegram(authData: TelegramAuthDto) {
+    const telegramUser = this.extractTelegramUser(authData);
+
+    if (!telegramUser || telegramUser.id === undefined || telegramUser.id === null) {
+      this.logger.warn('Auth attempt without telegram user payload');
+      throw new BadRequestException(
+        'Не удалось получить данные Telegram. Откройте мини-приложение через кнопку в боте.',
+      );
+    }
+
+    const telegramId = String(telegramUser.id).trim();
+    if (!telegramId || !/^\d+$/.test(telegramId)) {
+      this.logger.warn(`Invalid telegramId received: ${telegramId}`);
+      throw new BadRequestException('Некорректный идентификатор Telegram.');
+    }
+
+    // Опциональная проверка подписи initData. Включается переменной окружения
+    // AUTH_VERIFY_INIT_DATA=true. Включать рекомендуется в проде.
+    const shouldVerify =
+      (this.configService.get<string>('AUTH_VERIFY_INIT_DATA') || process.env.AUTH_VERIFY_INIT_DATA) === 'true';
+    if (shouldVerify) {
+      const botToken =
+        this.configService.get<string>('app.telegram.botToken') || process.env.TELEGRAM_BOT_TOKEN || '';
+      if (botToken && !this.verifyTelegramInitData(authData.initData, botToken)) {
+        this.logger.warn(`Invalid initData signature for telegramId=${telegramId}`);
+        throw new UnauthorizedException('Подпись Telegram WebApp не прошла проверку.');
+      }
+    }
+
+    // Опциональное обогащение свежими данными из Telegram API.
+    const shouldEnrichFromTelegram =
+      (this.configService.get<string>('AUTH_TELEGRAM_ENRICH') || process.env.AUTH_TELEGRAM_ENRICH) === 'true';
+    const freshTgData = shouldEnrichFromTelegram
+      ? await this.withTimeout(this.telegramService.getUserInfo(Number(telegramId)), 1200, null)
+      : null;
+
+    // Основные поля с дефолтами, чтобы NOT NULL колонки не падали
+    const firstName =
+      this.safeString(freshTgData?.first_name) ||
+      this.safeString(telegramUser.first_name) ||
+      'Пользователь';
+    const lastName = this.safeString(freshTgData?.last_name) || this.safeString(telegramUser.last_name);
+    const username = this.sanitizeUsername(freshTgData?.username ?? telegramUser.username);
+    const photoUrl = this.safeString((telegramUser as any).photo_url, 1024);
+    const languageCode = this.safeString(telegramUser.language_code, 16) || 'ru';
+
+    // Ищем существующего пользователя
+    let user = await this.usersRepository.findOne({ where: { telegramId } });
+
+    try {
+      if (!user) {
+        user = this.usersRepository.create({
+          telegramId,
+          firstName,
+          lastName,
+          username,
+          photoUrl,
+          languageCode,
+          isActive: true,
+          isVerified: false,
+          lastLoginAt: new Date(),
+        });
+        try {
+          user = await this.usersRepository.save(user);
+          this.logger.log(`✅ Created new user: id=${user.id} telegramId=${telegramId} username=${username || '-'}`);
+        } catch (saveError: any) {
+          const pgCode = saveError?.code || saveError?.driverError?.code;
+          if (pgCode === PG_UNIQUE_VIOLATION) {
+            // Гонка: другой запрос уже создал этого пользователя — забираем существующую запись
+            this.logger.warn(`User race condition for telegramId=${telegramId}, fetching existing`);
+            user = await this.usersRepository.findOne({ where: { telegramId } });
+            if (!user) {
+              throw new InternalServerErrorException('Не удалось создать пользователя. Попробуйте ещё раз.');
+            }
+          } else {
+            this.logger.error(
+              `User creation failed for telegramId=${telegramId}: ${saveError?.message}`,
+              saveError?.stack,
+            );
+            throw new InternalServerErrorException(
+              'Ошибка сохранения профиля. Попробуйте перезапустить приложение.',
+            );
+          }
+        }
+      } else {
+        // Аккуратно обновляем поля у существующего пользователя
+        user.firstName = firstName;
+        if (lastName !== undefined) user.lastName = lastName;
+        if (username !== undefined) user.username = username;
+        // Если username стал пустым (пользователь убрал его в Telegram) — обнуляем
+        if (freshTgData && 'username' in freshTgData && !freshTgData.username) {
+          user.username = undefined;
+        }
+        if (photoUrl) user.photoUrl = photoUrl;
+        if (languageCode) user.languageCode = languageCode;
+        user.lastLoginAt = new Date();
+        // Реактивируем аккаунт, если ранее был помечен как удалённый/неактивный
+        if (user.isActive === false) {
+          user.isActive = true;
+        }
+
+        try {
+          user = await this.usersRepository.save(user);
+        } catch (updateError: any) {
+          // Update — некритично. Если падает (например, длинное поле), просто логируем.
+          this.logger.warn(
+            `User update failed for telegramId=${telegramId}: ${updateError?.message}. Continuing with stale record.`,
+          );
+        }
+      }
+    } catch (e) {
+      if (e instanceof BadRequestException || e instanceof UnauthorizedException || e instanceof InternalServerErrorException) {
+        throw e;
+      }
+      this.logger.error(`Unexpected auth error: ${(e as any)?.message}`, (e as any)?.stack);
+      throw new InternalServerErrorException('Ошибка авторизации. Попробуйте ещё раз.');
+    }
+
+    const freshUser = (await this.usersRepository.findOne({ where: { id: user.id } })) || user;
+
+    const payload = {
+      sub: freshUser.id,
+      telegramId: freshUser.telegramId,
+      username: freshUser.username || '',
+      role: freshUser.role,
+    };
+
+    let token: string;
+    try {
+      token = this.jwtService.sign(payload);
+    } catch (e: any) {
+      this.logger.error(`JWT sign failed: ${e?.message}`, e?.stack);
+      throw new InternalServerErrorException('Не удалось выдать токен. Попробуйте ещё раз.');
+    }
+
+    return {
+      success: true,
+      token,
+      user: this.serializeUser(freshUser),
+    };
+  }
+
+  private serializeUser(user: User) {
+    return {
+      id: user.id,
+      telegramId: user.telegramId,
+      firstName: user.firstName,
+      lastName: user.lastName || '',
+      username: user.username || null,
+      photoUrl: user.photoUrl || '',
+      isVerified: user.isVerified,
+      onboardingCompleted: user.onboardingCompleted,
+      role: user.role,
+      email: user.email || null,
+      bio: user.bio || '',
+      phone: user.phone || null,
+      website: user.website || null,
+      telegramLink: user.telegramLink || null,
+      instagramLink: user.instagramLink || null,
+      subscribersCount: user.subscribersCount ?? null,
+      pricePerPost: user.pricePerPost ?? null,
+      pricePerStory: user.pricePerStory ?? null,
+      categories: user.categories || null,
+      companyName: user.companyName || null,
+      description: user.description || null,
+      languageCode: user.languageCode || null,
+      verificationRequested: user.verificationRequested,
+      verificationRequestedAt: user.verificationRequestedAt,
+    };
+  }
+
+  // -----------------------------------------------------------------------
+  // Профиль
+  // -----------------------------------------------------------------------
 
   async getProfile(userId: string) {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundException('Пользователь не найден');
     }
-    console.log('📋 GetProfile returning user:', { 
-      id: user.id, 
-      username: user.username,
-      telegramId: user.telegramId 
-    });
-    
-    return {
-      success: true,
-      user: {
-        id: user.id,
-        telegramId: user.telegramId,
-        firstName: user.firstName,
-        lastName: user.lastName || '',
-        username: user.username || null, // Важно: возвращаем null, а не пустую строку
-        photoUrl: user.photoUrl || '',
-        isVerified: user.isVerified,
-        email: user.email || null,
-        languageCode: user.languageCode || null,
-        bio: user.bio || '',
-        role: user.role,
-        phone: user.phone || null,
-        website: user.website || null,
-        telegramLink: user.telegramLink || null,
-        instagramLink: user.instagramLink || null,
-        subscribersCount: user.subscribersCount || null,
-        pricePerPost: user.pricePerPost || null,
-        pricePerStory: user.pricePerStory || null,
-        categories: user.categories || null,
-        companyName: user.companyName || null,
-        description: user.description || null,
-        onboardingCompleted: user.onboardingCompleted,
-        verificationRequested: user.verificationRequested,
-        verificationRequestedAt: user.verificationRequestedAt,
-      },
-    };
+    return { success: true, user: this.serializeUser(user) };
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) {
-      throw new BadRequestException('Пользователь не найден');
+      throw new NotFoundException('Пользователь не найден');
     }
+
+    // Применяем только определённые поля. Strict undefined check, чтобы '0' и '' сохранялись корректно.
+    if (dto.firstName !== undefined) user.firstName = this.safeString(dto.firstName) || user.firstName;
+    if (dto.lastName !== undefined) user.lastName = this.safeString(dto.lastName);
+    if (dto.username !== undefined) user.username = this.sanitizeUsername(dto.username);
+    if (dto.photoUrl !== undefined) user.photoUrl = this.safeString(dto.photoUrl, 1024);
+    if (dto.email !== undefined) user.email = this.safeString(dto.email, 255);
+    if (dto.bio !== undefined) user.bio = this.safeString(dto.bio, 2000);
+    if (dto.role !== undefined) user.role = dto.role;
+    if (dto.phone !== undefined) user.phone = this.safeString(dto.phone, 32);
+    if (dto.website !== undefined) user.website = this.safeString(dto.website, 512);
+    if (dto.telegramLink !== undefined) user.telegramLink = this.safeString(dto.telegramLink, 512);
+    if (dto.instagramLink !== undefined) user.instagramLink = this.safeString(dto.instagramLink, 512);
+    if (dto.subscribersCount !== undefined) user.subscribersCount = this.normalizeBigInt(dto.subscribersCount);
+    if (dto.pricePerPost !== undefined) user.pricePerPost = this.normalizeBigInt(dto.pricePerPost);
+    if (dto.pricePerStory !== undefined) user.pricePerStory = this.normalizeBigInt(dto.pricePerStory);
+    if (dto.categories !== undefined) user.categories = this.safeString(dto.categories, 512);
+    if (dto.companyName !== undefined) user.companyName = this.safeString(dto.companyName, 255);
+    if (dto.description !== undefined) user.description = this.safeString(dto.description, 2000);
+    if (dto.onboardingCompleted !== undefined) user.onboardingCompleted = !!dto.onboardingCompleted;
 
     try {
-      if (dto.firstName !== undefined) user.firstName = dto.firstName;
-      if (dto.lastName !== undefined) user.lastName = dto.lastName;
-      if (dto.username !== undefined) user.username = dto.username;
-      if (dto.photoUrl !== undefined) user.photoUrl = dto.photoUrl;
-      if (dto.email !== undefined) user.email = dto.email || null as any;
-      if (dto.bio !== undefined) user.bio = dto.bio;
-      if (dto.role !== undefined) user.role = dto.role;
-      if (dto.phone !== undefined) user.phone = dto.phone;
-      if (dto.website !== undefined) user.website = dto.website;
-      if (dto.telegramLink !== undefined) user.telegramLink = dto.telegramLink;
-      if (dto.instagramLink !== undefined) user.instagramLink = dto.instagramLink;
-      if (dto.subscribersCount !== undefined) user.subscribersCount = dto.subscribersCount;
-      if (dto.pricePerPost !== undefined) user.pricePerPost = dto.pricePerPost;
-      if (dto.pricePerStory !== undefined) user.pricePerStory = dto.pricePerStory;
-      if (dto.categories !== undefined) user.categories = dto.categories;
-      if (dto.companyName !== undefined) user.companyName = dto.companyName;
-      if (dto.description !== undefined) user.description = dto.description;
-      if (dto.onboardingCompleted !== undefined) user.onboardingCompleted = !!dto.onboardingCompleted;
-
       await this.usersRepository.save(user);
-      return this.getProfile(userId);
     } catch (error: any) {
-      console.error('❌ updateProfile save error:', {
-        userId,
-        dto,
-        errorMessage: error?.message,
-        errorCode: error?.code,
-        errorDetail: error?.detail,
-      });
+      this.logger.error(
+        `updateProfile save error for user ${userId}: ${error?.message} (code=${error?.code})`,
+        error?.stack,
+      );
+      const pgCode = error?.code || error?.driverError?.code;
+      if (pgCode === PG_UNIQUE_VIOLATION) {
+        throw new BadRequestException('Этот email уже используется другим аккаунтом.');
+      }
       throw new BadRequestException(
-        error?.detail || error?.message || 'Ошибка сохранения профиля'
+        error?.message?.startsWith('value too long')
+          ? 'Слишком длинное значение в одном из полей. Сократите текст.'
+          : 'Не удалось сохранить профиль. Попробуйте ещё раз.',
       );
     }
+
+    return this.getProfile(userId);
+  }
+
+  /** Нормализует значение в безопасное число для bigint колонок. */
+  private normalizeBigInt(value: unknown): number | null {
+    if (value === null || value === undefined || value === '') return null;
+    const num = typeof value === 'number' ? value : Number(String(value).replace(/[^\d.-]/g, ''));
+    if (!Number.isFinite(num)) return null;
+    if (num < 0) return 0;
+    // PostgreSQL bigint max — но реалистичный потолок для подписчиков/цен
+    const MAX = 9_999_999_999_999;
+    return Math.min(Math.floor(num), MAX);
   }
 
   async deleteAccount(userId: string) {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
-    if (!user) throw new BadRequestException('Пользователь не найден');
+    if (!user) throw new NotFoundException('Пользователь не найден');
 
     user.firstName = 'Удалённый';
     user.lastName = 'аккаунт';
@@ -310,48 +389,46 @@ export class AuthService {
     user.onboardingCompleted = false;
 
     await this.usersRepository.save(user);
-    console.log('🗑️ Account deleted (anonymized):', userId);
+    this.logger.log(`🗑️ Account anonymized: ${userId}`);
     return { success: true, message: 'Аккаунт удалён' };
   }
 
-  async requestVerification(userId: string, data: {
-    documents?: string[];
-    socialProofs?: {
-      platform: string;
-      url: string;
-      followers?: number;
-    }[];
-    message?: string;
-    verificationCode?: string;
-  }) {
+  async requestVerification(
+    userId: string,
+    data: {
+      documents?: string[];
+      socialProofs?: { platform: string; url: string; followers?: number }[];
+      message?: string;
+      verificationCode?: string;
+    },
+  ) {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
-    if (!user) throw new Error('User not found');
-    
+    if (!user) throw new NotFoundException('Пользователь не найден');
+
     if (user.isVerified) {
       throw new BadRequestException('Пользователь уже верифицирован');
     }
-    
+
     if (user.verificationRequested && !user.verificationData?.rejectionReason) {
       throw new BadRequestException('Заявка на верификацию уже отправлена');
     }
-    
-    // Проверяем паспорт
+
     if (!data.documents?.length) {
       throw new BadRequestException('Необходимо загрузить документ (паспорт)');
     }
-    
-    // Проверяем соцсети с 100к+ подписчиков
+
     const MIN_FOLLOWERS = 100000;
-    const hasEnoughFollowers = data.socialProofs?.some(p => p.followers && p.followers >= MIN_FOLLOWERS);
+    const hasEnoughFollowers = data.socialProofs?.some((p) => p.followers && p.followers >= MIN_FOLLOWERS);
     if (!hasEnoughFollowers) {
-      throw new BadRequestException(`Необходим аккаунт с минимум ${MIN_FOLLOWERS.toLocaleString()} подписчиков`);
+      throw new BadRequestException(
+        `Необходим аккаунт с минимум ${MIN_FOLLOWERS.toLocaleString()} подписчиков`,
+      );
     }
-    
-    // Проверяем код верификации
+
     if (!data.verificationCode) {
       throw new BadRequestException('Необходимо добавить код верификации в описание профиля');
     }
-    
+
     user.verificationRequested = true;
     user.verificationRequestedAt = new Date();
     user.verificationData = {
@@ -359,21 +436,21 @@ export class AuthService {
       socialProofs: data.socialProofs || [],
       message: data.message,
       verificationCode: data.verificationCode,
-      rejectionReason: undefined // Сбрасываем предыдущий отказ
+      rejectionReason: undefined,
     };
     await this.usersRepository.save(user);
-    
-    // Уведомляем админов о новой заявке
+
+    // Уведомляем админов о новой заявке (любые ошибки в Telegram API не должны ломать ответ пользователю)
     try {
-      const adminIds: number[] = this.configService.get<number[]>('app.admins.telegramIds') || []
-      const frontendUrl = this.configService.get('app.frontendUrl') || 'https://influentaa.vercel.app'
-      const fullName = `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}`.trim()
-      const username = user.username ? `@${user.username}` : ''
-      // Собираем информацию о соцсетях
-      const socialInfo = data.socialProofs?.map(p => 
-        `  • ${p.platform}: ${p.followers?.toLocaleString() || '?'} подписчиков`
-      ).join('\n') || ''
-      
+      const adminIds: number[] = this.configService.get<number[]>('app.admins.telegramIds') || [];
+      const frontendUrl = this.configService.get('app.frontendUrl') || 'https://influentaa.vercel.app';
+      const fullName = `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}`.trim();
+      const username = user.username ? `@${user.username}` : '';
+      const socialInfo =
+        data.socialProofs
+          ?.map((p) => `  • ${p.platform}: ${p.followers?.toLocaleString() || '?'} подписчиков`)
+          .join('\n') || '';
+
       const adminText = [
         '🆕 <b>Новая заявка на верификацию</b>',
         '',
@@ -387,38 +464,31 @@ export class AuthService {
         `📎 Документов: ${data.documents?.length || 0}`,
         data.message ? `📝 <b>Сообщение:</b> ${data.message}` : '',
         '',
-        '⚠️ <b>Проверьте:</b> код должен быть в описании профиля соцсети'
-      ].filter(Boolean).join('\n')
+        '⚠️ <b>Проверьте:</b> код должен быть в описании профиля соцсети',
+      ]
+        .filter(Boolean)
+        .join('\n');
 
       const keyboard: any = {
         inline_keyboard: [
           [{ text: '🛡 Открыть модерацию', web_app: { url: `${frontendUrl}/admin/moderation` } }],
         ] as any[],
-      }
-      const dmUrl = user.username ? `https://t.me/${user.username}` : `tg://user?id=${user.telegramId}`
-      keyboard.inline_keyboard.push([{ text: '✉️ Написать в Telegram', url: dmUrl }])
+      };
+      const dmUrl = user.username
+        ? `https://t.me/${user.username}`
+        : `tg://user?id=${user.telegramId}`;
+      keyboard.inline_keyboard.push([{ text: '✉️ Написать в Telegram', url: dmUrl }]);
 
       for (const adminId of adminIds) {
-        await this.telegramService.sendMessage(adminId, adminText, keyboard)
+        await this.telegramService.sendMessage(adminId, adminText, keyboard);
       }
-    } catch {}
+    } catch (notifyError: any) {
+      this.logger.warn(`Failed to notify admins about verification request: ${notifyError?.message}`);
+    }
 
     return {
       success: true,
-      message: 'Заявка на верификацию отправлена. Администратор рассмотрит её в ближайшее время.'
+      message: 'Заявка на верификацию отправлена. Администратор рассмотрит её в ближайшее время.',
     };
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

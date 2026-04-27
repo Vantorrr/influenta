@@ -42,18 +42,44 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Flag to suppress 401 redirect during critical operations (onboarding, etc.)
+// Флаг подавления 401-redirect во время критических операций (онбординг, сохранение профиля).
 let suppress401Redirect = false
 export function setSuppress401(val: boolean) { suppress401Redirect = val }
 
-// Handle responses
+// Throttle: не отправлять пользователя на «/» каждый раз, когда несколько запросов
+// одновременно получают 401. Раньше в этой ситуации страница перезагружалась
+// несколько раз подряд и оставляла впечатление «зависания».
+let lastRedirectAt = 0
+const REDIRECT_COOLDOWN_MS = 5000
+
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiResponse<any>>) => {
     if (typeof window !== 'undefined' && error.response?.status === 401 && !suppress401Redirect) {
-      localStorage.removeItem('influenta_token')
-      localStorage.removeItem('influenta_user')
-      window.location.href = '/'
+      const path = window.location.pathname || ''
+      // Не выкидываем со страниц, где модель «открой через бота» уже сама решит,
+      // что делать (онбординг, профиль, дебаг). Это убирает петлю редиректов.
+      const isProtected =
+        path.startsWith('/onboarding') ||
+        path.startsWith('/profile') ||
+        path.startsWith('/debug') ||
+        path.startsWith('/admin')
+
+      const now = Date.now()
+      if (!isProtected && now - lastRedirectAt > REDIRECT_COOLDOWN_MS) {
+        lastRedirectAt = now
+        try {
+          localStorage.removeItem('influenta_token')
+          localStorage.removeItem('influenta_user')
+        } catch {
+          // ignore
+        }
+        // router недоступен здесь — используем мягкий редирект через history,
+        // чтобы не убивать состояние Telegram WebApp.
+        if (path !== '/') {
+          window.location.replace('/')
+        }
+      }
     }
     return Promise.reject(error)
   }

@@ -1,21 +1,11 @@
-import { Controller, Post, Body, Get, UseGuards, Patch, Delete, Headers } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Patch, Delete, Headers, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString } from 'class-validator';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { User } from '@/users/entities/user.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-
-class TelegramAuthDto {
-  @IsOptional()
-  @IsString()
-  initData?: string;
-
-  @IsOptional()
-  // Разрешаем произвольные поля пользователя из Telegram (whitelist иначе их режет)
-  user?: any;
-}
+import { TelegramAuthDto } from './dto/telegram-auth.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -23,18 +13,21 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('telegram')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Authenticate user via Telegram WebApp' })
   @ApiBody({ type: TelegramAuthDto })
   async authenticateWithTelegram(
     @Body() authData: TelegramAuthDto,
     @Headers('x-telegram-init-data') initHeader?: string,
   ) {
-    // Если заголовок пришёл — подставляем его как initData
-    const payload: TelegramAuthDto = {
-      initData: authData.initData || initHeader,
+    // Заголовок имеет приоритет, если он непустой — это самый надёжный источник initData
+    // (его невозможно случайно подменить телом запроса).
+    const initData = (initHeader && initHeader.length > 10 ? initHeader : authData.initData) || undefined;
+
+    return this.authService.authenticateWithTelegram({
+      initData,
       user: authData.user,
-    }
-    return this.authService.authenticateWithTelegram(payload);
+    });
   }
 
   @Get('me')
@@ -48,10 +41,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Update current user profile' })
   @UseGuards(JwtAuthGuard)
   async updateProfile(@CurrentUser() user: User, @Body() dto: UpdateProfileDto) {
-    console.log('🔵 updateProfile called', { userId: user?.id, dto });
-    const res = await this.authService.updateProfile(user.id, dto);
-    console.log('🟢 updateProfile saved', res?.user);
-    return res;
+    return this.authService.updateProfile(user.id, dto);
   }
 
   @Get('webapp-debug')
@@ -62,7 +52,7 @@ export class AuthController {
       hasInitHeader: !!initHeader,
       initHeaderLength: initHeader?.length || 0,
       note: 'Если initHeaderLength = 0, Telegram не передал initData. Открой через кнопку в боте.',
-    }
+    };
   }
 
   @Get('debug')
@@ -73,7 +63,7 @@ export class AuthController {
       endpoint: '/auth/debug',
       hasInitHeader: !!initHeader,
       initHeaderLength: initHeader?.length || 0,
-    }
+    };
   }
 
   @Delete('account')
@@ -97,17 +87,8 @@ export class AuthController {
       }[];
       message?: string;
       verificationCode?: string;
-    }
+    },
   ) {
-    return this.authService.requestVerification(user.id, data)
+    return this.authService.requestVerification(user.id, data);
   }
 }
-
-
-
-
-
-
-
-
-

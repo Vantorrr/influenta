@@ -19,8 +19,9 @@ export default function HomePage() {
   const [legalTab, setLegalTab] = useState<'privacy' | 'offer' | 'rules'>('privacy')
 
   useEffect(() => {
-    // Если пользователь уже авторизован — редирект на дашборд
-    if (user?.id) {
+    // Если пользователь авторизован И прошёл онбординг — на дашборд.
+    // Иначе AuthGate сам отправит на /onboarding (одна точка истины).
+    if (user?.id && user?.onboardingCompleted) {
       router.push('/dashboard')
       return
     }
