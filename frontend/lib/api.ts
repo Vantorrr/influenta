@@ -312,6 +312,51 @@ export const messagesApi = {
   },
 }
 
+// Chat API (offer-chats: хранение в JSONB chats.messages)
+export interface OfferChatMessage {
+  id: string
+  content: string
+  senderId: string
+  createdAt: string | Date
+  isRead: boolean
+  type?: 'system' | 'user'
+}
+
+export interface OfferChatPayload {
+  id: string
+  offerId?: string
+  bloggerId?: string
+  advertiserId?: string
+  messages: OfferChatMessage[]
+  blogger?: any
+  advertiser?: any
+  offer?: any
+  createdAt?: string
+  updatedAt?: string
+}
+
+export const chatApi = {
+  async ensureForOffer(offerId: string): Promise<{ chatId: string }> {
+    const response = await api.post(`/chat/ensure-for-offer/${offerId}`)
+    return response.data
+  },
+
+  async getById(chatId: string): Promise<OfferChatPayload> {
+    const response = await api.get(`/chat/by-id/${chatId}`)
+    return response.data
+  },
+
+  async sendToChat(chatId: string, content: string): Promise<{ success: boolean; data: OfferChatMessage }> {
+    const response = await api.post(`/chat/by-id/${chatId}/messages`, { content })
+    return response.data
+  },
+
+  async markRead(chatId: string): Promise<{ success: boolean }> {
+    const response = await api.post(`/chat/by-id/${chatId}/read`)
+    return response.data
+  },
+}
+
 // Stats API
 export interface DashboardStats {
   profileViews: number

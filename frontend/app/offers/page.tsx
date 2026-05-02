@@ -5,7 +5,7 @@ import { Layout } from '@/components/layout/Layout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { offersApi } from '@/lib/api'
+import { offersApi, chatApi } from '@/lib/api'
 import { formatDate, formatPrice } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { Clock, CheckCircle, XCircle, MessageSquare, Calendar } from 'lucide-react'
@@ -50,17 +50,37 @@ export default function OffersPage() {
 
   const handleRespond = async (offerId: string, accept: boolean, rejectionReason?: string) => {
     try {
-      await offersApi.respond(offerId, { accept, rejectionReason })
+      const res: any = await offersApi.respond(offerId, { accept, rejectionReason })
       await loadOffers()
       if (accept) {
-        alert('Предложение принято! Теперь вы можете общаться с рекламодателем в чате.')
-        router.push('/messages')
+        const chatId = res?.chatId || res?.data?.chatId
+        if (chatId) {
+          router.push(`/messages?chatId=${chatId}`)
+        } else {
+          // Fallback: self-heal через ensureForOffer
+          try {
+            const ensured = await chatApi.ensureForOffer(offerId)
+            router.push(`/messages?chatId=${ensured.chatId}`)
+          } catch {
+            router.push('/messages')
+          }
+        }
       } else {
         alert('Предложение отклонено.')
       }
     } catch (error) {
       console.error('Failed to respond:', error)
       alert('Не удалось ответить на предложение')
+    }
+  }
+
+  const goToOfferChat = async (offerId: string) => {
+    try {
+      const ensured = await chatApi.ensureForOffer(offerId)
+      router.push(`/messages?chatId=${ensured.chatId}`)
+    } catch (e) {
+      console.error('Failed to ensure chat:', e)
+      router.push('/messages')
     }
   }
 
@@ -187,7 +207,7 @@ export default function OffersPage() {
                   {offer.status === 'accepted' && (
                     <Button
                       variant="primary"
-                      onClick={() => router.push('/messages')}
+                      onClick={(e) => { e.stopPropagation(); goToOfferChat(offer.id) }}
                       fullWidth
                     >
                       <MessageSquare className="w-4 h-4 mr-2" />

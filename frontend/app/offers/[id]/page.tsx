@@ -6,7 +6,7 @@ import { Layout } from '@/components/layout/Layout'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { offersApi } from '@/lib/api'
+import { offersApi, chatApi } from '@/lib/api'
 import { formatDate, formatPrice } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { 
@@ -45,11 +45,20 @@ export default function OfferDetailsPage() {
   const handleRespond = async (accept: boolean, rejectionReason?: string) => {
     try {
       setIsResponding(true)
-      await offersApi.respond(offer.id, { accept, rejectionReason })
-      
+      const res: any = await offersApi.respond(offer.id, { accept, rejectionReason })
+
       if (accept) {
-        alert('Предложение принято! Теперь вы можете общаться с рекламодателем в чате.')
-        router.push('/messages')
+        const chatId = res?.chatId || res?.data?.chatId
+        if (chatId) {
+          router.push(`/messages?chatId=${chatId}`)
+        } else {
+          try {
+            const ensured = await chatApi.ensureForOffer(offer.id)
+            router.push(`/messages?chatId=${ensured.chatId}`)
+          } catch {
+            router.push('/messages')
+          }
+        }
       } else {
         alert('Предложение отклонено.')
         router.push('/offers')
@@ -59,6 +68,16 @@ export default function OfferDetailsPage() {
       alert('Не удалось ответить на предложение')
     } finally {
       setIsResponding(false)
+    }
+  }
+
+  const goToOfferChat = async () => {
+    try {
+      const ensured = await chatApi.ensureForOffer(offer.id)
+      router.push(`/messages?chatId=${ensured.chatId}`)
+    } catch (e) {
+      console.error('Failed to ensure chat:', e)
+      router.push('/messages')
     }
   }
 
@@ -232,7 +251,7 @@ export default function OfferDetailsPage() {
             {offer.status === 'accepted' && (
               <Button
                 variant="primary"
-                onClick={() => router.push('/messages')}
+                onClick={goToOfferChat}
                 fullWidth
               >
                 <MessageSquare className="w-4 h-4 mr-2" />

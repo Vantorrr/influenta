@@ -13,7 +13,6 @@ import { ResponsesModule } from './responses/responses.module';
 import { BloggersModule } from './bloggers/bloggers.module';
 import { ListingsModule } from './listings/listings.module';
 import { AdvertisersModule } from './advertisers/advertisers.module';
-import { MessagesModule } from './messages/messages.module';
 import databaseConfig from './config/database.config';
 import appConfig from './config/app.config';
 import { SeedModule } from './seed/seed.module';
@@ -50,7 +49,6 @@ import { FavoritesModule } from './favorites/favorites.module';
     BloggersModule,
     ListingsModule,
     AdvertisersModule,
-    MessagesModule,
     SeedModule,
     AnalyticsModule,
     UploadsModule,

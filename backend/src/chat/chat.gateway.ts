@@ -28,10 +28,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(`Client disconnected: ${client.id}`);
   }
 
+  // ─── Response-chats (listing → отклик) ────────────────────────────
   @SubscribeMessage('joinChat')
   handleJoinChat(client: Socket, payload: { responseId: string }) {
     client.join(`chat-${payload.responseId}`);
-    console.log(`Client ${client.id} joined chat-${payload.responseId}`);
   }
 
   @SubscribeMessage('leaveChat')
@@ -52,21 +52,37 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('startTyping')
   handleStartTyping(client: Socket, payload: { responseId: string }) {
-    client.to(`chat-${payload.responseId}`).emit('typing', { userId: (client as any).user?.id });
+    client.to(`chat-${payload.responseId}`).emit('typing', {
+      responseId: payload.responseId,
+      userId: (client as any).user?.id,
+    });
   }
 
   @SubscribeMessage('stopTyping')
   handleStopTyping(client: Socket, payload: { responseId: string }) {
-    client.to(`chat-${payload.responseId}`).emit('stopTyping', { userId: (client as any).user?.id });
+    client.to(`chat-${payload.responseId}`).emit('stopTyping', {
+      responseId: payload.responseId,
+      userId: (client as any).user?.id,
+    });
+  }
+
+  // ─── Offer-chats (JSONB chats.messages) ───────────────────────────
+  @SubscribeMessage('joinOfferChat')
+  handleJoinOfferChat(client: Socket, payload: { chatId: string }) {
+    if (payload?.chatId) client.join(`offer-chat-${payload.chatId}`);
+  }
+
+  @SubscribeMessage('leaveOfferChat')
+  handleLeaveOfferChat(client: Socket, payload: { chatId: string }) {
+    if (payload?.chatId) client.leave(`offer-chat-${payload.chatId}`);
+  }
+
+  /** Внутренний метод: вызывается ChatService после appendUserMessage, чтобы пробросить событие в комнату. */
+  broadcastOfferMessage(chatId: string, message: any) {
+    try {
+      this.server.to(`offer-chat-${chatId}`).emit('offerMessage', message);
+    } catch {
+      // ignore
+    }
   }
 }
-
-
-
-
-
-
-
-
-
-

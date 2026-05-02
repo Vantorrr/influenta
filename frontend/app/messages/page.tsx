@@ -1,34 +1,35 @@
 'use client'
 
-import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  Search as SearchIcon, 
+import {
+  Search as SearchIcon,
   MessageSquare,
   CheckCircle,
-  Clock,
   X,
-  Send,
-  Paperclip,
-  Image as ImageIcon,
-  MoreVertical
 } from 'lucide-react'
-import Link from 'next/link'
 import { Layout } from '@/components/layout/Layout'
-import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { formatDate, getRelativeTime } from '@/lib/utils'
+import { getRelativeTime } from '@/lib/utils'
 import { ChatWindow } from '@/components/chat/ChatWindow'
 import { messagesApi } from '@/lib/api'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 
+type ChatType = 'response' | 'offer'
+
 interface Chat {
+  /** Уникальный ключ в списке (responseId для response-чата, chatId для offer-чата) */
   id: string
-  responseId: string
+  type: ChatType
+  /** Используется только для response-чатов (listing→отклик). Для offer-чата = null. */
+  responseId: string | null
+  /** Используется только для offer-чатов (UUID записи в таблице chats). Для response-чата = null. */
+  chatId: string | null
+  /** Title для отображения (листинг или название проекта) */
   listingTitle: string
   otherUser: {
     id?: string
@@ -55,16 +56,30 @@ interface Chat {
 
 export default function MessagesPage() {
   return (
-    <Suspense fallback={
-      <Layout>
-        <div className="container h-[calc(100vh-8rem)] flex items-center justify-center text-telegram-textSecondary">
-          Загрузка сообщений...
-        </div>
-      </Layout>
-    }>
+    <Suspense
+      fallback={
+        <Layout>
+          <div className="container h-[calc(100vh-8rem)] flex items-center justify-center text-telegram-textSecondary">
+            Загрузка сообщений...
+          </div>
+        </Layout>
+      }
+    >
       <MessagesPageContent />
     </Suspense>
   )
+}
+
+function normalizeText(raw: any): string {
+  if (raw === undefined || raw === null) return ''
+  if (typeof raw === 'object') {
+    try {
+      return JSON.stringify(raw)
+    } catch {
+      return ''
+    }
+  }
+  return String(raw)
 }
 
 function MessagesPageContent() {
@@ -76,130 +91,129 @@ function MessagesPageContent() {
   const [error, setError] = useState<string | null>(null)
   const currentUserId = user?.id || ''
 
-  // Загрузка реального списка чатов
   useEffect(() => {
     if (!user) return
     ;(async () => {
       try {
         const res = await messagesApi.getChatList()
-        
-        // Безопасное извлечение массива
+
         let rows: any[] = []
         if (Array.isArray(res)) {
           rows = res
         } else if (res && typeof res === 'object') {
-          if (Array.isArray((res as any).data)) {
-            rows = (res as any).data
-          } else if (Array.isArray((res as any).items)) {
-            rows = (res as any).items
-          }
+          if (Array.isArray((res as any).data)) rows = (res as any).data
+          else if (Array.isArray((res as any).items)) rows = (res as any).items
         }
-        
-        const normalized: Chat[] = rows
-          .filter((row: any) => row && (row.responseId || row.offerId)) // Фильтруем невалидные записи
-          .map((row: any) => {
-            // Определяем тип чата: response (отклик) или offer (оффер)
-            const isOffer = !!row.offerId;
-            
-            // Для response-чатов
-            if (!isOffer && row.responseId) {
-              const iAmBlogger = user.role === 'blogger'
-              const otherUserData = iAmBlogger
-                ? row.response?.listing?.advertiser?.user // Я блогер → собеседник рекламодатель
-                : row.response?.blogger?.user // Я рекламодатель → собеседник блогер
-              
-              // Безопасное извлечение content
-              let messageContent = 'Нет сообщений'
-              const rawContent = row.lastMessage?.text || row.lastMessage?.content
-              if (rawContent) {
-                if (typeof rawContent === 'object') {
-                  messageContent = JSON.stringify(rawContent)
-                } else {
-                  messageContent = String(rawContent)
-                }
-              }
-              
-              return {
-                id: String(row.responseId),
-                responseId: String(row.responseId),
-                listingTitle: String(row.response?.listing?.title || 'Объявление'),
-                otherUser: {
-                  id: otherUserData?.id ? String(otherUserData.id) : undefined,
-                  firstName: String(otherUserData?.firstName || 'Пользователь'),
-                  lastName: String(otherUserData?.lastName || ''),
-                  username: String(otherUserData?.username || ''),
-                  photoUrl: otherUserData?.photoUrl,
-                  role: iAmBlogger ? 'advertiser' : 'blogger',
-                },
-                lastMessage: row.lastMessage ? {
-                  content: messageContent,
-                  createdAt: new Date(row.lastMessage.createdAt || Date.now()),
-                  isRead: !!row.lastMessage.isRead,
-                  senderId: String(row.lastMessage.userId || row.lastMessage.senderId || ''),
-                } : {
-                  content: 'Нет сообщений',
-                  createdAt: new Date(),
-                  isRead: true,
-                  senderId: '',
-                },
-                unreadCount: Number(row.unreadCount) || 0,
-                status: 'active',
-                proposal: row.response ? {
-                  message: String(row.response.message || ''),
-                  proposedPrice: Number(row.response.proposedPrice) || 0,
-                  listingBudget: Number(row.response.listing?.budget) || 0,
-                } : undefined,
-              }
-            }
-            
-            // Для offer-чатов (коллаборации)
-            const iAmAdvertiser = row.offer?.advertiser?.userId === user.id;
-            const otherUserData = iAmAdvertiser
-              ? row.offer?.blogger // Я отправитель → собеседник блогер
-              : row.offer?.advertiser?.user; // Я получатель → собеседник отправитель
-            
-            let messageContent = 'Нет сообщений'
-            const rawContent = row.lastMessage?.text || row.lastMessage?.content
-            if (rawContent) {
-              if (typeof rawContent === 'object') {
-                messageContent = JSON.stringify(rawContent)
-              } else {
-                messageContent = String(rawContent)
-              }
-            }
-            
-            return {
-              id: String(row.offerId),
-              responseId: String(row.offerId), // Для совместимости
-              listingTitle: String(row.offer?.projectTitle || 'Коллаборация'),
+
+        const normalized: Chat[] = []
+        for (const row of rows) {
+          if (!row) continue
+          const rowType: ChatType =
+            row.type === 'offer' || row.offerId ? 'offer' : row.type === 'response' || row.responseId ? 'response' : 'response'
+
+          if (rowType === 'response' && row.responseId) {
+            const iAmBlogger = user.role === 'blogger'
+            const otherUserData = iAmBlogger
+              ? row.response?.listing?.advertiser?.user
+              : row.response?.blogger?.user
+
+            const rawLastContent = row.lastMessage?.content ?? row.lastMessage?.text
+            const lastContent = rawLastContent ? normalizeText(rawLastContent) : 'Нет сообщений'
+
+            normalized.push({
+              id: `response:${String(row.responseId)}`,
+              type: 'response',
+              responseId: String(row.responseId),
+              chatId: null,
+              listingTitle: normalizeText(row.response?.listing?.title) || 'Объявление',
               otherUser: {
                 id: otherUserData?.id ? String(otherUserData.id) : undefined,
-                firstName: String(otherUserData?.firstName || 'Пользователь'),
-                lastName: String(otherUserData?.lastName || ''),
-                username: String(otherUserData?.username || ''),
+                firstName: normalizeText(otherUserData?.firstName) || 'Пользователь',
+                lastName: normalizeText(otherUserData?.lastName),
+                username: normalizeText(otherUserData?.username),
+                photoUrl: otherUserData?.photoUrl,
+                role: iAmBlogger ? 'advertiser' : 'blogger',
+              },
+              lastMessage: row.lastMessage
+                ? {
+                    content: lastContent,
+                    createdAt: new Date(row.lastMessage.createdAt || Date.now()),
+                    isRead: !!row.lastMessage.isRead,
+                    senderId: String(row.lastMessage.userId || row.lastMessage.senderId || ''),
+                  }
+                : {
+                    content: 'Нет сообщений',
+                    createdAt: new Date(),
+                    isRead: true,
+                    senderId: '',
+                  },
+              unreadCount: Number(row.unreadCount) || 0,
+              status: 'active',
+              proposal: row.response
+                ? {
+                    message: normalizeText(row.response.message),
+                    proposedPrice: Number(row.response.proposedPrice) || 0,
+                    listingBudget: Number(row.response.listing?.budget) || 0,
+                  }
+                : undefined,
+            })
+            continue
+          }
+
+          if (rowType === 'offer' && (row.chatId || row.offerId)) {
+            const offer = row.offer || {}
+            const iAmAdvertiser =
+              offer?.advertiser?.userId === user.id ||
+              row.chat?.advertiserId === user.id
+            const otherUserData = iAmAdvertiser
+              ? offer?.blogger
+              : offer?.advertiser?.user
+
+            const rawLastContent = row.lastMessage?.content ?? row.lastMessage?.text
+            const lastContent = rawLastContent ? normalizeText(rawLastContent) : 'Нет сообщений'
+
+            const chatId = row.chatId ? String(row.chatId) : row.chat?.id ? String(row.chat.id) : ''
+
+            normalized.push({
+              id: `offer:${chatId || row.offerId}`,
+              type: 'offer',
+              responseId: null,
+              chatId: chatId || null,
+              listingTitle: normalizeText(offer?.projectTitle) || 'Коллаборация',
+              otherUser: {
+                id: otherUserData?.id ? String(otherUserData.id) : undefined,
+                firstName: normalizeText(otherUserData?.firstName) || 'Пользователь',
+                lastName: normalizeText(otherUserData?.lastName),
+                username: normalizeText(otherUserData?.username),
                 photoUrl: otherUserData?.photoUrl,
                 role: iAmAdvertiser ? 'blogger' : 'advertiser',
               },
-              lastMessage: row.lastMessage ? {
-                content: messageContent,
-                createdAt: new Date(row.lastMessage.createdAt || Date.now()),
-                isRead: !!row.lastMessage.isRead,
-                senderId: String(row.lastMessage.userId || row.lastMessage.senderId || ''),
-              } : {
-                content: 'Нет сообщений',
-                createdAt: new Date(),
-                isRead: true,
-                senderId: '',
-              },
+              lastMessage: row.lastMessage
+                ? {
+                    content: lastContent,
+                    createdAt: new Date(row.lastMessage.createdAt || Date.now()),
+                    isRead: !!row.lastMessage.isRead,
+                    senderId: String(row.lastMessage.senderId || row.lastMessage.userId || ''),
+                  }
+                : {
+                    content: 'Нет сообщений',
+                    createdAt: new Date(),
+                    isRead: true,
+                    senderId: '',
+                  },
               unreadCount: Number(row.unreadCount) || 0,
-              status: 'active',
-              proposal: row.offer ? {
-                message: String(row.offer.message || ''),
-                proposedPrice: Number(row.offer.proposedBudget) || 0,
-                listingBudget: Number(row.offer.proposedBudget) || 0,
-              } : undefined,
-            }
-          })
+              status: 'accepted',
+              proposal: offer
+                ? {
+                    message: normalizeText(offer.message),
+                    proposedPrice: Number(offer.proposedBudget) || 0,
+                    listingBudget: Number(offer.proposedBudget) || 0,
+                  }
+                : undefined,
+            })
+          }
+        }
+
         setChats(normalized)
         setError(null)
       } catch (e) {
@@ -210,42 +224,25 @@ function MessagesPageContent() {
     })()
   }, [user])
 
-  // Маркируем как прочитанные при открытии чата
+  // Авто-выбор чата по query. Поддерживаем оба параметра.
   useEffect(() => {
-    (async () => {
-      if (!selectedChat?.responseId) return
-      try {
-        const res = await messagesApi.getByResponse(selectedChat.responseId, 1, 50)
-        
-        // Безопасное извлечение массива
-        let items: any[] = []
-        if (Array.isArray(res)) {
-          items = res
-        } else if (res && typeof res === 'object') {
-          if (Array.isArray((res as any).data)) {
-            items = (res as any).data
-          }
-        }
-        
-        for (const m of items) {
-          if (m && !m.isRead && m.senderId !== currentUserId) {
-            try { await messagesApi.markAsRead(m.id) } catch {}
-          }
-        }
-      } catch {}
-    })()
-  }, [selectedChat, currentUserId])
-
-  // Автовыбор чата по responseId в query
-  useEffect(() => {
-    const rid = searchParams?.get('responseId')
-    if (rid && chats.length > 0) {
-      const found = chats.find(c => c.responseId === rid)
+    if (!chats.length) return
+    const chatId = searchParams?.get('chatId')
+    const responseId = searchParams?.get('responseId')
+    if (chatId) {
+      const found = chats.find((c) => c.type === 'offer' && c.chatId === chatId)
+      if (found) {
+        setSelectedChat(found)
+        return
+      }
+    }
+    if (responseId) {
+      const found = chats.find((c) => c.type === 'response' && c.responseId === responseId)
       if (found) setSelectedChat(found)
     }
   }, [searchParams, chats])
 
-  const filteredChats = chats.filter(chat => {
+  const filteredChats = chats.filter((chat) => {
     const searchLower = search.toLowerCase()
     return (
       (chat.listingTitle || '').toLowerCase().includes(searchLower) ||
@@ -260,9 +257,9 @@ function MessagesPageContent() {
   return (
     <Layout>
       <div className="h-[calc(100vh-4rem)] flex">
-        {/* Список чатов */}
-        <div className={`${selectedChat ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-96 border-r border-gray-700/50`}>
-          {/* Поиск */}
+        <div
+          className={`${selectedChat ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-96 border-r border-gray-700/50`}
+        >
           <div className="p-4 border-b border-gray-700/50">
             <Input
               type="search"
@@ -278,14 +275,10 @@ function MessagesPageContent() {
             )}
           </div>
 
-          {/* Ошибка загрузки */}
           {error && (
-            <div className="p-4 text-center text-telegram-danger">
-              {error}
-            </div>
+            <div className="p-4 text-center text-telegram-danger">{error}</div>
           )}
 
-          {/* Список чатов */}
           <div className="flex-1 overflow-y-auto">
             {filteredChats.length === 0 && !error && (
               <div className="p-4 text-center text-telegram-textSecondary">
@@ -294,10 +287,10 @@ function MessagesPageContent() {
             )}
             {filteredChats.map((chat, index) => (
               <motion.div
-                key={`${chat.id}-${index}`}
+                key={chat.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
+                transition={{ delay: Math.min(index * 0.03, 0.3) }}
               >
                 <button
                   onClick={() => setSelectedChat(chat)}
@@ -312,12 +305,13 @@ function MessagesPageContent() {
                       src={chat.otherUser?.photoUrl}
                       size="md"
                     />
-                    
+
                     <div className="flex-1 text-left">
                       <div className="flex items-start justify-between mb-1">
                         <div>
                           <h3 className="font-medium flex items-center gap-2">
-                            {chat.otherUser?.firstName || 'Пользователь'} {chat.otherUser?.lastName || ''}
+                            {chat.otherUser?.firstName || 'Пользователь'}{' '}
+                            {chat.otherUser?.lastName || ''}
                             {chat.status === 'accepted' && (
                               <CheckCircle className="w-4 h-4 text-telegram-success" />
                             )}
@@ -328,17 +322,27 @@ function MessagesPageContent() {
                           <p className="text-xs text-telegram-textSecondary">
                             {chat.listingTitle || 'Объявление'}
                           </p>
-                          {chat.otherUser?.role === "blogger" && chat.otherUser?.id && (
-                            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); window.location.href = `/bloggers/${chat.otherUser.id}` }} className="px-0 text-telegram-primary">
+                          {chat.otherUser?.role === 'blogger' && chat.otherUser?.id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                window.location.href = `/bloggers/${chat.otherUser.id}`
+                              }}
+                              className="px-0 text-telegram-primary"
+                            >
                               Открыть профиль блогера
                             </Button>
                           )}
                         </div>
                         <span className="text-xs text-telegram-textSecondary">
-                          {chat.lastMessage?.createdAt ? getRelativeTime(chat.lastMessage.createdAt) : ''}
+                          {chat.lastMessage?.createdAt
+                            ? getRelativeTime(chat.lastMessage.createdAt)
+                            : ''}
                         </span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between">
                         <p className="text-sm text-telegram-textSecondary line-clamp-1">
                           {chat.lastMessage?.senderId === currentUserId && 'Вы: '}
@@ -358,10 +362,17 @@ function MessagesPageContent() {
           </div>
         </div>
 
-        {/* Окно чата */}
         {selectedChat ? (
           <ChatWindow
-            chat={selectedChat}
+            chat={{
+              type: selectedChat.type,
+              responseId: selectedChat.responseId || undefined,
+              chatId: selectedChat.chatId || undefined,
+              listingTitle: selectedChat.listingTitle,
+              otherUser: selectedChat.otherUser,
+              status: selectedChat.status,
+              proposal: selectedChat.proposal,
+            }}
             currentUserId={currentUserId}
             onBack={() => setSelectedChat(null)}
           />

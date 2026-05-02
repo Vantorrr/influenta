@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Offer, OfferStatus } from './entities/offer.entity';
@@ -6,52 +12,52 @@ import { CreateOfferDto } from './dto/create-offer.dto';
 import { RespondOfferDto } from './dto/respond-offer.dto';
 import { User } from '@/users/entities/user.entity';
 import { TelegramService } from '@/telegram/telegram.service';
-import { MessagesService } from '@/messages/messages.service';
+import { ChatService } from '@/chat/chat.service';
 import { BloggersService } from '@/bloggers/bloggers.service';
 import { AdvertisersService } from '@/advertisers/advertisers.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class OffersService {
+  private readonly logger = new Logger(OffersService.name);
+
   constructor(
     @InjectRepository(Offer)
     private offersRepository: Repository<Offer>,
     private telegramService: TelegramService,
-    private messagesService: MessagesService,
+    private chatService: ChatService,
     private bloggersService: BloggersService,
     private advertisersService: AdvertisersService,
+    private configService: ConfigService,
   ) {}
 
   async create(createOfferDto: CreateOfferDto, user: User) {
-    // Разрешаем и рекламодателям, и блогерам отправлять предложения
     if (user.role !== 'advertiser' && user.role !== 'blogger') {
-      throw new BadRequestException('Только зарегистрированные пользователи могут отправлять предложения');
+      throw new BadRequestException(
+        'Только зарегистрированные пользователи могут отправлять предложения',
+      );
     }
 
-    // Блогер не может отправить предложение сам себе
     if (user.role === 'blogger' && user.id === createOfferDto.bloggerId) {
       throw new BadRequestException('Нельзя отправить предложение самому себе');
     }
 
-    // Получаем или создаём рекламодателя (для блогеров тоже создаём виртуальный профиль)
     const advertiser = await this.advertisersService.findOrCreateByUserId(user.id);
     if (!advertiser) {
       throw new BadRequestException('Профиль рекламодателя не найден');
     }
 
-    // Проверяем существование блогера
     const targetUser = await this.bloggersService.getUserById(createOfferDto.bloggerId);
     if (!targetUser || targetUser.role !== 'blogger') {
       throw new NotFoundException('Блогер не найден');
     }
-    
-    // Создаем виртуальный объект blogger для совместимости
+
     const blogger = {
       id: createOfferDto.bloggerId,
       userId: createOfferDto.bloggerId,
       user: targetUser,
     };
 
-    // Проверяем, нет ли уже активного предложения
     const existingOffer = await this.offersRepository.findOne({
       where: {
         advertiserId: advertiser.id,
@@ -64,66 +70,36 @@ export class OffersService {
       throw new BadRequestException('У вас уже есть активное предложение этому блогеру');
     }
 
-    // Создаем предложение (message не может быть null в БД)
     const offer = this.offersRepository.create({
       ...createOfferDto,
-      message: createOfferDto.message || '', // Пустая строка если не указано
+      message: createOfferDto.message || '',
       advertiserId: advertiser.id,
       status: OfferStatus.PENDING,
     });
 
     const savedOffer = await this.offersRepository.save(offer);
 
-    // Отправляем уведомление блогеру в Telegram
     const bloggerUser = blogger.user as any;
-    console.log('🔍 Sending offer notification to blogger:', {
-      bloggerId: blogger.id,
-      telegramId: bloggerUser?.telegramId,
-      firstName: bloggerUser?.firstName,
-    });
-    
-    // Используем telegramId для отправки уведомлений
     if (bloggerUser?.telegramId) {
       try {
         const isCollaboration = user.role === 'blogger';
-        const message = isCollaboration 
-          ? `🤝 <b>Новое предложение о коллаборации!</b>
+        const message = isCollaboration
+          ? `🤝 <b>Новое предложение о коллаборации!</b>\n\nОт блогера: ${user.firstName} ${user.lastName || ''}\nБюджет: ${createOfferDto.proposedBudget}₽${createOfferDto.projectTitle ? `\nПроект: ${createOfferDto.projectTitle}` : ''}\n\nСообщение:\n${createOfferDto.message || 'Без сообщения'}`
+          : `🎯 <b>Новое предложение о сотрудничестве!</b>\n\nОт: ${user.firstName} ${user.lastName || ''} ${user.companyName ? `(${user.companyName})` : ''}\nБюджет: ${createOfferDto.proposedBudget}₽${createOfferDto.projectTitle ? `\nПроект: ${createOfferDto.projectTitle}` : ''}\n\nСообщение:\n${createOfferDto.message || 'Без сообщения'}`;
 
-От блогера: ${user.firstName} ${user.lastName || ''}
-Бюджет: ${createOfferDto.proposedBudget}₽
-${createOfferDto.projectTitle ? `\nПроект: ${createOfferDto.projectTitle}` : ''}
-
-Сообщение:
-${createOfferDto.message || 'Без сообщения'}`
-          : `🎯 <b>Новое предложение о сотрудничестве!</b>
-
-От: ${user.firstName} ${user.lastName || ''} ${user.companyName ? `(${user.companyName})` : ''}
-Бюджет: ${createOfferDto.proposedBudget}₽
-${createOfferDto.projectTitle ? `\nПроект: ${createOfferDto.projectTitle}` : ''}
-
-Сообщение:
-${createOfferDto.message || 'Без сообщения'}`;
-
-        console.log('📤 Attempting to send message to Telegram ID:', bloggerUser.telegramId);
-        
-        // Отправляем сообщение с кнопкой
         await this.telegramService.sendMessageWithButton(
           bloggerUser.telegramId,
           message,
           'Посмотреть предложение',
-          `offers/${savedOffer.id}`
+          `offers/${savedOffer.id}`,
         );
-        
-        console.log('✅ Telegram notification sent successfully');
       } catch (error) {
-        console.error('❌ Failed to send Telegram notification:', error);
-        console.error('Error details:', {
-          message: error.message,
-          response: error.response?.data,
-        });
+        this.logger.warn(
+          `Failed to send offer Telegram notification to blogger ${bloggerUser.telegramId}: ${error?.message}`,
+        );
       }
     } else {
-      console.warn('⚠️ No Telegram ID found for blogger:', bloggerUser);
+      this.logger.warn(`No Telegram ID found for target blogger userId=${blogger.id}`);
     }
 
     return savedOffer;
@@ -152,7 +128,7 @@ ${createOfferDto.message || 'Без сообщения'}`;
 
     const [offers, total] = await this.offersRepository.findAndCount({
       where: { advertiserId: advertiser.id },
-      relations: ['blogger'], // blogger теперь User напрямую
+      relations: ['blogger'],
       order: { createdAt: 'DESC' },
     });
 
@@ -169,8 +145,7 @@ ${createOfferDto.message || 'Без сообщения'}`;
       throw new NotFoundException('Предложение не найдено');
     }
 
-    // Проверяем доступ (blogger теперь это User напрямую)
-    const canAccess = 
+    const canAccess =
       (user.role === 'blogger' && offer.blogger?.id === user.id) ||
       (user.role === 'advertiser' && offer.advertiser?.userId === user.id);
 
@@ -184,7 +159,6 @@ ${createOfferDto.message || 'Без сообщения'}`;
   async respond(id: string, respondDto: RespondOfferDto, user: User) {
     const offer = await this.findOne(id, user);
 
-    // Только блогер может отвечать на предложение (blogger теперь User напрямую)
     if (user.role !== 'blogger' || offer.blogger?.id !== user.id) {
       throw new ForbiddenException('Только блогер может отвечать на предложение');
     }
@@ -193,50 +167,84 @@ ${createOfferDto.message || 'Без сообщения'}`;
       throw new BadRequestException('Предложение уже обработано');
     }
 
+    let chatId: string | null = null;
+    let chatCreated = false;
+    let chatError: string | undefined;
+
     if (respondDto.accept) {
       offer.status = OfferStatus.ACCEPTED;
       offer.acceptedAt = new Date();
+      await this.offersRepository.save(offer);
 
-      // Создаем чат между блогером и рекламодателем
       try {
-        const chat = await this.messagesService.createChat(
-          offer.advertiser.userId,
-          offer.blogger.id, // blogger теперь User, используем id
-          `Предложение: ${offer.projectTitle || 'Сотрудничество'}`,
-          offer.id // Передаём ID оффера для привязки чата
-        );
+        const chat = await this.chatService.ensureChatForOffer(offer);
+        chatId = chat.id;
+        chatCreated = true;
 
-        // Отправляем приветственное сообщение
-        await this.messagesService.sendMessage(
-          offer.advertiser.userId,
-          chat.id,
-          `Блогер принял ваше предложение! Бюджет: ${offer.proposedBudget}₽`
-        );
+        try {
+          await this.chatService.appendSystemMessage(
+            chat,
+            `Блогер принял ваше предложение! Бюджет: ${offer.proposedBudget}₽`,
+          );
+        } catch (msgErr) {
+          this.logger.warn(
+            `Failed to append welcome message to offer chat ${chat.id}: ${msgErr?.message}`,
+          );
+        }
       } catch (error) {
-        console.error('Failed to create chat:', error);
+        chatError = error?.message || 'Unknown error';
+        this.logger.error(
+          `Failed to create chat for accepted offerId=${offer.id}: ${chatError}`,
+        );
       }
     } else {
       offer.status = OfferStatus.REJECTED;
       offer.rejectedAt = new Date();
       offer.rejectionReason = respondDto.rejectionReason;
+      await this.offersRepository.save(offer);
     }
-
-    await this.offersRepository.save(offer);
 
     // Уведомляем рекламодателя
     const advertiserUser = offer.advertiser?.user as any;
     if (advertiserUser?.telegramId) {
       try {
-        const message = respondDto.accept
-          ? `✅ <b>Ваше предложение принято!</b>\n\nБлогер ${offer.blogger?.firstName || 'Блогер'} принял ваше предложение.\nОткройте приложение для общения.`
-          : `❌ <b>Предложение отклонено</b>\n\nБлогер ${offer.blogger?.firstName || 'Блогер'} отклонил ваше предложение.\n${respondDto.rejectionReason ? `Причина: ${respondDto.rejectionReason}` : ''}`;
-
-        await this.telegramService.sendMessage(advertiserUser.telegramId, message);
+        if (respondDto.accept) {
+          const frontendUrl =
+            this.configService.get('app.frontendUrl') || 'https://influentaa.vercel.app';
+          const message = `✅ <b>Ваше предложение принято!</b>\n\nБлогер ${offer.blogger?.firstName || 'Блогер'} принял ваше предложение.\nОткройте приложение для общения.`;
+          const replyMarkup = chatId
+            ? {
+                inline_keyboard: [
+                  [
+                    {
+                      text: 'Открыть чат',
+                      web_app: { url: `${frontendUrl}/messages?chatId=${chatId}` },
+                    },
+                  ],
+                ],
+              }
+            : undefined;
+          await this.telegramService.sendMessage(
+            advertiserUser.telegramId,
+            message,
+            replyMarkup,
+          );
+        } else {
+          const message = `❌ <b>Предложение отклонено</b>\n\nБлогер ${offer.blogger?.firstName || 'Блогер'} отклонил ваше предложение.\n${respondDto.rejectionReason ? `Причина: ${respondDto.rejectionReason}` : ''}`;
+          await this.telegramService.sendMessage(advertiserUser.telegramId, message);
+        }
       } catch (error) {
-        console.error('Failed to send Telegram notification:', error);
+        this.logger.warn(
+          `Failed to notify advertiser about offer ${offer.id}: ${error?.message}`,
+        );
       }
     }
 
-    return offer;
+    return {
+      ...offer,
+      chatId,
+      chatCreated,
+      chatError,
+    };
   }
 }

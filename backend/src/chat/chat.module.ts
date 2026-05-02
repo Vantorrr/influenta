@@ -26,7 +26,7 @@ import { TelegramModule } from '../telegram/telegram.module';
   ],
   controllers: [ChatController],
   providers: [ChatGateway, ChatService],
-  exports: [ChatService],
+  exports: [ChatService, TypeOrmModule],
 })
 export class ChatModule {}
 

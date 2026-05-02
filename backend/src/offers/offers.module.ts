@@ -4,7 +4,7 @@ import { OffersService } from './offers.service';
 import { OffersController } from './offers.controller';
 import { Offer } from './entities/offer.entity';
 import { TelegramModule } from '@/telegram/telegram.module';
-import { MessagesModule } from '@/messages/messages.module';
+import { ChatModule } from '@/chat/chat.module';
 import { BloggersModule } from '@/bloggers/bloggers.module';
 import { AdvertisersModule } from '@/advertisers/advertisers.module';
 
@@ -12,7 +12,7 @@ import { AdvertisersModule } from '@/advertisers/advertisers.module';
   imports: [
     TypeOrmModule.forFeature([Offer]),
     TelegramModule,
-    MessagesModule,
+    ChatModule,
     BloggersModule,
     AdvertisersModule,
   ],
@@ -21,10 +21,3 @@ import { AdvertisersModule } from '@/advertisers/advertisers.module';
   exports: [OffersService],
 })
 export class OffersModule {}
-
-
-
-
-
-
-
