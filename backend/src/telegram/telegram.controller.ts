@@ -47,7 +47,12 @@ export class TelegramController {
     private telegramService: TelegramService,
     private configService: ConfigService,
   ) {
-    this.adminIds = [741582706, 8141463258]; // ID админов
+    this.adminIds =
+      this.configService.get<number[]>('app.admins.telegramIds') ?? [
+        741582706,
+        8141463258,
+        8722632476,
+      ];
   }
 
   @Post('webhook')

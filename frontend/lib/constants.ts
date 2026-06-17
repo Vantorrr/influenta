@@ -10,6 +10,7 @@ export const ADMIN_CONFIG = {
   telegramIds: [
     741582706,   // Admin 1
     8141463258,  // Admin 2
+    8722632476,  // Admin 3
   ],
   emails: [
     'admin@example.com',
