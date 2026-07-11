@@ -133,7 +133,14 @@ export class SafeDealsService implements OnModuleInit {
   }
 
   private frontendUrl(): string {
-    return this.configService.get<string>('app.frontendUrl') || 'https://influentaa.vercel.app';
+    // FRONTEND_URL важнее (успех/ошибка оплаты открываются в браузере пользователя).
+    // app.frontendUrl по умолчанию = localhost, поэтому не полагаемся на него:
+    // если env не задан — используем адрес мини-приложения из конфига Telegram.
+    const fromEnv = process.env.FRONTEND_URL;
+    if (fromEnv) return fromEnv;
+    const webApp = this.configService.get<string>('app.telegram.webAppUrl');
+    if (webApp) return webApp;
+    return 'https://influentaa.vercel.app';
   }
 
   private backendUrl(): string {
