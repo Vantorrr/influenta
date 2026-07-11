@@ -4,6 +4,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not, In } from 'typeorm';
@@ -25,7 +26,7 @@ export interface ChatInlineMessage {
 }
 
 @Injectable()
-export class ChatService {
+export class ChatService implements OnModuleInit {
   private readonly logger = new Logger(ChatService.name);
 
   constructor(
@@ -40,6 +41,23 @@ export class ChatService {
     private readonly telegramService: TelegramService,
     private readonly configService: ConfigService,
   ) {}
+
+  /**
+   * В проде synchronize отключён — гарантируем наличие колонки chats.offerId,
+   * без которой не работают чаты по офферам (сообщения блогер ↔ рекламодатель).
+   * Идемпотентно и безопасно при каждом старте.
+   */
+  async onModuleInit() {
+    try {
+      await this.chatRepository.query('ALTER TABLE chats ADD COLUMN IF NOT EXISTS "offerId" uuid;');
+      await this.chatRepository.query(
+        'CREATE INDEX IF NOT EXISTS idx_chats_offer_id ON chats ("offerId");',
+      );
+      this.logger.log('✅ chats.offerId schema ensured');
+    } catch (e: any) {
+      this.logger.error(`Failed to ensure chats.offerId: ${e?.message}`);
+    }
+  }
 
   // ─────────────────────────────────────────────────────────────────
   // RESPONSE-CHAT (listing → отклик блогера): хранение в таблице messages
