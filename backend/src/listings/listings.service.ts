@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Listing } from './entities/listing.entity';
@@ -326,11 +326,45 @@ export class ListingsService implements OnModuleInit {
       throw new ForbiddenException('You can only delete your own listings');
     }
 
-    // Сначала удаляем все связанные отклики
-    await this.listingsRepository.manager.query(
-      `DELETE FROM responses WHERE "listingId" = $1`,
-      [id]
+    const manager = this.listingsRepository.manager;
+
+    // Защита: нельзя удалять объявление с активной безопасной сделкой (деньги в эскроу)
+    try {
+      const active = await manager.query(
+        `SELECT 1 FROM safe_deals
+         WHERE ("listingId" = $1 OR "responseId" IN (SELECT id FROM responses WHERE "listingId" = $1))
+           AND status IN ('funded','in_progress','delivered','disputed')
+         LIMIT 1`,
+        [id],
+      );
+      if (Array.isArray(active) && active.length > 0) {
+        throw new BadRequestException(
+          'Нельзя удалить объявление с активной безопасной сделкой. Сначала завершите сделку или верните средства.',
+        );
+      }
+    } catch (e: any) {
+      if (e instanceof BadRequestException) throw e;
+      // Таблицы может не быть — значит активных сделок нет, продолжаем удаление
+    }
+
+    // Удаляем зависимые данные в правильном порядке, чтобы не упереться в внешние ключи.
+    const runQuiet = async (sql: string) => {
+      try {
+        await manager.query(sql, [id]);
+      } catch (err: any) {
+        this.logger.warn(`remove cleanup skipped: ${err?.message}`);
+      }
+    };
+    // 1) Сообщения чата привязаны к откликам (FK messages.responseId → responses.id)
+    await runQuiet(
+      `DELETE FROM messages WHERE "responseId" IN (SELECT id FROM responses WHERE "listingId" = $1)`,
     );
+    // 2) Безопасные сделки этого объявления/его откликов (осиротевшие после удаления)
+    await runQuiet(
+      `DELETE FROM safe_deals WHERE "listingId" = $1 OR "responseId" IN (SELECT id FROM responses WHERE "listingId" = $1)`,
+    );
+    // 3) Сами отклики
+    await manager.query(`DELETE FROM responses WHERE "listingId" = $1`, [id]);
 
     await this.listingsRepository.remove(listing);
     return { success: true };
