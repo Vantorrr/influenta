@@ -23,7 +23,7 @@ function PaymentFailContent() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/10 flex items-center justify-center">
             <XCircle className="w-9 h-9 text-red-500" />
           </div>
-          <h1 className="text-xl font-bold mb-2">Оплата не прошла</h1>
+          <h1 className="text-xl font-bold mb-2">Не получилось оплатить</h1>
           <p className="text-telegram-textSecondary text-sm mb-6">
             Платёж не был завершён. Средства не списаны — вы можете попробовать оплатить сделку ещё раз.
           </p>

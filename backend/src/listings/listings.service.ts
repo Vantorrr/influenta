@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Listing } from './entities/listing.entity';
@@ -20,7 +20,7 @@ const FORMAT_LABELS: Record<string, string> = {
 };
 
 @Injectable()
-export class ListingsService {
+export class ListingsService implements OnModuleInit {
   private readonly logger = new Logger(ListingsService.name);
 
   constructor(
@@ -32,6 +32,21 @@ export class ListingsService {
     private usersRepository: Repository<User>,
     private readonly telegramService: TelegramService,
   ) {}
+
+  /**
+   * Self-healing миграция: гарантирует наличие колонки useSafeDeal в проде,
+   * где synchronize отключён.
+   */
+  async onModuleInit() {
+    try {
+      await this.listingsRepository.query(
+        'ALTER TABLE listings ADD COLUMN IF NOT EXISTS "useSafeDeal" boolean NOT NULL DEFAULT false;',
+      );
+      this.logger.log('✅ listings.useSafeDeal schema ensured');
+    } catch (e: any) {
+      this.logger.error(`Failed to ensure listings.useSafeDeal: ${e?.message}`);
+    }
+  }
 
   private sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -48,24 +63,35 @@ export class ListingsService {
         ? (listing.targetCategories as unknown as string[]).filter(Boolean)
         : [];
 
-      const qb = this.usersRepository
-        .createQueryBuilder('user')
-        .select(['user.id', 'user.telegramId'])
-        .where('user.role = :role', { role: UserRole.BLOGGER })
-        .andWhere('user.isActive = :active', { active: true })
-        .andWhere("user.telegramId IS NOT NULL")
-        .andWhere("user.telegramId <> ''");
+      const baseQb = () =>
+        this.usersRepository
+          .createQueryBuilder('user')
+          .select(['user.id', 'user.telegramId'])
+          .where('user.role = :role', { role: UserRole.BLOGGER })
+          .andWhere('user.isActive = :active', { active: true })
+          .andWhere('user.telegramId IS NOT NULL')
+          .andWhere("user.telegramId <> ''");
+
+      // Пытаемся матчить по тематикам блогера, но т.к. категории у пользователей
+      // заполняются не всегда, при отсутствии совпадений уведомляем всех активных
+      // блогеров — так объявление точно дойдёт до аудитории.
+      let bloggers: Array<{ id: string; telegramId: string }> = [];
 
       if (targetCategories.length > 0) {
+        const qb = baseQb();
         const conds = targetCategories.map((_, i) => `user.categories ILIKE :cat_${i}`);
         const params: Record<string, string> = {};
         targetCategories.forEach((c, i) => {
           params[`cat_${i}`] = `%${c}%`;
         });
         qb.andWhere(`(${conds.join(' OR ')})`, params);
+        bloggers = await qb.getMany();
       }
 
-      const bloggers = await qb.getMany();
+      // Fallback: категории не заданы или ни один блогер не совпал по тематике
+      if (bloggers.length === 0) {
+        bloggers = await baseQb().getMany();
+      }
 
       // Дедуп telegramId + валидные числовые id
       const chatIds = Array.from(
@@ -87,11 +113,14 @@ export class ListingsService {
       const descr = (listing.description || '').trim();
       const shortDescr = descr.length > 180 ? descr.slice(0, 180) + '…' : descr;
 
+      const safeDealLine = listing.useSafeDeal ? `\n🛡 <b>Безопасная сделка</b> — оплата через эскроу` : '';
+
       const text =
         `📢 <b>Новое объявление для блогеров</b>\n\n` +
         `<b>${listing.title}</b>\n` +
         `💰 Бюджет: ${budgetStr}\n` +
         `🎬 Формат: ${formatLabel}` +
+        safeDealLine +
         (shortDescr ? `\n\n${shortDescr}` : '');
 
       this.logger.log(`New listing ${listing.id}: notifying ${chatIds.length} bloggers`);
@@ -360,6 +389,7 @@ export class ListingsService {
       status: listing.status,
       viewsCount: listing.viewsCount,
       responsesCount: listing.responsesCount,
+      useSafeDeal: !!listing.useSafeDeal,
       createdAt: listing.createdAt,
     };
   }

@@ -10,7 +10,8 @@ import {
   FileText,
   Target,
   Users,
-  AlertCircle
+  AlertCircle,
+  ShieldCheck
 } from 'lucide-react'
 import { RubIcon } from '@/components/ui/ruble-icon'
 import Link from 'next/link'
@@ -53,6 +54,7 @@ export default function CreateListingPage() {
       verifiedOnly: false,
     },
     deadline: '',
+    useSafeDeal: true,
   })
 
   const categories = Object.values(BloggerCategory)
@@ -121,6 +123,7 @@ export default function CreateListingPage() {
           verifiedOnly: formData.requirements.verifiedOnly,
         },
         deadline: formData.deadline ? new Date(formData.deadline).toISOString() : undefined,
+        useSafeDeal: formData.useSafeDeal,
       }
 
       // Удаляем пустые поля из requirements, чтобы не слал лишнее
@@ -384,6 +387,34 @@ export default function CreateListingPage() {
                   className="w-4 h-4 rounded border-gray-600 text-telegram-primary focus:ring-telegram-primary"
                 />
                 <span>Только верифицированные блогеры</span>
+              </label>
+            </CardContent>
+          </Card>
+
+          {/* Безопасная сделка */}
+          <Card className={`transition-colors ${formData.useSafeDeal ? 'border-emerald-500/40 bg-emerald-500/5' : ''}`}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShieldCheck className={`w-5 h-5 ${formData.useSafeDeal ? 'text-emerald-400' : ''}`} />
+                Безопасная сделка
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.useSafeDeal}
+                  onChange={(e) => setFormData(prev => ({ ...prev, useSafeDeal: e.target.checked }))}
+                  className="mt-1 w-5 h-5 rounded border-gray-600 text-emerald-500 focus:ring-emerald-500 accent-emerald-500"
+                />
+                <span className="text-sm">
+                  <span className="font-medium text-white">Проводить оплату через безопасную сделку</span>
+                  <span className="block text-telegram-textSecondary mt-1">
+                    Деньги резервируются на эскроу-счёте и переводятся блогеру только
+                    после подтверждения выполнения. Такие объявления помечаются зелёным
+                    значком и вызывают больше доверия.
+                  </span>
+                </span>
               </label>
             </CardContent>
           </Card>

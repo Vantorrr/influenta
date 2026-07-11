@@ -7,7 +7,8 @@ import {
   Search, 
   Clock, 
   Plus,
-  Briefcase
+  Briefcase,
+  ShieldCheck
 } from 'lucide-react'
 import { Layout } from '@/components/layout/Layout'
 import { Input } from '@/components/ui/input'
@@ -132,7 +133,17 @@ export default function ListingsPage() {
                 href={`/listings/${listing.id}`} 
                 className="block touch-manipulation active:scale-[0.99] transition-transform"
               >
-                <Card className="bg-[#1C1E20] border-white/5 p-5 hover:border-white/10 transition-colors shadow-sm">
+                <Card className={`p-5 transition-colors shadow-sm ${
+                  listing.useSafeDeal
+                    ? 'bg-emerald-500/[0.06] border-emerald-500/40 hover:border-emerald-500/60 shadow-emerald-500/5'
+                    : 'bg-[#1C1E20] border-white/5 hover:border-white/10'
+                }`}>
+                  {listing.useSafeDeal && (
+                    <div className="inline-flex items-center gap-1.5 mb-3 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      Безопасная сделка
+                    </div>
+                  )}
                   <div className="flex justify-between items-start mb-3">
                     <h3 className="text-lg font-bold text-white leading-snug flex-1 pr-4">
                       {listing.title}

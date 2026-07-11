@@ -77,6 +77,10 @@ export class Listing extends BaseEntity {
   @Column({ default: 0 })
   responsesCount: number;
 
+  // Безопасная сделка: средства держатся на эскроу-счёте до подтверждения выполнения
+  @Column({ default: false })
+  useSafeDeal: boolean;
+
   @Column({ type: 'jsonb', nullable: true })
   additionalInfo: Record<string, any>;
 }

@@ -112,6 +112,7 @@ export interface Listing {
   status: ListingStatus
   viewsCount: number
   responsesCount: number
+  useSafeDeal?: boolean
   additionalInfo?: Record<string, any>
   createdAt: Date
   updatedAt: Date

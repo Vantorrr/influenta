@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsArray, IsEnum, IsOptional, IsDateString, IsObject, Min, Max } from 'class-validator';
+import { IsString, IsNumber, IsArray, IsEnum, IsOptional, IsDateString, IsObject, IsBoolean, Min, Max } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { BloggerCategory, PostFormat } from '@/types';
 
@@ -33,4 +33,8 @@ export class CreateListingDto {
   @IsOptional()
   @IsDateString()
   deadline?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  useSafeDeal?: boolean;
 }

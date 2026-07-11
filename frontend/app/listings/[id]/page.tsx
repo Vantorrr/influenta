@@ -273,7 +273,31 @@ export default function ListingDetailsPage() {
           Назад
         </button>
 
-        <div style={cardStyle}>
+        <div style={{
+          ...cardStyle,
+          ...(listing.useSafeDeal ? {
+            border: '1px solid rgba(16, 185, 129, 0.4)',
+            boxShadow: '0 8px 32px rgba(16, 185, 129, 0.12)',
+          } : {}),
+        }}>
+          {listing.useSafeDeal && (
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '6px 12px',
+              borderRadius: 999,
+              background: 'rgba(16, 185, 129, 0.15)',
+              border: '1px solid rgba(16, 185, 129, 0.35)',
+              color: '#34d399',
+              fontSize: 13,
+              fontWeight: 600,
+              marginBottom: 16,
+            }}>
+              <Shield size={15} />
+              Безопасная сделка
+            </div>
+          )}
           <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', marginBottom: 16 }}>
             <h1 style={{ fontSize: 22, fontWeight: 700, color: 'white', lineHeight: 1.3, flex: 1, paddingRight: 16 }}>
               {listing.title}
