@@ -161,10 +161,11 @@ export class SafeDealsService implements OnModuleInit {
   }
 
   private dealButton(dealId: string, text = 'Открыть сделку') {
-    // Обычная url-кнопка → открывается веб-фронт (Vercel), а не мини-апп Telegram.
+    // web_app-кнопка → открывается внутри мини-аппа Telegram (сохраняется авторизация),
+    // а не во внешнем браузере.
     return {
       inline_keyboard: [
-        [{ text, url: `${this.frontendUrl()}/safe-deals/${dealId}` }],
+        [{ text, web_app: { url: `${this.frontendUrl()}/safe-deals/${dealId}` } }],
       ],
     };
   }
