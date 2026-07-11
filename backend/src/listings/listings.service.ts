@@ -1,23 +1,126 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Listing } from './entities/listing.entity';
 import { Advertiser } from '@/advertisers/entities/advertiser.entity';
-import { User } from '@/users/entities/user.entity';
+import { User, UserRole } from '@/users/entities/user.entity';
 import { ListingSearchDto } from './dto/listing-search.dto';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
 import { PaginationDto } from '@/common/dto/pagination.dto';
 import { ListingStatus } from '@/types';
+import { TelegramService } from '@/telegram/telegram.service';
+
+const FORMAT_LABELS: Record<string, string> = {
+  post: 'Пост',
+  story: 'Сторис',
+  live: 'Эфир/Reels',
+  post_and_story: 'Пост + Сторис',
+  any: 'Любой формат',
+};
 
 @Injectable()
 export class ListingsService {
+  private readonly logger = new Logger(ListingsService.name);
+
   constructor(
     @InjectRepository(Listing)
     private listingsRepository: Repository<Listing>,
     @InjectRepository(Advertiser)
     private advertisersRepository: Repository<Advertiser>,
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
+    private readonly telegramService: TelegramService,
   ) {}
+
+  private sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Уведомляет блогеров о новом объявлении. Матчит по тематикам (если заданы),
+   * иначе шлёт всем активным блогерам. Работает в фоне (fire-and-forget),
+   * с троттлингом, чтобы не упереться в лимиты Telegram.
+   */
+  private async notifyBloggersAboutListing(listing: Listing) {
+    try {
+      const targetCategories: string[] = Array.isArray(listing.targetCategories)
+        ? (listing.targetCategories as unknown as string[]).filter(Boolean)
+        : [];
+
+      const qb = this.usersRepository
+        .createQueryBuilder('user')
+        .select(['user.id', 'user.telegramId'])
+        .where('user.role = :role', { role: UserRole.BLOGGER })
+        .andWhere('user.isActive = :active', { active: true })
+        .andWhere("user.telegramId IS NOT NULL")
+        .andWhere("user.telegramId <> ''");
+
+      if (targetCategories.length > 0) {
+        const conds = targetCategories.map((_, i) => `user.categories ILIKE :cat_${i}`);
+        const params: Record<string, string> = {};
+        targetCategories.forEach((c, i) => {
+          params[`cat_${i}`] = `%${c}%`;
+        });
+        qb.andWhere(`(${conds.join(' OR ')})`, params);
+      }
+
+      const bloggers = await qb.getMany();
+
+      // Дедуп telegramId + валидные числовые id
+      const chatIds = Array.from(
+        new Set(
+          bloggers
+            .map((b) => parseInt(String(b.telegramId), 10))
+            .filter((id) => Number.isFinite(id)),
+        ),
+      );
+
+      if (chatIds.length === 0) {
+        this.logger.log(`New listing ${listing.id}: no bloggers to notify`);
+        return;
+      }
+
+      const formatLabel = FORMAT_LABELS[String(listing.format)] || 'Любой формат';
+      const budget = Number(listing.budget);
+      const budgetStr = Number.isFinite(budget) ? `${budget.toLocaleString('ru-RU')}₽` : '—';
+      const descr = (listing.description || '').trim();
+      const shortDescr = descr.length > 180 ? descr.slice(0, 180) + '…' : descr;
+
+      const text =
+        `📢 <b>Новое объявление для блогеров</b>\n\n` +
+        `<b>${listing.title}</b>\n` +
+        `💰 Бюджет: ${budgetStr}\n` +
+        `🎬 Формат: ${formatLabel}` +
+        (shortDescr ? `\n\n${shortDescr}` : '');
+
+      this.logger.log(`New listing ${listing.id}: notifying ${chatIds.length} bloggers`);
+
+      let sent = 0;
+      for (let i = 0; i < chatIds.length; i++) {
+        try {
+          await this.telegramService.sendMessageWithButton(
+            chatIds[i],
+            text,
+            '👀 Открыть объявление',
+            `listings/${listing.id}`,
+          );
+          sent++;
+        } catch (e: any) {
+          // Пользователь мог заблокировать бота — просто пропускаем
+        }
+        // Троттлинг: пауза каждые 20 сообщений + небольшой интервал
+        if ((i + 1) % 20 === 0) {
+          await this.sleep(700);
+        } else {
+          await this.sleep(60);
+        }
+      }
+      this.logger.log(`New listing ${listing.id}: delivered ${sent}/${chatIds.length}`);
+    } catch (e: any) {
+      this.logger.error(`notifyBloggersAboutListing failed for ${listing?.id}: ${e?.message}`);
+    }
+  }
 
   async search(searchDto: ListingSearchDto, paginationDto: PaginationDto) {
     const { search, status = ListingStatus.ACTIVE, minBudget, maxBudget, format } = searchDto;
@@ -139,6 +242,10 @@ export class ListingsService {
     listing.responsesCount = 0;
 
     await this.listingsRepository.save(listing);
+
+    // Фоново уведомляем блогеров о новом объявлении (не блокируем ответ)
+    void this.notifyBloggersAboutListing(listing);
+
     return this.formatListing(listing);
   }
 

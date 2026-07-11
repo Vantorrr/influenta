@@ -15,7 +15,7 @@ import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { getRelativeTime } from '@/lib/utils'
 import { ChatWindow } from '@/components/chat/ChatWindow'
-import { messagesApi } from '@/lib/api'
+import { messagesApi, chatApi } from '@/lib/api'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -225,10 +225,13 @@ function MessagesPageContent() {
   }, [user])
 
   // Авто-выбор чата по query. Поддерживаем оба параметра.
+  // Надёжность: если чат ещё не попал в список (только что создан / без сообщений),
+  // подгружаем его напрямую по chatId и открываем — кнопки всегда открывают чат.
   useEffect(() => {
-    if (!chats.length) return
     const chatId = searchParams?.get('chatId')
     const responseId = searchParams?.get('responseId')
+    if (!chatId && !responseId) return
+
     if (chatId) {
       const found = chats.find((c) => c.type === 'offer' && c.chatId === chatId)
       if (found) {
@@ -238,9 +241,63 @@ function MessagesPageContent() {
     }
     if (responseId) {
       const found = chats.find((c) => c.type === 'response' && c.responseId === responseId)
-      if (found) setSelectedChat(found)
+      if (found) {
+        setSelectedChat(found)
+        return
+      }
     }
-  }, [searchParams, chats])
+
+    // Fallback только для offer-чата по chatId
+    if (!chatId || !user) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const payload = await chatApi.getById(chatId)
+        if (cancelled || !payload?.id) return
+        const iAmAdvertiser = String(payload.advertiserId) === String(user.id)
+        const other = iAmAdvertiser ? payload.blogger : payload.advertiser
+        const fallback: Chat = {
+          id: `offer:${payload.id}`,
+          type: 'offer',
+          responseId: null,
+          chatId: String(payload.id),
+          listingTitle: normalizeText(payload.offer?.projectTitle) || 'Коллаборация',
+          otherUser: {
+            id: other?.id ? String(other.id) : undefined,
+            firstName: normalizeText(other?.firstName) || 'Пользователь',
+            lastName: normalizeText(other?.lastName),
+            username: normalizeText(other?.username),
+            photoUrl: other?.photoUrl,
+            role: iAmAdvertiser ? 'blogger' : 'advertiser',
+          },
+          lastMessage: {
+            content: 'Нет сообщений',
+            createdAt: new Date(),
+            isRead: true,
+            senderId: '',
+          },
+          unreadCount: 0,
+          status: 'accepted',
+          proposal: payload.offer
+            ? {
+                message: normalizeText(payload.offer.message),
+                proposedPrice: Number(payload.offer.proposedBudget) || 0,
+                listingBudget: Number(payload.offer.proposedBudget) || 0,
+              }
+            : undefined,
+        }
+        setChats((prev) =>
+          prev.some((c) => c.chatId === fallback.chatId) ? prev : [fallback, ...prev],
+        )
+        setSelectedChat(fallback)
+      } catch {
+        // чат недоступен — оставляем список как есть
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [searchParams, chats, user])
 
   const filteredChats = chats.filter((chat) => {
     const searchLower = search.toLowerCase()
