@@ -49,6 +49,9 @@ export class Offer {
   @Column({ nullable: true })
   deadline?: Date;
 
+  @Column({ default: false })
+  useSafeDeal: boolean;
+
   @Column({ nullable: true })
   rejectionReason?: string;
 

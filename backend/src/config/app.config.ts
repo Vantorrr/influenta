@@ -35,6 +35,27 @@ export default registerAs('app', () => ({
     commission: 10, // 10% commission
     minWithdrawal: 1000, // минимальная сумма вывода
   },
+
+  // Публичный URL бэкенда (для NotificationURL платёжного шлюза)
+  backendUrl:
+    process.env.BACKEND_URL ||
+    (process.env.RAILWAY_PUBLIC_DOMAIN
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+      : 'https://web-production-2bad2.up.railway.app'),
+
+  // Payments (T-Bank / Tinkoff Internet Acquiring)
+  payments: {
+    tbank: {
+      terminalKey: process.env.TBANK_TERMINAL_KEY || '1783341874843DEMO',
+      password: process.env.TBANK_PASSWORD || '9$HKgGnJY$RNC!O5',
+      apiUrl: process.env.TBANK_API_URL || 'https://securepay.tinkoff.ru/v2',
+      // Отправлять ли онлайн-чек (54-ФЗ). Для тестового терминала обычно не требуется.
+      sendReceipt: process.env.TBANK_SEND_RECEIPT === 'true',
+      receiptEmail: process.env.TBANK_RECEIPT_EMAIL || 'receipts@influenta.app',
+      taxation: process.env.TBANK_TAXATION || 'usn_income',
+      vat: process.env.TBANK_VAT || 'none',
+    },
+  },
 }))
 
 

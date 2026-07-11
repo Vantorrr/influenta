@@ -1,7 +1,7 @@
  'use client'
 
 import { useState } from 'react'
-import { X, Send, Calendar, FileText, Camera, MessageSquare } from 'lucide-react'
+import { X, Send, Calendar, FileText, Camera, MessageSquare, ShieldCheck } from 'lucide-react'
 import { RubIcon } from '@/components/ui/ruble-icon'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -23,6 +23,7 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
   const [proposedBudget, setProposedBudget] = useState('')
   const [format, setFormat] = useState('post')
   const [deadline, setDeadline] = useState('')
+  const [useSafeDeal, setUseSafeDeal] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -66,6 +67,7 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
         projectDescription: projectDescription.trim() || undefined,
         format: format || undefined,
         deadline: deadline || undefined,
+        useSafeDeal,
       })
       onSuccess()
     } catch (e: any) {
@@ -162,6 +164,47 @@ export function OfferModal({ bloggerId, bloggerName, onClose, onSuccess }: Offer
                   </div>
                   <p className="text-xs text-telegram-textSecondary mt-1">Минимальная сумма: 100₽</p>
                 </div>
+
+                {/* Безопасная сделка */}
+                <button
+                  type="button"
+                  onClick={() => setUseSafeDeal((v) => !v)}
+                  className={`w-full text-left rounded-xl border p-4 transition-colors ${
+                    useSafeDeal
+                      ? 'border-telegram-primary bg-telegram-primary/5'
+                      : 'border-telegram-border bg-telegram-bg'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border ${
+                        useSafeDeal
+                          ? 'border-telegram-primary bg-telegram-primary text-white'
+                          : 'border-telegram-border'
+                      }`}
+                    >
+                      {useSafeDeal && (
+                        <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
+                          <path
+                            fillRule="evenodd"
+                            d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4l3.1 3.1 6.8-6.8a1 1 0 011.4 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <span className="flex items-center gap-2 text-sm font-medium">
+                        <ShieldCheck className="w-4 h-4 text-telegram-primary" />
+                        Безопасная сделка
+                      </span>
+                      <p className="text-xs text-telegram-textSecondary mt-1">
+                        Оплата резервируется на защищённом счёте T-Bank и переводится блогеру
+                        только после того, как вы подтвердите выполнение работы.
+                      </p>
+                    </div>
+                  </div>
+                </button>
 
                 {/* Формат */}
                 <div>

@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsDateString, IsEnum, MinLength, Min } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsDateString, IsEnum, IsBoolean, MinLength, Min } from 'class-validator';
 import { PostFormat } from '@/types';
 
 export class CreateOfferDto {
@@ -29,6 +29,10 @@ export class CreateOfferDto {
   @IsOptional()
   @IsDateString()
   deadline?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  useSafeDeal?: boolean;
 }
 
 

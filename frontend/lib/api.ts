@@ -394,6 +394,7 @@ export const offersApi = {
     projectDescription?: string
     format?: string
     deadline?: string
+    useSafeDeal?: boolean
   }) {
     const response = await api.post('/offers', data)
     return response.data
@@ -411,6 +412,79 @@ export const offersApi = {
 
   async respond(id: string, data: { accept: boolean; rejectionReason?: string }) {
     const response = await api.post(`/offers/${id}/respond`, data)
+    return response.data
+  },
+}
+
+// Safe Deals (безопасная сделка через T-Bank)
+export type SafeDealStatus =
+  | 'created'
+  | 'awaiting_payment'
+  | 'funded'
+  | 'in_progress'
+  | 'delivered'
+  | 'released'
+  | 'disputed'
+  | 'refunded'
+  | 'cancelled'
+
+export interface SafeDeal {
+  id: string
+  offerId?: string
+  advertiserUserId: string
+  bloggerUserId: string
+  title?: string
+  amount: number
+  commissionAmount: number
+  payoutAmount: number
+  status: SafeDealStatus
+  paymentUrl?: string
+  tbankStatus?: string
+  isTwoStage?: boolean
+  deliveryNote?: string
+  disputeReason?: string
+  paidAt?: string
+  deliveredAt?: string
+  releasedAt?: string
+  refundedAt?: string
+  disputedAt?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export const safeDealApi = {
+  async createForOffer(offerId: string): Promise<{ deal: SafeDeal; paymentUrl?: string; alreadyActive?: boolean }> {
+    const response = await api.post(`/safe-deals/offer/${offerId}`)
+    return response.data
+  },
+
+  async getByOffer(offerId: string): Promise<SafeDeal | null> {
+    const response = await api.get(`/safe-deals/by-offer/${offerId}`)
+    return response.data
+  },
+
+  async getById(id: string): Promise<SafeDeal> {
+    const response = await api.get(`/safe-deals/${id}`)
+    return response.data
+  },
+
+  async listMy(): Promise<SafeDeal[]> {
+    const response = await api.get('/safe-deals/my')
+    return response.data
+  },
+
+  async markDelivered(id: string, note?: string): Promise<SafeDeal> {
+    const response = await api.post(`/safe-deals/${id}/delivered`, { note })
+    return response.data
+  },
+
+  async release(id: string): Promise<SafeDeal> {
+    const response = await api.post(`/safe-deals/${id}/release`)
+    return response.data
+  },
+
+  async dispute(id: string, reason?: string): Promise<SafeDeal> {
+    const response = await api.post(`/safe-deals/${id}/dispute`, { reason })
     return response.data
   },
 }

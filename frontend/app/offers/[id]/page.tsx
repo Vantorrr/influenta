@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { offersApi, chatApi } from '@/lib/api'
 import { formatDate, formatPrice } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+import { SafeDealPanel } from '@/components/SafeDealPanel'
 import { 
   ArrowLeft, Clock, CheckCircle, XCircle, MessageSquare, 
   Calendar, User, Briefcase, FileText 
@@ -267,6 +268,16 @@ export default function OfferDetailsPage() {
             )}
           </CardContent>
         </Card>
+
+        {offer.status !== 'rejected' && (offer.useSafeDeal || offer.status === 'accepted') && (
+          <SafeDealPanel
+            offerId={offer.id}
+            isBlogger={isForBlogger}
+            offerAccepted={offer.status === 'accepted'}
+            useSafeDeal={!!offer.useSafeDeal}
+            budget={Number(offer.proposedBudget) || 0}
+          />
+        )}
       </div>
     </Layout>
   )

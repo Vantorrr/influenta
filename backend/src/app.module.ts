@@ -20,6 +20,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { SocialPlatformsModule } from './social-platforms/social-platforms.module';
 import { FavoritesModule } from './favorites/favorites.module';
+import { SafeDealsModule } from './safe-deals/safe-deals.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { FavoritesModule } from './favorites/favorites.module';
     OffersModule,
     SocialPlatformsModule,
     FavoritesModule,
+    SafeDealsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
