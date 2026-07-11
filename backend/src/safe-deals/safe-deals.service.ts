@@ -144,13 +144,12 @@ export class SafeDealsService implements OnModuleInit {
   }
 
   private frontendUrl(): string {
-    // FRONTEND_URL важнее (успех/ошибка оплаты открываются в браузере пользователя).
-    // app.frontendUrl по умолчанию = localhost, поэтому не полагаемся на него:
-    // если env не задан — используем адрес мини-приложения из конфига Telegram.
+    // Всегда веб-версия (Vercel), а НЕ Telegram mini app (t.me) — чтобы редиректы
+    // после оплаты и кнопки в уведомлениях открывались на фронте, а не в мини-аппе.
     const fromEnv = process.env.FRONTEND_URL;
-    if (fromEnv) return fromEnv;
-    const webApp = this.configService.get<string>('app.telegram.webAppUrl');
-    if (webApp) return webApp;
+    if (fromEnv && /^https?:\/\//.test(fromEnv) && !fromEnv.includes('t.me')) {
+      return fromEnv.replace(/\/$/, '');
+    }
     return 'https://influentaa.vercel.app';
   }
 
@@ -162,9 +161,10 @@ export class SafeDealsService implements OnModuleInit {
   }
 
   private dealButton(dealId: string, text = 'Открыть сделку') {
+    // Обычная url-кнопка → открывается веб-фронт (Vercel), а не мини-апп Telegram.
     return {
       inline_keyboard: [
-        [{ text, web_app: { url: `${this.frontendUrl()}/safe-deals/${dealId}` } }],
+        [{ text, url: `${this.frontendUrl()}/safe-deals/${dealId}` }],
       ],
     };
   }
@@ -369,6 +369,7 @@ export class SafeDealsService implements OnModuleInit {
     deal.tbankStatus = status;
     if (body.PaymentId) deal.tbankPaymentId = String(body.PaymentId);
 
+    const prevStatus = deal.status;
     const wasFunded = deal.status === SafeDealStatus.FUNDED;
 
     switch (status) {
@@ -428,6 +429,20 @@ export class SafeDealsService implements OnModuleInit {
         deal.advertiserUserId,
         `🛡 <b>Оплата принята</b>\n\nСредства ${deal.amount}₽ захолдированы. Деньги уйдут блогеру только после того, как вы подтвердите выполнение работы.`,
         this.dealButton(deal.id),
+      );
+    }
+
+    // Уведомляем при неуспешной оплате (первый переход в CANCELLED)
+    const isFailure = ['REJECTED', 'CANCELED', 'AUTH_FAIL', 'DEADLINE_EXPIRED'].includes(status);
+    if (isFailure && deal.status === SafeDealStatus.CANCELLED && prevStatus !== SafeDealStatus.CANCELLED) {
+      await this.notify(
+        deal.advertiserUserId,
+        `❌ <b>Оплата не прошла</b>\n\nПлатёж по сделке «${deal.title || 'Безопасная сделка'}» на ${deal.amount}₽ не был завершён. Средства не списаны — вы можете попробовать оплатить ещё раз.`,
+        this.dealButton(deal.id, 'Повторить оплату'),
+      );
+      await this.notify(
+        deal.bloggerUserId,
+        `ℹ️ <b>Оплата пока не прошла</b>\n\nРекламодатель ещё не смог оплатить безопасную сделку «${deal.title || 'Безопасная сделка'}». Как только оплата пройдёт, вы получите уведомление.`,
       );
     }
 

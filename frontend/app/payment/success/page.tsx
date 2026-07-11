@@ -46,6 +46,8 @@ function PaymentSuccessContent() {
 
   const goToDeal = () => {
     if (deal?.offerId) router.push(`/offers/${deal.offerId}`)
+    else if (deal?.listingId) router.push(`/listings/${deal.listingId}`)
+    else if (deal?.responseId) router.push(`/messages?responseId=${deal.responseId}`)
     else router.push('/offers')
   }
 
