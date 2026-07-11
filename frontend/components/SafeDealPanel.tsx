@@ -9,9 +9,12 @@ import { formatPrice } from '@/lib/utils'
 import { safeDealApi, SafeDeal, SafeDealStatus } from '@/lib/api'
 
 interface SafeDealPanelProps {
-  offerId: string
+  /** Источник сделки: указывается ЛИБО offerId, ЛИБО responseId */
+  offerId?: string
+  responseId?: string
   isBlogger: boolean
-  offerAccepted: boolean
+  /** Предложение/отклик приняты — оплата доступна */
+  accepted: boolean
   useSafeDeal: boolean
   budget: number
 }
@@ -37,7 +40,7 @@ function openPaymentLink(url: string) {
   }
 }
 
-export function SafeDealPanel({ offerId, isBlogger, offerAccepted, useSafeDeal, budget }: SafeDealPanelProps) {
+export function SafeDealPanel({ offerId, responseId, isBlogger, accepted, useSafeDeal, budget }: SafeDealPanelProps) {
   const [deal, setDeal] = useState<SafeDeal | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -45,14 +48,18 @@ export function SafeDealPanel({ offerId, isBlogger, offerAccepted, useSafeDeal, 
 
   const load = useCallback(async () => {
     try {
-      const d = await safeDealApi.getByOffer(offerId)
+      const d = responseId
+        ? await safeDealApi.getByResponse(responseId)
+        : offerId
+        ? await safeDealApi.getByOffer(offerId)
+        : null
       setDeal(d)
     } catch {
       // нет доступа/сделки — оставляем null
     } finally {
       setLoading(false)
     }
-  }, [offerId])
+  }, [offerId, responseId])
 
   useEffect(() => {
     load()
@@ -65,7 +72,9 @@ export function SafeDealPanel({ offerId, isBlogger, offerAccepted, useSafeDeal, 
     setBusy(true)
     setError(null)
     try {
-      const res = await safeDealApi.createForOffer(offerId)
+      const res = responseId
+        ? await safeDealApi.createForResponse(responseId)
+        : await safeDealApi.createForOffer(offerId!)
       setDeal(res.deal)
       if (res.paymentUrl) {
         openPaymentLink(res.paymentUrl)
@@ -107,7 +116,7 @@ export function SafeDealPanel({ offerId, isBlogger, offerAccepted, useSafeDeal, 
   if (loading) return null
 
   const status = deal?.status
-  const canPay = !isBlogger && offerAccepted && (!deal || ['created', 'awaiting_payment', 'cancelled'].includes(status as string))
+  const canPay = !isBlogger && accepted && (!deal || ['created', 'awaiting_payment', 'cancelled'].includes(status as string))
   const isFundedStage = deal && ['funded', 'in_progress'].includes(status as string)
   const isDelivered = status === 'delivered'
   const canDispute = deal && ['funded', 'in_progress', 'delivered'].includes(status as string)
@@ -151,10 +160,10 @@ export function SafeDealPanel({ offerId, isBlogger, offerAccepted, useSafeDeal, 
           <div className="mb-3 p-3 bg-red-500/10 text-red-500 rounded-lg text-sm">{error}</div>
         )}
 
-        {/* Оффер ещё не принят */}
-        {!offerAccepted && !deal && (
+        {/* Ещё не принято */}
+        {!accepted && !deal && (
           <div className="text-sm text-telegram-textSecondary">
-            Оплата станет доступна после того, как блогер примет предложение.
+            Оплата станет доступна после принятия {responseId ? 'отклика' : 'предложения'}.
           </div>
         )}
 
@@ -167,7 +176,7 @@ export function SafeDealPanel({ offerId, isBlogger, offerAccepted, useSafeDeal, 
             </Button>
           )}
 
-          {isBlogger && (!deal || ['created', 'awaiting_payment'].includes(status as string)) && offerAccepted && (
+          {isBlogger && (!deal || ['created', 'awaiting_payment'].includes(status as string)) && accepted && (
             <div className="text-sm text-telegram-textSecondary">
               Ожидается оплата от рекламодателя. Как только средства поступят на гарантийный счёт, вы получите уведомление.
             </div>

@@ -431,6 +431,8 @@ export type SafeDealStatus =
 export interface SafeDeal {
   id: string
   offerId?: string
+  responseId?: string
+  listingId?: string
   advertiserUserId: string
   bloggerUserId: string
   title?: string
@@ -460,6 +462,16 @@ export const safeDealApi = {
 
   async getByOffer(offerId: string): Promise<SafeDeal | null> {
     const response = await api.get(`/safe-deals/by-offer/${offerId}`)
+    return response.data
+  },
+
+  async createForResponse(responseId: string): Promise<{ deal: SafeDeal; paymentUrl?: string; alreadyActive?: boolean }> {
+    const response = await api.post(`/safe-deals/response/${responseId}`)
+    return response.data
+  },
+
+  async getByResponse(responseId: string): Promise<SafeDeal | null> {
+    const response = await api.get(`/safe-deals/by-response/${responseId}`)
     return response.data
   },
 

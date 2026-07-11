@@ -47,6 +47,15 @@ export class SafeDeal extends BaseEntity {
   @JoinColumn({ name: 'offerId' })
   offer?: Offer;
 
+  /** Отклик на объявление, из которого создана сделка (альтернатива offerId) */
+  @Index('idx_safe_deals_response_id')
+  @Column({ type: 'uuid', nullable: true })
+  responseId?: string;
+
+  /** Объявление (для навигации/отображения), когда сделка из отклика */
+  @Column({ type: 'uuid', nullable: true })
+  listingId?: string;
+
   /** Плательщик (рекламодатель) — User.id */
   @Index('idx_safe_deals_advertiser')
   @Column({ type: 'uuid' })

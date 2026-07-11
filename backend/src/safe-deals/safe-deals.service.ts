@@ -12,6 +12,7 @@ import { randomUUID } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { SafeDeal, SafeDealStatus } from './entities/safe-deal.entity';
 import { Offer, OfferStatus } from '../offers/entities/offer.entity';
+import { Response, ResponseStatus } from '../responses/entities/response.entity';
 import { User } from '../users/entities/user.entity';
 import { TBankService } from './tbank.service';
 import { TelegramService } from '../telegram/telegram.service';
@@ -25,6 +26,8 @@ export class SafeDealsService implements OnModuleInit {
     private readonly dealRepo: Repository<SafeDeal>,
     @InjectRepository(Offer)
     private readonly offerRepo: Repository<Offer>,
+    @InjectRepository(Response)
+    private readonly responseRepo: Repository<Response>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly tbank: TBankService,
@@ -78,6 +81,12 @@ export class SafeDealsService implements OnModuleInit {
       await this.dealRepo.query(
         `ALTER TABLE offers ADD COLUMN IF NOT EXISTS "useSafeDeal" boolean DEFAULT false;`,
       );
+      // Поддержка сделок из откликов на объявления
+      await this.dealRepo.query(`ALTER TABLE safe_deals ADD COLUMN IF NOT EXISTS "responseId" uuid;`);
+      await this.dealRepo.query(`ALTER TABLE safe_deals ADD COLUMN IF NOT EXISTS "listingId" uuid;`);
+      await this.dealRepo.query(
+        `CREATE INDEX IF NOT EXISTS idx_safe_deals_response_id ON safe_deals ("responseId");`,
+      );
       this.logger.log('✅ safe_deals schema ensured');
     } catch (e: any) {
       this.logger.error(`Failed to ensure safe_deals schema: ${e?.message}`);
@@ -99,6 +108,8 @@ export class SafeDealsService implements OnModuleInit {
     return {
       id: deal.id,
       offerId: deal.offerId,
+      responseId: deal.responseId,
+      listingId: deal.listingId,
       advertiserUserId: deal.advertiserUserId,
       bloggerUserId: deal.bloggerUserId,
       title: deal.title,
@@ -234,6 +245,106 @@ export class SafeDealsService implements OnModuleInit {
     deal = await this.dealRepo.save(deal);
 
     return { deal: this.toPublic(deal), paymentUrl: initResult.paymentUrl };
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Создание сделки по отклику на объявление (рекламодатель)
+  // ─────────────────────────────────────────────────────────────
+  async createForResponse(responseId: string, user: User) {
+    const response = await this.responseRepo.findOne({
+      where: { id: responseId },
+      relations: [
+        'listing',
+        'listing.advertiser',
+        'listing.advertiser.user',
+        'blogger',
+        'blogger.user',
+      ],
+    });
+    if (!response) throw new NotFoundException('Отклик не найден');
+
+    const advertiserUserId = (response as any)?.listing?.advertiser?.userId;
+    if (!advertiserUserId || advertiserUserId !== user.id) {
+      throw new ForbiddenException('Оплатить сделку может только рекламодатель — владелец объявления');
+    }
+    if (response.status !== ResponseStatus.ACCEPTED) {
+      throw new BadRequestException('Безопасная сделка доступна только для принятого отклика');
+    }
+
+    const bloggerUserId = (response as any)?.blogger?.userId || (response as any)?.blogger?.user?.id;
+    if (!bloggerUserId) throw new BadRequestException('У отклика не определён блогер');
+
+    const amount = Number(response.proposedPrice);
+    if (!Number.isFinite(amount) || amount < 10) {
+      throw new BadRequestException('Некорректная сумма сделки');
+    }
+
+    const listingId = (response as any)?.listing?.id || (response as any)?.listingId;
+    const title = (response as any)?.listing?.title || 'Безопасная сделка';
+
+    let deal = await this.dealRepo.findOne({ where: { responseId: response.id } });
+    if (
+      deal &&
+      [SafeDealStatus.FUNDED, SafeDealStatus.IN_PROGRESS, SafeDealStatus.DELIVERED, SafeDealStatus.RELEASED].includes(
+        deal.status,
+      )
+    ) {
+      return { deal: this.toPublic(deal), alreadyActive: true };
+    }
+
+    const { commissionAmount, payoutAmount } = this.computeAmounts(amount);
+
+    if (!deal) {
+      deal = this.dealRepo.create({
+        responseId: response.id,
+        listingId,
+        advertiserUserId: user.id,
+        bloggerUserId,
+        title,
+        amount,
+        commissionAmount,
+        payoutAmount,
+        status: SafeDealStatus.CREATED,
+      });
+      deal = await this.dealRepo.save(deal);
+    } else {
+      deal.amount = amount;
+      deal.commissionAmount = commissionAmount;
+      deal.payoutAmount = payoutAmount;
+      deal.listingId = listingId;
+      deal.status = SafeDealStatus.CREATED;
+    }
+
+    const orderId = randomUUID().replace(/-/g, '');
+    const initResult = await this.tbank.init({
+      amount,
+      orderId,
+      description: `Безопасная сделка: ${title}`.slice(0, 250),
+      notificationUrl: `${this.backendUrl()}/payments/tbank/webhook`,
+      successUrl: `${this.frontendUrl()}/payment/success?dealId=${deal.id}`,
+      failUrl: `${this.frontendUrl()}/payment/fail?dealId=${deal.id}`,
+    });
+
+    if (!initResult.success || !initResult.paymentUrl) {
+      throw new BadRequestException(initResult.message || 'Не удалось создать платёж');
+    }
+
+    deal.tbankOrderId = orderId;
+    deal.tbankPaymentId = initResult.paymentId;
+    deal.paymentUrl = initResult.paymentUrl;
+    deal.status = SafeDealStatus.AWAITING_PAYMENT;
+    deal = await this.dealRepo.save(deal);
+
+    return { deal: this.toPublic(deal), paymentUrl: initResult.paymentUrl };
+  }
+
+  async getByResponse(responseId: string, user: User) {
+    const deal = await this.dealRepo.findOne({ where: { responseId } });
+    if (!deal) return null;
+    if (deal.advertiserUserId !== user.id && deal.bloggerUserId !== user.id) {
+      throw new ForbiddenException('Нет доступа к этой сделке');
+    }
+    return this.toPublic(deal);
   }
 
   // ─────────────────────────────────────────────────────────────

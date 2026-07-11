@@ -273,7 +273,7 @@ export default function OfferDetailsPage() {
           <SafeDealPanel
             offerId={offer.id}
             isBlogger={isForBlogger}
-            offerAccepted={offer.status === 'accepted'}
+            accepted={offer.status === 'accepted'}
             useSafeDeal={!!offer.useSafeDeal}
             budget={Number(offer.proposedBudget) || 0}
           />

@@ -8,6 +8,7 @@ import {
   ChevronRight, Target, LayoutGrid, Banknote, Send
 } from 'lucide-react'
 import { Layout } from '@/components/layout/Layout'
+import { SafeDealPanel } from '@/components/SafeDealPanel'
 import { listingsApi, responsesApi } from '@/lib/api'
 import { formatDate, formatPrice, getCategoryLabel, getPostFormatLabel } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
@@ -389,6 +390,18 @@ export default function ListingDetailsPage() {
             >
               💬 Перейди к переписке
             </button>
+
+            {myResponses[0]?.status === 'accepted' && (
+              <div style={{ marginTop: 16 }}>
+                <SafeDealPanel
+                  responseId={myResponses[0].id}
+                  isBlogger={true}
+                  accepted={true}
+                  useSafeDeal={!!listing.useSafeDeal}
+                  budget={Number(myResponses[0].proposedPrice) || 0}
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -478,6 +491,18 @@ export default function ListingDetailsPage() {
                       </>
                     )}
                   </div>
+
+                  {r.status === 'accepted' && (
+                    <div style={{ marginTop: 16 }}>
+                      <SafeDealPanel
+                        responseId={r.id}
+                        isBlogger={false}
+                        accepted={true}
+                        useSafeDeal={!!listing.useSafeDeal}
+                        budget={Number(r.proposedPrice) || 0}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

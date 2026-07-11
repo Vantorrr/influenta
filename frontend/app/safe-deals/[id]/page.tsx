@@ -17,6 +17,8 @@ export default function SafeDealRedirectPage() {
         const deal = await safeDealApi.getById(params.id)
         if (cancelled) return
         if (deal?.offerId) router.replace(`/offers/${deal.offerId}`)
+        else if (deal?.listingId) router.replace(`/listings/${deal.listingId}`)
+        else if (deal?.responseId) router.replace(`/messages?responseId=${deal.responseId}`)
         else router.replace('/offers')
       } catch {
         if (!cancelled) router.replace('/offers')

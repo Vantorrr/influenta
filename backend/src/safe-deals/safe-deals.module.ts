@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { SafeDeal } from './entities/safe-deal.entity';
 import { Offer } from '../offers/entities/offer.entity';
+import { Response } from '../responses/entities/response.entity';
 import { User } from '../users/entities/user.entity';
 import { SafeDealsService } from './safe-deals.service';
 import { TBankService } from './tbank.service';
@@ -13,7 +14,7 @@ import { TelegramModule } from '../telegram/telegram.module';
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([SafeDeal, Offer, User]),
+    TypeOrmModule.forFeature([SafeDeal, Offer, Response, User]),
     TelegramModule,
   ],
   controllers: [SafeDealsController, PaymentsWebhookController],

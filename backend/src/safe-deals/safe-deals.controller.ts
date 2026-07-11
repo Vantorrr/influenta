@@ -49,6 +49,18 @@ export class SafeDealsController {
     return this.safeDealsService.getByOffer(offerId, user);
   }
 
+  @Post('response/:responseId')
+  @ApiOperation({ summary: 'Создать безопасную сделку по отклику и получить ссылку на оплату' })
+  createForResponse(@Param('responseId') responseId: string, @CurrentUser() user: User) {
+    return this.safeDealsService.createForResponse(responseId, user);
+  }
+
+  @Get('by-response/:responseId')
+  @ApiOperation({ summary: 'Сделка по отклику (или null)' })
+  getByResponse(@Param('responseId') responseId: string, @CurrentUser() user: User) {
+    return this.safeDealsService.getByResponse(responseId, user);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Детали сделки' })
   getOne(@Param('id') id: string, @CurrentUser() user: User) {
