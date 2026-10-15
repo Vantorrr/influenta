@@ -1,3 +1,4 @@
+import dns from 'dns';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -7,6 +8,13 @@ import { Blogger } from '@/bloggers/entities/blogger.entity';
 import { Advertiser } from '@/advertisers/entities/advertiser.entity';
 import { Listing } from '@/listings/entities/listing.entity';
 import { Response as ListingResponse } from '@/responses/entities/response.entity';
+
+// В контейнерах Railway к api.telegram.org часто рвётся IPv6 → ECONNRESET
+try {
+  dns.setDefaultResultOrder('ipv4first');
+} catch {
+  /* older node */
+}
 
 @Injectable()
 export class TelegramService {
@@ -29,9 +37,28 @@ export class TelegramService {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  async sendMessage(chatId: number, text: string, replyMarkup?: any) {
+  private isTransientNetworkError(err: any): boolean {
+    const code = err?.cause?.code || err?.code || '';
+    const msg = String(err?.message || err?.cause?.message || '');
+    return (
+      code === 'ECONNRESET' ||
+      code === 'ETIMEDOUT' ||
+      code === 'ECONNREFUSED' ||
+      code === 'ENOTFOUND' ||
+      code === 'EAI_AGAIN' ||
+      code === 'UND_ERR_SOCKET' ||
+      msg.includes('fetch failed') ||
+      msg.includes('ECONNRESET') ||
+      msg.includes('ETIMEDOUT')
+    );
+  }
+
+  /**
+   * Отправка сообщения с ретраями на сетевые сбои и 429 (rate limit).
+   * Не бросает исключение наружу — возвращает ответ Telegram или { ok: false }.
+   */
+  async sendMessage(chatId: number, text: string, replyMarkup?: any, opts?: { maxAttempts?: number }) {
     const url = `${this.botApiUrl}/sendMessage`;
-    
     const payload = {
       chat_id: chatId,
       text,
@@ -39,20 +66,57 @@ export class TelegramService {
       reply_markup: replyMarkup,
     };
 
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+    const maxAttempts = opts?.maxAttempts ?? 4;
+    let lastError: any = null;
 
-      return await response.json();
-    } catch (error) {
-      console.error('Error sending message:', error);
-      throw error;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+        let response: Response;
+        try {
+          response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            signal: controller.signal,
+          });
+        } finally {
+          clearTimeout(timeout);
+        }
+
+        const data = await response.json().catch(() => null);
+
+        // Telegram rate limit
+        if (data && data.ok === false && (data.error_code === 429 || response.status === 429)) {
+          const retryAfter = Number(data?.parameters?.retry_after || 3);
+          await this.sleep(Math.min(60, Math.max(1, retryAfter)) * 1000);
+          continue;
+        }
+
+        if (data) return data;
+
+        // HTTP без JSON — ретраим
+        lastError = new Error(`Telegram HTTP ${response.status}`);
+      } catch (error: any) {
+        lastError = error;
+        if (!this.isTransientNetworkError(error) && error?.name !== 'AbortError') {
+          // Не сетевая ошибка (например, невалидный chat) — без бесконечных ретраев
+          if (attempt >= 2) break;
+        }
+      }
+
+      // backoff: 0.5s, 1.5s, 3s...
+      await this.sleep(Math.min(8000, 500 * attempt * attempt));
     }
+
+    console.warn(
+      `Telegram sendMessage failed chatId=${chatId}: ${lastError?.message || lastError?.cause?.message || 'unknown'}`,
+    );
+    return {
+      ok: false,
+      description: lastError?.message || lastError?.cause?.message || 'send failed',
+    };
   }
 
   getMaintenanceMessage(customText?: string) {
@@ -66,7 +130,10 @@ export class TelegramService {
 
   async broadcastMaintenance(customText?: string) {
     const text = this.getMaintenanceMessage(customText);
-    const frontendUrl = this.configService.get('app.frontendUrl') || 'https://influentaa.vercel.app';
+    const frontendUrl =
+      this.configService.get('app.telegram.webAppUrl') ||
+      this.configService.get('app.frontendUrl') ||
+      'https://influentaa.vercel.app';
 
     console.log('📢 BROADCAST START, botToken present:', !!this.botToken, 'botToken length:', this.botToken?.length);
 
@@ -77,17 +144,27 @@ export class TelegramService {
         .select(['user.telegramId'])
         .where('user.telegramId IS NOT NULL')
         .andWhere("user.telegramId <> ''")
+        .andWhere('user.isActive = true')
         .getMany();
     } catch (e: any) {
       console.error('📢 BROADCAST: Failed to fetch users:', e?.message);
       return { total: 0, success: 0, failed: 0, failedSamples: [] };
     }
 
-    const chatIds = users
-      .map(u => {
-        try { return parseInt(String(u.telegramId), 10) } catch { return NaN }
-      })
-      .filter(id => Number.isFinite(id));
+    // Дедуп telegramId — иначе одному человеку уйдёт несколько раз
+    const chatIds = Array.from(
+      new Set(
+        users
+          .map((u) => {
+            try {
+              return parseInt(String(u.telegramId), 10);
+            } catch {
+              return NaN;
+            }
+          })
+          .filter((id) => Number.isFinite(id) && id > 0),
+      ),
+    );
 
     console.log('📢 BROADCAST: Found', chatIds.length, 'users to message');
 
@@ -97,37 +174,40 @@ export class TelegramService {
     }
 
     let success = 0;
-    const failed: Array<{ chatId: number, reason: string }> = [];
+    const failed: Array<{ chatId: number; reason: string }> = [];
+    const markup = {
+      inline_keyboard: [
+        [{ text: '🚀 Открыть Influenta', web_app: { url: frontendUrl } }],
+        [{ text: '🆘 Техподдержка', url: 'https://t.me/influenta_support_bot' }],
+      ],
+    };
 
     for (let i = 0; i < chatIds.length; i++) {
       const chatId = chatIds[i] as number;
-      try {
-        const result = await this.sendMessage(chatId, text, {
-          inline_keyboard: [
-            [{ text: '🚀 Открыть Influenta', web_app: { url: frontendUrl } }],
-            [{ text: '🆘 Техподдержка', url: 'https://t.me/influenta_support_bot' }]
-          ]
-        });
-        if (result?.ok) {
-          success++;
-        } else {
-          failed.push({ chatId, reason: result?.description || 'API returned not ok' });
-        }
-      } catch (e: any) {
-        failed.push({ chatId, reason: e?.message || 'send failed' });
-      }
-      if ((i + 1) % 20 === 0) {
-        await this.sleep(700);
+      const result = await this.sendMessage(chatId, text, markup, { maxAttempts: 5 });
+      if (result?.ok) {
+        success++;
       } else {
-        await this.sleep(80);
+        const reason = result?.description || 'API returned not ok';
+        // Заблокировали бота / chat not found — это нормально, не ретраим вечно
+        failed.push({ chatId, reason });
       }
-      // Progress log every 100 messages
+
+      // ~25 msg/sec потолок Telegram на разные чаты; держим запас + паузы пачками
+      if ((i + 1) % 25 === 0) {
+        await this.sleep(1200);
+      } else {
+        await this.sleep(45);
+      }
+
       if ((i + 1) % 100 === 0) {
-        console.log(`📢 BROADCAST progress: ${i + 1}/${chatIds.length}, success: ${success}, failed: ${failed.length}`);
+        console.log(
+          `📢 BROADCAST progress: ${i + 1}/${chatIds.length}, success: ${success}, failed: ${failed.length}`,
+        );
       }
     }
 
-    console.log(`📢 BROADCAST DONE: total=${chatIds.length}, success=${success}, failed=${failed.length}`);
+    console.log(`📢 BROADCAST DONE: total=${chatIds.length}, success=${success}, failed: ${failed.length}`);
     if (failed.length > 0) {
       console.log('📢 BROADCAST failed samples:', JSON.stringify(failed.slice(0, 10)));
     }
