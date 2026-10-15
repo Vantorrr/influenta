@@ -163,9 +163,28 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       // ignore
     }
 
+    // Уже заполненный профиль (старые аккаунты без флага) не гоняем на регистрацию
+    const u = auth.user as any
+    const profileLooksComplete = !!(
+      u?.onboardingCompleted ||
+      u?.companyName ||
+      u?.bio ||
+      u?.categories ||
+      (u?.subscribersCount != null && Number(u.subscribersCount) > 0) ||
+      u?.role === 'admin'
+    )
     const onboardingDone =
-      auth.user.onboardingCompleted ||
+      !!u?.onboardingCompleted ||
+      profileLooksComplete ||
       (typeof window !== 'undefined' && localStorage.getItem('onboarding_completed') === 'true')
+
+    if (onboardingDone && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('onboarding_completed', 'true')
+      } catch {
+        /* ignore */
+      }
+    }
 
     if (!onboardingDone && !pathname.startsWith('/onboarding') && !isExempt) {
       router.replace('/onboarding')

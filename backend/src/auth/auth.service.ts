@@ -12,7 +12,7 @@ import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { TelegramService } from '../telegram/telegram.service';
-import { User } from '../users/entities/user.entity';
+import { User, UserRole } from '../users/entities/user.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { TelegramAuthDto, TelegramUserPayload } from './dto/telegram-auth.dto';
 
@@ -243,7 +243,9 @@ export class AuthService {
       throw new InternalServerErrorException('Ошибка авторизации. Попробуйте ещё раз.');
     }
 
-    const freshUser = (await this.usersRepository.findOne({ where: { id: user.id } })) || user;
+    let freshUser = (await this.usersRepository.findOne({ where: { id: user.id } })) || user;
+    // Подлечиваем onboardingCompleted у «старых» аккаунтов, чтобы не кидать на регистрацию
+    freshUser = await this.ensureOnboardingFlag(freshUser);
 
     const payload = {
       sub: freshUser.id,
@@ -301,11 +303,42 @@ export class AuthService {
   // Профиль
   // -----------------------------------------------------------------------
 
+  /**
+   * Старые аккаунты могли пользоваться приложением без флага onboardingCompleted.
+   * Если профиль уже заполнен — считаем онбординг пройденным и чиним флаг в БД.
+   */
+  private profileLooksComplete(user: User): boolean {
+    if (user.onboardingCompleted) return true;
+    if (user.role === UserRole.ADMIN) return true;
+    if (user.role === UserRole.ADVERTISER) {
+      return !!(user.companyName?.trim() || user.description?.trim());
+    }
+    // blogger / default
+    return !!(
+      user.bio?.trim() ||
+      user.categories?.trim() ||
+      (user.subscribersCount != null && Number(user.subscribersCount) > 0)
+    );
+  }
+
+  private async ensureOnboardingFlag(user: User): Promise<User> {
+    if (user.onboardingCompleted || !this.profileLooksComplete(user)) return user;
+    user.onboardingCompleted = true;
+    try {
+      await this.usersRepository.save(user);
+      this.logger.log(`Self-healed onboardingCompleted for user=${user.id}`);
+    } catch (e: any) {
+      this.logger.warn(`Failed to heal onboardingCompleted for ${user.id}: ${e?.message}`);
+    }
+    return user;
+  }
+
   async getProfile(userId: string) {
-    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    let user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException('Пользователь не найден');
     }
+    user = await this.ensureOnboardingFlag(user);
     return { success: true, user: this.serializeUser(user) };
   }
 
