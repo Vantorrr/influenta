@@ -23,7 +23,11 @@ export class BloggersService implements OnModuleInit {
         ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS "adminNotes" text;
         ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS "isFeatured" boolean DEFAULT false;
         ALTER TABLE users ADD COLUMN IF NOT EXISTS country varchar(16);
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS "isBanned" boolean NOT NULL DEFAULT false;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS "banReason" text;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS "bannedAt" timestamptz;
         CREATE INDEX IF NOT EXISTS idx_users_country ON users (country);
+        CREATE INDEX IF NOT EXISTS idx_users_is_banned ON users ("isBanned");
       `);
       console.log('✅ Bloggers schema fixed');
     } catch (e) {
@@ -266,11 +270,28 @@ export class BloggersService implements OnModuleInit {
 
   async getAllUsers() {
     const users = await this.usersRepository.find({
-      select: ['id', 'firstName', 'lastName', 'username', 'role', 'isActive', 'isVerified', 'bio', 'subscribersCount', 'pricePerPost', 'pricePerStory', 'categories']
+      select: [
+        'id',
+        'telegramId',
+        'firstName',
+        'lastName',
+        'username',
+        'role',
+        'isActive',
+        'isBanned',
+        'banReason',
+        'bannedAt',
+        'isVerified',
+        'bio',
+        'subscribersCount',
+        'pricePerPost',
+        'pricePerStory',
+        'categories',
+        'createdAt',
+      ],
+      order: { createdAt: 'DESC' },
     });
-    
-    console.log('🔍 All users:', users);
-    return users;
+    return { data: users };
   }
 
   async getUserById(userId: string): Promise<any> {

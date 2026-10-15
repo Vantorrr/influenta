@@ -204,6 +204,21 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     return <OpenInTelegramScreen />
   }
 
+  if (auth.error && /заблокирован/i.test(auth.error)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 bg-[#17212B] text-center">
+        <div className="max-w-sm space-y-3">
+          <div className="text-4xl">🚫</div>
+          <h1 className="text-xl font-semibold text-white">Доступ заблокирован</h1>
+          <p className="text-sm text-white/60">{auth.error}</p>
+          <p className="text-xs text-white/40">
+            Если это ошибка — напишите в поддержку @influenta_support_bot
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return <>{children}</>
 }
 

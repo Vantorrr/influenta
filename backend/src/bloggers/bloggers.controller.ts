@@ -1,11 +1,19 @@
 import { Controller, Get, Query, Param, UseGuards } from '@nestjs/common';
 import { BloggersService } from './bloggers.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
+import { AdminGuard } from '@/common/guards/admin.guard';
 import { BloggerSearchQueryDto } from './dto/blogger-search.query.dto';
 
 @Controller('bloggers')
 export class BloggersController {
   constructor(private readonly bloggersService: BloggersService) {}
+
+  // Важно: до :id, иначе "debug" попадёт в findOne
+  @Get('debug/all-users')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  async getAllUsers() {
+    return this.bloggersService.getAllUsers();
+  }
 
   @Get('search')
   @UseGuards(JwtAuthGuard)
@@ -18,11 +26,6 @@ export class BloggersController {
   @UseGuards(JwtAuthGuard)
   async findOne(@Param('id') id: string) {
     return this.bloggersService.findOne(id);
-  }
-
-  @Get('debug/all-users')
-  async getAllUsers() {
-    return this.bloggersService.getAllUsers();
   }
 }
 

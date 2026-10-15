@@ -215,9 +215,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (!response.ok) {
           const text = await response.text().catch(() => '')
-          lastError = `${response.status}: ${text}`
-          // 4xx (кроме 401) — повторять бессмысленно
-          if (response.status >= 400 && response.status < 500 && response.status !== 401) {
+          let message = text
+          try {
+            const parsed = JSON.parse(text)
+            message = parsed?.message || text
+            if (Array.isArray(message)) message = message.join(', ')
+          } catch {
+            /* raw text */
+          }
+          lastError = String(message || `${response.status}`)
+          // Бан / прочие 4xx (кроме 401) — не ретраим
+          const isBan = /заблокирован/i.test(lastError) || response.status === 403
+          if (isBan || (response.status >= 400 && response.status < 500 && response.status !== 401)) {
             console.warn('Auth: client error, not retrying', lastError)
             break
           }
@@ -239,11 +248,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     console.error('Telegram auth failed after retries:', lastError)
+    const banMsg =
+      typeof lastError === 'string' && /заблокирован/i.test(lastError)
+        ? lastError
+        : null
     setState((prev) => ({
       ...prev,
-      error: 'Не удалось авторизоваться через Telegram. Перезапустите мини-приложение.',
+      error:
+        banMsg ||
+        'Не удалось авторизоваться через Telegram. Перезапустите мини-приложение.',
       isLoading: false,
     }))
+    // Сбросить старую сессию, если аккаунт забанили
+    if (banMsg) writeSession(null, null)
     return false
   }, [applyUser, refresh, writeSession])
 

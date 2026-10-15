@@ -282,6 +282,9 @@ export class ListingsService implements OnModuleInit {
   }
 
   async create(createListingDto: CreateListingDto, user: User) {
+    if ((user as any).isBanned) {
+      throw new ForbiddenException('Аккаунт заблокирован — создание объявлений недоступно');
+    }
     if (user.role !== 'advertiser') {
       throw new ForbiddenException('Only advertisers can create listings');
     }

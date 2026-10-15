@@ -210,6 +210,15 @@ export class AuthService {
           }
         }
       } else {
+        // Жёсткий бан — вход запрещён (нельзя «разбанить себя» логином)
+        if (user.isBanned) {
+          throw new UnauthorizedException(
+            user.banReason
+              ? `Аккаунт заблокирован: ${user.banReason}`
+              : 'Аккаунт заблокирован администратором. Обратитесь в поддержку.',
+          );
+        }
+
         // Аккуратно обновляем поля у существующего пользователя
         user.firstName = firstName;
         if (lastName !== undefined) user.lastName = lastName;
@@ -221,8 +230,8 @@ export class AuthService {
         if (photoUrl) user.photoUrl = photoUrl;
         if (languageCode) user.languageCode = languageCode;
         user.lastLoginAt = new Date();
-        // Реактивируем аккаунт, если ранее был помечен как удалённый/неактивный
-        if (user.isActive === false) {
+        // Реактивируем только soft-delete, НЕ бан
+        if (user.isActive === false && !user.isBanned) {
           user.isActive = true;
         }
 
@@ -286,6 +295,8 @@ export class AuthService {
       payoutPhone: user.payoutPhone || null,
       payoutSbpMemberId: user.payoutSbpMemberId || null,
       payoutSbpBankName: user.payoutSbpBankName || null,
+      isBanned: !!user.isBanned,
+      banReason: user.banReason || null,
       country: user.country || null,
       website: user.website || null,
       telegramLink: user.telegramLink || null,

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
@@ -212,9 +212,88 @@ export class AdminService {
   async toggleUserBlock(id: string) {
     const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
-    const isActive = !user.isActive;
-    await this.usersRepository.update(id, { isActive });
-    return { success: true, isActive };
+    if (user.isBanned) {
+      return this.unbanUser(id);
+    }
+    return this.banUser(id, 'Заблокирован администратором');
+  }
+
+  /** Жёсткий бан: нельзя войти / создавать объявления; активные объявления закрываются */
+  async banUser(id: string, reason?: string) {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+    if (user.role === 'admin') {
+      throw new BadRequestException('Нельзя забанить админа');
+    }
+
+    const banReason = (reason || 'Заблокирован администратором').slice(0, 1000);
+    user.isBanned = true;
+    user.isActive = false;
+    user.banReason = banReason;
+    user.bannedAt = new Date();
+    await this.usersRepository.save(user);
+
+    // Закрываем все активные/paused объявления рекламодателя
+    const advertiser = await this.advertisersRepository.findOne({ where: { userId: id } });
+    let closedListings = 0;
+    if (advertiser) {
+      const open = await this.listingsRepository.find({
+        where: [
+          { advertiserId: advertiser.id, status: ListingStatus.ACTIVE },
+          { advertiserId: advertiser.id, status: ListingStatus.PAUSED },
+        ],
+      });
+      for (const listing of open) {
+        listing.status = ListingStatus.CLOSED;
+        listing.additionalInfo = {
+          ...(listing.additionalInfo || {}),
+          closedReason: 'user_banned',
+          closedAt: new Date().toISOString(),
+          banReason,
+        };
+        await this.listingsRepository.save(listing);
+        closedListings += 1;
+      }
+    }
+
+    try {
+      if (user.telegramId) {
+        await this.telegramService.sendMessage(
+          parseInt(String(user.telegramId), 10),
+          `🚫 <b>Доступ к Influenta заблокирован</b>\n\nПричина: ${banReason}\nЕсли это ошибка — напишите в поддержку.`,
+        );
+      }
+    } catch {
+      /* ignore */
+    }
+
+    return {
+      success: true,
+      isBanned: true,
+      banReason,
+      closedListings,
+    };
+  }
+
+  async unbanUser(id: string) {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+    user.isBanned = false;
+    user.isActive = true;
+    user.banReason = undefined;
+    user.bannedAt = undefined;
+    await this.usersRepository.save(user);
+    try {
+      if (user.telegramId) {
+        await this.telegramService.sendMessage(
+          parseInt(String(user.telegramId), 10),
+          `✅ <b>Доступ к Influenta восстановлен</b>\n\nМожете снова пользоваться приложением.`,
+        );
+      }
+    } catch {
+      /* ignore */
+    }
+    return { success: true, isBanned: false };
   }
 
   async softDeleteUser(id: string) {

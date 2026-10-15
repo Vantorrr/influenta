@@ -97,6 +97,18 @@ export class AdminController {
     return this.adminService.toggleUserBlock(id);
   }
 
+  @Post('users/:id/ban')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  async banUser(@Param('id') id: string, @Body() body: { reason?: string }) {
+    return this.adminService.banUser(id, body?.reason);
+  }
+
+  @Post('users/:id/unban')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  async unbanUser(@Param('id') id: string) {
+    return this.adminService.unbanUser(id);
+  }
+
   // Синхронизация счётчиков (пересчёт responsesCount для всех объявлений)
   @Post('sync-counters')
   @UseGuards(JwtAuthGuard, AdminGuard)

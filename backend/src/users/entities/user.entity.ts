@@ -105,6 +105,17 @@ export class User extends BaseEntity {
   @Column({ default: true })
   isActive: boolean;
 
+  /** Жёсткий бан: нельзя войти и создавать объявления (не снимается сам при логине) */
+  @Index('idx_users_is_banned')
+  @Column({ default: false })
+  isBanned: boolean;
+
+  @Column({ type: 'text', nullable: true })
+  banReason?: string;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  bannedAt?: Date;
+
   @Index('idx_users_is_verified')
   @Column({ default: false })
   isVerified: boolean;

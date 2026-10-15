@@ -1,11 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '@/users/entities/user.entity';
-// No direct AuthService dependency is required here
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -22,30 +21,29 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    // Стягиваем актуальную роль пользователя из БД, чтобы не зависеть от старого токена
-    let role: any = payload.role;
-    try {
-      const user = await this.usersRepository.findOne({ where: { id: payload.sub } });
-      if (user?.role) role = user.role;
-    } catch {}
+    const user = await this.usersRepository.findOne({ where: { id: payload.sub } });
+    if (!user) {
+      throw new UnauthorizedException('Пользователь не найден');
+    }
+    if (user.isBanned) {
+      throw new UnauthorizedException(
+        user.banReason
+          ? `Аккаунт заблокирован: ${user.banReason}`
+          : 'Аккаунт заблокирован администратором',
+      );
+    }
 
     return {
-      id: payload.sub,
-      telegramId: payload.telegramId,
-      username: payload.username,
-      role,
+      id: user.id,
+      telegramId: user.telegramId,
+      username: user.username,
+      role: user.role,
+      isBanned: user.isBanned,
+      isVerified: user.isVerified,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      companyName: user.companyName,
+      website: (user as any).website,
     } as Partial<User> & { id: string };
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
