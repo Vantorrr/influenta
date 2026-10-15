@@ -485,23 +485,36 @@ export class ListingsService implements OnModuleInit {
   }
 
   private formatListing(listing: Listing) {
+    const adv = listing.advertiser as any;
     return {
       id: listing.id,
       title: listing.title,
       description: listing.description,
       advertiserId: listing.advertiserId,
-      advertiser: {
-        id: listing.advertiser.id,
-        userId: (listing.advertiser as any).userId,
-        companyName: (listing.advertiser as any).companyName || ((listing.advertiser as any).firstName + ' ' + ((listing.advertiser as any).lastName || '')),
-        isVerified: (listing.advertiser as any).isVerified,
-        user: (listing.advertiser as any).user ? {
-          id: (listing.advertiser as any).user.id,
-          telegramId: (listing.advertiser as any).user.telegramId,
-          firstName: (listing.advertiser as any).user.firstName,
-          lastName: (listing.advertiser as any).user.lastName,
-        } : undefined,
-      },
+      advertiser: adv
+        ? {
+            id: adv.id,
+            userId: adv.userId,
+            companyName:
+              adv.companyName ||
+              `${adv.firstName || ''} ${adv.lastName || ''}`.trim() ||
+              'Рекламодатель',
+            isVerified: !!adv.isVerified,
+            user: adv.user
+              ? {
+                  id: adv.user.id,
+                  telegramId: adv.user.telegramId,
+                  firstName: adv.user.firstName,
+                  lastName: adv.user.lastName,
+                }
+              : undefined,
+          }
+        : {
+            id: listing.advertiserId,
+            userId: undefined,
+            companyName: 'Рекламодатель',
+            isVerified: false,
+          },
       targetCategories: listing.targetCategories || [],
       budget: listing.budget,
       format: listing.format,

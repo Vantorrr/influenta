@@ -310,13 +310,24 @@ export class AuthService {
   private profileLooksComplete(user: User): boolean {
     if (user.onboardingCompleted) return true;
     if (user.role === UserRole.ADMIN) return true;
+    // Админы по telegramId часто имеют роль blogger/advertiser — не гоняем их на онбординг
+    const adminIds = this.configService.get<number[]>('app.admins.telegramIds') || [];
+    const tgId = parseInt(String(user.telegramId), 10);
+    if (Number.isFinite(tgId) && adminIds.includes(tgId)) return true;
+
     if (user.role === UserRole.ADVERTISER) {
-      return !!(user.companyName?.trim() || user.description?.trim());
+      return !!(
+        user.companyName?.trim() ||
+        user.description?.trim() ||
+        user.website?.trim() ||
+        user.phone?.trim()
+      );
     }
     // blogger / default
     return !!(
       user.bio?.trim() ||
       user.categories?.trim() ||
+      user.phone?.trim() ||
       (user.subscribersCount != null && Number(user.subscribersCount) > 0)
     );
   }

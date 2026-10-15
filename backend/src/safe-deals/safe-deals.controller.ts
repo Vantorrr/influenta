@@ -14,6 +14,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 import { SafeDealsService } from './safe-deals.service';
 import { DeliverDealDto, DisputeDealDto } from './dto/deal-action.dto';
+import { CreatePaymentDto } from './dto/create-payment.dto';
 
 @ApiTags('safe-deals')
 @ApiBearerAuth()
@@ -69,7 +70,7 @@ export class SafeDealsController {
   @ApiOperation({ summary: 'Создать безопасную сделку по офферу и получить ссылку на оплату' })
   createForOffer(
     @Param('offerId') offerId: string,
-    @Body() body: { paymentMethod?: 'card' | 'crypto'; cryptoWalletId?: string; cryptoAmount?: string },
+    @Body() body: CreatePaymentDto,
     @CurrentUser() user: User,
   ) {
     return this.safeDealsService.createForOffer(offerId, user, body || {});
@@ -91,7 +92,7 @@ export class SafeDealsController {
   @ApiOperation({ summary: 'Создать безопасную сделку по отклику и получить ссылку на оплату' })
   createForResponse(
     @Param('responseId') responseId: string,
-    @Body() body: { paymentMethod?: 'card' | 'crypto'; cryptoWalletId?: string; cryptoAmount?: string },
+    @Body() body: CreatePaymentDto,
     @CurrentUser() user: User,
   ) {
     return this.safeDealsService.createForResponse(responseId, user, body || {});

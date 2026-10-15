@@ -163,15 +163,19 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       // ignore
     }
 
-    // Уже заполненный профиль (старые аккаунты без флага) не гоняем на регистрацию
+    // Уже заполненный профиль / админы / локальный флаг — не гоняем на регистрацию
     const u = auth.user as any
     const profileLooksComplete = !!(
       u?.onboardingCompleted ||
       u?.companyName ||
+      u?.description ||
+      u?.website ||
       u?.bio ||
       u?.categories ||
+      u?.phone ||
       (u?.subscribersCount != null && Number(u.subscribersCount) > 0) ||
-      u?.role === 'admin'
+      u?.role === 'admin' ||
+      auth.isAdmin
     )
     const onboardingDone =
       !!u?.onboardingCompleted ||
@@ -190,7 +194,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       router.replace('/onboarding')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auth.isAuthenticated, auth.user?.id, auth.user?.onboardingCompleted])
+  }, [auth.isAuthenticated, auth.isAdmin, auth.user?.id, auth.user?.onboardingCompleted])
 
   if (isExempt) {
     return <>{children}</>
