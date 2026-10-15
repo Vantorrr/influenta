@@ -12,7 +12,7 @@ import { Layout } from '@/components/layout/Layout'
 import { RubIcon } from '@/components/ui/ruble-icon'
 import { Avatar } from '@/components/ui/avatar'
 import { useAuth } from '@/hooks/useAuth'
-import { authApi, analyticsApi } from '@/lib/api'
+import { authApi, analyticsApi, safeDealApi } from '@/lib/api'
 import api from '@/lib/api'
 import { UserRole, BloggerCategory } from '@/types'
 import { VerificationModal } from '@/components/VerificationModal'
@@ -38,12 +38,16 @@ export default function ProfilePage() {
     bio: '',
     role: UserRole.BLOGGER,
     phone: '',
+    payoutPhone: '',
+    payoutSbpMemberId: '',
+    payoutSbpBankName: '',
     website: '',
     photoUrl: '',
     categories: [] as string[]
   })
+  const [sbpBanks, setSbpBanks] = useState<Array<{ memberId: string; memberName: string }>>([])
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     analyticsApi.track('quick_action_click', { targetType: 'profile', targetId: 'edit' })
     if (user) {
       const rawCats: any = (user as any).categories
@@ -59,10 +63,19 @@ export default function ProfilePage() {
         bio: user.bio || '',
         role: user.role || UserRole.BLOGGER,
         phone: (user as any).phone || '',
+        payoutPhone: (user as any).payoutPhone || (user as any).phone || '',
+        payoutSbpMemberId: (user as any).payoutSbpMemberId || '',
+        payoutSbpBankName: (user as any).payoutSbpBankName || '',
         website: (user as any).website || '',
         photoUrl: user.photoUrl || '',
         categories: normalizedCategories,
       })
+      try {
+        const banks = await safeDealApi.listSbpBanks()
+        setSbpBanks(Array.isArray(banks) ? banks : [])
+      } catch {
+        setSbpBanks([])
+      }
     }
     setIsEditing(true)
   }
@@ -79,6 +92,9 @@ export default function ProfilePage() {
         bio: formData.bio || undefined,
         role: formData.role || undefined,
         phone: formData.phone || undefined,
+        payoutPhone: formData.payoutPhone || undefined,
+        payoutSbpMemberId: formData.payoutSbpMemberId || undefined,
+        payoutSbpBankName: formData.payoutSbpBankName || undefined,
         website: formData.website || undefined,
         photoUrl: formData.photoUrl || undefined,
       }
@@ -149,6 +165,9 @@ export default function ProfilePage() {
       bio: '',
       role: UserRole.BLOGGER,
       phone: '',
+      payoutPhone: '',
+      payoutSbpMemberId: '',
+      payoutSbpBankName: '',
       website: '',
       photoUrl: '',
       categories: []
@@ -575,6 +594,46 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
+                {(formData.role === UserRole.BLOGGER || user?.role === UserRole.BLOGGER) && (
+                  <div>
+                    <label style={labelStyle}>Вывод на СБП (автовыплата)</label>
+                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginBottom: 10 }}>
+                      После подтверждения безопасной сделки деньги придут на этот номер через СБП.
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <div style={{ position: 'relative' }}>
+                        <Phone size={16} style={{ position: 'absolute', left: 14, top: 14, color: 'rgba(255,255,255,0.4)' }} />
+                        <input
+                          style={{ ...inputStyle, paddingLeft: 42 }}
+                          value={formData.payoutPhone}
+                          onChange={e => setFormData({ ...formData, payoutPhone: e.target.value })}
+                          placeholder="Телефон для СБП (+7…)"
+                        />
+                      </div>
+                      <select
+                        style={{ ...inputStyle, cursor: 'pointer' }}
+                        value={formData.payoutSbpMemberId}
+                        onChange={e => {
+                          const id = e.target.value
+                          const bank = sbpBanks.find(b => b.memberId === id)
+                          setFormData({
+                            ...formData,
+                            payoutSbpMemberId: id,
+                            payoutSbpBankName: bank?.memberName || '',
+                          })
+                        }}
+                      >
+                        <option value="">Банк получателя СБП</option>
+                        {sbpBanks.map(b => (
+                          <option key={b.memberId} value={b.memberId}>
+                            {b.memberName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
                 {formData.role === UserRole.BLOGGER && (
                   <div>
                     <label style={labelStyle}>Категории (макс. 2)</label>
@@ -664,6 +723,20 @@ export default function ProfilePage() {
                   { label: 'Роль', value: user.role === UserRole.BLOGGER ? 'Блогер' : 'Рекламодатель', icon: Star },
                   { label: 'Страна', value: getCountryName((user as any).country), icon: Globe },
                   { label: 'Телефон', value: (user as any).phone || 'Не указан', icon: Phone },
+                  ...(user.role === UserRole.BLOGGER
+                    ? [
+                        {
+                          label: 'СБП телефон',
+                          value: (user as any).payoutPhone || 'Не указан',
+                          icon: Phone,
+                        },
+                        {
+                          label: 'СБП банк',
+                          value: (user as any).payoutSbpBankName || 'Не указан',
+                          icon: Star,
+                        },
+                      ]
+                    : []),
                   { label: 'Email', value: user.email || 'Не указан', icon: Mail },
                   { label: 'Сайт', value: (user as any).website || 'Не указан', icon: Globe, isLink: true },
                 ].map((item, i) => (

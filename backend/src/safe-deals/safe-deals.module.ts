@@ -8,6 +8,7 @@ import { Response } from '../responses/entities/response.entity';
 import { User } from '../users/entities/user.entity';
 import { SafeDealsService } from './safe-deals.service';
 import { TBankService } from './tbank.service';
+import { TBankE2cService } from './tbank-e2c.service';
 import { SafeDealsController } from './safe-deals.controller';
 import { PaymentsWebhookController } from './payments-webhook.controller';
 import { TelegramModule } from '../telegram/telegram.module';
@@ -19,7 +20,7 @@ import { TelegramModule } from '../telegram/telegram.module';
     TelegramModule,
   ],
   controllers: [SafeDealsController, PaymentsWebhookController],
-  providers: [SafeDealsService, TBankService],
+  providers: [SafeDealsService, TBankService, TBankE2cService],
   exports: [SafeDealsService],
 })
 export class SafeDealsModule {}

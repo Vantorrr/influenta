@@ -168,8 +168,8 @@ export function SafeDealPanel({ offerId, responseId, isBlogger, accepted, useSaf
         </div>
 
         <p className="text-sm text-telegram-textSecondary mb-4">
-          Оплата картой (T-Bank) или криптой. Крипто-поступления подтверждает поддержка вручную.
-          Средства переводятся блогеру после подтверждения выполнения.
+          Оплата картой (T-Bank) или криптой. После подтверждения работы деньги автоматически
+          уходят блогеру на СБП (нужны телефон и банк в профиле блогера).
         </p>
 
         {deal && (
@@ -306,9 +306,31 @@ export function SafeDealPanel({ offerId, responseId, isBlogger, accepted, useSaf
           )}
 
           {status === 'released' && (
-            <div className="flex items-center gap-2 text-sm text-green-500">
-              <CheckCircle className="w-4 h-4" />
-              Сделка успешно завершена.
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-sm text-green-500">
+                <CheckCircle className="w-4 h-4" />
+                Сделка успешно завершена.
+              </div>
+              {deal?.payoutStatus === 'completed' && (
+                <div className="text-sm text-green-500/80">
+                  Автовыплата {formatPrice(deal.payoutAmount)} на СБП отправлена.
+                </div>
+              )}
+              {deal?.payoutStatus === 'pending' && (
+                <div className="text-sm text-amber-400">
+                  Выплата {formatPrice(deal.payoutAmount)} в обработке банком…
+                </div>
+              )}
+              {deal?.payoutStatus === 'failed' && (
+                <div className="text-sm text-red-400">
+                  Автовыплата не прошла{deal.payoutError ? `: ${deal.payoutError}` : ''}. Поддержка разберётся.
+                </div>
+              )}
+              {deal?.payoutStatus === 'skipped' && isBlogger && (
+                <div className="text-sm text-telegram-textSecondary">
+                  Укажите в профиле телефон и банк СБП, чтобы получать выплаты автоматически.
+                </div>
+              )}
             </div>
           )}
 

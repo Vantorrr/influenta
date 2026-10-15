@@ -24,4 +24,16 @@ export class PaymentsWebhookController {
       return 'OK';
     }
   }
+
+  /** Уведомления E2C-выплат (выплатной терминал) */
+  @Post('payout-webhook')
+  @HttpCode(200)
+  async payoutWebhook(@Body() body: Record<string, any>): Promise<string> {
+    try {
+      return await this.safeDealsService.handlePayoutNotification(body || {});
+    } catch (err: any) {
+      this.logger.error(`T-Bank E2C webhook error: ${err?.message}`);
+      return 'OK';
+    }
+  }
 }

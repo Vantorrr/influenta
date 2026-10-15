@@ -47,6 +47,18 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   phone?: string;
 
+  /** Телефон для автовыплаты СБП (7XXXXXXXXXX) */
+  @Column({ type: 'varchar', length: 16, nullable: true })
+  payoutPhone?: string;
+
+  /** Идентификатор банка получателя в СБП */
+  @Column({ type: 'varchar', length: 32, nullable: true })
+  payoutSbpMemberId?: string;
+
+  /** Название банка СБП (для UI) */
+  @Column({ type: 'varchar', length: 128, nullable: true })
+  payoutSbpBankName?: string;
+
   /** ISO-код страны (RU, BY, KZ, …) — для фильтра блогеров */
   @Index('idx_users_country')
   @Column({ type: 'varchar', length: 16, nullable: true })

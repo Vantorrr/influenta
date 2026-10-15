@@ -70,6 +70,21 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   @MaxLength(16)
+  payoutPhone?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  payoutSbpMemberId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  payoutSbpBankName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(16)
   country?: string;
 
   @IsOptional()

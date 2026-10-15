@@ -429,6 +429,8 @@ export type SafeDealStatus =
   | 'refunded'
   | 'cancelled'
 
+export type PayoutStatus = 'none' | 'pending' | 'completed' | 'failed' | 'skipped'
+
 export interface SafeDeal {
   id: string
   offerId?: string
@@ -458,8 +460,19 @@ export interface SafeDeal {
   releasedAt?: string
   refundedAt?: string
   disputedAt?: string
+  payoutStatus?: PayoutStatus | string
+  payoutPaymentId?: string
+  payoutOrderId?: string
+  payoutBankStatus?: string
+  payoutError?: string
+  paidOutAt?: string
   createdAt?: string
   updatedAt?: string
+}
+
+export interface SbpBank {
+  memberId: string
+  memberName: string
 }
 
 export type SafeDealPayOpts = {
@@ -521,6 +534,11 @@ export const safeDealApi = {
 
   async submitCryptoTx(id: string, txHash: string): Promise<SafeDeal> {
     const response = await api.post(`/safe-deals/${id}/crypto/tx`, { txHash })
+    return response.data
+  },
+
+  async listSbpBanks(): Promise<SbpBank[]> {
+    const response = await api.get('/safe-deals/sbp-banks')
     return response.data
   },
 }

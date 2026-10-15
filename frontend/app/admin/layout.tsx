@@ -17,7 +17,8 @@ import {
   TrendingUp,
   Crown,
   Wallet,
-  Pin
+  Pin,
+  Banknote
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -33,6 +34,7 @@ const navigation = [
   { name: 'Объявления', href: '/admin/listings', icon: FileText },
   { name: 'Закрепы', href: '/admin/pins', icon: Pin },
   { name: 'Крипто', href: '/admin/crypto', icon: Wallet },
+  { name: 'Выплаты', href: '/admin/payouts', icon: Banknote },
   { name: 'Модерация', href: '/admin/moderation', icon: Shield },
   { name: 'Настройки', href: '/admin/settings', icon: Settings },
 ]

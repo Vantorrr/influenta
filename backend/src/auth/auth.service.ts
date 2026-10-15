@@ -283,6 +283,9 @@ export class AuthService {
       email: user.email || null,
       bio: user.bio || '',
       phone: user.phone || null,
+      payoutPhone: user.payoutPhone || null,
+      payoutSbpMemberId: user.payoutSbpMemberId || null,
+      payoutSbpBankName: user.payoutSbpBankName || null,
       country: user.country || null,
       website: user.website || null,
       telegramLink: user.telegramLink || null,
@@ -368,6 +371,24 @@ export class AuthService {
     if (dto.bio !== undefined) user.bio = this.safeString(dto.bio, 2000);
     if (dto.role !== undefined) user.role = dto.role;
     if (dto.phone !== undefined) user.phone = this.safeString(dto.phone, 32);
+    if (dto.payoutPhone !== undefined) {
+      const raw = this.safeString(dto.payoutPhone, 16) || '';
+      // нормализуем в 7XXXXXXXXXX если возможно
+      const digits = raw.replace(/\D/g, '');
+      if (digits.length === 11 && (digits.startsWith('7') || digits.startsWith('8'))) {
+        user.payoutPhone = '7' + digits.slice(1);
+      } else if (digits.length === 10) {
+        user.payoutPhone = '7' + digits;
+      } else {
+        user.payoutPhone = raw || undefined;
+      }
+    }
+    if (dto.payoutSbpMemberId !== undefined) {
+      user.payoutSbpMemberId = this.safeString(dto.payoutSbpMemberId, 32) || undefined;
+    }
+    if (dto.payoutSbpBankName !== undefined) {
+      user.payoutSbpBankName = this.safeString(dto.payoutSbpBankName, 128) || undefined;
+    }
     if (dto.country !== undefined) user.country = this.safeString(dto.country, 16);
     if (dto.website !== undefined) user.website = this.safeString(dto.website, 512);
     if (dto.telegramLink !== undefined) user.telegramLink = this.safeString(dto.telegramLink, 512);

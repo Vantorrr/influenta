@@ -16,6 +16,7 @@ import { Offer, OfferStatus } from '../offers/entities/offer.entity';
 import { Response, ResponseStatus } from '../responses/entities/response.entity';
 import { User } from '../users/entities/user.entity';
 import { TBankService } from './tbank.service';
+import { TBankE2cService, normalizePayoutPhone } from './tbank-e2c.service';
 import { TelegramService } from '../telegram/telegram.service';
 
 export type DealPaymentOpts = {
@@ -40,6 +41,7 @@ export class SafeDealsService implements OnModuleInit {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly tbank: TBankService,
+    private readonly e2c: TBankE2cService,
     private readonly telegram: TelegramService,
     private readonly configService: ConfigService,
   ) {}
@@ -105,6 +107,17 @@ export class SafeDealsService implements OnModuleInit {
         ALTER TABLE safe_deals ADD COLUMN IF NOT EXISTS "cryptoAddress" varchar(256);
         ALTER TABLE safe_deals ADD COLUMN IF NOT EXISTS "cryptoAmount" varchar(64);
         ALTER TABLE safe_deals ADD COLUMN IF NOT EXISTS "cryptoTxHash" varchar(256);
+        ALTER TABLE safe_deals ADD COLUMN IF NOT EXISTS "payoutStatus" varchar(24) DEFAULT 'none';
+        ALTER TABLE safe_deals ADD COLUMN IF NOT EXISTS "payoutPaymentId" varchar;
+        ALTER TABLE safe_deals ADD COLUMN IF NOT EXISTS "payoutOrderId" varchar;
+        ALTER TABLE safe_deals ADD COLUMN IF NOT EXISTS "payoutBankStatus" varchar;
+        ALTER TABLE safe_deals ADD COLUMN IF NOT EXISTS "payoutError" text;
+        ALTER TABLE safe_deals ADD COLUMN IF NOT EXISTS "paidOutAt" timestamptz;
+      `);
+      await this.dealRepo.query(`
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS "payoutPhone" varchar(16);
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS "payoutSbpMemberId" varchar(32);
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS "payoutSbpBankName" varchar(128);
       `);
       await this.dealRepo.query(`
         CREATE TABLE IF NOT EXISTS crypto_wallets (
@@ -166,6 +179,12 @@ export class SafeDealsService implements OnModuleInit {
       releasedAt: deal.releasedAt,
       refundedAt: deal.refundedAt,
       disputedAt: deal.disputedAt,
+      payoutStatus: deal.payoutStatus || 'none',
+      payoutPaymentId: deal.payoutPaymentId,
+      payoutOrderId: deal.payoutOrderId,
+      payoutBankStatus: deal.payoutBankStatus,
+      payoutError: deal.payoutError,
+      paidOutAt: deal.paidOutAt,
       createdAt: deal.createdAt,
       updatedAt: deal.updatedAt,
     };
@@ -586,7 +605,7 @@ export class SafeDealsService implements OnModuleInit {
     return this.toPublic(deal);
   }
 
-  /** Рекламодатель подтверждает — релиз средств блогеру */
+  /** Рекламодатель подтверждает — списание холда + автовыплата блогеру по СБП */
   async release(dealId: string, user: User, isAdmin = false) {
     const deal = await this.loadForParticipant(dealId, user.id, true, isAdmin);
     const isAdvertiser = deal.advertiserUserId === user.id;
@@ -610,9 +629,21 @@ export class SafeDealsService implements OnModuleInit {
     deal.releasedAt = new Date();
     await this.dealRepo.save(deal);
 
+    // Автовыплата блогеру (E2C / СБП)
+    await this.attemptBloggerPayout(deal);
+
+    const payoutHint =
+      deal.payoutStatus === 'completed'
+        ? `Выплата ${deal.payoutAmount}₽ отправлена на ваш СБП.`
+        : deal.payoutStatus === 'pending'
+          ? `Выплата ${deal.payoutAmount}₽ в обработке банком.`
+          : deal.payoutStatus === 'failed'
+            ? `Выплата ${deal.payoutAmount}₽ не прошла автоматически — поддержка разберётся. ${deal.payoutError || ''}`
+            : `К выплате: ${deal.payoutAmount}₽ (комиссия ${deal.commissionAmount}₽).`;
+
     await this.notify(
       deal.bloggerUserId,
-      `🎉 <b>Сделка завершена</b>\n\nРекламодатель подтвердил выполнение. К выплате: ${deal.payoutAmount}₽ (комиссия платформы ${deal.commissionAmount}₽).`,
+      `🎉 <b>Сделка завершена</b>\n\nРекламодатель подтвердил выполнение.\n${payoutHint}`,
       this.dealButton(deal.id),
     );
     await this.notify(
@@ -620,6 +651,201 @@ export class SafeDealsService implements OnModuleInit {
       `🎉 <b>Сделка завершена</b>\n\nСпасибо! Средства направлены блогеру.`,
     );
     return this.toPublic(deal);
+  }
+
+  /**
+   * Автовыплата блогеру через E2C СБП.
+   * Не бросает наружу — ошибки пишутся в deal.payoutStatus=failed.
+   */
+  async attemptBloggerPayout(deal: SafeDeal): Promise<SafeDeal> {
+    if (['completed', 'pending'].includes(deal.payoutStatus || '')) {
+      return deal;
+    }
+    if (!this.e2c.isConfigured()) {
+      deal.payoutStatus = 'skipped';
+      deal.payoutError = 'Выплатной терминал не настроен (TBANK_PAYOUT_*)';
+      await this.dealRepo.save(deal);
+      return deal;
+    }
+
+    const blogger = await this.userRepo.findOne({ where: { id: deal.bloggerUserId } });
+    if (!blogger) {
+      deal.payoutStatus = 'failed';
+      deal.payoutError = 'Блогер не найден';
+      await this.dealRepo.save(deal);
+      return deal;
+    }
+
+    const phone = normalizePayoutPhone(blogger.payoutPhone || blogger.phone);
+    const sbpMemberId = blogger.payoutSbpMemberId?.trim();
+    if (!phone || !sbpMemberId) {
+      deal.payoutStatus = 'failed';
+      deal.payoutError =
+        'У блогера не указаны реквизиты СБП (телефон + банк). Нужно заполнить в профиле.';
+      await this.dealRepo.save(deal);
+      await this.notify(
+        blogger.id,
+        `⚠️ <b>Не удалось выплатить автоматически</b>\n\nУкажите в профиле телефон и банк СБП для получения ${deal.payoutAmount}₽.`,
+      );
+      await this.notifyAdmins(
+        `⚠️ Автовыплата не удалась\nСделка: ${deal.id}\nСумма: ${deal.payoutAmount}₽\nПричина: нет реквизитов СБП у блогера`,
+      );
+      return deal;
+    }
+
+    const orderId = `payout-${deal.id.slice(0, 8)}-${Date.now()}`;
+    deal.payoutStatus = 'pending';
+    deal.payoutOrderId = orderId;
+    deal.payoutError = undefined;
+    await this.dealRepo.save(deal);
+
+    const res = await this.e2c.payoutSbp({
+      amount: Number(deal.payoutAmount),
+      orderId,
+      phone,
+      sbpMemberId,
+      paymentRecipientId: phone,
+    });
+
+    if (!res.success) {
+      deal.payoutStatus = 'failed';
+      deal.payoutBankStatus = res.status;
+      deal.payoutError = res.message || res.errorCode || 'Банк отклонил выплату';
+      await this.dealRepo.save(deal);
+      await this.notifyAdmins(
+        `❌ Автовыплата failed\nСделка: ${deal.id}\nСумма: ${deal.payoutAmount}₽\n${deal.payoutError}`,
+      );
+      return deal;
+    }
+
+    deal.payoutPaymentId = res.paymentId;
+    deal.payoutBankStatus = res.status;
+    const done =
+      res.status === 'COMPLETED' ||
+      res.status === 'CHECKED' ||
+      res.status === 'CONFIRMED';
+    if (done) {
+      deal.payoutStatus = 'completed';
+      deal.paidOutAt = new Date();
+      deal.payoutError = undefined;
+    } else if (res.status === 'REJECTED') {
+      deal.payoutStatus = 'failed';
+      deal.payoutError = 'Банк отклонил выплату (REJECTED)';
+    } else {
+      // COMPLETING / CREDIT_CHECKING — ждём webhook
+      deal.payoutStatus = 'pending';
+    }
+    await this.dealRepo.save(deal);
+
+    if (deal.payoutStatus === 'failed') {
+      await this.notifyAdmins(
+        `❌ Автовыплата REJECTED\nСделка: ${deal.id}\nСумма: ${deal.payoutAmount}₽`,
+      );
+    }
+    return deal;
+  }
+
+  async adminRetryPayout(dealId: string) {
+    const deal = await this.dealRepo.findOne({ where: { id: dealId } });
+    if (!deal) throw new NotFoundException('Сделка не найдена');
+    if (deal.status !== SafeDealStatus.RELEASED) {
+      throw new BadRequestException('Повторная выплата только для завершённых сделок');
+    }
+    if (deal.payoutStatus === 'completed') {
+      throw new BadRequestException('Выплата уже выполнена');
+    }
+    deal.payoutStatus = 'none';
+    deal.payoutError = undefined;
+    deal.payoutPaymentId = undefined;
+    deal.payoutOrderId = undefined;
+    deal.payoutBankStatus = undefined;
+    await this.dealRepo.save(deal);
+    await this.attemptBloggerPayout(deal);
+    if (deal.payoutStatus === 'completed' || deal.payoutStatus === 'pending') {
+      await this.notify(
+        deal.bloggerUserId,
+        `💸 <b>Выплата отправлена</b>\n\n${deal.payoutAmount}₽ на ваш СБП.`,
+        this.dealButton(deal.id),
+      );
+    }
+    return this.toPublic(deal);
+  }
+
+  async listPayoutDeals(filter?: 'failed' | 'pending' | 'all') {
+    const qb = this.dealRepo
+      .createQueryBuilder('deal')
+      .where('deal.status = :st', { st: SafeDealStatus.RELEASED })
+      .orderBy('deal.updatedAt', 'DESC')
+      .take(100);
+    if (filter === 'failed') {
+      qb.andWhere('deal.payoutStatus = :ps', { ps: 'failed' });
+    } else if (filter === 'pending') {
+      qb.andWhere('deal.payoutStatus IN (:...ps)', { ps: ['pending', 'none', 'skipped'] });
+    } else {
+      qb.andWhere('deal.payoutStatus != :ps', { ps: 'none' });
+    }
+    const deals = await qb.getMany();
+    return deals.map((d) => this.toPublic(d));
+  }
+
+  /** Webhook статусов E2C-выплаты */
+  async handlePayoutNotification(body: Record<string, any>): Promise<string> {
+    if (!this.e2c.verifyNotification(body)) {
+      this.logger.warn('E2C notification: invalid token, ignoring');
+      return 'OK';
+    }
+    const orderId = String(body.OrderId || '');
+    if (!orderId) return 'OK';
+
+    const deal = await this.dealRepo.findOne({ where: { payoutOrderId: orderId } });
+    if (!deal) {
+      this.logger.warn(`E2C notification: deal not found for orderId=${orderId}`);
+      return 'OK';
+    }
+
+    const status = String(body.Status || '');
+    deal.payoutBankStatus = status;
+    if (body.PaymentId) deal.payoutPaymentId = String(body.PaymentId);
+
+    if (status === 'COMPLETED' || status === 'CHECKED' || status === 'CONFIRMED') {
+      const wasDone = deal.payoutStatus === 'completed';
+      deal.payoutStatus = 'completed';
+      deal.paidOutAt = deal.paidOutAt || new Date();
+      deal.payoutError = undefined;
+      await this.dealRepo.save(deal);
+      if (!wasDone) {
+        await this.notify(
+          deal.bloggerUserId,
+          `💸 <b>Выплата получена</b>\n\n${deal.payoutAmount}₽ зачислены на ваш СБП.`,
+          this.dealButton(deal.id),
+        );
+      }
+    } else if (status === 'REJECTED') {
+      deal.payoutStatus = 'failed';
+      deal.payoutError = body.Message || 'Банк отклонил выплату';
+      await this.dealRepo.save(deal);
+      await this.notifyAdmins(
+        `❌ E2C REJECTED\nСделка: ${deal.id}\n${deal.payoutError}`,
+      );
+    } else {
+      await this.dealRepo.save(deal);
+    }
+    return 'OK';
+  }
+
+  private async notifyAdmins(text: string) {
+    const adminIds = this.configService.get<number[]>('app.admins.telegramIds') || [];
+    for (const adminTgId of adminIds) {
+      try {
+        await this.telegram.sendMessage(adminTgId, text);
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  listSbpBanks() {
+    return this.e2c.getSbpMembers();
   }
 
   /** Любая сторона открывает спор */

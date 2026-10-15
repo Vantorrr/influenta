@@ -43,7 +43,7 @@ export default registerAs('app', () => ({
       ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
       : 'https://web-production-2bad2.up.railway.app'),
 
-  // Payments (T-Bank / Tinkoff Internet Acquiring)
+  // Payments (T-Bank / Tinkoff Internet Acquiring + E2C payouts)
   payments: {
     tbank: {
       terminalKey: process.env.TBANK_TERMINAL_KEY || '1783341874843DEMO',
@@ -54,6 +54,10 @@ export default registerAs('app', () => ({
       receiptEmail: process.env.TBANK_RECEIPT_EMAIL || 'receipts@influenta.app',
       taxation: process.env.TBANK_TAXATION || 'usn_income',
       vat: process.env.TBANK_VAT || 'none',
+      // Выплатной терминал (E2C / СБП → блогер)
+      payoutTerminalKey: process.env.TBANK_PAYOUT_TERMINAL_KEY || '',
+      payoutPassword: process.env.TBANK_PAYOUT_PASSWORD || '',
+      e2cApiUrl: process.env.TBANK_E2C_API_URL || 'https://securepay.tinkoff.ru/e2c/v2',
     },
   },
 }))

@@ -145,4 +145,26 @@ export class SafeDeal extends BaseEntity {
 
   @Column({ type: 'timestamptz', nullable: true })
   disputedAt?: Date;
+
+  /**
+   * Статус автовыплаты блогеру (E2C/СБП):
+   * none | pending | completed | failed | skipped
+   */
+  @Column({ type: 'varchar', length: 24, default: 'none' })
+  payoutStatus: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  payoutPaymentId?: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  payoutOrderId?: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  payoutBankStatus?: string;
+
+  @Column({ type: 'text', nullable: true })
+  payoutError?: string;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  paidOutAt?: Date;
 }

@@ -9,6 +9,9 @@ export interface User {
   email?: string
   bio?: string
   phone?: string
+  payoutPhone?: string
+  payoutSbpMemberId?: string
+  payoutSbpBankName?: string
   country?: string
   website?: string
   role: UserRole

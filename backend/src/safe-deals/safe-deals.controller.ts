@@ -32,6 +32,19 @@ export class SafeDealsController {
     return !!user?.telegramId && adminIds.includes(parseInt(String(user.telegramId), 10));
   }
 
+  @Get('sbp-banks')
+  @ApiOperation({ summary: 'Список банков СБП для выплат блогеру' })
+  listSbpBanks() {
+    return this.safeDealsService.listSbpBanks();
+  }
+
+  @Get('payouts')
+  @UseGuards(AdminGuard)
+  @ApiOperation({ summary: 'Админ: сделки с автовыплатами' })
+  listPayouts() {
+    return this.safeDealsService.listPayoutDeals('all');
+  }
+
   @Get('crypto/wallets')
   @ApiOperation({ summary: 'Активные крипто-кошельки для оплаты' })
   listCryptoWallets() {
@@ -157,5 +170,12 @@ export class SafeDealsController {
   @ApiOperation({ summary: 'Админ: подтвердить поступление крипты' })
   adminConfirmCrypto(@Param('id') id: string) {
     return this.safeDealsService.adminConfirmCrypto(id);
+  }
+
+  @Post(':id/admin/retry-payout')
+  @UseGuards(AdminGuard)
+  @ApiOperation({ summary: 'Админ: повторить автовыплату блогеру' })
+  adminRetryPayout(@Param('id') id: string) {
+    return this.safeDealsService.adminRetryPayout(id);
   }
 }
