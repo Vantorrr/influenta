@@ -281,6 +281,7 @@ export class AuthService {
       email: user.email || null,
       bio: user.bio || '',
       phone: user.phone || null,
+      country: user.country || null,
       website: user.website || null,
       telegramLink: user.telegramLink || null,
       instagramLink: user.instagramLink || null,
@@ -323,6 +324,7 @@ export class AuthService {
     if (dto.bio !== undefined) user.bio = this.safeString(dto.bio, 2000);
     if (dto.role !== undefined) user.role = dto.role;
     if (dto.phone !== undefined) user.phone = this.safeString(dto.phone, 32);
+    if (dto.country !== undefined) user.country = this.safeString(dto.country, 16);
     if (dto.website !== undefined) user.website = this.safeString(dto.website, 512);
     if (dto.telegramLink !== undefined) user.telegramLink = this.safeString(dto.telegramLink, 512);
     if (dto.instagramLink !== undefined) user.instagramLink = this.safeString(dto.instagramLink, 512);

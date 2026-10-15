@@ -2,12 +2,16 @@ import { Controller, Get, UseGuards, Patch, Param, Body, Post } from '@nestjs/co
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { AdminGuard } from '@/common/guards/admin.guard';
+import { ListingsService } from '../listings/listings.service';
 
 import { UpdateBloggerAdminDto } from './dto/update-blogger-admin.dto';
 
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly listingsService: ListingsService,
+  ) {}
 
   // Обновить данные блогера (админ)
   @Patch('bloggers/:id')
@@ -121,6 +125,13 @@ export class AdminController {
     return this.adminService.getListingsAdmin();
   }
 
+  /** Заявки на закреп / активные закрепы (ДО :id, иначе перехватит) */
+  @Get('listings/pins')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  async listPins() {
+    return this.listingsService.listPinRequests();
+  }
+
   // Админ: детали объявления + отклики
   @Get('listings/:id')
   @UseGuards(JwtAuthGuard, AdminGuard)
@@ -136,6 +147,19 @@ export class AdminController {
     @Body() body: { reason?: string }
   ) {
     return this.adminService.deleteListing(id, body?.reason || 'Модерация администратора');
+  }
+
+  /** Активировать закреп после оплаты (отдельная услуга) */
+  @Post('listings/:id/pin')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  async activatePin(@Param('id') id: string, @Body() body: { days?: number }) {
+    return this.listingsService.activatePin(id, body?.days ?? 7);
+  }
+
+  @Post('listings/:id/unpin')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  async deactivatePin(@Param('id') id: string) {
+    return this.listingsService.deactivatePin(id);
   }
 
   // Админ: массовая рассылка о техработах

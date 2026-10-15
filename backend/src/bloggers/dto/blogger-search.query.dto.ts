@@ -22,6 +22,15 @@ export class BloggerSearchQueryDto {
   platform?: string;
 
   @IsOptional()
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') return value.split(',').map((v) => v.trim()).filter(Boolean);
+    return [];
+  })
+  @IsArray()
+  countries?: string[];
+
+  @IsOptional()
   @IsBoolean()
   @Transform(({ value }) => value === 'true' || value === true)
   verifiedOnly?: boolean;

@@ -55,6 +55,7 @@ export default function CreateListingPage() {
     },
     deadline: '',
     useSafeDeal: true,
+    requestPin: false,
   })
 
   const categories = Object.values(BloggerCategory)
@@ -124,6 +125,7 @@ export default function CreateListingPage() {
         },
         deadline: formData.deadline ? new Date(formData.deadline).toISOString() : undefined,
         useSafeDeal: formData.useSafeDeal,
+        requestPin: formData.requestPin,
       }
 
       // Удаляем пустые поля из requirements, чтобы не слал лишнее
@@ -391,7 +393,7 @@ export default function CreateListingPage() {
             </CardContent>
           </Card>
 
-          {/* Безопасная сделка */}
+          {/* Безопасная сделка — только подсветка, без автозакрепа */}
           <Card className={`transition-colors ${formData.useSafeDeal ? 'border-emerald-500/40 bg-emerald-500/5' : ''}`}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -411,8 +413,34 @@ export default function CreateListingPage() {
                   <span className="font-medium text-white">Проводить оплату через безопасную сделку</span>
                   <span className="block text-telegram-textSecondary mt-1">
                     Деньги резервируются на эскроу-счёте и переводятся блогеру только
-                    после подтверждения выполнения. Такие объявления помечаются зелёным
-                    значком и вызывают больше доверия.
+                    после подтверждения выполнения. Объявление выделяется зелёным —
+                    без автозакрепа в ленте.
+                  </span>
+                </span>
+              </label>
+            </CardContent>
+          </Card>
+
+          {/* Закреп — отдельная платная услуга */}
+          <Card className={`transition-colors ${formData.requestPin ? 'border-sky-500/40 bg-sky-500/5' : ''}`}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                Закреп в ленте
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.requestPin}
+                  onChange={(e) => setFormData(prev => ({ ...prev, requestPin: e.target.checked }))}
+                  className="mt-1 w-5 h-5 rounded border-gray-600 text-sky-500 focus:ring-sky-500 accent-sky-500"
+                />
+                <span className="text-sm">
+                  <span className="font-medium text-white">Запросить закреп (платно отдельно)</span>
+                  <span className="block text-telegram-textSecondary mt-1">
+                    Объявление поднимется вверх ленты после оплаты. Напишите в поддержку
+                    для оплаты закрепа — модератор активирует его вручную.
                   </span>
                 </span>
               </label>

@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import Link from 'next/link'
 import { 
   Edit, Save, X, User, Mail, AtSign, FileText, Phone, Globe, 
   Users2, Shield, CheckCircle, AlertCircle, Clock, Camera, Upload,
-  ChevronRight, Star, Zap, LayoutGrid, BarChart3, Settings
+  ChevronRight, Star, Zap, LayoutGrid, BarChart3, Settings, Headphones
 } from 'lucide-react'
+import { getCountryName } from '@/lib/countries'
 import { Layout } from '@/components/layout/Layout'
 import { RubIcon } from '@/components/ui/ruble-icon'
 import { Avatar } from '@/components/ui/avatar'
@@ -660,6 +662,7 @@ export default function ProfilePage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {[
                   { label: 'Роль', value: user.role === UserRole.BLOGGER ? 'Блогер' : 'Рекламодатель', icon: Star },
+                  { label: 'Страна', value: getCountryName((user as any).country), icon: Globe },
                   { label: 'Телефон', value: (user as any).phone || 'Не указан', icon: Phone },
                   { label: 'Email', value: user.email || 'Не указан', icon: Mail },
                   { label: 'Сайт', value: (user as any).website || 'Не указан', icon: Globe, isLink: true },
@@ -676,6 +679,38 @@ export default function ProfilePage() {
                 ))}
               </div>
             </div>
+          )}
+
+          {/* Support */}
+          {!isEditing && (
+            <Link href="/support" style={{ textDecoration: 'none', display: 'block', marginBottom: 20 }}>
+              <div style={{
+                ...cardStyle,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 0,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    background: 'rgba(51, 144, 236, 0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    <Headphones size={20} color="#3390ec" />
+                  </div>
+                  <div>
+                    <div style={{ color: 'white', fontWeight: 600, fontSize: 15 }}>Поддержка</div>
+                    <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13 }}>Закрепы, крипта, споры, вопросы</div>
+                  </div>
+                </div>
+                <ChevronRight size={18} color="rgba(255,255,255,0.4)" />
+              </div>
+            </Link>
           )}
 
           {/* Verification Card */}

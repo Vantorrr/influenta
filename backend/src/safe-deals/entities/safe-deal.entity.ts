@@ -98,6 +98,29 @@ export class SafeDeal extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   paymentUrl?: string;
 
+  /** Способ оплаты: card (T-Bank) или crypto (ручное подтверждение) */
+  @Column({ type: 'varchar', length: 16, default: 'card' })
+  paymentMethod: 'card' | 'crypto' | string;
+
+  @Column({ type: 'uuid', nullable: true })
+  cryptoWalletId?: string;
+
+  @Column({ type: 'varchar', length: 16, nullable: true })
+  cryptoNetwork?: string;
+
+  @Column({ type: 'varchar', length: 16, nullable: true })
+  cryptoCurrency?: string;
+
+  @Column({ type: 'varchar', length: 256, nullable: true })
+  cryptoAddress?: string;
+
+  /** Сумма в крипте (как указал рекламодатель / админ), строкой для точности */
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  cryptoAmount?: string;
+
+  @Column({ type: 'varchar', length: 256, nullable: true })
+  cryptoTxHash?: string;
+
   /** true — платёж двухстадийный (деньги в холде, требуется Confirm) */
   @Column({ type: 'boolean', default: false })
   isTwoStage: boolean;

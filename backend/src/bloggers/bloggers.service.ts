@@ -22,6 +22,8 @@ export class BloggersService implements OnModuleInit {
       await this.usersRepository.query(`
         ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS "adminNotes" text;
         ALTER TABLE bloggers ADD COLUMN IF NOT EXISTS "isFeatured" boolean DEFAULT false;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS country varchar(16);
+        CREATE INDEX IF NOT EXISTS idx_users_country ON users (country);
       `);
       console.log('✅ Bloggers schema fixed');
     } catch (e) {
@@ -29,8 +31,8 @@ export class BloggersService implements OnModuleInit {
     }
   }
 
-  async search(searchDto: BloggerSearchDto & { minSubscribers?: number; maxSubscribers?: number; minPrice?: number; maxPrice?: number; minViews30days?: number; maxViews30days?: number; minUniqueViewers30days?: number; maxUniqueViewers30days?: number }, paginationDto: PaginationDto) {
-    const { search, categories, verifiedOnly, minSubscribers, maxSubscribers, minPrice, maxPrice, minViews30days, maxViews30days, minUniqueViewers30days, maxUniqueViewers30days } = searchDto as any;
+  async search(searchDto: BloggerSearchDto & { minSubscribers?: number; maxSubscribers?: number; minPrice?: number; maxPrice?: number; minViews30days?: number; maxViews30days?: number; minUniqueViewers30days?: number; maxUniqueViewers30days?: number; countries?: string[] }, paginationDto: PaginationDto) {
+    const { search, categories, verifiedOnly, minSubscribers, maxSubscribers, minPrice, maxPrice, minViews30days, maxViews30days, minUniqueViewers30days, maxUniqueViewers30days, countries } = searchDto as any;
     const platform = (searchDto as any)?.platform as string | undefined;
     const { page = 1, limit = 20 } = paginationDto;
 
@@ -138,6 +140,16 @@ export class BloggersService implements OnModuleInit {
           WHERE sp."userId" = user.id AND sp.platform = :platform
         )
       `, { platform })
+    }
+
+    // Фильтр по странам
+    const countriesList: string[] = Array.isArray(countries)
+      ? countries.filter(Boolean)
+      : typeof countries === 'string' && countries
+        ? [countries]
+        : [];
+    if (countriesList.length > 0) {
+      query.andWhere('user.country IN (:...countries)', { countries: countriesList });
     }
 
     const [data, total] = await query

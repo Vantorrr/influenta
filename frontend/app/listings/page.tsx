@@ -8,7 +8,8 @@ import {
   Clock, 
   Plus,
   Briefcase,
-  ShieldCheck
+  ShieldCheck,
+  Pin
 } from 'lucide-react'
 import { Layout } from '@/components/layout/Layout'
 import { Input } from '@/components/ui/input'
@@ -18,7 +19,10 @@ import { Card } from '@/components/ui/card'
 import { listingsApi } from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
 import { formatPrice, getCategoryLabel } from '@/lib/utils'
+import { CATEGORY_LABELS } from '@/lib/constants'
 import { Listing } from '@/types'
+
+const LISTING_CATEGORIES = Object.keys(CATEGORY_LABELS)
 
 export default function ListingsPage() {
   const router = useRouter()
@@ -27,10 +31,11 @@ export default function ListingsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'all' | 'my'>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
 
   useEffect(() => {
     loadListings()
-  }, [activeTab])
+  }, [activeTab, selectedCategories])
 
   const loadListings = async (isSearch = false) => {
     // Если это поиск и у нас уже есть данные, не показываем загрузку на весь экран
@@ -43,7 +48,10 @@ export default function ListingsPage() {
       if (activeTab === 'my') {
         data = await listingsApi.getMyListings(1, 50)
       } else {
-        data = await listingsApi.search({ search: searchQuery }, 1, 50)
+        data = await listingsApi.search({
+          search: searchQuery,
+          categories: selectedCategories.length ? (selectedCategories as any) : undefined,
+        }, 1, 50)
       }
       setListings(Array.isArray(data?.data) ? data.data : [])
     } catch (error) {
@@ -51,6 +59,12 @@ export default function ListingsPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const toggleCategory = (cat: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+    )
   }
 
   // Дебаунс поиска
@@ -118,6 +132,28 @@ export default function ListingsPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+
+          {activeTab === 'all' && (
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
+              {LISTING_CATEGORIES.map((cat) => {
+                const active = selectedCategories.includes(cat)
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => toggleCategory(cat)}
+                    className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                      active
+                        ? 'bg-blue-500/20 border-blue-500/40 text-blue-300'
+                        : 'bg-[#1C1E20] border-white/5 text-white/50'
+                    }`}
+                  >
+                    {CATEGORY_LABELS[cat] || cat}
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* Listings Grid */}
@@ -138,12 +174,20 @@ export default function ListingsPage() {
                     ? 'bg-emerald-500/[0.06] border-emerald-500/40 hover:border-emerald-500/60 shadow-emerald-500/5'
                     : 'bg-[#1C1E20] border-white/5 hover:border-white/10'
                 }`}>
-                  {listing.useSafeDeal && (
-                    <div className="inline-flex items-center gap-1.5 mb-3 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      Безопасная сделка
-                    </div>
-                  )}
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {listing.isPinned && (
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-sky-500/15 border border-sky-500/30 text-sky-300 text-xs font-semibold">
+                        <Pin className="w-3.5 h-3.5" />
+                        Закреплено
+                      </div>
+                    )}
+                    {listing.useSafeDeal && (
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        Безопасная сделка
+                      </div>
+                    )}
+                  </div>
                   <div className="flex justify-between items-start mb-3">
                     <h3 className="text-lg font-bold text-white leading-snug flex-1 pr-4">
                       {listing.title}

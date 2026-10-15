@@ -39,12 +39,16 @@ export class ListingsService implements OnModuleInit {
    */
   async onModuleInit() {
     try {
-      await this.listingsRepository.query(
-        'ALTER TABLE listings ADD COLUMN IF NOT EXISTS "useSafeDeal" boolean NOT NULL DEFAULT false;',
-      );
-      this.logger.log('✅ listings.useSafeDeal schema ensured');
+      await this.listingsRepository.query(`
+        ALTER TABLE listings ADD COLUMN IF NOT EXISTS "useSafeDeal" boolean NOT NULL DEFAULT false;
+        ALTER TABLE listings ADD COLUMN IF NOT EXISTS "isPinned" boolean NOT NULL DEFAULT false;
+        ALTER TABLE listings ADD COLUMN IF NOT EXISTS "pinRequested" boolean NOT NULL DEFAULT false;
+        ALTER TABLE listings ADD COLUMN IF NOT EXISTS "pinnedUntil" TIMESTAMPTZ NULL;
+        CREATE INDEX IF NOT EXISTS idx_listings_is_pinned ON listings ("isPinned");
+      `);
+      this.logger.log('✅ listings schema ensured (useSafeDeal, pin)');
     } catch (e: any) {
-      this.logger.error(`Failed to ensure listings.useSafeDeal: ${e?.message}`);
+      this.logger.error(`Failed to ensure listings schema: ${e?.message}`);
     }
   }
 
@@ -152,10 +156,26 @@ export class ListingsService implements OnModuleInit {
   }
 
   async search(searchDto: ListingSearchDto, paginationDto: PaginationDto) {
-    const { search, status = ListingStatus.ACTIVE, minBudget, maxBudget, format } = searchDto;
+    const {
+      search,
+      status = ListingStatus.ACTIVE,
+      minBudget,
+      maxBudget,
+      format,
+      categories,
+      useSafeDeal,
+    } = searchDto as ListingSearchDto & { categories?: string[]; useSafeDeal?: boolean };
     const { page = 1, limit = 20 } = paginationDto;
 
-    console.log('🔍 Listings search with status:', status);
+    // Снимаем просроченные закрепы (идемпотентно, без блокировки выдачи)
+    try {
+      await this.listingsRepository.query(
+        `UPDATE listings SET "isPinned" = false
+         WHERE "isPinned" = true AND "pinnedUntil" IS NOT NULL AND "pinnedUntil" < NOW()`,
+      );
+    } catch {
+      /* колонки может ещё не быть на первом старте */
+    }
 
     const query = this.listingsRepository
       .createQueryBuilder('listing')
@@ -163,10 +183,8 @@ export class ListingsService implements OnModuleInit {
     
     // Если статус "archive" - показываем все кроме активных, иначе фильтруем по статусу
     if ((status as string) === 'archive') {
-      console.log('📦 Fetching archive listings (not active)');
       query.where('listing.status != :activeStatus', { activeStatus: ListingStatus.ACTIVE });
     } else {
-      console.log('📋 Fetching listings with status:', status);
       query.where('listing.status = :status', { status });
     }
 
@@ -190,13 +208,32 @@ export class ListingsService implements OnModuleInit {
       query.andWhere('listing.format = :format', { format })
     }
 
+    if (useSafeDeal === true) {
+      query.andWhere('listing.useSafeDeal = true');
+    }
+
+    // Фильтр по тематикам (пересечение с targetCategories)
+    const cats: string[] = Array.isArray(categories)
+      ? categories.filter(Boolean)
+      : [];
+    if (cats.length > 0) {
+      const orConds = cats.map(
+        (_, i) => `:${'lcat' + i} = ANY (listing."targetCategories"::text[])`,
+      );
+      const params: Record<string, string> = {};
+      cats.forEach((c, i) => {
+        params['lcat' + i] = c;
+      });
+      query.andWhere(`(${orConds.join(' OR ')})`, params);
+    }
+
+    // Закреплённые сверху, затем по дате. Safe deal НЕ влияет на порядок.
     const [data, total] = await query
-      .orderBy('listing.createdAt', 'DESC')
+      .orderBy('listing.isPinned', 'DESC')
+      .addOrderBy('listing.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
-
-    console.log('📊 Listings found:', total, 'statuses:', data.map(l => l.status));
 
     return {
       data: data.map(listing => this.formatListing(listing)),
@@ -262,13 +299,21 @@ export class ListingsService implements OnModuleInit {
       advertiser = await this.advertisersRepository.save(advertiser);
     }
 
+    const { requestPin, ...listingFields } = createListingDto as CreateListingDto & {
+      requestPin?: boolean;
+    };
+
     const listing = new Listing();
-    Object.assign(listing, createListingDto);
+    Object.assign(listing, listingFields);
     listing.advertiserId = advertiser.id;
     listing.advertiser = advertiser as any;
     listing.status = ListingStatus.ACTIVE;
     listing.viewsCount = 0;
     listing.responsesCount = 0;
+    // Безопасная сделка НЕ включает закреп — закреп только по отдельному запросу
+    listing.isPinned = false;
+    listing.pinRequested = !!requestPin;
+    listing.pinnedUntil = null;
 
     await this.listingsRepository.save(listing);
 
@@ -370,6 +415,48 @@ export class ListingsService implements OnModuleInit {
     return { success: true };
   }
 
+  /**
+   * Админ активирует закреп после оплаты (отдельная платная услуга).
+   * days — срок закрепления в днях (по умолчанию 7).
+   */
+  async activatePin(id: string, days = 7) {
+    const listing = await this.listingsRepository.findOne({
+      where: { id },
+      relations: ['advertiser'],
+    });
+    if (!listing) throw new NotFoundException('Listing not found');
+
+    const safeDays = Math.max(1, Math.min(90, Number(days) || 7));
+    listing.isPinned = true;
+    listing.pinRequested = false;
+    listing.pinnedUntil = new Date(Date.now() + safeDays * 24 * 60 * 60 * 1000);
+    await this.listingsRepository.save(listing);
+    return this.formatListing(listing);
+  }
+
+  async deactivatePin(id: string) {
+    const listing = await this.listingsRepository.findOne({
+      where: { id },
+      relations: ['advertiser'],
+    });
+    if (!listing) throw new NotFoundException('Listing not found');
+    listing.isPinned = false;
+    listing.pinRequested = false;
+    listing.pinnedUntil = null;
+    await this.listingsRepository.save(listing);
+    return this.formatListing(listing);
+  }
+
+  async listPinRequests() {
+    const rows = await this.listingsRepository.find({
+      where: [{ pinRequested: true }, { isPinned: true }],
+      relations: ['advertiser'],
+      order: { updatedAt: 'DESC' },
+      take: 100,
+    });
+    return rows.map((l) => this.formatListing(l));
+  }
+
   async updateStatus(id: string, status: ListingStatus, user: User) {
     const listing = await this.listingsRepository.findOne({
       where: { id },
@@ -424,6 +511,9 @@ export class ListingsService implements OnModuleInit {
       viewsCount: listing.viewsCount,
       responsesCount: listing.responsesCount,
       useSafeDeal: !!listing.useSafeDeal,
+      isPinned: !!listing.isPinned,
+      pinRequested: !!listing.pinRequested,
+      pinnedUntil: listing.pinnedUntil || null,
       createdAt: listing.createdAt,
     };
   }

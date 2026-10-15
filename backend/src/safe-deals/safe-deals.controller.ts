@@ -31,10 +31,48 @@ export class SafeDealsController {
     return !!user?.telegramId && adminIds.includes(parseInt(String(user.telegramId), 10));
   }
 
+  @Get('crypto/wallets')
+  @ApiOperation({ summary: 'Активные крипто-кошельки для оплаты' })
+  listCryptoWallets() {
+    return this.safeDealsService.listActiveWallets();
+  }
+
+  @Get('crypto/wallets/all')
+  @UseGuards(AdminGuard)
+  @ApiOperation({ summary: 'Админ: все крипто-кошельки' })
+  listAllCryptoWallets() {
+    return this.safeDealsService.listAllWallets();
+  }
+
+  @Post('crypto/wallets')
+  @UseGuards(AdminGuard)
+  @ApiOperation({ summary: 'Админ: создать/обновить крипто-кошелёк' })
+  upsertWallet(@Body() body: any) {
+    return this.safeDealsService.upsertWallet(body || {});
+  }
+
+  @Post('crypto/wallets/:id/deactivate')
+  @UseGuards(AdminGuard)
+  @ApiOperation({ summary: 'Админ: деактивировать кошелёк' })
+  deactivateWallet(@Param('id') id: string) {
+    return this.safeDealsService.deleteWallet(id);
+  }
+
+  @Get('crypto/deals')
+  @UseGuards(AdminGuard)
+  @ApiOperation({ summary: 'Админ: список крипто-сделок' })
+  listCryptoDeals() {
+    return this.safeDealsService.listCryptoDeals();
+  }
+
   @Post('offer/:offerId')
   @ApiOperation({ summary: 'Создать безопасную сделку по офферу и получить ссылку на оплату' })
-  createForOffer(@Param('offerId') offerId: string, @CurrentUser() user: User) {
-    return this.safeDealsService.createForOffer(offerId, user);
+  createForOffer(
+    @Param('offerId') offerId: string,
+    @Body() body: { paymentMethod?: 'card' | 'crypto'; cryptoWalletId?: string; cryptoAmount?: string },
+    @CurrentUser() user: User,
+  ) {
+    return this.safeDealsService.createForOffer(offerId, user, body || {});
   }
 
   @Get('my')
@@ -51,8 +89,12 @@ export class SafeDealsController {
 
   @Post('response/:responseId')
   @ApiOperation({ summary: 'Создать безопасную сделку по отклику и получить ссылку на оплату' })
-  createForResponse(@Param('responseId') responseId: string, @CurrentUser() user: User) {
-    return this.safeDealsService.createForResponse(responseId, user);
+  createForResponse(
+    @Param('responseId') responseId: string,
+    @Body() body: { paymentMethod?: 'card' | 'crypto'; cryptoWalletId?: string; cryptoAmount?: string },
+    @CurrentUser() user: User,
+  ) {
+    return this.safeDealsService.createForResponse(responseId, user, body || {});
   }
 
   @Get('by-response/:responseId')
@@ -97,5 +139,22 @@ export class SafeDealsController {
   @ApiOperation({ summary: 'Админ: вернуть средства рекламодателю' })
   adminRefund(@Param('id') id: string) {
     return this.safeDealsService.adminRefund(id);
+  }
+
+  @Post(':id/crypto/tx')
+  @ApiOperation({ summary: 'Рекламодатель отправляет hash крипто-транзакции' })
+  submitCryptoTx(
+    @Param('id') id: string,
+    @Body() body: { txHash?: string },
+    @CurrentUser() user: User,
+  ) {
+    return this.safeDealsService.submitCryptoTx(id, user, body?.txHash || '');
+  }
+
+  @Post(':id/admin/confirm-crypto')
+  @UseGuards(AdminGuard)
+  @ApiOperation({ summary: 'Админ: подтвердить поступление крипты' })
+  adminConfirmCrypto(@Param('id') id: string) {
+    return this.safeDealsService.adminConfirmCrypto(id);
   }
 }

@@ -47,6 +47,11 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   phone?: string;
 
+  /** ISO-код страны (RU, BY, KZ, …) — для фильтра блогеров */
+  @Index('idx_users_country')
+  @Column({ type: 'varchar', length: 16, nullable: true })
+  country?: string;
+
   @Column({ nullable: true })
   website?: string;
 

@@ -357,10 +357,12 @@ export default function DashboardPage() {
         <div className="mt-6 pt-6 border-t border-white/5 flex flex-col items-center gap-3">
           {/* Support Link */}
           <a
-            href="https://t.me/influenta_support_bot"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/support"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white/50 hover:text-white/80 hover:bg-white/10 transition-all w-full justify-center max-w-xs"
+            onClick={(e) => {
+              e.preventDefault()
+              window.location.href = '/support'
+            }}
           >
             <Shield className="w-3.5 h-3.5" />
             <span>Поддержка и помощь</span>

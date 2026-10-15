@@ -20,6 +20,7 @@ import {
   X
 } from 'lucide-react'
 import { CATEGORY_LABELS } from '@/lib/constants'
+import { COUNTRIES } from '@/lib/countries'
 import { authApi, analyticsApi, setSuppress401 } from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
 import { UserRole } from '@/types'
@@ -57,6 +58,7 @@ const VkIcon = ({ className = '' }: { className?: string }) => (
 
 interface StepData {
   role?: 'blogger' | 'advertiser'
+  country?: string
   // Blogger fields
   bio?: string
   categories?: string[]
@@ -153,7 +155,7 @@ function OnboardingInner() {
     if (data.role === 'blogger') {
       switch (currentStep) {
         case 0: // О блоге
-          return !!data.bio && data.bio.length >= 10
+          return !!data.bio && data.bio.length >= 10 && !!data.country
         case 1: // Тематика
           return !!data.categories && data.categories.length > 0
         case 2: // Аудитория
@@ -178,7 +180,7 @@ function OnboardingInner() {
     if (data.role === 'advertiser') {
       switch (currentStep) {
         case 0: // Название компании
-          return !!data.companyName && data.companyName.length >= 2
+          return !!data.companyName && data.companyName.length >= 2 && !!data.country
         case 1: // Описание
           return !!data.description && data.description.length >= 10
         case 2: // Сайт (необязательно)
@@ -238,6 +240,9 @@ function OnboardingInner() {
       role: data.role === 'blogger' ? UserRole.BLOGGER : UserRole.ADVERTISER,
       onboardingCompleted: true,
     }
+
+    if (!data.country) return { ok: false, error: 'Укажите страну' }
+    payload.country = data.country
 
     if (data.role === 'blogger') {
       const bio = (data.bio || '').trim()
@@ -443,17 +448,32 @@ function OnboardingInner() {
         case 0:
           return (
             <div className="space-y-6">
-              <label className="label">О вашем блоге</label>
-              <textarea
-                value={data.bio || ''}
-                onChange={(e) => updateData('bio', e.target.value)}
-                placeholder="Например: Рассказываю о путешествиях и делюсь лайфхаками..."
-                className="input min-h-[120px] resize-none"
-                maxLength={500}
-              />
-              <p className="text-sm text-telegram-textSecondary">
-                {data.bio?.length || 0} / 500 символов
-              </p>
+              <div>
+                <label className="label">Страна</label>
+                <select
+                  value={data.country || ''}
+                  onChange={(e) => updateData('country', e.target.value)}
+                  className="input mt-2"
+                >
+                  <option value="">Выберите страну</option>
+                  {COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.code}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label">О вашем блоге</label>
+                <textarea
+                  value={data.bio || ''}
+                  onChange={(e) => updateData('bio', e.target.value)}
+                  placeholder="Например: Рассказываю о путешествиях и делюсь лайфхаками..."
+                  className="input min-h-[120px] resize-none mt-2"
+                  maxLength={500}
+                />
+                <p className="text-sm text-telegram-textSecondary">
+                  {data.bio?.length || 0} / 500 символов
+                </p>
+              </div>
             </div>
           )
         
@@ -788,14 +808,29 @@ function OnboardingInner() {
         case 0:
           return (
             <div className="space-y-6">
-              <label className="label">Название компании</label>
-              <input
-                type="text"
-                value={data.companyName || ''}
-                onChange={(e) => updateData('companyName', e.target.value)}
-                placeholder="Например: ООО Ромашка"
-                className="input"
-              />
+              <div>
+                <label className="label">Страна</label>
+                <select
+                  value={data.country || ''}
+                  onChange={(e) => updateData('country', e.target.value)}
+                  className="input mt-2"
+                >
+                  <option value="">Выберите страну</option>
+                  {COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.code}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label">Название компании</label>
+                <input
+                  type="text"
+                  value={data.companyName || ''}
+                  onChange={(e) => updateData('companyName', e.target.value)}
+                  placeholder="Например: ООО Ромашка"
+                  className="input mt-2"
+                />
+              </div>
             </div>
           )
         

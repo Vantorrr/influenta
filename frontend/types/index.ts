@@ -8,6 +8,9 @@ export interface User {
   photoUrl?: string
   email?: string
   bio?: string
+  phone?: string
+  country?: string
+  website?: string
   role: UserRole
   isActive: boolean
   isVerified: boolean
@@ -113,6 +116,9 @@ export interface Listing {
   viewsCount: number
   responsesCount: number
   useSafeDeal?: boolean
+  isPinned?: boolean
+  pinRequested?: boolean
+  pinnedUntil?: Date | string | null
   additionalInfo?: Record<string, any>
   createdAt: Date
   updatedAt: Date
@@ -260,6 +266,7 @@ export interface PaginatedResponse<T> {
 // Filter types
 export interface BloggerFilters {
   categories?: BloggerCategory[]
+  countries?: string[]
   platform?: string
   minSubscribers?: number
   maxSubscribers?: number

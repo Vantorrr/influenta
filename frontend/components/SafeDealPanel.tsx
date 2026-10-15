@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { ShieldCheck, Loader2, CheckCircle, AlertTriangle, CreditCard, PackageCheck, RotateCcw } from 'lucide-react'
+import { ShieldCheck, Loader2, CheckCircle, AlertTriangle, CreditCard, PackageCheck, RotateCcw, Copy } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -45,6 +45,8 @@ export function SafeDealPanel({ offerId, responseId, isBlogger, accepted, useSaf
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [payMethod, setPayMethod] = useState<'card' | 'crypto'>('card')
+  const [txHash, setTxHash] = useState('')
 
   const load = useCallback(async () => {
     try {
@@ -54,6 +56,7 @@ export function SafeDealPanel({ offerId, responseId, isBlogger, accepted, useSaf
         ? await safeDealApi.getByOffer(offerId)
         : null
       setDeal(d)
+      if (d?.cryptoTxHash) setTxHash(d.cryptoTxHash)
     } catch {
       // нет доступа/сделки — оставляем null
     } finally {
@@ -72,9 +75,10 @@ export function SafeDealPanel({ offerId, responseId, isBlogger, accepted, useSaf
     setBusy(true)
     setError(null)
     try {
+      const opts = { paymentMethod: payMethod }
       const res = responseId
-        ? await safeDealApi.createForResponse(responseId)
-        : await safeDealApi.createForOffer(offerId!)
+        ? await safeDealApi.createForResponse(responseId, opts)
+        : await safeDealApi.createForOffer(offerId!, opts)
       setDeal(res.deal)
       if (res.paymentUrl) {
         openPaymentLink(res.paymentUrl)
@@ -86,6 +90,30 @@ export function SafeDealPanel({ offerId, responseId, isBlogger, accepted, useSaf
       setError(Array.isArray(msg) ? msg.join(', ') : String(msg))
     } finally {
       setBusy(false)
+    }
+  }
+
+  const handleSubmitTx = async () => {
+    if (!deal) return
+    setBusy(true)
+    setError(null)
+    try {
+      const updated = await safeDealApi.submitCryptoTx(deal.id, txHash)
+      setDeal(updated)
+    } catch (e: any) {
+      const msg = errMessage(e)
+      setError(Array.isArray(msg) ? msg.join(', ') : String(msg))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const copyAddress = async () => {
+    if (!deal?.cryptoAddress) return
+    try {
+      await navigator.clipboard.writeText(deal.cryptoAddress)
+    } catch {
+      /* ignore */
     }
   }
 
@@ -120,6 +148,11 @@ export function SafeDealPanel({ offerId, responseId, isBlogger, accepted, useSaf
   const isFundedStage = deal && ['funded', 'in_progress'].includes(status as string)
   const isDelivered = status === 'delivered'
   const canDispute = deal && ['funded', 'in_progress', 'delivered'].includes(status as string)
+  const isCrypto = deal?.paymentMethod === 'crypto' || payMethod === 'crypto'
+  const awaitingCrypto =
+    !isBlogger &&
+    deal?.paymentMethod === 'crypto' &&
+    status === 'awaiting_payment'
 
   return (
     <Card className="mb-4 border-telegram-primary/30">
@@ -135,8 +168,8 @@ export function SafeDealPanel({ offerId, responseId, isBlogger, accepted, useSaf
         </div>
 
         <p className="text-sm text-telegram-textSecondary mb-4">
-          Деньги хранятся на защищённом счёте T-Bank и переводятся блогеру только после
-          подтверждения выполнения работы. При споре решение принимает модератор платформы.
+          Оплата картой (T-Bank) или криптой. Крипто-поступления подтверждает поддержка вручную.
+          Средства переводятся блогеру после подтверждения выполнения.
         </p>
 
         {deal && (
@@ -160,20 +193,77 @@ export function SafeDealPanel({ offerId, responseId, isBlogger, accepted, useSaf
           <div className="mb-3 p-3 bg-red-500/10 text-red-500 rounded-lg text-sm">{error}</div>
         )}
 
-        {/* Ещё не принято */}
         {!accepted && !deal && (
           <div className="text-sm text-telegram-textSecondary">
             Оплата станет доступна после принятия {responseId ? 'отклика' : 'предложения'}.
           </div>
         )}
 
-        {/* Действия */}
         <div className="flex flex-col gap-2">
+          {canPay && !deal && (
+            <div className="flex gap-2 mb-1">
+              <button
+                type="button"
+                onClick={() => setPayMethod('card')}
+                className={`flex-1 py-2 rounded-xl text-sm border ${
+                  payMethod === 'card'
+                    ? 'border-telegram-primary bg-telegram-primary/10 text-telegram-primary'
+                    : 'border-white/10 text-white/50'
+                }`}
+              >
+                Карта
+              </button>
+              <button
+                type="button"
+                onClick={() => setPayMethod('crypto')}
+                className={`flex-1 py-2 rounded-xl text-sm border ${
+                  payMethod === 'crypto'
+                    ? 'border-telegram-primary bg-telegram-primary/10 text-telegram-primary'
+                    : 'border-white/10 text-white/50'
+                }`}
+              >
+                Крипта
+              </button>
+            </div>
+          )}
+
           {canPay && (
             <Button variant="primary" onClick={handlePay} disabled={busy} fullWidth>
               {busy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CreditCard className="w-4 h-4 mr-2" />}
-              {deal ? 'Оплатить сделку' : `Оплатить безопасную сделку · ${formatPrice(budget)}`}
+              {deal
+                ? isCrypto
+                  ? 'Показать реквизиты снова'
+                  : 'Оплатить картой'
+                : isCrypto
+                ? `Оплатить криптой · ${formatPrice(budget)}`
+                : `Оплатить картой · ${formatPrice(budget)}`}
             </Button>
+          )}
+
+          {awaitingCrypto && deal?.cryptoAddress && (
+            <div className="rounded-xl border border-sky-500/30 bg-sky-500/5 p-3 space-y-2 text-sm">
+              <div className="text-sky-300 font-medium">
+                Переведите {deal.cryptoCurrency || 'USDT'} ({deal.cryptoNetwork || 'TRC20'})
+              </div>
+              <div className="flex items-start gap-2">
+                <code className="flex-1 break-all text-xs text-white/80">{deal.cryptoAddress}</code>
+                <button type="button" onClick={copyAddress} className="p-1.5 rounded bg-white/5">
+                  <Copy className="w-4 h-4" />
+                </button>
+              </div>
+              <input
+                value={txHash}
+                onChange={(e) => setTxHash(e.target.value)}
+                placeholder="Hash транзакции"
+                className="w-full rounded-lg bg-telegram-bgSecondary border border-white/10 px-3 py-2 text-sm"
+              />
+              <Button variant="secondary" onClick={handleSubmitTx} disabled={busy || !txHash.trim()} fullWidth>
+                Отправить hash в поддержку
+              </Button>
+              <p className="text-xs text-white/40">
+                После перевода модератор подтвердит поступление вручную.
+              </p>
+            </div>
           )}
 
           {isBlogger && (!deal || ['created', 'awaiting_payment'].includes(status as string)) && accepted && (

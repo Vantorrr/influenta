@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { BloggerFilters, BLOGGER_CATEGORIES } from '@/types' // Assuming these exist, if not I'll define them locally or fix imports
 import { cn, getCategoryLabel } from '@/lib/utils'
+import { COUNTRIES } from '@/lib/countries'
 
 // Fallback if types are not exported
 const PLATFORMS = [
@@ -56,6 +57,19 @@ export function FilterModal({ isOpen, onClose, filters, onApply }: FilterModalPr
         categories: exists 
           ? current.filter(c => c !== cat)
           : [...current, cat]
+      }
+    })
+  }
+
+  const handleCountryToggle = (code: string) => {
+    setLocalFilters(prev => {
+      const current = prev.countries || []
+      const exists = current.includes(code)
+      return {
+        ...prev,
+        countries: exists
+          ? current.filter(c => c !== code)
+          : [...current, code]
       }
     })
   }
@@ -182,6 +196,33 @@ export function FilterModal({ isOpen, onClose, filters, onApply }: FilterModalPr
                       <span className="font-semibold text-sm">Другие...</span>
                     </button>
                   )}
+                </div>
+              </div>
+
+              {/* Countries */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-telegram-textSecondary uppercase tracking-wider">
+                  Страна
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {COUNTRIES.map((c) => {
+                    const isActive = (localFilters.countries || []).includes(c.code)
+                    return (
+                      <button
+                        key={c.code}
+                        type="button"
+                        onClick={() => handleCountryToggle(c.code)}
+                        className={cn(
+                          'px-3 py-1.5 rounded-full text-sm border transition-all',
+                          isActive
+                            ? 'bg-telegram-primary/15 border-telegram-primary text-telegram-primary'
+                            : 'bg-telegram-bg border-white/5 text-telegram-textSecondary'
+                        )}
+                      >
+                        {c.name}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 

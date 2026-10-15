@@ -1,5 +1,5 @@
-import { IsOptional, IsString, IsEnum, IsInt, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsOptional, IsString, IsEnum, IsInt, Min, IsArray, IsBoolean } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 import { ListingStatus } from '@/types';
 
 export class ListingSearchDto {
@@ -26,6 +26,21 @@ export class ListingSearchDto {
   @IsOptional()
   @IsString()
   format?: string;
+
+  /** Фильтр по тематикам объявления (humor, beauty, …) */
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') return value.split(',').map((v) => v.trim()).filter(Boolean);
+    return [];
+  })
+  @IsArray()
+  categories?: string[];
+
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  useSafeDeal?: boolean;
 }
 
 

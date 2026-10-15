@@ -11,11 +11,18 @@ import { Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { SafeDeal, SafeDealStatus } from './entities/safe-deal.entity';
+import { CryptoWallet } from './entities/crypto-wallet.entity';
 import { Offer, OfferStatus } from '../offers/entities/offer.entity';
 import { Response, ResponseStatus } from '../responses/entities/response.entity';
 import { User } from '../users/entities/user.entity';
 import { TBankService } from './tbank.service';
 import { TelegramService } from '../telegram/telegram.service';
+
+export type DealPaymentOpts = {
+  paymentMethod?: 'card' | 'crypto';
+  cryptoWalletId?: string;
+  cryptoAmount?: string;
+};
 
 @Injectable()
 export class SafeDealsService implements OnModuleInit {
@@ -24,6 +31,8 @@ export class SafeDealsService implements OnModuleInit {
   constructor(
     @InjectRepository(SafeDeal)
     private readonly dealRepo: Repository<SafeDeal>,
+    @InjectRepository(CryptoWallet)
+    private readonly walletRepo: Repository<CryptoWallet>,
     @InjectRepository(Offer)
     private readonly offerRepo: Repository<Offer>,
     @InjectRepository(Response)
@@ -87,6 +96,29 @@ export class SafeDealsService implements OnModuleInit {
       await this.dealRepo.query(
         `CREATE INDEX IF NOT EXISTS idx_safe_deals_response_id ON safe_deals ("responseId");`,
       );
+      // Крипто-оплата (ручное управление ТП/админом)
+      await this.dealRepo.query(`
+        ALTER TABLE safe_deals ADD COLUMN IF NOT EXISTS "paymentMethod" varchar(16) DEFAULT 'card';
+        ALTER TABLE safe_deals ADD COLUMN IF NOT EXISTS "cryptoWalletId" uuid;
+        ALTER TABLE safe_deals ADD COLUMN IF NOT EXISTS "cryptoNetwork" varchar(16);
+        ALTER TABLE safe_deals ADD COLUMN IF NOT EXISTS "cryptoCurrency" varchar(16);
+        ALTER TABLE safe_deals ADD COLUMN IF NOT EXISTS "cryptoAddress" varchar(256);
+        ALTER TABLE safe_deals ADD COLUMN IF NOT EXISTS "cryptoAmount" varchar(64);
+        ALTER TABLE safe_deals ADD COLUMN IF NOT EXISTS "cryptoTxHash" varchar(256);
+      `);
+      await this.dealRepo.query(`
+        CREATE TABLE IF NOT EXISTS crypto_wallets (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          label varchar(64) NOT NULL,
+          network varchar(16) NOT NULL DEFAULT 'TRC20',
+          currency varchar(16) NOT NULL DEFAULT 'USDT',
+          address varchar(256) NOT NULL,
+          "isActive" boolean NOT NULL DEFAULT true,
+          notes text,
+          "createdAt" timestamptz NOT NULL DEFAULT now(),
+          "updatedAt" timestamptz NOT NULL DEFAULT now()
+        );
+      `);
       this.logger.log('✅ safe_deals schema ensured');
     } catch (e: any) {
       this.logger.error(`Failed to ensure safe_deals schema: ${e?.message}`);
@@ -118,6 +150,13 @@ export class SafeDealsService implements OnModuleInit {
       payoutAmount: Number(deal.payoutAmount),
       status: deal.status,
       paymentUrl: deal.paymentUrl,
+      paymentMethod: deal.paymentMethod || 'card',
+      cryptoWalletId: deal.cryptoWalletId,
+      cryptoNetwork: deal.cryptoNetwork,
+      cryptoCurrency: deal.cryptoCurrency,
+      cryptoAddress: deal.cryptoAddress,
+      cryptoAmount: deal.cryptoAmount,
+      cryptoTxHash: deal.cryptoTxHash,
       tbankStatus: deal.tbankStatus,
       isTwoStage: deal.isTwoStage,
       deliveryNote: deal.deliveryNote,
@@ -130,6 +169,87 @@ export class SafeDealsService implements OnModuleInit {
       createdAt: deal.createdAt,
       updatedAt: deal.updatedAt,
     };
+  }
+
+  /** Инициализация оплаты: карта (T-Bank) или крипта (ручное подтверждение) */
+  private async initiatePayment(deal: SafeDeal, opts?: DealPaymentOpts) {
+    const method = opts?.paymentMethod === 'crypto' ? 'crypto' : 'card';
+
+    if (method === 'crypto') {
+      let wallet: CryptoWallet | null = null;
+      if (opts?.cryptoWalletId) {
+        wallet = await this.walletRepo.findOne({
+          where: { id: opts.cryptoWalletId, isActive: true },
+        });
+      }
+      if (!wallet) {
+        wallet = await this.walletRepo.findOne({
+          where: { isActive: true },
+          order: { createdAt: 'ASC' },
+        });
+      }
+      if (!wallet) {
+        throw new BadRequestException(
+          'Крипто-оплата временно недоступна: нет активных кошельков. Обратитесь в поддержку.',
+        );
+      }
+
+      deal.paymentMethod = 'crypto';
+      deal.cryptoWalletId = wallet.id;
+      deal.cryptoNetwork = wallet.network;
+      deal.cryptoCurrency = wallet.currency;
+      deal.cryptoAddress = wallet.address;
+      deal.cryptoAmount = opts?.cryptoAmount || String(deal.amount);
+      deal.paymentUrl = undefined;
+      deal.tbankOrderId = undefined;
+      deal.tbankPaymentId = undefined;
+      deal.status = SafeDealStatus.AWAITING_PAYMENT;
+      deal = await this.dealRepo.save(deal);
+
+      await this.notify(
+        deal.advertiserUserId,
+        `💎 <b>Оплата криптой</b>\n\nСеть: <b>${wallet.network}</b>\nВалюта: <b>${wallet.currency}</b>\nАдрес:\n<code>${wallet.address}</code>\n\nПосле перевода отправьте hash транзакции в сделке. Подтверждение — вручную через поддержку.`,
+        this.dealButton(deal.id, 'Открыть сделку'),
+      );
+
+      // Уведомляем админов о новой крипто-сделке
+      const adminIds = this.configService.get<number[]>('app.admins.telegramIds') || [];
+      for (const adminTgId of adminIds) {
+        try {
+          await this.telegram.sendMessage(
+            adminTgId,
+            `💎 <b>Новая крипто-сделка</b>\nСумма: ${deal.amount}₽\n${wallet.currency} ${wallet.network}\nID: ${deal.id}`,
+          );
+        } catch {
+          /* ignore */
+        }
+      }
+
+      return { deal: this.toPublic(deal), crypto: true as const };
+    }
+
+    const orderId = randomUUID().replace(/-/g, '');
+    const initResult = await this.tbank.init({
+      amount: Number(deal.amount),
+      orderId,
+      description: `Безопасная сделка: ${deal.title}`.slice(0, 250),
+      notificationUrl: `${this.backendUrl()}/payments/tbank/webhook`,
+      successUrl: `${this.frontendUrl()}/payment/success?dealId=${deal.id}`,
+      failUrl: `${this.frontendUrl()}/payment/fail?dealId=${deal.id}`,
+    });
+
+    if (!initResult.success || !initResult.paymentUrl) {
+      throw new BadRequestException(initResult.message || 'Не удалось создать платёж');
+    }
+
+    deal.paymentMethod = 'card';
+    deal.tbankOrderId = orderId;
+    deal.tbankPaymentId = initResult.paymentId;
+    deal.paymentUrl = initResult.paymentUrl;
+    deal.status = SafeDealStatus.AWAITING_PAYMENT;
+    deal = await this.dealRepo.save(deal);
+
+    return { deal: this.toPublic(deal), paymentUrl: initResult.paymentUrl, crypto: false as const };
   }
 
   private async notify(userId: string, text: string, replyMarkup?: any) {
@@ -173,7 +293,7 @@ export class SafeDealsService implements OnModuleInit {
   // ─────────────────────────────────────────────────────────────
   // Создание сделки и инициализация оплаты (рекламодатель)
   // ─────────────────────────────────────────────────────────────
-  async createForOffer(offerId: string, user: User) {
+  async createForOffer(offerId: string, user: User, opts?: DealPaymentOpts) {
     const offer = await this.offerRepo.findOne({
       where: { id: offerId },
       relations: ['advertiser', 'advertiser.user', 'blogger'],
@@ -223,35 +343,13 @@ export class SafeDealsService implements OnModuleInit {
       deal.status = SafeDealStatus.CREATED;
     }
 
-    // Новый orderId на каждую попытку оплаты
-    const orderId = randomUUID().replace(/-/g, '');
-
-    const initResult = await this.tbank.init({
-      amount,
-      orderId,
-      description: `Безопасная сделка: ${deal.title}`.slice(0, 250),
-      notificationUrl: `${this.backendUrl()}/payments/tbank/webhook`,
-      successUrl: `${this.frontendUrl()}/payment/success?dealId=${deal.id}`,
-      failUrl: `${this.frontendUrl()}/payment/fail?dealId=${deal.id}`,
-    });
-
-    if (!initResult.success || !initResult.paymentUrl) {
-      throw new BadRequestException(initResult.message || 'Не удалось создать платёж');
-    }
-
-    deal.tbankOrderId = orderId;
-    deal.tbankPaymentId = initResult.paymentId;
-    deal.paymentUrl = initResult.paymentUrl;
-    deal.status = SafeDealStatus.AWAITING_PAYMENT;
-    deal = await this.dealRepo.save(deal);
-
-    return { deal: this.toPublic(deal), paymentUrl: initResult.paymentUrl };
+    return this.initiatePayment(deal, opts);
   }
 
   // ─────────────────────────────────────────────────────────────
   // Создание сделки по отклику на объявление (рекламодатель)
   // ─────────────────────────────────────────────────────────────
-  async createForResponse(responseId: string, user: User) {
+  async createForResponse(responseId: string, user: User, opts?: DealPaymentOpts) {
     const response = await this.responseRepo.findOne({
       where: { id: responseId },
       relations: [
@@ -316,27 +414,7 @@ export class SafeDealsService implements OnModuleInit {
       deal.status = SafeDealStatus.CREATED;
     }
 
-    const orderId = randomUUID().replace(/-/g, '');
-    const initResult = await this.tbank.init({
-      amount,
-      orderId,
-      description: `Безопасная сделка: ${title}`.slice(0, 250),
-      notificationUrl: `${this.backendUrl()}/payments/tbank/webhook`,
-      successUrl: `${this.frontendUrl()}/payment/success?dealId=${deal.id}`,
-      failUrl: `${this.frontendUrl()}/payment/fail?dealId=${deal.id}`,
-    });
-
-    if (!initResult.success || !initResult.paymentUrl) {
-      throw new BadRequestException(initResult.message || 'Не удалось создать платёж');
-    }
-
-    deal.tbankOrderId = orderId;
-    deal.tbankPaymentId = initResult.paymentId;
-    deal.paymentUrl = initResult.paymentUrl;
-    deal.status = SafeDealStatus.AWAITING_PAYMENT;
-    deal = await this.dealRepo.save(deal);
-
-    return { deal: this.toPublic(deal), paymentUrl: initResult.paymentUrl };
+    return this.initiatePayment(deal, opts);
   }
 
   async getByResponse(responseId: string, user: User) {
@@ -584,7 +662,7 @@ export class SafeDealsService implements OnModuleInit {
     if (deal.status === SafeDealStatus.RELEASED) {
       throw new BadRequestException('Средства уже выплачены блогеру — возврат невозможен');
     }
-    if (deal.tbankPaymentId) {
+    if (deal.paymentMethod !== 'crypto' && deal.tbankPaymentId) {
       const res = await this.tbank.cancel(deal.tbankPaymentId, deal.amount);
       if (!res.success) {
         throw new BadRequestException(res.message || 'Банк отклонил возврат');
@@ -603,5 +681,130 @@ export class SafeDealsService implements OnModuleInit {
       `ℹ️ <b>Сделка закрыта возвратом</b>\n\nМодератор принял решение вернуть средства рекламодателю.`,
     );
     return this.toPublic(deal);
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Крипто-кошельки и ручное подтверждение
+  // ─────────────────────────────────────────────────────────────
+
+  async listActiveWallets() {
+    const wallets = await this.walletRepo.find({
+      where: { isActive: true },
+      order: { createdAt: 'ASC' },
+    });
+    return wallets.map((w) => ({
+      id: w.id,
+      label: w.label,
+      network: w.network,
+      currency: w.currency,
+      address: w.address,
+    }));
+  }
+
+  async listAllWallets() {
+    return this.walletRepo.find({ order: { createdAt: 'DESC' } });
+  }
+
+  async upsertWallet(data: {
+    id?: string;
+    label: string;
+    network: string;
+    currency: string;
+    address: string;
+    isActive?: boolean;
+    notes?: string;
+  }) {
+    if (!data.label?.trim() || !data.address?.trim()) {
+      throw new BadRequestException('Укажите название и адрес кошелька');
+    }
+    let wallet: CryptoWallet;
+    if (data.id) {
+      const existing = await this.walletRepo.findOne({ where: { id: data.id } });
+      if (!existing) throw new NotFoundException('Кошелёк не найден');
+      wallet = existing;
+    } else {
+      wallet = this.walletRepo.create();
+    }
+    wallet.label = data.label.trim().slice(0, 64);
+    wallet.network = (data.network || 'TRC20').slice(0, 16);
+    wallet.currency = (data.currency || 'USDT').slice(0, 16);
+    wallet.address = data.address.trim().slice(0, 256);
+    wallet.isActive = data.isActive !== false;
+    wallet.notes = data.notes?.trim() || undefined;
+    return this.walletRepo.save(wallet);
+  }
+
+  async deleteWallet(id: string) {
+    const wallet = await this.walletRepo.findOne({ where: { id } });
+    if (!wallet) throw new NotFoundException('Кошелёк не найден');
+    wallet.isActive = false;
+    await this.walletRepo.save(wallet);
+    return { success: true };
+  }
+
+  /** Рекламодатель отправляет hash транзакции */
+  async submitCryptoTx(dealId: string, user: User, txHash: string) {
+    const deal = await this.dealRepo.findOne({ where: { id: dealId } });
+    if (!deal) throw new NotFoundException('Сделка не найдена');
+    if (deal.advertiserUserId !== user.id) {
+      throw new ForbiddenException('Только плательщик может указать hash');
+    }
+    if (deal.paymentMethod !== 'crypto') {
+      throw new BadRequestException('Сделка оплачивается не криптой');
+    }
+    if (!txHash?.trim() || txHash.trim().length < 8) {
+      throw new BadRequestException('Укажите корректный hash транзакции');
+    }
+    deal.cryptoTxHash = txHash.trim().slice(0, 256);
+    await this.dealRepo.save(deal);
+
+    const adminIds = this.configService.get<number[]>('app.admins.telegramIds') || [];
+    for (const adminTgId of adminIds) {
+      try {
+        await this.telegram.sendMessage(
+          adminTgId,
+          `💎 <b>Hash по крипто-сделке</b>\nID: ${deal.id}\nTX: <code>${deal.cryptoTxHash}</code>\nСумма: ${deal.amount}₽`,
+        );
+      } catch {
+        /* ignore */
+      }
+    }
+    return this.toPublic(deal);
+  }
+
+  /** Админ вручную подтверждает поступление крипты → FUNDED */
+  async adminConfirmCrypto(dealId: string) {
+    const deal = await this.dealRepo.findOne({ where: { id: dealId } });
+    if (!deal) throw new NotFoundException('Сделка не найдена');
+    if (deal.paymentMethod !== 'crypto') {
+      throw new BadRequestException('Это не крипто-сделка');
+    }
+    if (![SafeDealStatus.AWAITING_PAYMENT, SafeDealStatus.CREATED].includes(deal.status as SafeDealStatus)) {
+      throw new BadRequestException(`Нельзя подтвердить сделку в статусе ${deal.status}`);
+    }
+    deal.status = SafeDealStatus.FUNDED;
+    deal.paidAt = new Date();
+    await this.dealRepo.save(deal);
+
+    await this.notify(
+      deal.advertiserUserId,
+      `✅ <b>Крипто-оплата подтверждена</b>\n\nСредства под гарантией платформы. Блогер может приступать к работе.`,
+      this.dealButton(deal.id),
+    );
+    await this.notify(
+      deal.bloggerUserId,
+      `✅ <b>Сделка оплачена (крипта)</b>\n\nМожете приступать к работе.`,
+      this.dealButton(deal.id),
+    );
+    return this.toPublic(deal);
+  }
+
+  async listCryptoDeals() {
+    const deals = await this.dealRepo.find({
+      where: { paymentMethod: 'crypto' },
+      order: { updatedAt: 'DESC' },
+      take: 100,
+    });
+    return deals.map((d) => this.toPublic(d));
   }
 }

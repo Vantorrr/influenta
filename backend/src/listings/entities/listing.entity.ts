@@ -81,6 +81,21 @@ export class Listing extends BaseEntity {
   @Column({ default: false })
   useSafeDeal: boolean;
 
+  /**
+   * Закреп объявления — отдельная платная услуга (не связана с useSafeDeal).
+   * Пользователь может запросить закреп (pinRequested), админ активирует после оплаты.
+   */
+  @Index('idx_listings_is_pinned')
+  @Column({ default: false })
+  isPinned: boolean;
+
+  /** Запрошен закреп, ждёт оплаты / подтверждения админом */
+  @Column({ default: false })
+  pinRequested: boolean;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  pinnedUntil?: Date | null;
+
   @Column({ type: 'jsonb', nullable: true })
   additionalInfo: Record<string, any>;
 }

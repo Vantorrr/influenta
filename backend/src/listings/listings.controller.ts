@@ -16,12 +16,22 @@ export class ListingsController {
 
   @Get('search')
   async search(@Query() query: any) {
+    const categoriesRaw = query.categories;
+    const categories = Array.isArray(categoriesRaw)
+      ? categoriesRaw
+      : typeof categoriesRaw === 'string' && categoriesRaw
+        ? categoriesRaw.split(',').map((v: string) => v.trim()).filter(Boolean)
+        : undefined;
+
     const searchDto: ListingSearchDto = {
       search: query.search,
       status: query.status,
       minBudget: query.minBudget ? parseInt(String(query.minBudget), 10) : undefined,
       maxBudget: query.maxBudget ? parseInt(String(query.maxBudget), 10) : undefined,
       format: query.format,
+      categories,
+      useSafeDeal:
+        query.useSafeDeal === 'true' || query.useSafeDeal === true ? true : undefined,
     } as ListingSearchDto;
     const paginationDto: PaginationDto = {
       page: query.page ? parseInt(String(query.page), 10) : undefined,

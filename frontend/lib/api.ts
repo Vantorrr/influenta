@@ -135,6 +135,7 @@ export const bloggersApi = {
     if (filters?.platform) params.platform = filters.platform
     if (filters?.verifiedOnly) params.verifiedOnly = true
     if (filters?.categories && filters.categories.length > 0) params.categories = filters.categories.join(',')
+    if (filters?.countries && filters.countries.length > 0) params.countries = filters.countries.join(',')
     if (typeof filters?.minSubscribers === 'number') params.minSubscribers = filters.minSubscribers
     if (typeof filters?.maxSubscribers === 'number') params.maxSubscribers = filters.maxSubscribers
     if (typeof filters?.minViews30days === 'number') params.minViews30days = filters.minViews30days
@@ -441,6 +442,13 @@ export interface SafeDeal {
   payoutAmount: number
   status: SafeDealStatus
   paymentUrl?: string
+  paymentMethod?: 'card' | 'crypto' | string
+  cryptoWalletId?: string
+  cryptoNetwork?: string
+  cryptoCurrency?: string
+  cryptoAddress?: string
+  cryptoAmount?: string
+  cryptoTxHash?: string
   tbankStatus?: string
   isTwoStage?: boolean
   deliveryNote?: string
@@ -454,9 +462,15 @@ export interface SafeDeal {
   updatedAt?: string
 }
 
+export type SafeDealPayOpts = {
+  paymentMethod?: 'card' | 'crypto'
+  cryptoWalletId?: string
+  cryptoAmount?: string
+}
+
 export const safeDealApi = {
-  async createForOffer(offerId: string): Promise<{ deal: SafeDeal; paymentUrl?: string; alreadyActive?: boolean }> {
-    const response = await api.post(`/safe-deals/offer/${offerId}`)
+  async createForOffer(offerId: string, opts?: SafeDealPayOpts): Promise<{ deal: SafeDeal; paymentUrl?: string; alreadyActive?: boolean; crypto?: boolean }> {
+    const response = await api.post(`/safe-deals/offer/${offerId}`, opts || {})
     return response.data
   },
 
@@ -465,8 +479,8 @@ export const safeDealApi = {
     return response.data
   },
 
-  async createForResponse(responseId: string): Promise<{ deal: SafeDeal; paymentUrl?: string; alreadyActive?: boolean }> {
-    const response = await api.post(`/safe-deals/response/${responseId}`)
+  async createForResponse(responseId: string, opts?: SafeDealPayOpts): Promise<{ deal: SafeDeal; paymentUrl?: string; alreadyActive?: boolean; crypto?: boolean }> {
+    const response = await api.post(`/safe-deals/response/${responseId}`, opts || {})
     return response.data
   },
 
@@ -497,6 +511,16 @@ export const safeDealApi = {
 
   async dispute(id: string, reason?: string): Promise<SafeDeal> {
     const response = await api.post(`/safe-deals/${id}/dispute`, { reason })
+    return response.data
+  },
+
+  async listCryptoWallets(): Promise<Array<{ id: string; label: string; network: string; currency: string; address: string }>> {
+    const response = await api.get('/safe-deals/crypto/wallets')
+    return response.data
+  },
+
+  async submitCryptoTx(id: string, txHash: string): Promise<SafeDeal> {
+    const response = await api.post(`/safe-deals/${id}/crypto/tx`, { txHash })
     return response.data
   },
 }

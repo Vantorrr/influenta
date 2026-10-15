@@ -37,4 +37,12 @@ export class CreateListingDto {
   @IsOptional()
   @IsBoolean()
   useSafeDeal?: boolean;
+
+  /**
+   * Запросить закреп объявления (платная услуга отдельно от безопасной сделки).
+   * Не активирует закреп сразу — ставит pinRequested, админ подтверждает после оплаты.
+   */
+  @IsOptional()
+  @IsBoolean()
+  requestPin?: boolean;
 }

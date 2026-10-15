@@ -8,11 +8,13 @@ import { Advertiser } from '../advertisers/entities/advertiser.entity';
 import { Listing } from '../listings/entities/listing.entity';
 import { Response } from '../responses/entities/response.entity';
 import { TelegramModule } from '../telegram/telegram.module';
+import { ListingsModule } from '../listings/listings.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Blogger, Advertiser, Listing, Response]),
     TelegramModule,
+    ListingsModule,
   ],
   controllers: [AdminController],
   providers: [AdminService],

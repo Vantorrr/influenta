@@ -69,6 +69,11 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(16)
+  country?: string;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(512)
   website?: string;
 
