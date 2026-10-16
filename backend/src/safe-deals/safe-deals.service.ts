@@ -694,7 +694,19 @@ export class SafeDealsService implements OnModuleInit {
       return deal;
     }
 
-    const orderId = `payout-${deal.id.slice(0, 8)}-${Date.now()}`;
+    // Безопасная сделка T-Bank: E2C Init обязан использовать тот же OrderId, что и оплата.
+    // Новый payout-* OrderId даёт sbpCheckCredit / Error 21 — средства привязаны к сделке по OrderId эквайринга.
+    const orderId = deal.tbankOrderId;
+    if (!orderId) {
+      deal.payoutStatus = 'failed';
+      deal.payoutError = 'Нет OrderId оплаты T-Bank — выплата по безопасной сделке невозможна';
+      await this.dealRepo.save(deal);
+      await this.notifyAdmins(
+        `❌ Автовыплата failed\nСделка: ${deal.id}\nСумма: ${deal.payoutAmount}₽\n${deal.payoutError}`,
+      );
+      return deal;
+    }
+
     deal.payoutStatus = 'pending';
     deal.payoutOrderId = orderId;
     deal.payoutError = undefined;

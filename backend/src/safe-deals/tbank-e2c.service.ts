@@ -46,9 +46,10 @@ const FALLBACK_SBP_MEMBERS: SbpMember[] = [
 ];
 
 /**
- * Клиент T-Bank E2C (выплаты физлицам).
+ * Клиент T-Bank E2C (выплаты физлицам по безопасной сделке).
  * Боевой URL: https://securepay.tinkoff.ru/e2c/v2
  * Для СБП достаточно Init (без Payment).
+ * OrderId в Init должен совпадать с OrderId оплаты (/v2/Init) — иначе sbpCheckCredit.
  */
 @Injectable()
 export class TBankE2cService {
@@ -183,8 +184,8 @@ export class TBankE2cService {
     let friendly = [data.Message, data.Details].filter(Boolean).join('. ') || 'Ошибка выплаты';
     if (details.includes('sbpCheckCredit') || data.ErrorCode === '21') {
       friendly =
-        'Банк не подтвердил СБП-счёт получателя. Проверьте телефон и банк СБП в профиле блогера, ' +
-        'баланс на выплатном терминале и что СБП-выплаты включены в T-Bank.';
+        'T-Bank отклонил СБП-выплату (sbpCheckCredit). Для безопасной сделки OrderId выплаты ' +
+        'должен совпадать с OrderId оплаты; также проверьте телефон/банк СБП в профиле.';
     }
 
     return {
