@@ -1,6 +1,14 @@
+import dns from 'dns';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash } from 'crypto';
+
+// Railway/EU часто ходит в api по IPv6 → T-Bank рвёт/таймаутит
+try {
+  dns.setDefaultResultOrder('ipv4first');
+} catch {
+  /* older node */
+}
 
 export interface TBankInitParams {
   amount: number; // в рублях
@@ -42,12 +50,61 @@ export class TBankService {
   private readonly terminalKey: string;
   private readonly password: string;
   private readonly apiUrl: string;
+  private proxyDispatcher: any | null = null;
 
   constructor(private readonly configService: ConfigService) {
     this.terminalKey = this.configService.get<string>('app.payments.tbank.terminalKey') || '';
     this.password = this.configService.get<string>('app.payments.tbank.password') || '';
     this.apiUrl =
       this.configService.get<string>('app.payments.tbank.apiUrl') || 'https://securepay.tinkoff.ru/v2';
+
+    const proxyUrl =
+      this.configService.get<string>('app.payments.tbank.proxyUrl') ||
+      process.env.TBANK_HTTPS_PROXY ||
+      process.env.HTTPS_PROXY ||
+      '';
+    if (proxyUrl) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const { ProxyAgent } = require('undici');
+        this.proxyDispatcher = new ProxyAgent(proxyUrl);
+        this.logger.log(`T-Bank: using HTTPS proxy for acquiring`);
+      } catch (e: any) {
+        this.logger.warn(`T-Bank proxy init failed: ${e?.message}`);
+      }
+    }
+
+    if (!this.terminalKey || !this.password) {
+      this.logger.warn('T-Bank: TBANK_TERMINAL_KEY / TBANK_PASSWORD не заданы');
+    } else {
+      this.logger.log(`T-Bank acquiring terminal: ${this.terminalKey.slice(0, 6)}…`);
+    }
+  }
+
+  isConfigured(): boolean {
+    return !!(this.terminalKey && this.password);
+  }
+
+  private sleep(ms: number) {
+    return new Promise((r) => setTimeout(r, ms));
+  }
+
+  private isTransient(err: any): boolean {
+    const code = err?.cause?.code || err?.code || '';
+    const msg = String(err?.message || err?.cause?.message || '');
+    return (
+      code === 'ECONNRESET' ||
+      code === 'ETIMEDOUT' ||
+      code === 'ECONNREFUSED' ||
+      code === 'ENOTFOUND' ||
+      code === 'EAI_AGAIN' ||
+      code === 'UND_ERR_CONNECT_TIMEOUT' ||
+      code === 'UND_ERR_SOCKET' ||
+      code === 'UND_ERR_HEADERS_TIMEOUT' ||
+      msg.includes('fetch failed') ||
+      msg.includes('timeout') ||
+      msg.includes('ECONNRESET')
+    );
   }
 
   private generateToken(params: Record<string, string | number | boolean | undefined | null>): string {
@@ -67,24 +124,65 @@ export class TBankService {
     return createHash('sha256').update(concatenated, 'utf8').digest('hex');
   }
 
-  private async post<T = any>(method: string, body: Record<string, any>): Promise<T | null> {
-    try {
-      const res = await fetch(`${this.apiUrl}/${method}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const data = (await res.json()) as T;
-      return data;
-    } catch (err: any) {
-      this.logger.error(`T-Bank ${method} request failed: ${err?.message}`);
-      return null;
+  private async post<T = any>(
+    method: string,
+    body: Record<string, any>,
+  ): Promise<{ data: T | null; error?: string }> {
+    const url = `${this.apiUrl.replace(/\/$/, '')}/${method}`;
+    const maxAttempts = 4;
+    let lastError = '';
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 25000);
+      try {
+        const init: RequestInit & { dispatcher?: any } = {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        };
+        if (this.proxyDispatcher) init.dispatcher = this.proxyDispatcher;
+
+        const res = await fetch(url, init);
+        const text = await res.text();
+        let data: any = null;
+        try {
+          data = text ? JSON.parse(text) : null;
+        } catch {
+          lastError = `Неверный ответ шлюза (HTTP ${res.status}): ${text.slice(0, 120)}`;
+          this.logger.error(`T-Bank ${method}: ${lastError}`);
+          return { data: null, error: lastError };
+        }
+        return { data: data as T };
+      } catch (err: any) {
+        const cause = err?.cause?.code || err?.cause?.message || err?.message || 'unknown';
+        lastError = String(cause);
+        this.logger.error(`T-Bank ${method} attempt ${attempt}/${maxAttempts}: ${lastError}`);
+        if (!this.isTransient(err) || attempt === maxAttempts) {
+          break;
+        }
+        await this.sleep(400 * attempt);
+      } finally {
+        clearTimeout(timeout);
+      }
     }
+
+    return {
+      data: null,
+      error: `Нет ответа от платёжного шлюза (${lastError}). Проверьте сеть/прокси до securepay.tinkoff.ru`,
+    };
   }
 
   /** Инициализация платежа. Возвращает ссылку на оплату. */
   async init(params: TBankInitParams): Promise<TBankInitResult> {
-    // T-Bank ожидает сумму в копейках (целое число)
+    if (!this.isConfigured()) {
+      return {
+        success: false,
+        message: 'Платежи не настроены: задайте TBANK_TERMINAL_KEY и TBANK_PASSWORD в Railway',
+      };
+    }
+
     const amountKopecks = Math.round(params.amount * 100);
 
     const base: Record<string, any> = {
@@ -100,7 +198,6 @@ export class TBankService {
     const Token = this.generateToken(base);
     const requestBody: Record<string, any> = { ...base, Token };
 
-    // Опциональный онлайн-чек (54-ФЗ)
     const sendReceipt = this.configService.get<boolean>('app.payments.tbank.sendReceipt');
     if (sendReceipt) {
       const email = params.customerEmail || this.configService.get<string>('app.payments.tbank.receiptEmail');
@@ -119,9 +216,9 @@ export class TBankService {
       };
     }
 
-    const data = await this.post('Init', requestBody);
+    const { data, error } = await this.post('Init', requestBody);
     if (!data) {
-      return { success: false, message: 'Нет ответа от платёжного шлюза' };
+      return { success: false, message: error || 'Нет ответа от платёжного шлюза' };
     }
 
     if (data.Success && data.PaymentURL) {
@@ -151,8 +248,8 @@ export class TBankService {
     };
     if (amount !== undefined) base.Amount = Math.round(amount * 100);
     const Token = this.generateToken(base);
-    const data = await this.post('Confirm', { ...base, Token });
-    if (!data) return { success: false, message: 'Нет ответа от платёжного шлюза' };
+    const { data, error } = await this.post('Confirm', { ...base, Token });
+    if (!data) return { success: false, message: error || 'Нет ответа от платёжного шлюза' };
     if (data.Success) return { success: true, status: data.Status };
     this.logger.error(`T-Bank Confirm failed: ${data.ErrorCode} ${data.Message}`);
     return { success: false, errorCode: data.ErrorCode, message: data.Message };
@@ -166,8 +263,8 @@ export class TBankService {
     };
     if (amount !== undefined) base.Amount = Math.round(amount * 100);
     const Token = this.generateToken(base);
-    const data = await this.post('Cancel', { ...base, Token });
-    if (!data) return { success: false, message: 'Нет ответа от платёжного шлюза' };
+    const { data, error } = await this.post('Cancel', { ...base, Token });
+    if (!data) return { success: false, message: error || 'Нет ответа от платёжного шлюза' };
     if (data.Success) return { success: true, status: data.Status };
     this.logger.error(`T-Bank Cancel failed: ${data.ErrorCode} ${data.Message}`);
     return { success: false, errorCode: data.ErrorCode, message: data.Message };
@@ -179,10 +276,45 @@ export class TBankService {
       PaymentId: paymentId,
     };
     const Token = this.generateToken(base);
-    const data = await this.post('GetState', { ...base, Token });
-    if (!data) return { success: false, message: 'Нет ответа от платёжного шлюза' };
+    const { data, error } = await this.post('GetState', { ...base, Token });
+    if (!data) return { success: false, message: error || 'Нет ответа от платёжного шлюза' };
     if (data.Success) return { success: true, status: data.Status };
     return { success: false, errorCode: data.ErrorCode, message: data.Message };
+  }
+
+  /** Пинг шлюза: создаёт и сразу отменяет платёж на 1 ₽ */
+  async ping(): Promise<{
+    ok: boolean;
+    terminalKey?: string;
+    message: string;
+    paymentId?: string;
+  }> {
+    if (!this.isConfigured()) {
+      return { ok: false, message: 'TBANK_TERMINAL_KEY / TBANK_PASSWORD не заданы' };
+    }
+    const orderId = `ping-${Date.now()}`;
+    const init = await this.init({
+      amount: 1,
+      orderId,
+      description: 'Influenta gateway ping',
+      notificationUrl: 'https://example.com/ping',
+      successUrl: 'https://example.com/ok',
+      failUrl: 'https://example.com/fail',
+    });
+    if (!init.success || !init.paymentId) {
+      return {
+        ok: false,
+        terminalKey: this.terminalKey,
+        message: init.message || 'Init failed',
+      };
+    }
+    await this.cancel(init.paymentId);
+    return {
+      ok: true,
+      terminalKey: this.terminalKey,
+      paymentId: init.paymentId,
+      message: 'OK',
+    };
   }
 
   /**

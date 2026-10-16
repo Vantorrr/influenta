@@ -58,6 +58,8 @@ export default registerAs('app', () => ({
       payoutTerminalKey: process.env.TBANK_PAYOUT_TERMINAL_KEY || '',
       payoutPassword: process.env.TBANK_PAYOUT_PASSWORD || '',
       e2cApiUrl: process.env.TBANK_E2C_API_URL || 'https://securepay.tinkoff.ru/e2c/v2',
+      // Если Railway вне РФ и T-Bank режет IP — HTTP(S) прокси в РФ
+      proxyUrl: process.env.TBANK_HTTPS_PROXY || process.env.HTTPS_PROXY || '',
     },
   },
 }))

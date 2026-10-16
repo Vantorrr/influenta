@@ -21,6 +21,6 @@ import { TelegramModule } from '../telegram/telegram.module';
   ],
   controllers: [SafeDealsController, PaymentsWebhookController],
   providers: [SafeDealsService, TBankService, TBankE2cService],
-  exports: [SafeDealsService],
+  exports: [SafeDealsService, TBankService, TBankE2cService],
 })
 export class SafeDealsModule {}

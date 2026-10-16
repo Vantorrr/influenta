@@ -3,6 +3,7 @@ import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { AdminGuard } from '@/common/guards/admin.guard';
 import { ListingsService } from '../listings/listings.service';
+import { TBankService } from '../safe-deals/tbank.service';
 
 import { UpdateBloggerAdminDto } from './dto/update-blogger-admin.dto';
 
@@ -11,6 +12,7 @@ export class AdminController {
   constructor(
     private readonly adminService: AdminService,
     private readonly listingsService: ListingsService,
+    private readonly tbank: TBankService,
   ) {}
 
   // Обновить данные блогера (админ)
@@ -26,6 +28,13 @@ export class AdminController {
   @Get('health')
   health() {
     return { ok: true }
+  }
+
+  /** Проверка доступа к T-Bank Init (1 ₽ + Cancel) */
+  @Post('payments/tbank/ping')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  pingTbank() {
+    return this.tbank.ping();
   }
 
   // Платформенные метрики для админ-дашборда

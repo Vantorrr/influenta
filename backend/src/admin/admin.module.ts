@@ -9,12 +9,14 @@ import { Listing } from '../listings/entities/listing.entity';
 import { Response } from '../responses/entities/response.entity';
 import { TelegramModule } from '../telegram/telegram.module';
 import { ListingsModule } from '../listings/listings.module';
+import { SafeDealsModule } from '../safe-deals/safe-deals.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Blogger, Advertiser, Listing, Response]),
     TelegramModule,
     ListingsModule,
+    SafeDealsModule,
   ],
   controllers: [AdminController],
   providers: [AdminService],
