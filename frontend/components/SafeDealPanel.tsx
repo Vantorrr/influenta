@@ -25,10 +25,24 @@ const STATUS_META: Record<SafeDealStatus, { label: string; variant: 'default' | 
   funded: { label: 'Оплачено · средства в гарантии', variant: 'success' },
   in_progress: { label: 'В работе', variant: 'success' },
   delivered: { label: 'Работа выполнена · ждёт подтверждения', variant: 'warning' },
-  released: { label: 'Завершена · выплачено', variant: 'success' },
+  released: { label: 'Завершена', variant: 'success' },
   disputed: { label: 'Спор на рассмотрении', variant: 'danger' },
   refunded: { label: 'Возврат средств', variant: 'danger' },
   cancelled: { label: 'Отменена', variant: 'default' },
+}
+
+function releasedStatusLabel(payoutStatus?: string) {
+  switch (payoutStatus) {
+    case 'completed':
+      return { label: 'Завершена · выплачено', variant: 'success' as const }
+    case 'pending':
+      return { label: 'Завершена · выплата идёт', variant: 'warning' as const }
+    case 'failed':
+    case 'skipped':
+      return { label: 'Завершена · выплата не прошла', variant: 'danger' as const }
+    default:
+      return { label: 'Завершена', variant: 'success' as const }
+  }
 }
 
 function openPaymentLink(url: string) {
@@ -163,7 +177,17 @@ export function SafeDealPanel({ offerId, responseId, isBlogger, accepted, useSaf
             <span className="font-semibold">Безопасная сделка</span>
           </div>
           {status && (
-            <Badge variant={STATUS_META[status].variant}>{STATUS_META[status].label}</Badge>
+            <Badge
+              variant={
+                status === 'released'
+                  ? releasedStatusLabel(deal?.payoutStatus).variant
+                  : STATUS_META[status].variant
+              }
+            >
+              {status === 'released'
+                ? releasedStatusLabel(deal?.payoutStatus).label
+                : STATUS_META[status].label}
+            </Badge>
           )}
         </div>
 
@@ -322,8 +346,15 @@ export function SafeDealPanel({ offerId, responseId, isBlogger, accepted, useSaf
                 </div>
               )}
               {deal?.payoutStatus === 'failed' && (
-                <div className="text-sm text-red-400">
-                  Автовыплата не прошла{deal.payoutError ? `: ${deal.payoutError}` : ''}. Поддержка разберётся.
+                <div className="text-sm text-red-400 space-y-1">
+                  <div>
+                    Автовыплата не прошла
+                    {deal.payoutError ? `: ${deal.payoutError}` : ''}.
+                  </div>
+                  <div className="text-xs text-red-400/80">
+                    Деньги у платформы. Блогер: проверьте телефон и банк СБП в профиле. Админ может
+                    повторить выплату в разделе «Выплаты».
+                  </div>
                 </div>
               )}
               {deal?.payoutStatus === 'skipped' && isBlogger && (

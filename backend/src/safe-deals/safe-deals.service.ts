@@ -646,10 +646,11 @@ export class SafeDealsService implements OnModuleInit {
       `🎉 <b>Сделка завершена</b>\n\nРекламодатель подтвердил выполнение.\n${payoutHint}`,
       this.dealButton(deal.id),
     );
-    await this.notify(
-      deal.advertiserUserId,
-      `🎉 <b>Сделка завершена</b>\n\nСпасибо! Средства направлены блогеру.`,
-    );
+    const advHint =
+      deal.payoutStatus === 'completed' || deal.payoutStatus === 'pending'
+        ? 'Спасибо! Средства направлены блогеру.'
+        : 'Сделка закрыта. Автовыплата блогеру не прошла — поддержка повторит перевод.';
+    await this.notify(deal.advertiserUserId, `🎉 <b>Сделка завершена</b>\n\n${advHint}`);
     return this.toPublic(deal);
   }
 

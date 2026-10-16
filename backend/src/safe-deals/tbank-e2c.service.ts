@@ -144,12 +144,18 @@ export class TBankE2cService {
       return { success: false, message: 'Минимальная сумма выплаты 1 ₽' };
     }
 
+    // SbpMemberId в API — Number; в Token уходит строковое представление
+    const memberIdNum = Number(String(params.sbpMemberId).replace(/\D/g, ''));
+    if (!Number.isFinite(memberIdNum) || memberIdNum <= 0) {
+      return { success: false, message: 'Некорректный банк СБП (SbpMemberId)' };
+    }
+
     const base: Record<string, any> = {
       TerminalKey: this.terminalKey,
       OrderId: params.orderId,
       Amount: amountKopecks,
       Phone: params.phone,
-      SbpMemberId: String(params.sbpMemberId),
+      SbpMemberId: memberIdNum,
       FinalPayout: true,
       PaymentRecipientId: params.paymentRecipientId || params.phone,
     };
@@ -170,13 +176,21 @@ export class TBankE2cService {
     }
 
     this.logger.error(
-      `E2C Init failed: ${data.ErrorCode} ${data.Message} ${data.Details || ''}`,
+      `E2C Init failed: ${data.ErrorCode} ${data.Message} ${data.Details || ''} phone=${params.phone} bank=${memberIdNum}`,
     );
+
+    const details = String(data.Details || '');
+    let friendly = [data.Message, data.Details].filter(Boolean).join('. ') || 'Ошибка выплаты';
+    if (details.includes('sbpCheckCredit') || data.ErrorCode === '21') {
+      friendly =
+        'Банк не подтвердил СБП-счёт получателя. Проверьте телефон и банк СБП в профиле блогера, ' +
+        'баланс на выплатном терминале и что СБП-выплаты включены в T-Bank.';
+    }
+
     return {
       success: false,
       errorCode: data.ErrorCode,
-      message:
-        [data.Message, data.Details].filter(Boolean).join('. ') || 'Ошибка выплаты',
+      message: friendly,
       status: data.Status,
     };
   }
