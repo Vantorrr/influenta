@@ -1,6 +1,8 @@
+import https from 'https';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash } from 'crypto';
+import { URL } from 'url';
 
 export interface E2cPayoutParams {
   amount: number; // рубли
@@ -54,6 +56,7 @@ export class TBankE2cService {
   private readonly terminalKey: string;
   private readonly password: string;
   private readonly apiUrl: string;
+  private readonly httpsAgent: https.Agent;
   private sbpCache: { at: number; members: SbpMember[] } | null = null;
 
   constructor(private readonly configService: ConfigService) {
@@ -63,6 +66,9 @@ export class TBankE2cService {
     this.apiUrl =
       this.configService.get<string>('app.payments.tbank.e2cApiUrl') ||
       'https://securepay.tinkoff.ru/e2c/v2';
+    const insecure =
+      (process.env.TBANK_TLS_INSECURE || 'true').toLowerCase() !== 'false';
+    this.httpsAgent = new https.Agent({ keepAlive: true, rejectUnauthorized: !insecure });
   }
 
   isConfigured(): boolean {
@@ -91,13 +97,36 @@ export class TBankE2cService {
   }
 
   private async post<T = any>(method: string, body: Record<string, any>): Promise<T | null> {
+    const url = new URL(`${this.apiUrl.replace(/\/$/, '')}/${method}`);
+    const payload = JSON.stringify(body);
     try {
-      const res = await fetch(`${this.apiUrl}/${method}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+      const text = await new Promise<string>((resolve, reject) => {
+        const req = https.request(
+          {
+            protocol: url.protocol,
+            hostname: url.hostname,
+            port: url.port || 443,
+            path: `${url.pathname}${url.search}`,
+            method: 'POST',
+            agent: this.httpsAgent,
+            headers: {
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(payload),
+            },
+            timeout: 25000,
+          },
+          (res) => {
+            const chunks: Buffer[] = [];
+            res.on('data', (c) => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)));
+            res.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+          },
+        );
+        req.on('timeout', () => req.destroy(new Error('timeout')));
+        req.on('error', reject);
+        req.write(payload);
+        req.end();
       });
-      return (await res.json()) as T;
+      return text ? (JSON.parse(text) as T) : null;
     } catch (err: any) {
       this.logger.error(`E2C ${method} failed: ${err?.message}`);
       return null;

@@ -1,9 +1,10 @@
 import dns from 'dns';
+import https from 'https';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash } from 'crypto';
+import { URL } from 'url';
 
-// Railway/EU часто ходит в api по IPv6 → T-Bank рвёт/таймаутит
 try {
   dns.setDefaultResultOrder('ipv4first');
 } catch {
@@ -40,9 +41,8 @@ export interface TBankSimpleResult {
  * Клиент T-Bank (Tinkoff) Internet Acquiring.
  * Документация: https://developer.tbank.ru/eacq/
  *
- * Токен запроса = SHA-256 от конкатенации значений всех корневых
- * скалярных параметров (+ Password), отсортированных по ключу.
- * Вложенные объекты (Receipt, DATA) и сам Token в расчёт не входят.
+ * На Railway Node ругается на цепочку сертификатов T-Bank
+ * (SELF_SIGNED_CERT_IN_CHAIN) — для шлюза используем отдельный https.Agent.
  */
 @Injectable()
 export class TBankService {
@@ -50,7 +50,7 @@ export class TBankService {
   private readonly terminalKey: string;
   private readonly password: string;
   private readonly apiUrl: string;
-  private proxyDispatcher: any | null = null;
+  private readonly httpsAgent: https.Agent;
 
   constructor(private readonly configService: ConfigService) {
     this.terminalKey = this.configService.get<string>('app.payments.tbank.terminalKey') || '';
@@ -58,20 +58,16 @@ export class TBankService {
     this.apiUrl =
       this.configService.get<string>('app.payments.tbank.apiUrl') || 'https://securepay.tinkoff.ru/v2';
 
-    const proxyUrl =
-      this.configService.get<string>('app.payments.tbank.proxyUrl') ||
-      process.env.TBANK_HTTPS_PROXY ||
-      process.env.HTTPS_PROXY ||
-      '';
-    if (proxyUrl) {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const { ProxyAgent } = require('undici');
-        this.proxyDispatcher = new ProxyAgent(proxyUrl);
-        this.logger.log(`T-Bank: using HTTPS proxy for acquiring`);
-      } catch (e: any) {
-        this.logger.warn(`T-Bank proxy init failed: ${e?.message}`);
-      }
+    // По умолчанию ослабляем TLS только для T-Bank: иначе fetch падает за ~100ms
+    // с SELF_SIGNED_CERT_IN_CHAIN, хотя Telegram/остальное работает.
+    const insecure =
+      (process.env.TBANK_TLS_INSECURE || 'true').toLowerCase() !== 'false';
+    this.httpsAgent = new https.Agent({
+      keepAlive: true,
+      rejectUnauthorized: !insecure,
+    });
+    if (insecure) {
+      this.logger.warn('T-Bank TLS: rejectUnauthorized=false (TBANK_TLS_INSECURE)');
     }
 
     if (!this.terminalKey || !this.password) {
@@ -90,8 +86,8 @@ export class TBankService {
   }
 
   private isTransient(err: any): boolean {
-    const code = err?.cause?.code || err?.code || '';
-    const msg = String(err?.message || err?.cause?.message || '');
+    const code = err?.code || err?.cause?.code || '';
+    const msg = String(err?.message || '');
     return (
       code === 'ECONNRESET' ||
       code === 'ETIMEDOUT' ||
@@ -99,11 +95,9 @@ export class TBankService {
       code === 'ENOTFOUND' ||
       code === 'EAI_AGAIN' ||
       code === 'UND_ERR_CONNECT_TIMEOUT' ||
-      code === 'UND_ERR_SOCKET' ||
-      code === 'UND_ERR_HEADERS_TIMEOUT' ||
-      msg.includes('fetch failed') ||
       msg.includes('timeout') ||
-      msg.includes('ECONNRESET')
+      msg.includes('ECONNRESET') ||
+      msg.includes('socket')
     );
   }
 
@@ -111,17 +105,57 @@ export class TBankService {
     const tokenSource: Record<string, string> = {};
     for (const [key, value] of Object.entries(params)) {
       if (value === undefined || value === null) continue;
-      if (typeof value === 'object') continue; // Receipt / DATA не участвуют
+      if (typeof value === 'object') continue;
       tokenSource[key] = typeof value === 'boolean' ? (value ? 'true' : 'false') : String(value);
     }
     tokenSource['Password'] = this.password;
 
-    const concatenated = Object.keys(tokenSource)
-      .sort()
-      .map((k) => tokenSource[k])
-      .join('');
+    return createHash('sha256')
+      .update(
+        Object.keys(tokenSource)
+          .sort()
+          .map((k) => tokenSource[k])
+          .join(''),
+        'utf8',
+      )
+      .digest('hex');
+  }
 
-    return createHash('sha256').update(concatenated, 'utf8').digest('hex');
+  private httpsPostJson(urlStr: string, body: Record<string, any>): Promise<{ status: number; text: string }> {
+    const url = new URL(urlStr);
+    const payload = JSON.stringify(body);
+    return new Promise((resolve, reject) => {
+      const req = https.request(
+        {
+          protocol: url.protocol,
+          hostname: url.hostname,
+          port: url.port || 443,
+          path: `${url.pathname}${url.search}`,
+          method: 'POST',
+          agent: this.httpsAgent,
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            'Content-Length': Buffer.byteLength(payload),
+          },
+          timeout: 25000,
+        },
+        (res) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (c) => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)));
+          res.on('end', () => {
+            resolve({
+              status: res.statusCode || 0,
+              text: Buffer.concat(chunks).toString('utf8'),
+            });
+          });
+        },
+      );
+      req.on('timeout', () => req.destroy(Object.assign(new Error('timeout'), { code: 'ETIMEDOUT' })));
+      req.on('error', reject);
+      req.write(payload);
+      req.end();
+    });
   }
 
   private async post<T = any>(
@@ -133,48 +167,31 @@ export class TBankService {
     let lastError = '';
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 25000);
       try {
-        const init: RequestInit & { dispatcher?: any } = {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify(body),
-          signal: controller.signal,
-        };
-        if (this.proxyDispatcher) init.dispatcher = this.proxyDispatcher;
-
-        const res = await fetch(url, init);
-        const text = await res.text();
+        const { status, text } = await this.httpsPostJson(url, body);
         let data: any = null;
         try {
           data = text ? JSON.parse(text) : null;
         } catch {
-          lastError = `Неверный ответ шлюза (HTTP ${res.status}): ${text.slice(0, 120)}`;
+          lastError = `Неверный ответ шлюза (HTTP ${status}): ${text.slice(0, 120)}`;
           this.logger.error(`T-Bank ${method}: ${lastError}`);
           return { data: null, error: lastError };
         }
         return { data: data as T };
       } catch (err: any) {
-        const cause = err?.cause?.code || err?.cause?.message || err?.message || 'unknown';
-        lastError = String(cause);
+        lastError = err?.code || err?.message || 'unknown';
         this.logger.error(`T-Bank ${method} attempt ${attempt}/${maxAttempts}: ${lastError}`);
-        if (!this.isTransient(err) || attempt === maxAttempts) {
-          break;
-        }
+        if (!this.isTransient(err) || attempt === maxAttempts) break;
         await this.sleep(400 * attempt);
-      } finally {
-        clearTimeout(timeout);
       }
     }
 
     return {
       data: null,
-      error: `Нет ответа от платёжного шлюза (${lastError}). Проверьте сеть/прокси до securepay.tinkoff.ru`,
+      error: `Нет ответа от платёжного шлюза (${lastError})`,
     };
   }
 
-  /** Инициализация платежа. Возвращает ссылку на оплату. */
   async init(params: TBankInitParams): Promise<TBankInitResult> {
     if (!this.isConfigured()) {
       return {
@@ -240,7 +257,6 @@ export class TBankService {
     };
   }
 
-  /** Подтверждение (списание) захолдированного платежа — двухстадийная схема. */
   async confirm(paymentId: string, amount?: number): Promise<TBankSimpleResult> {
     const base: Record<string, any> = {
       TerminalKey: this.terminalKey,
@@ -255,7 +271,6 @@ export class TBankService {
     return { success: false, errorCode: data.ErrorCode, message: data.Message };
   }
 
-  /** Отмена/возврат платежа. Для захолдированного — reverse, для списанного — refund. */
   async cancel(paymentId: string, amount?: number): Promise<TBankSimpleResult> {
     const base: Record<string, any> = {
       TerminalKey: this.terminalKey,
@@ -282,7 +297,6 @@ export class TBankService {
     return { success: false, errorCode: data.ErrorCode, message: data.Message };
   }
 
-  /** Пинг шлюза: создаёт и сразу отменяет платёж на 1 ₽ */
   async ping(): Promise<{
     ok: boolean;
     terminalKey?: string;
@@ -317,10 +331,6 @@ export class TBankService {
     };
   }
 
-  /**
-   * Проверка подписи входящего уведомления (webhook).
-   * Токен считается по всем корневым скалярным полям тела (+ Password), кроме Token.
-   */
   verifyNotification(body: Record<string, any>): boolean {
     if (!body || typeof body !== 'object' || !body.Token) return false;
     const { Token, ...rest } = body;
